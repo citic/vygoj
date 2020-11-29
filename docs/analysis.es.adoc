@@ -1,0 +1,66 @@
+= Análisis del juez en línea
+:stem:
+
+Este documento analiza las necesidades que motivaron a la creación del juez en línea, que apoye a la programación paradigmática de computadoras, en especial los paradigmas de programación concurrente y distribuido, así como satisfacer necesidades de usabilidad tanto para estudiantes como docentes.
+
+
+
+== Contexto
+
+Los objetivos de una persona u organización que busca el juez en línea, es mejorar los procesos de enseñanza y aprendizaje de la programación de computadoras. Los jueces en línea se crearon inicialmente en el contexto de la educación de la computación como calificadores automáticos que facilitan la labor de evaluación de código de estudiantes, incrementan el nivel de rigor, y la equidad o justicia de las calificaciones.
+
+Los jueces en línea también se usan en el contexto de la programación competitiva y el reclutamiento, sin embargo, el aquí propuesto pertenece al dominio de la educación de la computación, y se diferencia de otros en este dominio por apoyar los paradigmas de programación, en especial la programación concurrente y distribuida, así como de atender las necesidades de los docentes y no sólo las de los aprendices.
+
+Los docentes buscarían este sistema porque está ideado en satisfacer sus necesidades. La literatura científica revela pocos trabajos orientados a las necesidades docentes de los jueces en línea. En una link:Online Judge Support for Programming Teaching[investigación realizada por los autores^] se recaba una lista de requerimientos a partir de grupos de docentes, la literatura científica, y una teoría de aprendizaje.
+
+Los estudiantes buscarían este sistema por dos motivos. La motivación mediada ocurre cuando sus docentes usan el sistema como apoyo a un curso formal. La auto-motivación ocurre cuando los estudiantes buscan aprender por sus propios medios de recursos disponibles al público, como cursos y retos de programación.
+
+En general los docentes buscan proveer problemas de programación a sus estudiantes, elaborar estos problemas, potenciales soluciones, casos de prueba. Hacer llegar estos problemas a sus estudiantes. Monitorear su progreso, proveer realimentación, ayudar a estudiantes en problemas. Obtener calificaciones automáticas del sistema. Poder cooperar con otros docentes en la elaboración de los recursos o el progreso de los cursos.
+
+Los estudiantes buscan resolver problemas planteados por los docentes, aprender de cursos autodidácticos, o practicar con problemas de programación. Los estudiantes necesitan realimentación inmediata, poder aprender de sus errores, mejorar sus programas comparándolos contra los de sus pares o docentes, proveer o recibir realimentación de sus pares y docentes.
+
+La infraestructura requerida por el juez en línea dependerá de la fase en la que se encuentre el proyecto.
+
+. Fase 1 utilizará una plataforma de pruebas en línea como link:https://judge0.com/[judge0^].
+. Fase 2 utilizará una plataforma de pruebas propia, con un nodo máster y varios esclavos.
+. Fase 3 utilizará una plataforma de pruebas propia en la nube con varios máster y esclavos.
+
+Los principales obstáculos del proyecto son técnicos debidos a las complejidades propias de los paradigmas de programación concurrente, distribuido, y sus intersecciones. La cantidad de herramientas educativas en estos contextos utilizan estos paradigmas para su propia implementación, pero no los ofrecen para que los estudiantes elaboren programas y sean realimentados de acuerdo a la corrección, eficiencia, y buenas prácticas en estos paradigmas.
+
+Los jueces en línea más cercanos a este contexto son los educativos que apoyen la docencia y no sólo el autoaprendizaje. La lista formal se encuentra en revisión de literatura. Entre estos se consideran:
+
+. link:https://codeboard.io/[Codeboard^]. Un IDE en línea. {¿Por qué no repl.it y similares?}
+. link:http://www.codewars.com/[CodeWars^]. Un juez en línea ludificado, cuya módulo de docencia es de pago.
+. link:https://jutge.org/[Jutge.org^]. Un juez con funcionalidad similar a Mooshak.
+. link:https://www.urionlinejudge.com.br/judge/login[URI Online Judge^]. Un juez atractivo para estudiantes, pero limitado para docentes.
+. link:https://www.hackerrank.com/[HackerRank^]. Un juez de reclutamiento con funcionalidad gratuita para universidades.
+
+
+
+== Usuarios
+
+El juez en línea está ideado para un contexto académico, cuyos usuarios son estudiantes, docentes, y administradores de tecnología de información.
+
+
+
+=== Administradores
+
+Los administradores no buscan usar el juez en línea directamente. Son los docentes quienes tienen esta necesidad y acudirán al administrador de tecnología de información de la organización para que se encargue de "hacer funcionar" la herramienta. Los administradores son personas que se encargan de obtener y darle mantenimiento a la infraestructura donde correrá el juez en línea, además de instalarlo, configurarlo, actualizarlo, hacer respaldos, desinstalar, y funciones similares.
+
+Los administradores tienen requerimientos del juez en línea como los siguientes:
+
+. Documentación sobre cómo instalar, configurar, actualizar, respaldar, desinstalar el juez en línea.
+
+. Administrar usuarios: _CRUD_ de cuentas de usuario, establecer roles (administrador, docente, estudiante), conectarse a servidores de usuarios (LDAP).
+
+. Obtener estadísticas, reportes, y advertencias en tiempo real del sistema, como carga de uso de recursos (CPU, memoria, red), bitácoras de errores, envío de correos de problemas (preventivos y correctivos).
+
+
+
+=== Docentes
+
+
+
+
+=== Estudiantes
+

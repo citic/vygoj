@@ -1,3 +1,18 @@
-# programming_judge
+# Concurrent Programming Judge
 
-An online judge for teaching and learning of computer programming including the concurrent programming paradigm.
+An online judge for teaching and learning of computer programming including the concurrent programming paradigm. An **online programming judge** is a software that provides verdicts about the correctness and efficiency of other computer programs. They are used for three main goals:
+
+1. *Competitive programming*. Solutions made by competitors are submitted to the online judge. The judge determines who is the winner of the contest. The problems usually are available on the online judge for helping new competitors to rehearse for future contests.
+
+2. *Education*. Online judges that are designed for assisting students to learn computer programming in self-taught or mediated way.
+
+3. *Recruiting*. Online judges that help recruiters to hire talented developers, and the latter to aim for competitive jobs.
+
+
+
+## Documentation
+
+- [Analysis (es)](docs/analysis.es.adoc)
+- Design
+- Installation
+- Usage
