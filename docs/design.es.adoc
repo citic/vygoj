@@ -1,0 +1,8 @@
+= Diseño
+
+La arquitectura del juez en línea está diseñada para ser modular, de acuerdo a las recomendaciones de (link:https://ieeexplore.ieee.org/document/9245310[Došilović y Mekterović, 2020^]).
+
+[#fig_architecture]
+.Arquitectura del juez en línea
+image::./img/architecture.svg[]
+
