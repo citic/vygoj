@@ -1,24 +1,66 @@
 = Concurrent Programming Judge
 
-An online judge for teaching and learning of computer programming including the concurrent programming paradigm. An *online programming judge* is a software that provides verdicts about the correctness and efficiency of other computer programs. They are used for three main goals:
+An online judge for teaching and learning of computer programming including the concurrent programming paradigm. An *online programming judge* is a software that provides verdicts about the correctness and efficiency of other computer programs. This is an online judge for educative goals. Other online judges are designed for competitive programming and recruiting. This online judge is compound of three modules:
 
-1. _Competitive programming_. Solutions made by competitors are submitted to the online judge. The judge determines who is the winner of the contest. The problems usually are available on the online judge for helping new competitors to rehearse for future contests.
+[#fig_architecture]
+.Software architecture
+image::docs/img/architecture.svg[]
 
-2. _Education_. Online judges that are designed for assisting students to learn computer programming in self-taught or mediated way.
+Users are teachers, students, and administrators. They use a _web browser_ to access the *Online Judge Web Application* module, namely *app* for short. This module is a web server developed in Node.js and its source code is the `src/app/` directory.
 
-3. _Recruiting_. Online judges that help recruiters to hire talented developers, and the latter to aim for competitive jobs.
+The web application does not run code from users. It captures that code and passes it to the *Code Execution Service*, called *service* for short. This is a web service that executes code in a cluster of computers, and provides verdicts about the correctness and efficiency of the given code.
+
+For security reasons, the _Code Execution Service_ must run non-trusted code within an isolated environment. A *Code Execution Engine*, namely *engine* for short, is conceptually a virtual machine or software container that compiles the code and runs it without affecting other programs. An engine is created by the _web service_ for each program execution, and then destroyed. The _web service_ fetches the results of the program execution.
+
+The results of each executed program are fetched from the _app_ module and shown to the users. The _app_ module is not only an online judge, it is an educative tool that helps students to learn computer programming and teachers to manage their courses, monitor their students, and more.
+
+Currently the _Code Execution Service_ is provided by link:https://judge0.com/[Jutge0^]. But in future phases an own service may be designed for meeting the concurrent and distributed programming requirements.
+
+
 
 
 
 == Documentation
 
-- link:docs/analysis.es.adoc[Analysis (es)]
-- Design
-- Installation
-- Usage
+- link:docs/analysis.es.adoc[Analysis (es)]: Documents the problem and requirements this online judge tries to solve.
+- link:docs/design.es.adoc[Design (es)]: Documents global design decisions.
+- User manual: Guide for administrators, teachers, and students.
+
+
+
+
+
+== Installation
+
+This online judge requires a computer with link:https://nodejs.org/[Node.js] installed. In order to run the Online Judge Web Application
+
+
+
 
 
 == Useful tools
 
 These tools are not npm dependencies of this project. This document supposes they are installed globally if reader wants to use them.
 
+link:https://nodemon.io/[nodemon^] easily restarts the process each time a source file is modified:
+
+[source,sh]
+----
+npm install -g nodemon
+nodemon app.js
+----
+
+link:https://pm2.keymetrics.io/[PM2] keeps the application running on the production server even when the app crashes.
+
+[source,sh]
+----
+npm install pm2 -g
+pm2 start app.js
+----
+
+
+
+
+== Credits
+
+This tool is created at the link:https://www.ecci.ucr.ac.cr/[Escuela de Ciencias de la Computación e Informática^] of the link:https://www.ucr.ac.cr/[Universidad de Costa Rica^], as a research project by link:http://jeisson.ecci.ucr.ac.cr/[Jeisson Hidalgo-Céspedes^], link:mailto:gabriela.marin@ucr.ac.cr[Gabriela Marín-Raventós], and link:mailto:marta.calderon@ucr.ac.cr[Marta Eunice Calderón-Campos].
