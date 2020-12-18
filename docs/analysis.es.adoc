@@ -40,8 +40,25 @@ Los jueces en línea más cercanos a este contexto son los educativos que apoyen
 
 == Contenido
 
-{Pendiente}
+{Pendiente: Tabla con los siguientes contenidos y atributos:}
 
+. Curso. Tipo (mediado, autodidacta, híbrido). Fechas. Institución. Departamento. Docentes. Título. Descripción. Requisitos. Estudiantes matriculados. Programa de curso. {Tiene vista de contenidos y vista cronograma}.
+
+. Contenido. Padre (jerarquía). Título. Lista de contenidos, cada uno con su tipo: recurso o actividad.
+
+. Recurso. Tipo: texto, enlaces, imágenes, audio, vídeo.
+
+. Actividad. Tipo: pregunta, problema programado. Peso en la calificación.
+
+. Problema. _problem statement_, solución (docente, estudiantes), casos de prueba, restricciones (lenguaje, duraciones, speedup, condiciones de carrera, _linter options_). Veredicto.
+
+. Solución. jerarquía de archivos.
+
+. Veredicto. Resultado de ejecución: _compiler diagnostics_, _timeout_, resultados de casos de prueba, puntaje.
+
+. Caso de prueba. Cuatro archivos _args_, _stdin_, _expected stdout_, _expected error_.
+
+. Progreso de estudiante(s). Matriz de actividades vs estudiantes.
 
 
 
