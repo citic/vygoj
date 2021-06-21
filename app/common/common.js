@@ -1,4 +1,7 @@
-// This application name
-export const appName = 'vygoj';
-// Default internet port where server will be listening for connections
-export const port = 8080;
+// This object contains the global consts
+export default {
+  // This application name
+  appName: 'vygoj',
+  // Default internet port where server will be listening for connections
+  port: 8080,
+};

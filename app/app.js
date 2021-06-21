@@ -1,19 +1,13 @@
 import express from 'express';
-import * as common from './common/common.js';
+import common from './common/common.js';
+import routes from './routes/routes.js';
 
 // Express is a factory function. When it is run, it returns a HTTP request
 // handler function that receives (req, res) objects
 const app = express();
 
-// Log each HTTP request
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
-  next();
-});
-
-app.get('/', (req, res, next) => {
-  res.send(`${common.appName} web app`);
-});
+// Route according to the request URI
+app.use(routes);
 
 // Start listening for connections, HTTP requests, and manage them
 console.log(`${common.appName} listening on port ${common.port}...`);
