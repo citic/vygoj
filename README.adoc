@@ -1,12 +1,14 @@
-= Concurrent Programming Judge
+= Vygoj: Vygotsky Online Juge
 
-An online judge for teaching and learning of computer programming including the concurrent programming paradigm. An *online programming judge* is a software that provides verdicts about the correctness and efficiency of other computer programs. This is an online judge for educative goals. Other online judges are designed for competitive programming and recruiting. This online judge is compound of three modules:
+**VygOJ**, Vygotsky Online Juge, is an educative tool designed to support software requirements derived from Socialcultural Constructivism theory. Vygoj combines features from other tools such as Online Programming Judges (OJ), Learning Management Systems (LMS), and Massive Open Online Courses (MOOC). As a distintive feature, Vygoj supports the concurrent programming paradigm.
+
+An *online programming judge* is a software that provides verdicts about the correctness and efficiency of other computer programs. Vygoj is an online judge for educative goals that support the concurrent programming paradigm. Other online judges are designed for competitive programming and recruiting. This online judge is compound of three modules:
 
 [#fig_architecture]
 .Software architecture
 image::docs/img/architecture.svg[]
 
-Users are teachers, students, and administrators. They use a _web browser_ to access the *Online Judge Web Application* module, namely *app* for short. This module is a web server developed in Node.js and its source code is the `src/app/` directory.
+Users are teachers, students, and administrators. They use a _web browser_ to access the *Online Judge Web Application* module, namely *app* for short. This module is a web server developed in Node.js and its source code is the `app/` directory.
 
 The web application does not run code from users. It captures that code and passes it to the *Code Execution Service*, called *service* for short. This is a web service that executes code in a cluster of computers, and provides verdicts about the correctness and efficiency of the given code.
 
@@ -63,4 +65,7 @@ pm2 start app.js
 
 == Credits
 
-This tool is created at the link:https://www.ecci.ucr.ac.cr/[Escuela de Ciencias de la Computación e Informática^] of the link:https://www.ucr.ac.cr/[Universidad de Costa Rica^], as a research project by link:http://jeisson.ecci.ucr.ac.cr/[Jeisson Hidalgo-Céspedes^], link:mailto:gabriela.marin@ucr.ac.cr[Gabriela Marín-Raventós], and link:mailto:marta.calderon@ucr.ac.cr[Marta Eunice Calderón-Campos].
+This tool is created at the link:https://www.ecci.ucr.ac.cr/[Escuela de Ciencias de la Computación e Informática^] of the link:https://www.ucr.ac.cr/[Universidad de Costa Rica^], as a research project by link:http://jeisson.ecci.ucr.ac.cr/[Jeisson Hidalgo-Céspedes^], link:mailto:gabriela.marin@ucr.ac.cr[Gabriela Marín-Raventós], and link:mailto:marta.calderon@ucr.ac.cr[Marta Eunice Calderón-Campos]. Special thanks to:
+
+. link:https://boxicons.com/[Boxicons^].
+
