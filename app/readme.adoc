@@ -1,0 +1,14 @@
+= Vygoj web application
+
+The web application component allows professors to create courses and students to follow them. It is compound of two parts:
+
+. The frontend is an XHTML/CSS/JS application for running on web browsers.
+. The backend is a Node.js application using Express framework.
+
+== Directory structure
+
+. link:common/[] contains common code used by front and backend
+
+. link:public/[] contains static XHTML, CSS, JS, images, sound, video files.
+
+. link:views/[] contains XHTML templates using TBD engine.

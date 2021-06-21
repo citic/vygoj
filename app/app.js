@@ -1,10 +1,17 @@
 import express from 'express';
+import path from 'path';
 import common from './common/common.js';
 import routes from './routes/routes.js';
 
 // Express is a factory function. When it is run, it returns a HTTP request
 // handler function that receives (req, res) objects
 const app = express();
+
+// Serve static files such as XHTML, CSS, JS, images, sounds, videos
+// express.static(path) returns a middleware function that looks for URIs that
+// match files into the public/ folder, and serves them setting their content-
+// type according to their file extension
+app.use(express.static(path.join(process.cwd(), 'public')));
 
 // Route according to the request URI
 app.use(routes);
