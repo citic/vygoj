@@ -34,7 +34,15 @@ Currently the _Code Execution Service_ is provided by link:https://judge0.com/[J
 
 == Installation
 
-This online judge requires a computer with link:https://nodejs.org/[Node.js] installed. In order to run the Online Judge Web Application
+This online judge requires a computer with link:https://nodejs.org/[Node.js] installed. In order to run the Online Judge Web Application. Then run `npm clean-instal` in order to install dependencies. You can start the web application server wit `npm start`:
+
+[source,sh]
+----
+npm ci
+npm start
+----
+
+See the following sections for convenience tools that keep the server running even when a crash happens.
 
 
 
