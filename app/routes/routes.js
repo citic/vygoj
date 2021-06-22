@@ -1,5 +1,4 @@
 import express from 'express';
-import path from 'path';
 import common from '../common/common.js';
 
 // Create an express router that communicates with app object and provides
@@ -19,7 +18,9 @@ router.get('/', (req, res) => {
 
 // 404 not found error page
 router.use((req, res) => {
-  res.status(404).sendFile(path.join(process.cwd(), 'views/not_found.xhtml'));
+  res.status(404).render('not_found', {
+    pageTitle: 'Page not found',
+  });
 });
 
 export default router;

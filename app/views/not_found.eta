@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="es" xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8"/>
-    <title>Page not found</title>
+    <title>Vygot: <%= it.pageTitle %>></title>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <meta name="author" content="Jeisson Hidalgo-Céspedes"/>
     <link rel="stylesheet" href="/css/site.css"/>
   </head>
   <body>
-    <h1>Page not found</h1>
+    <h1><%= it.pageTitle %></h1>
     <p><a href="/">Home</a></p>
   </body>
 </html>
