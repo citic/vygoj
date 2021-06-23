@@ -25,8 +25,11 @@
         </ul>
       </nav>
     </header>
-    <main>
+    <main class="main">
 <%~ it.body %>
     </main>
+    <footer class="site_footer">
+      <small>Vygoj v1.0.0</small>
+    </footer>
   </body>
 </html>

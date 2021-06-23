@@ -18,8 +18,8 @@ class CourseController {
     res.xhtml().render('index', {
       title: 'Vygotsky Online Judge (Vygoj)',
       breadcumbs: [
-        { href: '/course1', text: 'Course 1'},
-        { href: '/course1/section1', text: 'Section 1'},
+        { href: '/course1', text: 'Course 1' },
+        { href: '/course1/section1', text: 'Section 1' },
       ],
     });
   }
