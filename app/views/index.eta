@@ -1,1 +1,38 @@
+    <main class="courses">
 <% layout('./layout') %>
+<% if (it.myCourses.length > 0) { %>
+      <article class="courses_section courses--mine">
+        <h3>My courses</h3>
+        <!-- todo: reuse the code below -->
+      </article>
+<% } %>
+<% if (it.availableCourses.length > 0) { %>
+      <article class="courses_section courses--available">
+        <h3 class="courses_section__title">Available courses</h3>
+        <div class="courses_list">
+<% it.availableCourses.forEach((course) => { %>
+          <section class="couses_item">
+            <img class="course__image" src="<%= course.image %>" alt="<%= course.title %>"/>
+            <h4 class="course__header">
+              <a href="/course/<%= course.id %>">
+                <span class="course__code"><%= course.code %></span>
+                <span class="course__title"><%= course.title %></span>
+              </a>
+            </h4>
+            <p class="course__instructors">
+<% course.instructors.forEach((instructor) => { %>
+              <a href="/prof/<%= instructor.id %>"><%= instructor.name %></a>
+<% }); %>
+            </p>
+            <p class="course_statistics">
+              <%= course.statistics.students %> students,
+              <%= course.statistics.sections %> sections,
+              <%= course.statistics.problems %> problems,
+              <%= course.statistics.questions %> questions.
+            </p>
+          </section>
+<% }); %>
+        </div>
+      </article>
+<% } %>
+    </main>
