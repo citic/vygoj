@@ -8,10 +8,15 @@
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node app.js"
+    "start": "node app.js",
+    "stylelint": "npx stylelint '**/*.css'"
   },
   "dependencies": {
     "eta": "^1.12.2",
     "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "stylelint": "^13.13.1",
+    "stylelint-config-standard": "^22.0.0"
   }
 }

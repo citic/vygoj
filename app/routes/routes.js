@@ -1,5 +1,5 @@
 import express from 'express';
-import common from '../common/common.js';
+// import common from '../common/common.js';
 
 // Create an express router that communicates with app object and provides
 // functions to help with routing of URIs
@@ -9,7 +9,7 @@ const router = express.Router();
 router.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
   // Define a res.xhtml() method that renders xhtml content-type used by vygot
-  res.xhtml = function() {
+  res.xhtml = function xhtml() {
     return this.contentType('application/xhtml+xml');
   };
   next();
