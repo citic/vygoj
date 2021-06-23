@@ -1,6 +1,9 @@
+// Library imports
 import * as eta from 'eta';
 import express from 'express';
 import path from 'path';
+
+// Vygoj imports
 import common from './common/common.js';
 import routes from './routes/routes.js';
 
@@ -21,7 +24,9 @@ app.set('view engine', 'eta');
 // type according to their file extension
 app.use(express.static(path.join(process.cwd(), 'public')));
 
-// Route according to the request URI
+// Routing is the most general operation of the application. Routers distribute
+// HTTP requests between Controllers. Controllers fetch from or put data to
+// Models, and results are shown with Views
 app.use(routes);
 
 // Start listening for connections, HTTP requests, and manage them
