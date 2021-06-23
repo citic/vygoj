@@ -24,12 +24,7 @@
               <a href="/prof/<%= instructor.id %>"><%= instructor.name %></a>
 <% }); %>
             </p>
-            <p class="course_statistics">
-              <%= course.statistics.students %> students,
-              <%= course.statistics.sections %> sections,
-              <%= course.statistics.problems %> problems,
-              <%= course.statistics.questions %> questions.
-            </p>
+            <p class="course_statistics"><%= course.statistics.students %> students, <%= course.statistics.sections %> sections, <%= course.statistics.problems %> problems, <%= course.statistics.questions %> questions.</p>
           </section>
 <% }); %>
         </div>

@@ -11,7 +11,7 @@ class CourseController {
   // Get the homepage view
   getIndex(req, res) {
     // Show the homepage
-    res.xhtml().render('index', {
+    res.xhtml().render('courses', {
       title: 'Vygotsky Online Judge (Vygoj)',
       breadcumbs: [
         { href: '/course1', text: 'Course 1' },
