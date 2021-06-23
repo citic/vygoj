@@ -1,7 +1,6 @@
 // Library imports
 import * as eta from 'eta';
 import express from 'express';
-import path from 'path';
 
 // Vygoj imports
 import common from './common/common.js';
@@ -17,12 +16,6 @@ app.disable('x-powered-by');
 // Set Eta as the template engine
 app.engine('eta', eta.renderFile);
 app.set('view engine', 'eta');
-
-// Serve static files such as XHTML, CSS, JS, images, sounds, videos
-// express.static(path) returns a middleware function that looks for URIs that
-// match files into the public/ folder, and serves them setting their content-
-// type according to their file extension
-app.use(express.static(path.join(process.cwd(), 'public')));
 
 // Routing is the most general operation of the application. Routers distribute
 // HTTP requests between Controllers. Controllers fetch from or put data to

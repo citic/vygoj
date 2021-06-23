@@ -1,5 +1,7 @@
 // Library imports
 import express from 'express';
+import path from 'path';
+
 // Vygot imports
 import courseController from '../controllers/course.js';
 import errorController from '../controllers/error.js';
@@ -23,6 +25,11 @@ router.use(injectXhtml);
 router.use((req, res, next) => { log.appendHttpRequest(req); next(); });
 // Homepage
 router.get('/', courseController.getIndex);
+// Serve static files such as XHTML, CSS, JS, images, sounds, videos
+// express.static(path) returns a middleware function that looks for URIs that
+// match files into the public/ folder, and serves them setting their content-
+// type according to their file extension
+router.use(express.static(path.join(process.cwd(), 'public')));
 // 404 not found error page
 router.use(errorController.getNotFound);
 
