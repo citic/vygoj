@@ -8,10 +8,25 @@
     <link rel="stylesheet" href="/css/<%= it.stylesheet ?? 'site' %>.css"/>
   </head>
   <body>
-    <h1><%= it.title %></h1>
-    <p><a href="/">Home</a></p>
+    <header class="site_header">
+      <h1 class="site_header__title">Vygotsky Online Judge</h1>
+      <nav class="breadcumb">
+        <ul class="breadcumb__list">
+          <li class="breadcumb__item">
+            <a href="/">Home</a>
+          </li>
+<% if (it.breadcumbs) { %>
+<%   it.breadcumbs.forEach((link) => { %>
+          <li class="breadcumb__item">
+            <a href="<%= link.href %>"><%= link.text %></a>
+          </li>
+<%   }); %>
+<% } %>
+        </ul>
+      </nav>
+    </header>
     <main>
-      <%~ it.body %>
+<%~ it.body %>
     </main>
   </body>
 </html>

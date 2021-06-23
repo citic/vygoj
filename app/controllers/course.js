@@ -16,7 +16,11 @@ class CourseController {
   // Get the homepage view
   getIndex(req, res) {
     res.xhtml().render('index', {
-      title: 'Vygoj: Vygotsky Online Judge',
+      title: 'Vygotsky Online Judge (Vygoj)',
+      breadcumbs: [
+        { href: '/course1', text: 'Course 1'},
+        { href: '/course1/section1', text: 'Section 1'},
+      ],
     });
   }
 } // class
