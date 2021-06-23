@@ -14,7 +14,7 @@
  */
 class CourseController {
   // Get the homepage view
-  static getIndex(req, res) {
+  getIndex(req, res) {
     res.xhtml().render('index', {
       title: 'Vygoj: Vygotsky Online Judge',
     });

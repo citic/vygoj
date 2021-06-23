@@ -1,6 +1,8 @@
+// Library imports
 import express from 'express';
-
+// Vygot imports
 import courseController from '../controllers/course.js';
+import errorController from '../controllers/error.js';
 import log from '../controllers/log.js';
 
 // Create an express router that communicates with app object and provides
@@ -21,12 +23,8 @@ router.use(injectXhtml);
 router.use((req, res, next) => { log.appendHttpRequest(req); next(); });
 // Homepage
 router.get('/', courseController.getIndex);
-
 // 404 not found error page
-router.use((req, res) => {
-  res.status(404).xhtml().render('not_found', {
-    title: 'Page not found',
-  });
-});
+router.use(errorController.getNotFound);
 
+// Chain the router using the import/export mechanism
 export default router;
