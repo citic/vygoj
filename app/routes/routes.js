@@ -8,18 +8,24 @@ const router = express.Router();
 // Log each HTTP request
 router.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
+  // Define a res.xhtml() method that renders xhtml content-type used by vygot
+  res.xhtml = function() {
+    return this.contentType('application/xhtml+xml');
+  };
   next();
 });
 
 // Homepage
 router.get('/', (req, res) => {
-  res.send(`${common.appName} web app`);
+  res.xhtml().render('index', {
+    title: 'Vygoj: Vygotsky Online Judge',
+  });
 });
 
 // 404 not found error page
 router.use((req, res) => {
-  res.status(404).render('not_found', {
-    pageTitle: 'Page not found',
+  res.status(404).xhtml().render('not_found', {
+    title: 'Page not found',
   });
 });
 
