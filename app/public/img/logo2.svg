@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg width="64" height="42" version="1.1" viewBox="0 0 16.933 11.113" xmlns="http://www.w3.org/2000/svg">
+ <g>
+  <g transform="matrix(1.4573 .0024466 -.0024466 1.4573 -7.7558 -4.6631)">
+   <circle cx="12.058" cy="7.6906" r=".36033"/>
+   <g fill="#e3dbdb" stroke="#000" stroke-linecap="round" stroke-linejoin="bevel" stroke-width=".26458">
+    <rect x="6.994" y="6.2934" width="2.9453" height="2.7691" rx=".2"/>
+    <rect x="6.415" y="4.6571" width="4.1033" height="1.6363" rx=".2"/>
+    <rect x="6.415" y="9.0625" width="4.1033" height="1.6363" rx=".2"/>
+    <rect x="9.9514" y="7.3111" width="6.8617" height=".85329" rx=".2"/>
+   </g>
+  </g>
+  <g transform="rotate(-42.281 5.7423 11.196)" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width=".38558px">
+   <path d="m8.0421 0.44079 2.1284 4.1453 4.8752 1.9304-2.6911-4.175z" fill="#d7eef4"/>
+   <path d="m11.403 3.3809 3.6391 3.1668-1.2518 1.3981" fill="none"/>
+  </g>
+  <ellipse cx="9.4966" cy="3.336" rx=".48701" ry=".5073"/>
+ </g>
+</svg>

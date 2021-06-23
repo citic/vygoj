@@ -5,11 +5,17 @@
     <title><%= it.title %></title>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <meta name="author" content="Jeisson Hidalgo-Céspedes"/>
+    <link rel="icon" type="image/svg+xml" href="/img/logo.svg"/>
     <link rel="stylesheet" href="/css/<%= it.stylesheet ?? 'site' %>.css"/>
   </head>
   <body>
     <header class="site_header">
+      <img class="site_logo" src="img/logo.svg" alt="Site logo"/>
       <h1 class="site_header__title">Vygotsky Online Judge</h1>
+      <a class="user" href="/user/<%= it.user.id %>">
+        <box-icon class="user_avatar" name="user" type="solid" size="lg"></box-icon>
+        <span class="user_name"><%= it.user.name %></span>
+      </a>
       <nav class="breadcumb">
         <ul class="breadcumb__list">
           <li class="breadcumb__item">
@@ -29,5 +35,6 @@
     <footer class="site_footer">
       <small>Vygoj v1.0.0</small>
     </footer>
+    <script src="https://unpkg.com/boxicons@latest/dist/boxicons.js"></script>
   </body>
 </html>

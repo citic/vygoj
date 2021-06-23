@@ -28,7 +28,7 @@ export default class Course {
         id: 'c17',
         code: 'CI0117',
         title: 'Programación paralela y concurrente',
-        image: 'img/c17.png',
+        image: '/img/logo2.svg',
         instructors: [
           { id: 'u13', name: 'Jeisson Hidalgo-Céspedes' },
         ],
@@ -43,7 +43,7 @@ export default class Course {
         id: 'c08',
         code: 'CI0113',
         title: 'Programación II',
-        image: 'img/c08.png',
+        image: '/img/logo2.svg',
         instructors: [
           { id: 'u8', name: 'Edgar Casasola-Murillo' },
         ],

@@ -13,6 +13,10 @@ class CourseController {
     // Show the homepage
     res.xhtml().render('courses', {
       title: 'Vygotsky Online Judge (Vygoj)',
+      user: {
+        id: 'login',
+        name: 'User',
+      },
       breadcumbs: [
         { href: '/course1', text: 'Course 1' },
         { href: '/course1/section1', text: 'Section 1' },

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg width="64" height="64" version="1.1" viewBox="0 0 16.933 16.933" xmlns="http://www.w3.org/2000/svg">
+ <g>
+  <g transform="matrix(1.0766 .98224 -.98224 1.0766 6.2909 -8.9878)">
+   <circle cx="12.058" cy="7.6906" r=".36033"/>
+   <g fill="#e3dbdb" stroke="#000" stroke-linecap="round" stroke-linejoin="bevel" stroke-width=".26458">
+    <rect x="6.994" y="6.2934" width="2.9453" height="2.7691" rx=".2"/>
+    <rect x="6.415" y="4.6571" width="4.1033" height="1.6363" rx=".2"/>
+    <rect x="6.415" y="9.0625" width="4.1033" height="1.6363" rx=".2"/>
+    <rect x="9.9514" y="7.3111" width="6.5275" height=".85315" rx=".2"/>
+   </g>
+  </g>
+  <rect x=".19279" y="14.298" width="6.9405" height="2.4099" rx=".58293" fill="#ffe6d5" stroke="#000" stroke-linecap="round" stroke-linejoin="bevel" stroke-width=".38558"/>
+  <g stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width=".38558px">
+   <path d="m7.0266 0.23046 3.3568 4.6041 5.1728 2.1461-3.2834-4.5491z" fill="#d7eef4"/>
+   <path d="m11.215 3.6484 4.3106 3.3935-1.5958 2.0177" fill="none"/>
+  </g>
+ </g>
+</svg>
