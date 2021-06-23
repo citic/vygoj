@@ -1,5 +1,6 @@
 import express from 'express';
 
+import courseController from '../controllers/course.js';
 import log from '../controllers/log.js';
 
 // Create an express router that communicates with app object and provides
@@ -18,13 +19,8 @@ function injectXhtml(req, res, next) {
 router.use(injectXhtml);
 // Log each HTTP request
 router.use((req, res, next) => { log.appendHttpRequest(req); next(); });
-
 // Homepage
-router.get('/', (req, res) => {
-  res.xhtml().render('index', {
-    title: 'Vygoj: Vygotsky Online Judge',
-  });
-});
+router.get('/', courseController.getIndex);
 
 // 404 not found error page
 router.use((req, res) => {
