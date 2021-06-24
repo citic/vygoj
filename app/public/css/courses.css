@@ -1,0 +1,28 @@
+@import url('site.css');
+
+.course_item {
+  border: 1px solid gray;
+  border-radius: 0.5rem;
+  padding: 0rem 1rem;
+  display: flex;
+}
+
+.course_item:not(:first-child) {
+  margin-top: 1rem;
+}
+
+.course__image {
+  margin-right: 0.5rem;
+}
+
+.course__header {
+  margin: 0;
+}
+
+.course__instructors {
+  margin: 0;
+}
+
+.course_statistics {
+  margin: 0;
+}

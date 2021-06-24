@@ -18,7 +18,7 @@
           <span class="user_name"><%= it.user.name %></span>
         </a>
       </div>
-      <nav class="breadcumbs">
+      <nav class="breadcumbs filled">
         <ul class="breadcumb__list">
           <li class="breadcumb__item">
             <a href="/">Home</a>
@@ -33,8 +33,10 @@
         </ul>
       </nav>
     </header>
+    <div class="page_content">
 <%~ it.body %>
-    <footer class="site_footer">
+    </div>
+    <footer class="site_footer filled">
       <small>Vygoj v1.0.0</small>
     </footer>
     <script src="https://unpkg.com/boxicons@latest/dist/boxicons.js"></script>

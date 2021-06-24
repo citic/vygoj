@@ -12,6 +12,7 @@ class CourseController {
   getIndex(req, res) {
     // Show the homepage
     res.xhtml().render('courses', {
+      stylesheet: 'courses',
       title: 'Vygotsky Online Judge (Vygoj)',
       user: {
         id: 'login',

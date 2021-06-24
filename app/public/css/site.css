@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Monda&display=swap');
 
 :root {
-  --bg-color: rgb(213, 255, 245);
+  --bg-color: rgb(53, 104, 100);
   --head-foot-border: 1px solid gray;
 }
 
@@ -17,10 +17,6 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-}
-
-main {
-  flex-grow: 1;
 }
 
 a {
@@ -47,11 +43,19 @@ a:hover {
   align-items: center;
 }
 
-.breadcumbs {
+.filled {
   border-top: var(--head-foot-border);
-  border-bottom: var(--head-foot-border);
+  color: white;
   background-color: var(--bg-color);
   box-shadow: 0 3px 5px grey;
+}
+
+.filled a {
+  color: rgb(206, 236, 255);
+}
+
+.breadcumbs {
+  border-bottom: var(--head-foot-border);
 }
 
 .breadcumb__list {
@@ -71,7 +75,11 @@ a:hover {
 }
 
 .site_footer {
-  border-top: var(--head-foot-border);
-  background-color: var(--bg-color);
   min-height: 2rem;
+  padding: 0.25rem 1rem;
+}
+
+.page_content {
+  flex-grow: 1;
+  margin: 0.5rem 2.5rem;
 }
