@@ -1,6 +1,77 @@
 @import url('https://fonts.googleapis.com/css2?family=Monda&display=swap');
 
+:root {
+  --bg-color: rgb(213, 255, 245);
+  --head-foot-border: 1px solid gray;
+}
+
+html {
+  height: 100vh;
+}
+
 body {
   font-family: 'Monda', sans-serif;
-  font-size: 11pt;
+  font-size: 10pt;
+  margin: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+main {
+  flex-grow: 1;
+}
+
+a {
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.site_header--row {
+  display: flex;
+  justify-content: space-around;
+}
+
+.site_header__title {
+  text-shadow: 0 5px 5px gray;
+}
+
+.user_control {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.breadcumbs {
+  border-top: var(--head-foot-border);
+  border-bottom: var(--head-foot-border);
+  background-color: var(--bg-color);
+  box-shadow: 0 3px 5px grey;
+}
+
+.breadcumb__list {
+  display: flex;
+  list-style-type: none;
+  padding: 0;
+  margin: .25rem 0 .25rem 1rem;
+}
+
+.breadcumb__item {
+  margin-right: 1rem;
+}
+
+.breadcumb__item:not(:first-child)::before {
+  content: "≫";
+  margin-right: .75rem;
+}
+
+.site_footer {
+  border-top: var(--head-foot-border);
+  background-color: var(--bg-color);
+  min-height: 2rem;
 }
