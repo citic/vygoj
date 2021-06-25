@@ -24,14 +24,14 @@ router.use(injectXhtml);
 // Log each HTTP request
 router.use((req, res, next) => { log.appendHttpRequest(req); next(); });
 // Homepage
-router.get('/', courseController.getIndex);
+router.get('/', (req, res, next) => { courseController.getIndex(req, res); });
 // Serve static files such as XHTML, CSS, JS, images, sounds, videos
 // express.static(path) returns a middleware function that looks for URIs that
 // match files into the public/ folder, and serves them setting their content-
 // type according to their file extension
 router.use(express.static(path.join(process.cwd(), 'public')));
 // 404 not found error page
-router.use(errorController.getNotFound);
+router.use((req, res, next) => { errorController.getNotFound(req, res); });
 
 // Chain the router using the import/export mechanism
 export default router;
