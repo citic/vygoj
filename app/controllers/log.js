@@ -3,6 +3,7 @@ import path from 'path';
 
 import common from '../common/common.js';
 
+// TODO: separate between Log model class and LogController (singleton)
 class Log {
   constructor(filename = '') {
     this.filename = filename;

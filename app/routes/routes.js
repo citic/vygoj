@@ -3,8 +3,8 @@ import express from 'express';
 import path from 'path';
 
 // Vygot imports
-import courseController from '../controllers/course.js';
-import errorController from '../controllers/error.js';
+import courseController from '../controllers/courseController.js';
+import errorController from '../controllers/errorController.js';
 import log from '../controllers/log.js';
 
 // Create an express router that communicates with app object and provides

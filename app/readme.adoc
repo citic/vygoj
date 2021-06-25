@@ -7,6 +7,8 @@ The web application component allows professors to create courses and students t
 
 == Directory structure
 
+JavaScript files that start with uppercase, e.g `Course.js`, export a class. Camel-case files that start with lowercase, e.g `courseController.js` export a symbol, usually a singleton object.
+
 . link:common/[] contains common code used by front and backend
 
 . link:public/[] contains static XHTML, CSS, JS, images, sound, video files.
