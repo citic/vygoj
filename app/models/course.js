@@ -21,7 +21,7 @@
  */
 export default class Course {
   // todo: filter params: state
-  static fetchAllCourses() {
+  static fetchMyCourses() {
     // todo: this test will be replaced by a database query
     return [
       {
@@ -37,6 +37,27 @@ export default class Course {
           sections: 356, // lessons?
           problems: 64,
           questions: 128,
+        },
+      },
+    ];
+  }
+
+  static fetchAllCourses() {
+    // todo: this test will be replaced by a database query
+    return [
+      {
+        id: 'c1',
+        code: 'CI0112',
+        title: 'Programación I',
+        image: '/img/logo2.svg',
+        instructors: [
+          { id: 'u19', name: 'Josefina Pujol' },
+        ],
+        statistics: {
+          students: 18,
+          sections: 148, // lessons?
+          problems: 39,
+          questions: 19,
         },
       },
       {

@@ -23,7 +23,7 @@ class CourseController {
         { href: '/course1/section1', text: 'Section 1' },
       ],
       // The list of user's courses
-      myCourses: [],
+      myCourses: Course.fetchMyCourses(),
       // The list of available courses for this user
       availableCourses: Course.fetchAllCourses(),
     });

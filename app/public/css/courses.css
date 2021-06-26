@@ -3,7 +3,7 @@
 .course_item {
   border: 1px solid gray;
   border-radius: 0.5rem;
-  padding: 0rem 1rem;
+  padding: 0 1rem;
   display: flex;
 }
 

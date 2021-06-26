@@ -3,7 +3,11 @@
 <% if (it.myCourses.length > 0) { %>
         <article class="courses_section courses--mine">
           <h3>My courses</h3>
-          <!-- todo: reuse the code below -->
+          <div class="course_list">
+<% it.myCourses.forEach((course) => { %>
+<%~ includeFile('partials/course_entry', course) %>
+<% }); %>
+          </div>
         </article>
 <% } %>
 <% if (it.availableCourses.length > 0) { %>
@@ -11,23 +15,7 @@
           <h3 class="course_section__title">Available courses</h3>
           <div class="course_list">
 <% it.availableCourses.forEach((course) => { %>
-            <section class="course_item">
-              <img class="course__image" src="<%= course.image %>" alt="<%= course.title %>"/>
-              <div class="course__details">
-                <h4 class="course__header">
-                  <a href="/course/<%= course.id %>">
-                    <span class="course__code"><%= course.code %></span>
-                    <span class="course__title"><%= course.title %></span>
-                  </a>
-                </h4>
-                <p class="course__instructors">
-<% course.instructors.forEach((instructor) => { %>
-                  <a href="/prof/<%= instructor.id %>"><%= instructor.name %></a>
-<% }); %>
-                </p>
-                <p class="course_statistics"><%= course.statistics.students %> students, <%= course.statistics.sections %> sections, <%= course.statistics.problems %> problems, <%= course.statistics.questions %> questions.</p>
-              </div>
-            </section>
+<%~ includeFile('partials/course_entry', course) %>
 <% }); %>
           </div>
         </article>
