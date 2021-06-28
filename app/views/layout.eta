@@ -37,7 +37,8 @@
 <%~ it.body %>
     </div>
     <footer class="site_footer filled">
-      <small>Vygoj v1.0.0</small>
+      <span class="software_version">Vygoj v1.0.0</span>
+      <span class="help_controls"><a href="/help">Help</a></span>
     </footer>
     <script src="https://unpkg.com/boxicons@latest/dist/boxicons.js"></script>
   </body>

@@ -84,9 +84,13 @@ a:hover {
 }
 
 .site_footer {
-  min-height: 2rem;
+  min-height: 1.5rem;
   padding: 0.25rem 1rem;
   font-family: 'JetBrains Mono', monospace;
+  box-shadow: 0 -3px 5px grey;
+  font-size: smaller;
+  display: flex;
+  justify-content: space-between;
 }
 
 .page_content {
