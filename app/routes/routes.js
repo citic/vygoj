@@ -23,8 +23,13 @@ function injectXhtml(req, res, next) {
 router.use(injectXhtml);
 // Log each HTTP request
 router.use((req, res, next) => { log.appendHttpRequest(req); next(); });
+
 // Homepage
 router.get('/', (req, res) => { courseController.getIndex(req, res); });
+// Course
+router.get('/course/:courseId', (req, res) => {
+  courseController.getCourse(req, res);
+});
 // Serve static files such as XHTML, CSS, JS, images, sounds, videos
 // express.static(path) returns a middleware function that looks for URIs that
 // match files into the public/ folder, and serves them setting their content-

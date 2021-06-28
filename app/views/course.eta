@@ -1,0 +1,12 @@
+<% layout('./layout') %>
+      <main class="course">
+        <article class="course__description">
+          <h3><%= it.course.title %></h3>
+          <p>Code: <%= it.course.code %></p>
+          <p>Instructors:
+<% it.course.instructors.forEach((instructor) => { %>
+              <a href="/prof/<%= instructor.id %>"><%= instructor.name %></a>
+<% }); %>
+          </p>
+        </article>
+      </main>

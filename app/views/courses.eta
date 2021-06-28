@@ -1,5 +1,5 @@
-      <main class="courses">
 <% layout('./layout') %>
+      <main class="courses">
 <% if (it.myCourses.length > 0) { %>
         <article class="courses_section courses--mine">
           <h3>My courses</h3>

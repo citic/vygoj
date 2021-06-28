@@ -28,6 +28,24 @@ class CourseController {
       availableCourses: Course.fetchAllCourses(),
     });
   }
+
+  // Get the contents page for a course
+  getCourse(req, res) {
+    const courseId = req.params.courseId;
+    const course = Course.findById(courseId);
+    res.render('course', {
+      stylesheet: 'courses',
+      title: course.title,
+      user: {
+        id: 'login',
+        name: 'User',
+      },
+      breadcumbs: [
+        { href: `/course/${course.id}`, text: course.code },
+      ],
+      course: course,
+    });
+  }
 } // class
 
 // Export the singleton controller
