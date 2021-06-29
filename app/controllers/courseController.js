@@ -35,7 +35,7 @@ class CourseController {
     const course = Course.findById(courseId);
     res.render('course', {
       stylesheet: 'courses',
-      title: course.title,
+      title: `${course.title} - Vygoj`,
       user: {
         id: 'login',
         name: 'User',

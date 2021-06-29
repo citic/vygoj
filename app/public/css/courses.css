@@ -28,3 +28,15 @@
 .course_statistics {
   margin: 0;
 }
+
+.course__contents ol {
+  padding-left: 1rem;
+}
+
+.course__section p {
+  margin: 0;
+}
+
+.line {
+  margin: 0;
+}

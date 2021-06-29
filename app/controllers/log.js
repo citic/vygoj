@@ -27,5 +27,5 @@ class Log {
 }
 
 // Singleton log instance
-const log = new Log(path.join(process.cwd(), 'vygot.tsv'));
+const log = new Log(path.join(process.cwd(), 'data', 'vygot.tsv'));
 export default log;

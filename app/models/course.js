@@ -14,14 +14,16 @@ const allCourses = [
       problems: 64,
       questions: 128,
     },
+    contents: [
+    ],
   },
   {
     id: 'c1',
     code: 'CI0112',
-    title: 'Programación I',
+    title: 'Programación I en C',
     image: '/img/logo2.svg',
     instructors: [
-      { id: 'u19', name: 'Josefina Pujol' },
+      { id: 'u13', name: 'Jeisson Hidalgo-Céspedes' },
     ],
     statistics: {
       students: 18,
@@ -29,6 +31,43 @@ const allCourses = [
       problems: 39,
       questions: 19,
     },
+    repo: 'progra1-21b',
+    contents: [
+      {
+        name: 'IO',
+        title: 'Input/output',
+        folder: '1.1_intro_io',
+        contents: [
+          {
+            name: 'lost_in_space_ints',
+            title: 'Enteros perdidos en el espacio',
+            folder: 'lost_in_space_ints',
+          },
+          {
+            name: 'enclosing_lines',
+            title: 'Encerrar las líneas',
+            folder: 'enclosing_lines',
+          },
+        ],
+      },
+      {
+        name: 'expr_cond',
+        title: 'Expresiones y condicionales',
+        folder: '1.2_expressions_if',
+        contents: [
+          {
+            name: 'line_numbers',
+            title: 'Números de línea',
+            folder: 'line_numbers',
+          },
+          {
+            name: 'hours_mins_secs',
+            title: 'Normalizar horas, minutos, segundos',
+            folder: 'hours_mins_secs',
+          },
+        ],
+      },
+    ],
   },
   {
     id: 'c08',
@@ -44,6 +83,8 @@ const allCourses = [
       problems: 27,
       questions: 94,
     },
+    contents: [
+    ],
   },
 ];
 

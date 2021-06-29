@@ -1,12 +1,33 @@
+<%
+function showContent(content, indent = 0, repo = '') {
+  let result = '';
+  if (!content) return result;
+  result += ' '.repeat(2 * indent) + '<ol class="course__sections">\n';
+  for (let index = 0; index < content.length; ++index) {
+    const item = content[index];
+    result += ' '.repeat(2 * (indent + 1)) + '<li class="course__section">\n';
+    result += ' '.repeat(2 * (indent + 2));
+    const path = `${repo}/${item.folder}`;
+    result += `<p class="course__activity"><a href="${path}">${item.title}</a></p>\n`;
+    result += showContent(item.contents, indent + 2, path);
+    result += ' '.repeat(2 * (indent + 1)) + '</li>\n';
+  }
+  result += ' '.repeat(2 * indent) + '</ol>\n';
+  return result;
+} %>
 <% layout('./layout') %>
       <main class="course">
         <article class="course__description">
-          <h3><%= it.course.title %></h3>
-          <p>Code: <%= it.course.code %></p>
-          <p>Instructors:
+          <h3 class="course__title"><%= it.course.title %></h3>
+          <p class="course__code line">Code: <%= it.course.code %></p>
+          <p class="course__instructors">Instructors:
 <% it.course.instructors.forEach((instructor) => { %>
-              <a href="/prof/<%= instructor.id %>"><%= instructor.name %></a>
+            <a class="course__instructor" href="/prof/<%= instructor.id %>"><%= instructor.name %></a>
 <% }); %>
           </p>
+          <section class="course__contents">
+            <h4 class="course__contents--title">Course contents</h4>
+<%~ showContent(it.course.contents, 6, `/act/${it.course.repo}`); %>
+          </section>
         </article>
       </main>
