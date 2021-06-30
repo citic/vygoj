@@ -39,6 +39,7 @@ a:hover {
 .site_header--row {
   display: flex;
   justify-content: space-around;
+  align-items: center;
 }
 
 .site_header__title {

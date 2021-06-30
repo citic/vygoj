@@ -19,8 +19,6 @@ class CourseController {
         name: 'User',
       },
       breadcumbs: [
-        { href: '/course1', text: 'Course 1' },
-        { href: '/course1/section1', text: 'Section 1' },
       ],
       // The list of user's courses
       myCourses: Course.fetchMyCourses(),
