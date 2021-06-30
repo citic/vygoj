@@ -2,7 +2,7 @@
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8"/>
-    <title><%= it.title %></title>
+    <title><%= it.title ?? 'Vygotsky Online Judge' %></title>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <meta name="author" content="Jeisson Hidalgo-Céspedes"/>
     <link rel="icon" type="image/svg+xml" href="/img/logo.svg"/>
@@ -13,9 +13,9 @@
       <div class="site_header--row">
         <img class="site_logo" src="/img/logo.svg" alt="Site logo"/>
         <h1 class="site_header__title">Vygotsky Online Judge</h1>
-        <a class="user_control" href="/user/<%= it.user.id %>">
+        <a class="user_control" href="/user/<%= it.user?.id ?? 'login' %>">
           <box-icon class="user_avatar" name="user" type="solid" size="lg"></box-icon>
-          <span class="user_name"><%= it.user.name %></span>
+          <span class="user_name"><%= it.user?.name ?? 'User' %></span>
         </a>
       </div>
       <nav class="breadcumbs filled">
