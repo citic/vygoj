@@ -1,5 +1,5 @@
 // Library imports
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
 
 // Vygot imports
@@ -12,7 +12,7 @@ import log from '../controllers/log.js';
 const router = express.Router();
 
 // Define a res.xhtml() method that renders xhtml content-type used by vygot
-function injectXhtml(req, res, next) {
+function injectXhtml(req: Request, res: Response, next: NextFunction) {
   res.xhtml = function xhtml() {
     return this.contentType('application/xhtml+xml');
   };

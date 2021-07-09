@@ -1,15 +1,18 @@
 import fs from 'fs';
 import path from 'path';
+import { Request, Response } from 'express';
 
 import common from '../common/common.js';
 
 // TODO: separate between Log model class and LogController (singleton)
 class Log {
+  filename: string;
+
   constructor(filename = '') {
     this.filename = filename;
   }
 
-  append(message, type = 'info', category = '') {
+  append(message: string, type = 'info', category = '') {
     const date = new Date();
     const line = `${date}\t${type}\t${category}\t${message}\n`;
     fs.appendFile(this.filename, line, (error) => {
@@ -19,7 +22,7 @@ class Log {
     });
   }
 
-  appendHttpRequest(req) {
+  appendHttpRequest(req: Request) {
     const message = `${req.method} ${req.url}`;
     console.log(message);
     this.append(message, 'info', 'req');

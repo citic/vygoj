@@ -121,7 +121,7 @@ export default class Course {
     return [Course.findById('c1'), Course.findById('c08')];
   }
 
-  static findById(id) {
+  static findById(id: string) {
     return allCourses.find((course) => course.id === id);
   }
 }

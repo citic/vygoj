@@ -1,4 +1,6 @@
+import { Request, Response } from 'express';
 import Course from '../models/course.js';
+import errorController from './errorController.js';
 
 /**
  * Controls the Courses homepage.
@@ -9,7 +11,7 @@ import Course from '../models/course.js';
  */
 class CourseController {
   // Get the homepage view
-  getIndex(req, res) {
+  getIndex(req: Request, res: Response) {
     // Show the homepage
     res.xhtml().render('courses', {
       stylesheet: 'courses',
@@ -28,21 +30,25 @@ class CourseController {
   }
 
   // Get the contents page for a course
-  getCourse(req, res) {
+  getCourse(req: Request, res: Response) {
     const courseId = req.params.courseId;
     const course = Course.findById(courseId);
-    res.render('course', {
-      stylesheet: 'courses',
-      title: `${course.title} - Vygoj`,
-      user: {
-        id: 'login',
-        name: 'User',
-      },
-      breadcumbs: [
-        { href: `/course/${course.id}`, text: course.code },
-      ],
-      course,
-    });
+    if (course) {
+      res.render('course', {
+        stylesheet: 'courses',
+        title: `${course.title} - Vygoj`,
+        user: {
+          id: 'login',
+          name: 'User',
+        },
+        breadcumbs: [
+          { href: `/course/${course.id}`, text: course.code },
+        ],
+        course,
+      });
+    } else {
+      errorController.getNotFound(req, res);
+    }
   }
 } // class
 
