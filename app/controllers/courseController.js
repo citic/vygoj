@@ -41,7 +41,7 @@ class CourseController {
       breadcumbs: [
         { href: `/course/${course.id}`, text: course.code },
       ],
-      course: course,
+      course,
     });
   }
 } // class

@@ -113,15 +113,15 @@ export default class Course {
   // todo: filter params: state
   static fetchMyCourses() {
     // todo: this test will be replaced by a database query
-    return [ Course.findById('c17') ];
+    return [Course.findById('c17')];
   }
 
   static fetchAllCourses() {
     // todo: this test will be replaced by a database query
-    return [ Course.findById('c1'), Course.findById('c08') ];
+    return [Course.findById('c1'), Course.findById('c08')];
   }
 
   static findById(id) {
-    return allCourses.find(course => course.id === id);
+    return allCourses.find((course) => course.id === id);
   }
 }
