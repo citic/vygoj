@@ -11,16 +11,6 @@ import log from '../controllers/log.js';
 // functions to help with routing of URIs
 const router = express.Router();
 
-// Define a res.xhtml() method that renders xhtml content-type used by vygot
-function injectXhtml(req: Request, res: Response, next: NextFunction) {
-  res.xhtml = function xhtml() {
-    return this.contentType('application/xhtml+xml');
-  };
-  next();
-}
-
-// Inject req.xhtml() method
-router.use(injectXhtml);
 // Log each HTTP request
 router.use((req, res, next) => { log.appendHttpRequest(req); next(); });
 

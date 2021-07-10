@@ -13,7 +13,7 @@ class CourseController {
   // Get the homepage view
   getIndex(req: Request, res: Response) {
     // Show the homepage
-    res.xhtml().render('courses', {
+    res.contentType('application/xhtml+xml').render('courses', {
       stylesheet: 'courses',
       title: 'Vygotsky Online Judge (Vygoj)',
       user: {
