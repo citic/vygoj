@@ -34,10 +34,11 @@ Currently the _Code Execution Service_ is provided by link:https://judge0.com/[J
 
 == Installation
 
-This online judge requires a computer with link:https://nodejs.org/[Node.js] installed. In order to run the Online Judge Web Application. Then run `npm clean-instal` in order to install dependencies. You can start the web application server wit `npm start`:
+See link:app/readme.adoc[] for installation details of the Online Judge Web Application. In short, if you already have link:https://nodejs.org/[Node.js] and  link:https://www.npmjs.com/package/typescript[TypeScript compiler^] installed, the following commands get the judge app running:
 
 [source,sh]
 ----
+cd app
 npm ci
 npm start
 ----

@@ -3,7 +3,61 @@
 The web application component allows professors to create courses and students to follow them. It is compound of two parts:
 
 . The frontend is an XHTML/CSS/JS application for running on web browsers.
-. The backend is a Node.js application using Express framework.
+. The backend is a Node.js application using Express framework and written in TypeScript.
+
+
+
+== Install and run
+
+For convenience, the following dependencies are supposed to be installed globally, therefore you can reuse them for other projects
+
+
+.Global dependencies
+[%autowidth.stretch,cols=",",options="header"]
+|===
+|Dependency |Install command
+
+|link:https://nodejs.org/[Node.js^]
+|(your preferred one)
+
+|link:https://www.npmjs.com/package/typescript[TypeScript compiler^]
+|`sudo npm i -g typescript`.
+
+|link:https://www.npmjs.com/package/pm2[Process Manager 2^]
+|`sudo npm i -g pm2`
+|===
+
+
+Then, do a clean install of the dependencies:
+
+[source,sh]
+----
+npm ci
+----
+
+To run the server temporally:
+
+[source,sh]
+----
+npm start
+----
+
+To run the server and keep it running after crashes or reboots (it requires pm2):
+
+[source,sh]
+----
+npm run server
+----
+
+To restart the server after changes made to the source code
+
+[source,sh]
+----
+npm run restart
+----
+
+
+
 
 == Directory structure
 
