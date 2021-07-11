@@ -1,4 +1,5 @@
 module.exports = {
+  root: true,
   env: {
     browser: true,
     es2021: true,
@@ -23,5 +24,10 @@ module.exports = {
     'no-console': "off",
     // Allow .js extension in modules
     "import/extensions": ["error", "ignorePackages"]
+  },
+  settings: {
+    react: {
+      version: '999.999.999',
+    },
   },
 };
