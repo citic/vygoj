@@ -11,6 +11,7 @@ import errorController from './errorController.js';
  */
 class CourseController {
   // Get the homepage view
+  // eslint-disable-next-line class-methods-use-this
   getIndex(req: Request, res: Response) {
     // Show the homepage
     res.contentType('application/xhtml+xml').render('courses', {
@@ -30,8 +31,9 @@ class CourseController {
   }
 
   // Get the contents page for a course
+  // eslint-disable-next-line class-methods-use-this
   getCourse(req: Request, res: Response) {
-    const courseId = req.params.courseId;
+    const courseId = req.params.courseId as string;
     const course = Course.findById(courseId);
     if (course) {
       res.render('course', {

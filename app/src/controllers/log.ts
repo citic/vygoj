@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 
 import common from '../common/common.js';
 

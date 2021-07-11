@@ -1,5 +1,5 @@
 // Library imports
-import express, { Request, Response, NextFunction } from 'express';
+import express from 'express';
 import path from 'path';
 
 // Vygot imports
