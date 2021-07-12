@@ -58,6 +58,18 @@ npm run restart
 
 
 
+== Development
+
+For setting a development environment, consider the following advices. First `tsc-watch` can detect any change in `.ts` files, incrementally compile them, and restart the server:
+
+[source,sh]
+----
+sudo npm i -g tsc-watch
+npm run dev
+----
+
+
+
 
 == Directory structure
 

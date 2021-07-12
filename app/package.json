@@ -8,6 +8,7 @@
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "tsc-watch --onSuccess 'node dist/app.js'",
     "start": "tsc && node dist/app.js",
     "server": "tsc && pm2 start dist/app.js",
     "restart": "tsc && pm2 restart dist/app.js",

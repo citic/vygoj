@@ -25,3 +25,6 @@ app.use(routes);
 // Start listening for connections, HTTP requests, and manage them
 console.log(`${common.appName} listening on port ${common.port}...`);
 app.listen(common.port);
+
+// TODO: Enable HTTPs https://stackoverflow.com/a/11745114
+// TODO: Use nginx along with Express https://unit.nginx.org/howto/express/
