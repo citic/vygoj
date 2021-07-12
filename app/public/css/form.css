@@ -1,0 +1,33 @@
+/* Adapted from https://www.sanwebe.com/2014/08/css-html-forms-designs */
+
+label:not(:first-of-type) {
+  margin-top: 1rem;
+}
+
+input,
+textarea,
+fieldset {
+  border: 1px solid #c2c2c2;
+  box-shadow: 1px 1px 4px #ebebeb;
+  border-radius: 3px;
+  padding: 7px;
+  font: inherit;
+}
+
+fieldset {
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+button,
+input[type=submit],
+input[type=button] {
+  border: none;
+  padding: 8px 15px 8px 15px;
+  background: #ff8500;
+  color: #fff;
+  box-shadow: 1px 1px 4px #dadada;
+  border-radius: 3px;
+  font: inherit;
+  min-width: 5rem;
+}

@@ -1,0 +1,13 @@
+<% layout('./layout') %>
+      <main class="login">
+        <form class="login_form" action="/user/login" method="post">
+          <fieldset class="login_credentials">
+            <legend>User credentials</legend>
+            <label for="email">E-Mail</label>
+            <input type="email" name="email" id="email" required="required"/>
+            <label for="password">Password</label>
+            <input type="password" name="password" id="password" required="required"/>
+          </fieldset>
+          <button class="button" type="submit">Login</button>
+        </form>
+      </main>

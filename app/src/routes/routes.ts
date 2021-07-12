@@ -6,6 +6,7 @@ import path from 'path';
 import courseController from '../controllers/courseController.js';
 import errorController from '../controllers/errorController.js';
 import log from '../controllers/log.js';
+import userController from '../controllers/userController.js';
 
 // Create an express router that communicates with app object and provides
 // functions to help with routing of URIs
@@ -16,10 +17,15 @@ router.use((req, res, next) => { log.appendHttpRequest(req); next(); });
 
 // Homepage
 router.get('/', (req, res) => { courseController.getIndex(req, res); });
+// Login
+router.get('/user/login', (req, res) => {
+  userController.getUserLogin(req, res);
+});
 // Course
 router.get('/course/:courseId', (req, res) => {
   courseController.getCourse(req, res);
 });
+
 // Serve static files such as XHTML, CSS, JS, images, sounds, videos
 // express.static(path) returns a middleware function that looks for URIs that
 // match files into the public/ folder, and serves them setting their content-
