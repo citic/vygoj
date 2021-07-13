@@ -11,6 +11,7 @@
             <p class="login_message error"><%= it.errorMessage %></p>
 <% } %>
           </fieldset>
+          <p><small>By pressing the Login button you are accepting the use of cookies in this site to keep your session alive.</small></p>
           <button class="button" type="submit">Login</button>
         </form>
       </main>

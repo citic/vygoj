@@ -7,6 +7,13 @@ interface User {
   password: string;
 }
 
+// https://stackoverflow.com/a/65696437
+declare module 'express-session' {
+  interface SessionData {
+    user: User;
+  }
+}
+
 /**
  * Manages users, login, logout, preferences
  */
@@ -23,6 +30,7 @@ class UserController {
     res.contentType('application/xhtml+xml').render('user/login', {
       title: 'User login',
       stylesheet: 'user',
+      user: req.session.user,
     });
   }
 
@@ -35,6 +43,8 @@ class UserController {
     const user = this.findByEmail(email);
     // If provided credentials are valid
     if (user && user.password === password) {
+      // Store user name in the session
+      req.session.user = user;
       // Show homepage with user login
       res.redirect('/');
     } else {
@@ -50,6 +60,11 @@ class UserController {
   // Find a user by email
   findByEmail(email: string) {
     return this.users.find((user) => user.email.toLowerCase() === email.toLowerCase());
+  }
+
+  // Find a user by id
+  findById(id: number) {
+    return this.users.find((user) => user.id === id);
   }
 }
 

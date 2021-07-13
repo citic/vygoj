@@ -17,10 +17,7 @@ class CourseController {
     res.contentType('application/xhtml+xml').render('courses', {
       stylesheet: 'courses',
       title: 'Vygotsky Online Judge (Vygoj)',
-      user: {
-        id: 'login',
-        name: 'User',
-      },
+      user: req.session.user,
       breadcumbs: [
       ],
       // The list of user's courses
@@ -39,10 +36,7 @@ class CourseController {
       res.render('course', {
         stylesheet: 'courses',
         title: `${course.title} - Vygoj`,
-        user: {
-          id: 'login',
-          name: 'User',
-        },
+        user: req.session.user,
         breadcumbs: [
           { href: `/course/${course.id}`, text: course.code },
         ],

@@ -1,5 +1,6 @@
 // Library imports
 import express from 'express';
+import session from 'express-session';
 import path from 'path';
 
 // Vygot imports
@@ -16,6 +17,13 @@ const router = express.Router();
 router.use((req, res, next) => { log.appendHttpRequest(req); next(); });
 // Wait for the body of POST HTTP-Requests and parse it as att1=val1&att2=val2
 router.use(express.urlencoded({ extended: false }));
+
+// Sessions
+router.use(session({
+  secret: 'Yes, size matters, bigger is better! (At least for this text)',
+  resave: false,
+  saveUninitialized: false,
+}));
 
 // Homepage
 router.get('/', (req, res) => { courseController.getIndex(req, res); });
