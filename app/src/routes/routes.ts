@@ -14,12 +14,17 @@ const router = express.Router();
 
 // Log each HTTP request
 router.use((req, res, next) => { log.appendHttpRequest(req); next(); });
+// Wait for the body of POST HTTP-Requests and parse it as att1=val1&att2=val2
+router.use(express.urlencoded({ extended: false }));
 
 // Homepage
 router.get('/', (req, res) => { courseController.getIndex(req, res); });
 // Login
 router.get('/user/login', (req, res) => {
   userController.getUserLogin(req, res);
+});
+router.post('/user/login', (req, res) => {
+  userController.postUserLogin(req, res);
 });
 // Course
 router.get('/course/:courseId', (req, res) => {

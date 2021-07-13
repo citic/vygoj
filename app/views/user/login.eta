@@ -7,6 +7,9 @@
             <input type="email" name="email" id="email" required="required"/>
             <label for="password">Password</label>
             <input type="password" name="password" id="password" required="required"/>
+<% if (it.errorMessage) { %>
+            <p class="login_message error"><%= it.errorMessage %></p>
+<% } %>
           </fieldset>
           <button class="button" type="submit">Login</button>
         </form>
