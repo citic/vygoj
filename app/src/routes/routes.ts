@@ -27,14 +27,19 @@ router.use(session({
 
 // Homepage
 router.get('/', (req, res) => { courseController.getIndex(req, res); });
-// Login
+
+// Users
 router.get('/user/login', (req, res) => {
   userController.getUserLogin(req, res);
 });
 router.post('/user/login', (req, res) => {
   userController.postUserLogin(req, res);
 });
-// Course
+router.get('/user/:userId', (req, res) => {
+  userController.getUserPreferences(req, res);
+});
+
+// Courses
 router.get('/course/:courseId', (req, res) => {
   courseController.getCourse(req, res);
 });

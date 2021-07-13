@@ -57,6 +57,12 @@ class UserController {
     }
   }
 
+  // GET /user/123
+  getUserPreferences(req: Request, res: Response) {
+    req.session.user = undefined;
+    res.redirect('/user/login');
+  }
+
   // Find a user by email
   findByEmail(email: string) {
     return this.users.find((user) => user.email.toLowerCase() === email.toLowerCase());
