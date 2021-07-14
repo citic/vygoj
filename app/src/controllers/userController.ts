@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 
 interface User {
   id: number;
+  role: string;
   name: string;
   email: string;
   password: string;
@@ -20,9 +21,9 @@ declare module 'express-session' {
 class UserController {
   // The users database
   users:User[] = [
-    { id: 1, name: 'Admin', email: 'admin@vygoj.com', password: 'adminvyg'},
-    { id: 2, name: 'Professor', email: 'prof@vygoj.com', password: 'profvyg'},
-    { id: 3, name: 'Student', email: 'student@vygoj.com', password: 'studvyg'},
+    { id: 1, role: 'admin', name: 'Admin', email: 'admin@vygoj.com', password: 'adminvyg'},
+    { id: 2, role: 'professor', name: 'Professor', email: 'prof@vygoj.com', password: 'profvyg'},
+    { id: 3, role: 'student', name: 'Student', email: 'student@vygoj.com', password: 'studvyg'},
   ];
 
   // eslint-disable-next-line class-methods-use-this
@@ -59,8 +60,29 @@ class UserController {
 
   // GET /user/123
   getUserPreferences(req: Request, res: Response) {
-    req.session.user = undefined;
-    res.redirect('/user/login');
+    if (req.session.user) {
+      res.contentType('application/xhtml+xml').render('user/preferences', {
+        title: 'User preferences',
+        stylesheet: 'user',
+        user: req.session.user,
+      });
+    } else {
+      // Oops, internal error, may be the cookie is obsolete
+      res.redirect('/user/login');
+    }
+  }
+
+  // POST /user/preferences
+  postUserPreferences(req: Request, res: Response) {
+    if (req.body.action === 'update') {
+      res.redirect('/user/preferences');
+    } else if (req.body.action === 'logout') {
+      req.session.user = undefined;
+      res.redirect('/user/login');
+    } else {
+      // Internal error
+      res.redirect('/');
+    }
   }
 
   // Find a user by email

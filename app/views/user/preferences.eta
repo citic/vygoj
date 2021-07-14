@@ -1,0 +1,35 @@
+<% layout('./layout') %>
+      <main class="user_preferences">
+        <h2>Preferences for <%= it.user.role %> user <%= it.user.id %></h2>
+        <form class="preferences_form" action="/user/preferences" method="post">
+          <fieldset class="user_information">
+            <legend>User information</legend>
+            <label for="name">Full name</label>
+            <input type="text" name="name" id="name" required="required" value="<%= it.user.name %>"/>
+            <label for="email">E-Mail</label>
+            <input type="email" name="email" id="email" required="required" value="<%= it.user.email %>"/>
+          </fieldset>
+          <fieldset class="user_password">
+            <legend>Change password</legend>
+            <label for="current_password">Current password</label>
+            <input type="current_password" name="current_password" id="current_password"/>
+            <label for="new_password">New password</label>
+            <input type="new_password" name="new_password" id="new_password"/>
+          </fieldset>
+          <fieldset class="preferences">
+            <p>Mode:
+              <input type="radio" id="light_mode" name="mode" value="light" checked="checked"/>
+              <label for="light_mode">Light</label>
+              <input type="radio" id="dark_mode" name="mode" value="dark"/>
+              <label for="dark_mode">Dark</label>
+            </p>
+          </fieldset>
+<% if (it.errorMessage) { %>
+            <p class="login_message error"><%= it.errorMessage %></p>
+<% } %>
+          <p>
+            <button class="button" type="submit" name="action" value="update">Update</button>
+            <button class="button" type="submit" name="action" value="logout">Logout</button>
+          </p>
+        </form>
+      </main>

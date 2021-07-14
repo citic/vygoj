@@ -38,6 +38,9 @@ router.post('/user/login', (req, res) => {
 router.get('/user/:userId', (req, res) => {
   userController.getUserPreferences(req, res);
 });
+router.post('/user/preferences', (req, res) => {
+  userController.postUserPreferences(req, res);
+});
 
 // Courses
 router.get('/course/:courseId', (req, res) => {
