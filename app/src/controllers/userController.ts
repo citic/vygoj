@@ -75,10 +75,15 @@ class UserController {
   // POST /user/preferences
   postUserPreferences(req: Request, res: Response) {
     if (req.body.action === 'update') {
+      // TODO: Save user preferences in DB
       res.redirect('/user/preferences');
     } else if (req.body.action === 'logout') {
-      req.session.user = undefined;
-      res.redirect('/user/login');
+      req.session.destroy((error) => {
+        if (error) {
+          console.error(error);
+        }
+        res.redirect('/user/login');
+      });
     } else {
       // Internal error
       res.redirect('/');
