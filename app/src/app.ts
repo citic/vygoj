@@ -6,7 +6,7 @@ import { MongoClient } from 'mongodb';
 // Vygoj imports
 import common from './common/common.js';
 import routes from './routes/routes.js';
-import { connectToDatabase } from './util/database.js';
+import database from './util/database.js';
 
 // Express is a factory function. When it is run, it returns a HTTP request
 // handler function that receives (req, res) objects
@@ -26,7 +26,7 @@ app.use(routes);
 
 // Connect to the database before launching the web server
 try {
-  await connectToDatabase();
+  await database.connect();
   // Start listening for connections, HTTP requests, and manage them
   console.log(`${common.appName} listening on port ${common.port}...`);
   app.listen(common.port);
