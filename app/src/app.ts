@@ -1,38 +1,40 @@
 // Library imports
 import * as eta from 'eta';
 import express from 'express';
-import { MongoClient } from 'mongodb';
 
 // Vygoj imports
 import common from './common/common.js';
 import routes from './routes/routes.js';
 import database from './util/database.js';
 
-// Express is a factory function. When it is run, it returns a HTTP request
-// handler function that receives (req, res) objects
-const app = express();
+// Starts the execution of the server
+async function main() {
+  // Express is a factory function. When it is run, it returns a HTTP request
+  // handler function that receives (req, res) objects
+  const app = express();
 
-// Hide the express-powered HTTP header in each response message
-app.disable('x-powered-by');
+  // Hide the express-powered HTTP header in each response message
+  app.disable('x-powered-by');
 
-// Set Eta as the template engine
-app.engine('eta', eta.renderFile);
-app.set('view engine', 'eta');
+  // Set Eta as the template engine
+  app.engine('eta', eta.renderFile);
+  app.set('view engine', 'eta');
 
-// Routing is the most general operation of the application. Routers distribute
-// HTTP requests between Controllers. Controllers fetch from or put data to
-// Models, and results are shown with Views
-app.use(routes);
+  // Routing is the most general operation of the application. Routers
+  // distribute HTTP requests between Controllers. Controllers fetch from or
+  // put data to Models, and results are shown with Views
+  app.use(routes);
 
-// Connect to the database before launching the web server
-try {
+  // Connect to the database before launching the web server
   await database.connect();
+
   // Start listening for connections, HTTP requests, and manage them
   console.log(`${common.appName} listening on port ${common.port}...`);
   app.listen(common.port);
+}
+
+try {
+  main();
 } catch (error) {
   console.error(error);
 }
-
-// TODO: Enable HTTPs https://stackoverflow.com/a/11745114
-// TODO: Use nginx along with Express https://unit.nginx.org/howto/express/

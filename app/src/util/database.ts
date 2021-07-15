@@ -5,13 +5,14 @@ const url = 'mongodb+srv://vygoj-app:VH7Be7IkT5IS0QtQ@cluster0.uieic.mongodb.net
 
 // Manages the connection with the database
 class Database {
-  // The client connection to the database. 
+  // The client connection to the database.
   database: MongoClient | null = null;
 
   // Establish the connection with the database
   // Call this function before using the database object
   async connect() {
-    return this.database = await MongoClient.connect(url);
+    this.database = await MongoClient.connect(url);
+    return this.database;
   }
 
   // Get a reference to the database

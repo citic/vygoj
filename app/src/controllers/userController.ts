@@ -20,10 +20,13 @@ declare module 'express-session' {
  */
 class UserController {
   // The users database
-  users:User[] = [
-    { id: 1, role: 'admin', name: 'Admin', email: 'admin@vygoj.com', password: 'adminvyg'},
-    { id: 2, role: 'professor', name: 'Professor', email: 'prof@vygoj.com', password: 'profvyg'},
-    { id: 3, role: 'student', name: 'Student', email: 'student@vygoj.com', password: 'studvyg'},
+  users: User[] = [
+    // eslint-disable-next-line object-curly-newline,
+    { id: 1, role: 'admin', name: 'Admin', email: 'admin@vygoj.com', password: 'adminvyg' },
+    // eslint-disable-next-line object-curly-newline,
+    { id: 2, role: 'professor', name: 'Professor', email: 'prof@vygoj.com', password: 'profvyg' },
+    // eslint-disable-next-line object-curly-newline,
+    { id: 3, role: 'student', name: 'Student', email: 'student@vygoj.com', password: 'studvyg' },
   ];
 
   // eslint-disable-next-line class-methods-use-this
@@ -59,6 +62,7 @@ class UserController {
   }
 
   // GET /user/123
+  // eslint-disable-next-line class-methods-use-this
   getUserPreferences(req: Request, res: Response) {
     if (req.session.user) {
       res.contentType('application/xhtml+xml').render('user/preferences', {
@@ -73,6 +77,7 @@ class UserController {
   }
 
   // POST /user/preferences
+  // eslint-disable-next-line class-methods-use-this
   postUserPreferences(req: Request, res: Response) {
     if (req.body.action === 'update') {
       // TODO: Save user preferences in DB
