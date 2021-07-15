@@ -6,6 +6,7 @@ import express from 'express';
 import common from './common/common.js';
 import routes from './routes/routes.js';
 import database from './util/database.js';
+// import userController from './controllers/userController.js';
 
 // Starts the execution of the server
 async function main() {
@@ -27,6 +28,7 @@ async function main() {
 
   // Connect to the database before launching the web server
   await database.connect();
+  // await userController.createTestUsers();
 
   // Start listening for connections, HTTP requests, and manage them
   console.log(`${common.appName} listening on port ${common.port}...`);

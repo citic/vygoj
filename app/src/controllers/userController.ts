@@ -1,12 +1,6 @@
 import { Request, Response } from 'express';
-
-interface User {
-  id: number;
-  role: string;
-  name: string;
-  email: string;
-  password: string;
-}
+import { User, Role } from '../models/user.js';
+import database from '../util/database.js';
 
 // https://stackoverflow.com/a/65696437
 declare module 'express-session' {
@@ -21,13 +15,16 @@ declare module 'express-session' {
 class UserController {
   // The users database
   users: User[] = [
-    // eslint-disable-next-line object-curly-newline,
-    { id: 1, role: 'admin', name: 'Admin', email: 'admin@vygoj.com', password: 'adminvyg' },
-    // eslint-disable-next-line object-curly-newline,
-    { id: 2, role: 'professor', name: 'Professor', email: 'prof@vygoj.com', password: 'profvyg' },
-    // eslint-disable-next-line object-curly-newline,
-    { id: 3, role: 'student', name: 'Student', email: 'student@vygoj.com', password: 'studvyg' },
+    new User(1, Role.admin, 'Admin', 'admin@vygoj.com', 'adminvyg'),
+    new User(2, Role.professor, 'Professor', 'prof@vygoj.com', 'profvyg'),
+    new User(3, Role.student, 'Student', 'student@vygoj.com', 'studvyg'),
+    new User(4, Role.assistant, 'Assistant', 'assistant@vygoj.com', 'assistvyg'),
   ];
+
+  // Create test users
+  async createTestUsers() {
+    return await database.get().collection('users').insertMany(this.users);
+  }
 
   // eslint-disable-next-line class-methods-use-this
   getUserLogin(req: Request, res: Response) {
