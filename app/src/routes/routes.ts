@@ -20,7 +20,7 @@ router.use(express.urlencoded({ extended: false }));
 
 // Sessions
 router.use(session({
-  secret: 'Yes, size matters, bigger is better! (At least for this text)',
+  secret: 'Yes, size matters, longer is much better! (At least for this text)',
   resave: false,
   saveUninitialized: false,
 }));

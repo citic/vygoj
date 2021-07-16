@@ -14,10 +14,7 @@ export const enum ThemeMode {
 }
 
 export class Preferences {
-  mode: ThemeMode;
-
-  constructor(mode: ThemeMode = ThemeMode.light) {
-    this.mode = mode;
+  constructor(public mode: ThemeMode = ThemeMode.light) {
   }
 
   static default() {
@@ -26,24 +23,13 @@ export class Preferences {
 }
 
 export class User {
-  id: number = 0;
-  role: Role = Role.unknown;
-  name: string = '';
-  email: string = '';
-  password: string = '';
-  preferences: Preferences = Preferences.default();
-
-  constructor(id: number
-    , role: Role = Role.unknown
-    , name: string = ''
-    , email: string = ''
-    , password = ''
-    , preferences: Preferences = Preferences.default()) {
-    this.id = id;
-    this.role = role;
-    this.name = name;
-    this.email = email;
-    this.password = password;
+  // Creates class attributes using parameter properties
+  constructor(public id: number,
+    public role: Role = Role.unknown,
+    public name: string = '',
+    public email: string = '',
+    public password = '',
+    public preferences: Preferences = Preferences.default()) {
   }
 
   async save() {

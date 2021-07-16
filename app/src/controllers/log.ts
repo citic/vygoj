@@ -6,10 +6,7 @@ import common from '../common/common.js';
 
 // TODO: separate between Log model class and LogController (singleton)
 class Log {
-  filename: string;
-
-  constructor(filename = '') {
-    this.filename = filename;
+  constructor(public filename = '') {
   }
 
   append(message: string, type = 'info', category = '') {
