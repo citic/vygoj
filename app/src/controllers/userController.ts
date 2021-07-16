@@ -23,7 +23,7 @@ class UserController {
 
   // Create test users
   async createTestUsers() {
-    return await database.get().collection('users').insertMany(this.users);
+    return await database.users().insertMany(this.users);
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -37,11 +37,11 @@ class UserController {
 
   // POST /user/login
   // Called after filling out the Login dialog
-  postUserLogin(req: Request, res: Response) {
+  async postUserLogin(req: Request, res: Response) {
     // Get data provided by user in the login form
     const email = req.body.email as string;
     const password = req.body.password as string;
-    const user = this.findByEmail(email);
+    const user = await User.findByEmail(email);
     // If provided credentials are valid
     if (user && user.password === password) {
       // Store user name in the session
@@ -90,16 +90,6 @@ class UserController {
       // Internal error
       res.redirect('/');
     }
-  }
-
-  // Find a user by email
-  findByEmail(email: string) {
-    return this.users.find((user) => user.email.toLowerCase() === email.toLowerCase());
-  }
-
-  // Find a user by id
-  findById(id: number) {
-    return this.users.find((user) => user.id === id);
   }
 }
 
