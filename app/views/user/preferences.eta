@@ -1,6 +1,6 @@
 <% layout('./layout') %>
       <main class="user_preferences">
-        <h2>Preferences for <%= it.user.role %> user <%= it.user.id %></h2>
+        <h2>Preferences for <%= it.user.role %> user <%= it.user.name %></h2>
         <form class="preferences_form" action="/user/preferences" method="post">
           <fieldset class="user_information">
             <legend>User information</legend>

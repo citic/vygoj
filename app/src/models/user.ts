@@ -1,5 +1,6 @@
 import { Preferences } from './preferences.js';
 import database from '../util/database.js';
+import { ObjectId } from 'mongodb';
 
 export const enum Role {
   unknown = 'unknown',
@@ -10,13 +11,14 @@ export const enum Role {
 }
 
 export class User {
+  public _id: ObjectId;
   // Creates class attributes using parameter properties
-  constructor(public id: number,
-    public role: Role = Role.unknown,
+  constructor(public role: Role = Role.unknown,
     public name: string = '',
     public email: string = '',
     public password = '',
     public preferences: Preferences = Preferences.default()) {
+    this._id = new ObjectId();
     this.email = email.toLowerCase();
   }
 

@@ -15,10 +15,10 @@ declare module 'express-session' {
 class UserController {
   // The users database
   users: User[] = [
-    new User(1, Role.admin, 'Admin', 'admin@vygoj.com', 'adminvyg'),
-    new User(2, Role.professor, 'Professor', 'prof@vygoj.com', 'profvyg'),
-    new User(3, Role.student, 'Student', 'student@vygoj.com', 'studvyg'),
-    new User(4, Role.assistant, 'Assistant', 'assistant@vygoj.com', 'assistvyg'),
+    new User(Role.admin, 'Admin', 'admin@vygoj.com', 'adminvyg'),
+    new User(Role.professor, 'Professor', 'prof@vygoj.com', 'profvyg'),
+    new User(Role.student, 'Student', 'student@vygoj.com', 'studvyg'),
+    new User(Role.assistant, 'Assistant', 'assistant@vygoj.com', 'assistvyg'),
   ];
 
   // Create test users
