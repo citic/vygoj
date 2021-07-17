@@ -26,7 +26,7 @@ export class User {
     await database.users().insertOne(this);
   }
 
-  // Find a user in DB by email, returns an array of objects
+  // Find a user in DB by email, returns the found user object
   static async findByEmail(email: string) {
     // Build a query object having email in lowercase
     const query = { email: email.toLowerCase() };
@@ -38,5 +38,15 @@ export class User {
     }
     // If found return this user. If not-found, array is empty, return undefined
     return users.length === 1 ? users[0] : undefined;
+  }
+
+  // Find a user in DB by ID
+  static async findById(id: string) {
+    // Build a query converting the string to a valid MongoDB ObjectId
+    const query = { _id: new ObjectId(id) };
+    // Get the user, next() returns a promise to the last object of the results
+    const user = await database.users().find(query).next() as User;
+    // Return the result. It may be undefined
+    return user;
   }
 }
