@@ -23,7 +23,7 @@ class UserController {
 
   // Create test users
   async createTestUsers() {
-    return await database.users().insertMany(this.users);
+    await database.users().insertMany(this.users);
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -37,6 +37,7 @@ class UserController {
 
   // POST /user/login
   // Called after filling out the Login dialog
+  // eslint-disable-next-line class-methods-use-this
   async postUserLogin(req: Request, res: Response) {
     // Get data provided by user in the login form
     const email = req.body.email as string;

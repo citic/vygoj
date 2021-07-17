@@ -1,3 +1,4 @@
+import { Preferences } from './preferences.js';
 import database from '../util/database.js';
 
 export const enum Role {
@@ -6,20 +7,6 @@ export const enum Role {
   professor = 'professor',
   student = 'student',
   assistant = 'assistant',
-}
-
-export const enum ThemeMode {
-  light = 'light',
-  dark = 'dark',
-}
-
-export class Preferences {
-  constructor(public mode: ThemeMode = ThemeMode.light) {
-  }
-
-  static default() {
-    return new Preferences();
-  }
 }
 
 export class User {
@@ -34,7 +21,7 @@ export class User {
   }
 
   async save() {
-    return await database.users().insertOne(this);
+    await database.users().insertOne(this);
   }
 
   // Find a user in DB by email, returns an array of objects
