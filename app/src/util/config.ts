@@ -1,10 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 
-// MongoDB database connection string
 interface ConfigJson {
-  // Allows to have arbitrary properties as any regular object
-  [key: string]: string;
+  // MongoDB database connection string
+  database: string;
+  // The network port wher app is listening for connections
+  port: number;
 }
 
 // Singleton Config object
@@ -12,9 +13,9 @@ interface ConfigJson {
 // databases, max users allowed and so on. The configuration file is located
 // at 'config/config.json' under the application folder
 class Config {
-  public config: ConfigJson | null = null;
+  public config: ConfigJson;
 
-  load() {
+  constructor() {
     // Config file is in config/config.json file
     const filename = path.join(process.cwd(), 'config', 'config.json');
     // Read the entire contents of the file as a string
@@ -26,15 +27,10 @@ class Config {
     }
   }
 
-  // Get the value of a configuration key. Configuration is a set of key/value
-  // pairs loaded from config.json file. Be sure to call load() before calling
-  // this method.
-  get(key: string) {
-    if (this.config && this.config.hasOwnProperty(key)) {
-      return this.config[key];
-    }
-    throw new Error(`load configuration file before using it`);
-  }
+  // Get the value of each configuration key. Be sure to call load() before
+  // calling any of these methods
+  getDatabase() { return this.config.database; }
+  getPort() { return this.config.port; }
 }
 
 // Singleton

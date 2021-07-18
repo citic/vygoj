@@ -1,4 +1,3 @@
-import config from './config.js';
 import database from './database.js';
 import { User, Role } from '../models/user.js';
 
@@ -16,8 +15,6 @@ const user = new User(Role.admin, 'Admin', 'admin@vygoj.com', 'adminvyg');
  * using a web browser and change the password by a secure one.
  */
 async function createUser() {
-  // Load configuration file
-  config.load();
   // Connect to the database before creating the admin user
   await database.connect();
   // TODO: Receive role, name, email, and password by CLI arguments

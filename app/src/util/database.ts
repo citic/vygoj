@@ -9,7 +9,7 @@ class Database {
   // Establish the connection with the database
   // Call this function before using the database object
   async connect() {
-    const client = await MongoClient.connect(config.get('database'));
+    const client = await MongoClient.connect(config.getDatabase());
     this.database = client.db();
     return this.database;
   }
