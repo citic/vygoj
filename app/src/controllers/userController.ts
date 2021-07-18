@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { User, Role } from '../models/user.js';
-import database from '../util/database.js';
+import { User } from '../models/user.js';
 
+// Adds the user reference to the session data
 // https://stackoverflow.com/a/65696437
 declare module 'express-session' {
   interface SessionData {
@@ -13,19 +13,6 @@ declare module 'express-session' {
  * Manages users, login, logout, preferences
  */
 class UserController {
-  // The users database
-  users: User[] = [
-    new User(Role.admin, 'Admin', 'admin@vygoj.com', 'adminvyg'),
-    new User(Role.professor, 'Professor', 'prof@vygoj.com', 'profvyg'),
-    new User(Role.student, 'Student', 'student@vygoj.com', 'studvyg'),
-    new User(Role.assistant, 'Assistant', 'assistant@vygoj.com', 'assistvyg'),
-  ];
-
-  // Create test users
-  async createTestUsers() {
-    await database.users().insertMany(this.users);
-  }
-
   // eslint-disable-next-line class-methods-use-this
   getUserLogin(req: Request, res: Response) {
     res.contentType('application/xhtml+xml').render('user/login', {

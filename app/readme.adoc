@@ -1,15 +1,31 @@
 = Vygoj web application
+:toc:
 
 The web application component allows professors to create courses and students to follow them. It is compound of two parts:
 
 . The frontend is an XHTML/CSS/JS application for running on web browsers.
 . The backend is a Node.js application using Express framework and written in TypeScript.
 
+Therefore you need command-line access to the machine where the app will be installed. The following instructions assume a Unix-like enviroment.
+
+
 
 
 == Install and run
 
-For convenience, the following dependencies are supposed to be installed globally, therefore you can reuse them for other projects
+Clone this repository in the machine where the app will run. The commands in this document suppose you are in the `app/` folder:
+
+[source,sh]
+----
+git clone https://git.ucr.ac.cr/ecci/vygoj.git
+cd vygoj/app
+----
+
+
+
+=== Dependencies
+
+For convenience, the following commands suppose that dependencies installed globally, therefore you can reuse them for other projects. However you can remove `sudo` and `-g` if you prefer installing them as project dependencies.
 
 
 .Global dependencies
@@ -35,6 +51,36 @@ Then, do a clean install of the dependencies:
 npm ci
 ----
 
+
+
+
+=== Configure
+
+Before running Vygoj web application for first time, it must be configured. Copy the example configuration file. The `-n` option avoids overwriting the file if you already have a configuration.
+
+[source,sh]
+----
+cp -n config/config-example.json config/config.json
+----
+
+Then, edit the `config/config.json` using your favorite text editor. Change the network port you expect the web application is listening for connections. By default 8080 is used.
+
+Provide a MongoDB database connection string. If you do not have a database, you may want to create one link:https://docs.mongodb.com/manual/administration/install-community/[locally^] or link:https://docs.atlas.mongodb.com/getting-started/[in the cloud].
+
+If your database is empty, you need to create an administrator user. The following command will create an admin user with default values and password:
+
+[source,sh]
+----
+node dist/util/createUser.js
+----
+
+You can provide optional command line arguments to set the user full name, password, email, and other properties. Use `node dist/util/createUser.js help` to get them.
+
+
+
+
+=== Run the server
+
 To run the server temporally:
 
 [source,sh]
@@ -58,6 +104,8 @@ npm run restart
 
 
 
+
+
 == Development
 
 For setting a development environment, consider the following advices. First `tsc-watch` can detect any change in `.ts` files, incrementally compile them, and restart the server:
@@ -71,7 +119,7 @@ npm run dev
 
 
 
-== Directory structure
+=== Directory structure
 
 JavaScript files that start with uppercase, e.g `Course.js`, export a class. Camel-case files that start with lowercase, e.g `courseController.js` export a symbol, usually a singleton object.
 
