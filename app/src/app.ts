@@ -4,8 +4,9 @@ import express from 'express';
 
 // Vygoj imports
 import common from './common/common.js';
-import routes from './routes/routes.js';
+import config from './util/config.js';
 import database from './util/database.js';
+import routes from './routes/routes.js';
 // import userController from './controllers/userController.js';
 
 // Starts the execution of the server
@@ -26,6 +27,8 @@ async function main() {
   // put data to Models, and results are shown with Views
   app.use(routes);
 
+  // Load configuration file
+  config.load();
   // Connect to the database before launching the web server
   await database.connect();
   // await userController.createTestUsers();
