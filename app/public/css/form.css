@@ -27,10 +27,29 @@ input[type=submit],
 input[type=button] {
   border: none;
   padding: 8px 15px 8px 15px;
-  background: #ff8500;
-  color: #fff;
   box-shadow: 1px 1px 4px #dadada;
   border-radius: 3px;
   font: inherit;
   min-width: 5rem;
+  cursor: pointer;
+}
+
+.confirm {
+  color: #fff;
+  background: #3f51b5;
+}
+
+.reject {
+  color: #fff;
+  background: #ff8500;
+}
+
+.danger {
+  color: #fff;
+  background: red;
+}
+
+button:hover {
+  font-weight: bold;
+  filter: drop-shadow(2px 2px 2px gray);
 }

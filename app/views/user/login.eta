@@ -12,6 +12,6 @@
 <% } %>
           </fieldset>
           <p><small>By pressing the Login button you are accepting the use of cookies in this site to keep your session alive.</small></p>
-          <button class="button" type="submit" name="login">Login</button>
+          <button class="button confirm" type="submit" name="login">Login</button>
         </form>
       </main>

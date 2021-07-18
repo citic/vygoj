@@ -13,6 +13,8 @@ declare module 'express-session' {
  * Manages users, login, logout, preferences
  */
 class UserController {
+  // GET /user/login
+  // Get the user login form
   // eslint-disable-next-line class-methods-use-this
   getUserLogin(req: Request, res: Response) {
     res.contentType('application/xhtml+xml').render('user/login', {
@@ -23,7 +25,7 @@ class UserController {
   }
 
   // POST /user/login
-  // Called after filling out the Login dialog
+  // Called after filling out the login dialog
   // eslint-disable-next-line class-methods-use-this
   async postUserLogin(req: Request, res: Response) {
     // Get data provided by user in the login form
@@ -47,6 +49,7 @@ class UserController {
   }
 
   // GET /user/123
+  // Called when a logged in user asks for its user profile/preferences
   // eslint-disable-next-line class-methods-use-this
   getUserPreferences(req: Request, res: Response) {
     if (req.session.user) {
@@ -62,6 +65,7 @@ class UserController {
   }
 
   // POST /user/preferences
+  // Called when user saves its preferences
   // eslint-disable-next-line class-methods-use-this
   postUserPreferences(req: Request, res: Response) {
     if (req.body.action === 'update') {
