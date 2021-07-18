@@ -67,6 +67,16 @@ Then, edit the `config/config.json` using your favorite text editor. Change the 
 
 Provide a MongoDB database connection string. If you do not have a database, you may want to create one link:https://docs.mongodb.com/manual/administration/install-community/[locally^] or link:https://docs.atlas.mongodb.com/getting-started/[in the cloud].
 
+If your database is local, create a user for the Vygoj Web Application. You can use any MongoDB client, such as `mongosh`. The following code include the respective database connection string as a comment:
+
+[source,js]
+----
+db.createUser({user: 'vygoj-app', pwd: 'AGoodPass', roles: [{role: 'readWrite', db: 'vygoj'}]})
+// "database": "mongodb://vygoj-app:AGoodPass@localhost:27017/vygoj?authSource=admin"
+----
+
+If your database is in the cloud, e.g with MongoDB Atlas, in Database Access menu create a `vygoj-app` user with read-and-write permissions, generate a password and save it. In the Network Access menu, add the IP of the machine where the App will be running. Finally, go to the database list, press Connect, then "Connect an application", and copy the database connection string that starts with `mongodb+srv:`. Paste it in the `database` field of your `config/config.json` file and replace the <password> by the actual generated password.
+
 If your database is empty, you need to create an administrator user. The following command will create an admin user with default values and password:
 
 [source,sh]
