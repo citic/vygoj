@@ -56,7 +56,7 @@ class UserController {
       res.contentType('application/xhtml+xml').render('user/preferences', {
         title: 'User preferences',
         stylesheet: 'user',
-        user: req.session.user,
+        user: User.factory(req.session.user),
       });
     } else {
       // Oops, internal error, may be the cookie is obsolete

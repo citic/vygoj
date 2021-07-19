@@ -30,6 +30,9 @@
           <p>
             <button class="button confirm" type="submit" name="action" value="update">Update</button>
             <button class="button reject" type="submit" name="action" value="logout">Logout</button>
+<% if (it.user.isAdmin()) { %>
+            <button class="button reject" type="submit" name="action" value="deactivate">Deactivate Account</button>
+<% } %>
             <button class="button danger" type="submit" name="action" value="delete">Delete Account</button>
           </p>
         </form>

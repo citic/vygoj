@@ -25,6 +25,19 @@ export class User {
     this.email = email.toLowerCase();
   }
 
+  // Create a User object from the given json object
+  static factory(jsonObject: User) {
+    const user = new User();
+    Object.assign(user, jsonObject);
+    return user;
+  }
+
+  // Getter methods
+  isAdmin() { return this.role == Role.admin; }
+  isProfessor() { return this.role == Role.professor; }
+  isStudent() { return this.role == Role.student; }
+  isAssistant() { return this.role == Role.assistant; }
+
   async save() {
     await database.users().insertOne(this);
   }
@@ -40,7 +53,7 @@ export class User {
       throw new Error(`dberror: several users with email ${email}`);
     }
     // If found return this user. If not-found, array is empty, return undefined
-    return users.length === 1 ? users[0] : undefined;
+    return users.length === 1 ? User.factory(users[0]) : undefined;
   }
 
   // Find a user in DB by ID
@@ -50,6 +63,6 @@ export class User {
     // Get the user, next() returns a promise to the last object of the results
     const user = await database.users().find(query).next() as User;
     // Return the result. It may be undefined
-    return user;
+    return User.factory(user);
   }
 }
