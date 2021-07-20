@@ -14,7 +14,7 @@
         <a href="/"><img class="site_logo" src="/img/logo.svg" alt="Site logo"/></a>
         <h1 class="site_header__title">Vygotsky Online Judge</h1>
         <a class="icon_control" href="/user/<%= it.user?._id ?? 'login' %>">
-          <box-icon class="icon_control__image" name="user" type="solid" size="lg"></box-icon>
+          <img class="icon_control__image" src="/icon/user.svg" alt="User control"/>
           <span class="icon_control__caption"><%= it.user?.name ?? 'User' %></span>
         </a>
       </div>
@@ -40,6 +40,5 @@
       <span class="software_version">Vygoj v0.0.1</span>
       <span class="help_controls"><a href="/help">Help</a></span>
     </footer>
-    <script src="https://unpkg.com/boxicons@latest/dist/boxicons.js"></script>
   </body>
 </html>
