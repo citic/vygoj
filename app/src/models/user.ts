@@ -17,7 +17,7 @@ export class User {
 
   // Creates class attributes using parameter properties
   constructor(public role: Role = Role.unknown,
-    public name: string = '',
+    public name: string = 'User',
     public email: string = '',
     public password = '',
     public preferences: Preferences = Preferences.default()) {
@@ -26,9 +26,11 @@ export class User {
   }
 
   // Create a User object from the given json object
-  static factory(jsonObject: User) {
+  static factory(jsonObject: User | undefined) {
     const user = new User();
-    Object.assign(user, jsonObject);
+    if (jsonObject) {
+      Object.assign(user, jsonObject);
+    }
     return user;
   }
 

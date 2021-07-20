@@ -46,11 +46,23 @@ a:hover {
   text-shadow: 0 5px 5px gray;
 }
 
-.user_control {
+.panel {
+  display: flex;
+  flex-direction: row;
+  border: 1px solid gray;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.icon_control {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   align-items: center;
+}
+
+.icon_control__image {
+  min-width: 2.75rem;
 }
 
 .filled {
