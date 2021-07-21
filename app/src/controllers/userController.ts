@@ -53,9 +53,10 @@ class UserController {
   // eslint-disable-next-line class-methods-use-this
   getUserPreferences(req: Request, res: Response, errorMessage = '') {
     if (req.session.user) {
-      res.contentType('application/xhtml+xml').render('user/preferences', {
+      res.render('user/preferences', {
         title: 'User preferences',
         stylesheet: 'user',
+        scripts: ['/js/user/preferences.js'],
         user: User.factory(req.session.user),
         errorMessage,
       });

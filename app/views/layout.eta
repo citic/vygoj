@@ -40,5 +40,8 @@
       <span class="software_version">Vygoj v0.0.1</span>
       <span class="help_controls"><a href="/help">Help</a></span>
     </footer>
+<% if (it.scripts) { it.scripts.forEach((script) => { %>
+    <script src="<%= script %>" type="module" defer="defer"></script>
+<% }); } %>
   </body>
 </html>

@@ -28,9 +28,9 @@
             </p>
           </fieldset>
           <p>
-            <button class="button confirm" type="submit" name="action" value="update">Update</button>
-            <button class="button reject" type="submit" name="action" value="logout">Logout</button>
-            <button class="button danger" type="submit" name="action" value="delete">Delete Account</button>
+            <button id="confirm_button" class="button confirm" type="submit" name="action" value="update">Update</button>
+            <button id="reject_button" class="button reject" type="submit" name="action" value="logout">Logout</button>
+            <button id="delete_button" class="button danger" type="submit" name="action" value="delete">Delete Account</button>
           </p>
         </form>
       </main>
