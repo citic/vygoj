@@ -1,4 +1,3 @@
-import { Preferences } from '../models/preferences.js';
 import { Request, Response } from 'express';
 import { User } from '../models/user.js';
 
@@ -109,7 +108,7 @@ class UserController {
     // TODO: Validate that field values are not empty nor code injection
     user.name = req.body.name;
     user.email = req.body.email;
-    user.preferences.mode = Preferences.mapMode(req.body.mode);
+    user.uiMode = req.body.ui_mode;
     // If user asked to change password
     if (req.body.current_password.length > 0) {
       if (req.body.current_password === user.password) {

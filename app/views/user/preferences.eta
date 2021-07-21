@@ -1,6 +1,9 @@
 <% layout('./layout') %>
       <main class="user_preferences">
         <h2>Preferences for <%= it.user.role %> user <%= it.user.name %></h2>
+<% if (it.errorMessage) { %>
+        <p class="login_message error"><%= it.errorMessage %></p>
+<% } %>
         <form class="preferences_form" action="/user/preferences" method="post">
           <fieldset class="user_information">
             <legend>User information</legend>
@@ -12,27 +15,21 @@
           <fieldset class="user_password">
             <legend>Change password</legend>
             <label for="current_password">Current password</label>
-            <input type="current_password" name="current_password" id="current_password"/>
+            <input type="password" name="current_password" id="current_password"/>
             <label for="new_password">New password</label>
-            <input type="new_password" name="new_password" id="new_password"/>
+            <input type="password" name="new_password" id="new_password"/>
           </fieldset>
           <fieldset class="preferences">
-            <p>Mode:
-              <input type="radio" id="light_mode" name="mode" value="light" checked="checked"/>
+            <p>Interface Mode:
+              <input type="radio" id="light_mode" name="ui_mode" value="light"<%~ it.user.uiMode === 'light' ? ' checked="checked"' : '' %>/>
               <label for="light_mode">Light</label>
-              <input type="radio" id="dark_mode" name="mode" value="dark"/>
+              <input type="radio" id="dark_mode" name="ui_mode" value="dark"<%~ it.user.uiMode === 'dark' ? ' checked="checked"' : '' %>/>
               <label for="dark_mode">Dark</label>
             </p>
           </fieldset>
-<% if (it.errorMessage) { %>
-          <p class="login_message error"><%= it.errorMessage %></p>
-<% } %>
           <p>
             <button class="button confirm" type="submit" name="action" value="update">Update</button>
             <button class="button reject" type="submit" name="action" value="logout">Logout</button>
-<% if (it.user.isAdmin()) { %>
-            <button class="button reject" type="submit" name="action" value="deactivate">Deactivate Account</button>
-<% } %>
             <button class="button danger" type="submit" name="action" value="delete">Delete Account</button>
           </p>
         </form>

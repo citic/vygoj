@@ -1,4 +1,3 @@
-import { Preferences } from './preferences.js';
 import database from '../util/database.js';
 import { ObjectId } from 'mongodb';
 
@@ -17,10 +16,10 @@ export class User {
 
   // Creates class attributes using parameter properties
   constructor(public role: Role = Role.unknown,
-    public name: string = 'User',
-    public email: string = '',
+    public name = 'User',
+    public email = '',
     public password = '',
-    public preferences: Preferences = Preferences.default()) {
+    public uiMode: 'light' | 'dark' = 'light') {
     this._id = new ObjectId();
     this.email = email.toLowerCase();
   }
