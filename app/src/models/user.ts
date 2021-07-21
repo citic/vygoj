@@ -19,7 +19,8 @@ export class User {
     public name = 'User',
     public email = '',
     public password = '',
-    public uiMode: 'light' | 'dark' = 'light') {
+    public uiMode: 'light' | 'dark' = 'light',
+    public status: 'active' | 'inactive' | 'deleted' = 'active') {
     this._id = new ObjectId();
     this.email = email.toLowerCase();
   }
@@ -73,5 +74,17 @@ export class User {
     const user = await database.users().find(query).next() as User;
     // Return the result. It may be undefined
     return User.factory(user);
+  }
+
+  // Delete a user from the database by its id
+  static async deleteById(id: string | ObjectId) {
+    // Build a query using the identification of the user
+    const query = { _id: new ObjectId(id) };
+    // Remove from database
+    // TODO: Remove a user only if it has no related data (set deleted state and
+    // only admins/prof may actually delete accounts and all related data)
+    const result = await database.users().deleteOne(query);
+    // Return a Result object, with properties such as deletedCount
+    return result;
   }
 }

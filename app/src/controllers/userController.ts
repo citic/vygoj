@@ -70,7 +70,7 @@ class UserController {
   postUserPreferences(req: Request, res: Response) {
     switch (req.body.action) {
       case 'deactivate': return this.deactivateUser(req, res);
-      case 'delete': return this.removeUser(req, res);
+      case 'delete': return this.deleteUser(req, res);
       case 'logout': return this.logoutUser(req, res);
       case 'update': return this.updateUser(req, res);
       default: res.redirect('/'); // Internal error
@@ -83,10 +83,14 @@ class UserController {
     res.redirect('/');
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  removeUser(req: Request, res: Response) {
-    // TODO: remove user
-    res.redirect('/');
+  async deleteUser(req: Request, res: Response) {
+    // If there is a logged in user
+    if (req.session.user) {
+      await User.deleteById(req.session.user._id);
+    }
+
+    // Show login form
+    return this.logoutUser(req, res);
   }
 
   // eslint-disable-next-line class-methods-use-this
