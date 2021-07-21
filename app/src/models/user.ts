@@ -30,6 +30,7 @@ export class User {
     const user = new User();
     if (jsonObject) {
       Object.assign(user, jsonObject);
+      user._id = new ObjectId(jsonObject._id);
     }
     return user;
   }
@@ -40,8 +41,15 @@ export class User {
   isStudent() { return this.role == Role.student; }
   isAssistant() { return this.role == Role.assistant; }
 
+  // Add this user as new one in database
   async save() {
     await database.users().insertOne(this);
+  }
+  
+  // Updates the database object with this one
+  async update() {
+    await database.users().updateOne({_id: new ObjectId(this._id) }
+      , { $set: this } );
   }
 
   // Find a user in DB by email, returns the found user object

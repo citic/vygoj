@@ -10,4 +10,15 @@ export class Preferences {
   static default() {
     return new Preferences();
   }
+
+  static mapMode(text: string) {
+    switch (text) {
+      case 'dark':
+        return ThemeMode.dark;
+
+      case 'light':
+      default:
+        return ThemeMode.light;
+    }
+  }
 }

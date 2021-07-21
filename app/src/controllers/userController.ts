@@ -1,3 +1,4 @@
+import { Preferences } from '../models/preferences.js';
 import { Request, Response } from 'express';
 import { User } from '../models/user.js';
 
@@ -51,12 +52,13 @@ class UserController {
   // GET /user/123
   // Called when a logged in user asks for its user profile/preferences
   // eslint-disable-next-line class-methods-use-this
-  getUserPreferences(req: Request, res: Response) {
+  getUserPreferences(req: Request, res: Response, errorMessage = '') {
     if (req.session.user) {
       res.contentType('application/xhtml+xml').render('user/preferences', {
         title: 'User preferences',
         stylesheet: 'user',
         user: User.factory(req.session.user),
+        errorMessage,
       });
     } else {
       // Oops, internal error, may be the cookie is obsolete
@@ -65,25 +67,72 @@ class UserController {
   }
 
   // POST /user/preferences
-  // Called when user saves its preferences
-  // eslint-disable-next-line class-methods-use-this
+  // Called when user presses a button in its preferences form
   postUserPreferences(req: Request, res: Response) {
-    if (req.body.action === 'update') {
-      // TODO: Save user preferences in DB
-      res.redirect('/user/preferences');
-    } else if (req.body.action === 'logout') {
-      req.session.destroy((error) => {
-        if (error) {
-          console.error(error);
-        }
-        res.redirect('/user/login');
-      });
-    } else {
-      // Internal error
-      res.redirect('/');
+    switch (req.body.action) {
+      case 'deactivate': return this.deactivateUser(req, res);
+      case 'delete': return this.removeUser(req, res);
+      case 'logout': return this.logoutUser(req, res);
+      case 'update': return this.updateUser(req, res);
+      default: res.redirect('/'); // Internal error
     }
   }
-}
+
+  // eslint-disable-next-line class-methods-use-this
+  deactivateUser(req: Request, res: Response) {
+    // TODO: set active until date
+    res.redirect('/');
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  removeUser(req: Request, res: Response) {
+    // TODO: remove user
+    res.redirect('/');
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  logoutUser(req: Request, res: Response) {
+    req.session.destroy((error) => {
+      if (error) {
+        console.error(error);
+      }
+      res.redirect('/user/login');
+    });
+  }
+
+  // Called when user presses the Update
+  async updateUser(req: Request, res: Response) {
+    // Get the user object
+    const user = User.factory(req.session.user);
+    let errorMessage = '';
+    // Update its fields
+    // TODO: Validate that field values are not empty nor code injection
+    user.name = req.body.name;
+    user.email = req.body.email;
+    user.preferences.mode = Preferences.mapMode(req.body.mode);
+    // If user asked to change password
+    if (req.body.current_password.length > 0) {
+      if (req.body.current_password === user.password) {
+        const newPassword = req.body.new_password.trim();
+        if (newPassword.length > 0) {
+          user.password = newPassword;
+        } else {
+          errorMessage = 'New password cannot be empty';
+        }
+      } else {
+        errorMessage = 'Invalid password';
+      }
+    }
+    // If no errors, save user preferences in DB
+    if (errorMessage === '') {
+      // TODO: Manage exceptions try/catch
+      await user.update();
+      req.session.user = user;
+    }
+    // Show the preferences form again
+    return this.getUserPreferences(req, res, errorMessage);
+  }
+} // class
 
 // Export the singleton controller
 const userController = new UserController();

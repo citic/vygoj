@@ -25,7 +25,7 @@
             </p>
           </fieldset>
 <% if (it.errorMessage) { %>
-            <p class="login_message error"><%= it.errorMessage %></p>
+          <p class="login_message error"><%= it.errorMessage %></p>
 <% } %>
           <p>
             <button class="button confirm" type="submit" name="action" value="update">Update</button>
