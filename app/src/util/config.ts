@@ -30,6 +30,7 @@ class Config {
   // Get the value of each configuration key. Be sure to call load() before
   // calling any of these methods
   getDatabase() { return this.config.database; }
+
   getPort() { return this.config.port; }
 }
 

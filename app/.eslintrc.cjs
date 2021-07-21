@@ -23,7 +23,9 @@ module.exports = {
     // Allow defensive programming
     'no-console': "off",
     // Allow .js extension in modules
-    "import/extensions": ["error", "ignorePackages"]
+    "import/extensions": ["error", "ignorePackages"],
+    // Allow _id MongoDB identifier starting with underscore
+    "no-underscore-dangle": ["error", { "allow": ["_id"] }],
   },
   settings: {
     react: {

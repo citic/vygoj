@@ -73,7 +73,7 @@ class UserController {
       case 'delete': return this.deleteUser(req, res);
       case 'logout': return this.logoutUser(req, res);
       case 'update': return this.updateUser(req, res);
-      default: res.redirect('/'); // Internal error
+      default: res.redirect('/'); return undefined; // Internal error
     }
   }
 

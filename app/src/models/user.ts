@@ -1,5 +1,5 @@
-import database from '../util/database.js';
 import { ObjectId } from 'mongodb';
+import database from '../util/database.js';
 
 export const enum Role {
   unknown = 'unknown',
@@ -36,20 +36,23 @@ export class User {
   }
 
   // Getter methods
-  isAdmin() { return this.role == Role.admin; }
-  isProfessor() { return this.role == Role.professor; }
-  isStudent() { return this.role == Role.student; }
-  isAssistant() { return this.role == Role.assistant; }
+  isAdmin() { return this.role === Role.admin; }
+
+  isProfessor() { return this.role === Role.professor; }
+
+  isStudent() { return this.role === Role.student; }
+
+  isAssistant() { return this.role === Role.assistant; }
 
   // Add this user as new one in database
   async save() {
     await database.users().insertOne(this);
   }
-  
+
   // Updates the database object with this one
   async update() {
-    await database.users().updateOne({_id: new ObjectId(this._id) }
-      , { $set: this } );
+    await database.users().updateOne({ _id: new ObjectId(this._id) },
+      { $set: this });
   }
 
   // Find a user in DB by email, returns the found user object
