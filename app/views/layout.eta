@@ -5,7 +5,10 @@
     <title><%= it.title ?? 'Vygotsky Online Judge' %></title>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <meta name="author" content="Jeisson Hidalgo-Céspedes"/>
-    <link rel="preload" href="/css/<%= it.stylesheet ?? 'site' %>.css" as="style"/>
+    <link rel="preload" href="/css/site.css" as="style"/>
+<% if (it.stylesheet) { %>
+    <link rel="preload" href="/css/<%= it.stylesheet %>.css" as="style"/>
+<% } %>
     <link rel="stylesheet" href="/css/<%= it.stylesheet ?? 'site' %>.css"/>
     <link rel="icon" type="image/svg+xml" href="/img/logo.svg"/>
   </head>
@@ -15,7 +18,7 @@
         <a href="/"><img class="site_logo" src="/img/logo.svg" alt="Site logo" width="64" height="64"/></a>
         <h1 class="site_header__title">Vygotsky Online Judge</h1>
         <a class="icon_control" href="/user/<%= it.user?._id ?? 'login' %>">
-          <img class="icon_control__image" src="/icon/user.svg" alt="User control"/>
+          <img class="icon_control__image" src="/icon/user.svg" alt="User control" width="44" height="44"/>
           <span class="icon_control__caption"><%= it.user?.name ?? 'User' %></span>
         </a>
       </div>
