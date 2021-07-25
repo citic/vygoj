@@ -15,7 +15,7 @@ class CourseController {
   // eslint-disable-next-line class-methods-use-this
   getIndex(req: Request, res: Response) {
     // Show the homepage
-    res.contentType('application/xhtml+xml').render('courses', {
+    res.render('courses', {
       stylesheet: 'courses',
       title: 'Vygotsky Online Judge (Vygoj)',
       user: User.factory(req.session.user),

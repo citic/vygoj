@@ -47,6 +47,15 @@ router.get('/course/:courseId', (req, res) => {
   courseController.getCourse(req, res);
 });
 
+// Problems
+router.get('/status', (req, res) => {
+  if (Math.random() < 0.75) {
+    res.json({ status: 'online' });
+  } else {
+    res.json({ status: 'offline' });
+  }
+});
+
 // Serve static files such as XHTML, CSS, JS, images, sounds, videos
 // express.static(path) returns a middleware function that looks for URIs that
 // match files into the public/ folder, and serves them setting their content-

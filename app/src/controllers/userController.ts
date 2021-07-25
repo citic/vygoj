@@ -17,7 +17,7 @@ class UserController {
   // Get the user login form
   // eslint-disable-next-line class-methods-use-this
   getUserLogin(req: Request, res: Response) {
-    res.contentType('application/xhtml+xml').render('user/login', {
+    res.render('user/login', {
       title: 'User login',
       stylesheet: 'user',
       user: req.session.user,
@@ -40,7 +40,7 @@ class UserController {
       res.redirect('/');
     } else {
       // Show login form again with an error message
-      res.contentType('application/xhtml+xml').render('user/login', {
+      res.render('user/login', {
         title: 'User login',
         stylesheet: 'user',
         errorMessage: 'Invalid user or password',

@@ -98,12 +98,21 @@ a:hover {
 
 .site_footer {
   min-height: 1.5rem;
+  margin-top: 1rem;
   padding: 0.25rem 1rem;
   font-family: 'JetBrains Mono', monospace;
   box-shadow: 0 -3px 5px grey;
   font-size: smaller;
   display: flex;
   justify-content: space-between;
+}
+
+.site_footer > * {
+  flex: 1 1 0px;
+}
+
+.help_controls {
+  text-align: right;
 }
 
 .page_content {
