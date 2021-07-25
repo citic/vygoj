@@ -107,7 +107,7 @@ a:hover {
   justify-content: space-between;
 }
 
-.site_footer > * {
+.site_footer > span {
   flex: 1 1 0px;
 }
 
@@ -122,4 +122,25 @@ a:hover {
 
 .error {
   color: red;
+}
+
+#backend_status {
+  text-align: center;
+}
+
+#backend_offline {
+  color: orangered;
+  fill: currentColor;
+}
+
+.hidden {
+  display: none;
+}
+
+.visible_block {
+  display: block;
+}
+
+.visible_inline {
+  display: inline;
 }

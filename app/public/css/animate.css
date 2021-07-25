@@ -1,0 +1,24 @@
+/* Animations generated and adapted from http://animista.net */
+
+@keyframes slide-bck-center {
+  0% {
+    transform: translateZ(0);
+  }
+  100% {
+  }
+}
+
+.slide-bck-center {
+  animation: slide-bck-center 1s cubic-bezier(0.470, 0.000, 0.745, 0.715) infinite alternate both;
+}
+
+.mover {
+  will-change: transform;
+  animation: move 1s infinite ease-in-out alternate;
+}
+
+@keyframes move {
+  20%, 100% {
+    transform: translate(5px, 0);
+  }
+}

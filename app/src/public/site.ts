@@ -7,12 +7,15 @@ interface Status {
 
 /** Common behavior for all site pages */
 class Site {
-  backendStatusElement: HTMLImageElement;
+  backendOfflineElement: HTMLSpanElement;
+
+  backendOnlineElement: HTMLSpanElement;
 
   constructor() {
-    this.backendStatusElement = document.getElementById('backend_status') as HTMLImageElement;
-    if (!this.backendStatusElement) {
-      throw new Error('Could not find backend_status element');
+    this.backendOfflineElement = document.getElementById('backend_offline') as HTMLSpanElement;
+    this.backendOnlineElement = document.getElementById('backend_online') as HTMLSpanElement;
+    if (!this.backendOfflineElement || !this.backendOnlineElement) {
+      throw new Error('Could not find backend status elements');
     }
   }
 
@@ -52,17 +55,22 @@ class Site {
     }
   }
 
-  showBackendOnline(message: string) {
-    this.backendStatusElement.src = '/icon/cloud_online.svg';
-    this.backendStatusElement.alt = message;
+  showBackendOffline(message: string, log: boolean) {
+    Site.setStatusImage(this.backendOfflineElement, 'visible_inline', message, log);
+    Site.setStatusImage(this.backendOnlineElement, 'hidden', message, log);
   }
 
-  showBackendOffline(error: string, log: boolean) {
+  showBackendOnline(message: string) {
+    Site.setStatusImage(this.backendOfflineElement, 'hidden', message, false);
+    Site.setStatusImage(this.backendOnlineElement, 'visible_inline', message, false);
+  }
+
+  static setStatusImage(element: HTMLSpanElement, status: string, message: string, log: boolean) {
     if (log) {
-      console.error(error);
+      console.error(message);
     }
-    this.backendStatusElement.src = '/icon/cloud_offline.svg';
-    this.backendStatusElement.alt = error;
+    element.className = status;
+    element.title = message;
   }
 }
 
