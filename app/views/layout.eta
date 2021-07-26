@@ -14,7 +14,7 @@
     <link rel="icon" type="image/svg+xml" href="/img/logo.svg"/>
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="crossorigin"/>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anaheim&family=JetBrains+Mono&display=swap"/>
+    <link rel="stylesheet preload" href="https://fonts.googleapis.com/css2?family=Anaheim&family=JetBrains+Mono&display=swap" as="style"/>
   </head>
   <body>
     <header class="site_header">
