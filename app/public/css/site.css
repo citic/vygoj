@@ -1,11 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Anaheim&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap');
-
 /* Sans-serif:
+@import url('https://fonts.googleapis.com/css2?family=Anaheim&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Imprima&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Monda&display=swap');
 
 Monospace:
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Ubuntu+Mono&display=swap');
 */
 
@@ -21,6 +20,7 @@ html {
 body {
   font-family: 'Anaheim', sans-serif;
   font-size: 12pt;
+  font-display: swap;
   margin: 0;
   height: 100%;
   display: flex;
