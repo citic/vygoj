@@ -5,6 +5,7 @@
     <title><%= it.title ?? 'Vygotsky Online Judge' %></title>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <meta name="author" content="Jeisson Hidalgo-Céspedes"/>
+    <meta name="description" content="An educative online judge for teaching and learning computing programming with emphasis in concurrent programming paradigm"/>
     <link rel="preload" href="/css/site.css" as="style"/>
 <% if (it.stylesheet) { %>
     <link rel="preload" href="/css/<%= it.stylesheet %>.css" as="style"/>
@@ -13,7 +14,6 @@
     <link rel="icon" type="image/svg+xml" href="/img/logo.svg"/>
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="crossorigin"/>
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Anaheim&family=JetBrains+Mono&display=swap" as="font"/>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anaheim&family=JetBrains+Mono&display=swap"/>
   </head>
   <body>
