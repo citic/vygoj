@@ -3,11 +3,19 @@ import config from '../util/config.js';
 import { fetchJson } from '../common/common.js';
 
 // TODO: Remove redundancy with site.ts, a backend.d.ts file?
+interface Queue {
+  queue: string;
+  size: number;
+  available: number;
+  idle: number;
+  working: number;
+  paused: number;
+  failed: number;
+}
+
 interface Status {
   status: string;
-  workers: {
-    [key: string]: number;
-  };
+  workers?: Queue[];
 }
 
 /**
@@ -19,7 +27,7 @@ class BackendController {
   status: Status;
 
   constructor() {
-    this.status = { status: 'offline', workers: { } };
+    this.status = { status: 'offline' };
     this.checkBackendStatus();
     setInterval(() => {
       this.checkBackendStatus();
@@ -28,17 +36,16 @@ class BackendController {
 
   // Called at some intervals to pull the backend status
   checkBackendStatus() {
-    fetchJson(config.getBackend())
-      .then((json) => { this.status.workers = json; })
+    fetchJson(`${config.getBackend()}/workers`)
+      .then((json) => {
+        this.status.status = 'online';
+        this.status.workers = json;
+      })
       .catch((error) => console.error(error.message));
   }
 
   getStatus(req: Request, res: Response) {
-    if (Math.random() < 0.75) {
-      res.json(this.status);
-    } else {
-      res.json(this.status);
-    }
+    res.json(this.status);
   }
 }
 

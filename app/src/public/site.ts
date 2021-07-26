@@ -1,16 +1,32 @@
 // TODO: Remove redundancy with backend.ts, a backend.d.ts file?
+interface Queue {
+  queue: string;
+  size: number;
+  available: number;
+  idle: number;
+  working: number;
+  paused: number;
+  failed: number;
+}
+
 interface Status {
   status: string;
-  workers: {
-    [key: string]: number;
-  };
+  workers?: Queue[];
 }
 
 /** Common behavior for all site pages */
 class Site {
+  // The SVG shown when the backend is offline or user disconnected
   backendOfflineElement: HTMLSpanElement;
 
+  // The SVG shown when the backend is online and user connected
   backendOnlineElement: HTMLSpanElement;
+
+  // True if show backend state instead of app version
+  wantsBackendDetails: boolean = true;
+
+  // A copy of the last status received
+  status: Status = { status: 'offline' };
 
   constructor() {
     this.backendOfflineElement = document.getElementById('backend_offline') as HTMLSpanElement;
@@ -29,7 +45,7 @@ class Site {
     this.checkBackendStatus();
     window.setInterval(() => {
       this.checkBackendStatus();
-    }, 10000);
+    }, 60000);
   }
 
   // Called at some intervals to pull the backend status
@@ -43,17 +59,33 @@ class Site {
 
   // Called when the backend status arrived to update the UI
   updateBackendStatus(json : Status) {
-    let message = '';
-    if (json.workers) {
-      Object.keys(json.workers).forEach((key: string) => {
-        message += `${key}: ${json.workers[key]}\n`;
-      });
+    this.status = json;
+    if (this.wantsBackendDetails) {
+      this.showBackendDetails();
     }
     if (json.status === 'online') {
-      this.showBackendOnline(message);
+      this.showBackendOnline('Connected');
     } else {
-      this.showBackendOffline(message, false);
+      this.showBackendOffline('Disconnected', false);
     }
+  }
+
+  showBackendDetails() {
+    const element = document.getElementById('software_version') as HTMLSpanElement;
+    element.innerText = this.buildBackendDetails();
+  }
+
+  buildBackendDetails() {
+    let message = '';
+    if (this.status.workers) {
+      this.status.workers.forEach((queue: Queue) => {
+        message += `${queue.queue} p${queue.size} f${queue.failed}`;
+        message += ` a${queue.available} w${queue.working} p${queue.paused} i${queue.idle}`;
+      });
+    } else {
+      message = this.status.status;
+    }
+    return message;
   }
 
   showBackendOffline(message: string, log: boolean) {
