@@ -4,6 +4,7 @@ import session from 'express-session';
 import path from 'path';
 
 // Vygot imports
+import backendController from '../controllers/backendController.js';
 import courseController from '../controllers/courseController.js';
 import errorController from '../controllers/errorController.js';
 import log from '../controllers/log.js';
@@ -47,13 +48,9 @@ router.get('/course/:courseId', (req, res) => {
   courseController.getCourse(req, res);
 });
 
-// Problems
+// Problems: judge0 backend
 router.get('/status', (req, res) => {
-  if (Math.random() < 0.75) {
-    res.json({ status: 'online' });
-  } else {
-    res.json({ status: 'offline' });
-  }
+  backendController.getStatus(req, res);
 });
 
 // Serve static files such as XHTML, CSS, JS, images, sounds, videos

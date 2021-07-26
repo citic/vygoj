@@ -44,10 +44,10 @@
       <span class="software_version">Vygoj v0.0.1</span>
       <span id="backend_status">
         <span id="backend_offline" class="hidden">
-<%~ includeFile('../public/icon/cloud_offline.svg') %>
+          <%~ includeFile('../public/icon/cloud_offline.svg') %> 
         </span>
         <span id="backend_online" class="hidden">
-<%~ includeFile('../public/icon/cloud_online.svg') %>
+          <%~ includeFile('../public/icon/cloud_online.svg') %> 
         </span>
       </span>
       <span class="help_controls"><a href="/help">Help</a></span>

@@ -1,4 +1,6 @@
 {
   "database": "mongodb://user:pass@host/db?params",
-  "port": 8080
+  "port": 8080,
+  "backend": "http://judge0.net.address:port",
+  "backendStatusInterval": 10000
 }

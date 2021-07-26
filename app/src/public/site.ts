@@ -1,3 +1,4 @@
+// TODO: Remove redundancy with backend.ts, a backend.d.ts file?
 interface Status {
   status: string;
   workers: {

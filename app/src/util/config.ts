@@ -6,6 +6,10 @@ interface ConfigJson {
   database: string;
   // The network port wher app is listening for connections
   port: number;
+  // The connection string to the judge backend service
+  backend: string;
+  // Milliseconds the judge backend service is checked
+  backendStatusInterval: number;
 }
 
 // Singleton Config object
@@ -31,7 +35,14 @@ class Config {
   // calling any of these methods
   getDatabase() { return this.config.database; }
 
+  // Network port where Vygoj app will listen
   getPort() { return this.config.port; }
+
+  // The connection string to the judge backend service
+  getBackend() { return this.config.backend; }
+
+  // Milliseconds the judge backend service is checked
+  getBackendStatusInterval() { return this.config.backendStatusInterval; }
 }
 
 // Singleton
