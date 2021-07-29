@@ -74,7 +74,7 @@ export class User {
     // Build a query converting the string to a valid MongoDB ObjectId
     const query = { _id: new ObjectId(id) };
     // Get the user, next() returns a promise to the last object of the results
-    const user = await database.users().find(query).next() as User;
+    const user = await database.users().findOne(query) as User;
     // Return the result. It may be undefined
     return User.factory(user);
   }
