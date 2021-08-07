@@ -1,3 +1,5 @@
+import { ObjectId } from 'mongodb';
+
 // Simulates the course database. It will be replaced by a real DB/files access
 const allCourses = [
   {
@@ -110,6 +112,8 @@ const allCourses = [
  * - Future: When it is ready but its start date is comming.
  */
 export default class Course {
+  _id: ObjectId | undefined;
+
   // todo: filter params: state
   static fetchMyCourses() {
     // todo: this test will be replaced by a database query

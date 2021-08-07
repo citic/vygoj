@@ -1,4 +1,5 @@
 import { ObjectId } from 'mongodb';
+import Course from './course.js';
 import database from '../util/database.js';
 
 export const enum Role {
@@ -89,5 +90,15 @@ export class User {
     const result = await database.users().deleteOne(query);
     // Return a Result object, with properties such as deletedCount
     return result;
+  }
+
+  /**
+   * Enrolls this user to the given course. If user is already enrolled, no
+   * change is made.
+   */
+  async enroll(course: Course) {
+    await database.users().updateOne({ _id: new ObjectId(this._id) }, {
+      $push: { courses: { id: course._id } },
+    });
   }
 }
