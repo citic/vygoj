@@ -144,3 +144,8 @@ a:hover {
 .visible_inline {
   display: inline;
 }
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: smaller;
+}

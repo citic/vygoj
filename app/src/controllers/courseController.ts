@@ -27,6 +27,20 @@ class CourseController {
     });
   }
 
+  // Get a page where professors admin their courses
+  // eslint-disable-next-line class-methods-use-this
+  getAdminCourse(req: Request, res: Response) {
+    // Show the homepage
+    res.render('courses/admin', {
+      stylesheet: 'courses',
+      title: 'Admin my courses - Vygoj',
+      user: req.session.user,
+      breadcumbs: [
+        { href: '/course/admin', text: 'Admin my courses' },
+      ],
+    });
+  }
+
   // Get the contents page for a course
   // eslint-disable-next-line class-methods-use-this
   getCourse(req: Request, res: Response) {

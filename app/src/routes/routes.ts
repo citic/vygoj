@@ -48,6 +48,10 @@ router.post('/user/preferences', (req, res) => {
 });
 
 // Courses
+// Professors admin their courses
+router.get('/course/admin', (req, res) => {
+  courseController.getAdminCourse(req, res);
+});
 router.get('/course/:courseId', (req, res) => {
   courseController.getCourse(req, res);
 });

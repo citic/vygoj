@@ -65,3 +65,7 @@ button:hover,
 .form_controls {
   text-align: center;
 }
+
+.button_bar {
+  margin-bottom: 0;
+}

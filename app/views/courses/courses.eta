@@ -18,7 +18,7 @@
           <header class="course_section__header">
             <h3 class="course_section__title">My courses</h3>
 <% if (it.user && it.user.isProfessor()) { %>
-            <a href="/course/add" class="button confirm small">Add Course</a>
+            <a href="/course/admin" class="button confirm small">Add Course</a>
 <% } %>
           </header>
           <div class="course_list">
