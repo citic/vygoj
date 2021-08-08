@@ -1,4 +1,16 @@
 @import url('site.css');
+@import url('form.css');
+
+.course_section__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin: 2rem 0 0.5rem;
+}
+
+.course_section__header h3 {
+  margin: 0;
+}
 
 .course_item {
   border: 1px solid gray;

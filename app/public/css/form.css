@@ -24,7 +24,8 @@ fieldset {
 
 button,
 input[type=submit],
-input[type=button] {
+input[type=button],
+a.button {
   border: none;
   padding: 8px 15px 8px 15px;
   box-shadow: 1px 1px 4px #dadada;
@@ -32,6 +33,12 @@ input[type=button] {
   font: inherit;
   min-width: 5rem;
   cursor: pointer;
+  fill: currentColor;
+  text-align: center;
+}
+
+.button.small {
+  padding: 4px 10px 4px 10px;
 }
 
 .confirm {
@@ -49,7 +56,12 @@ input[type=button] {
   background: red;
 }
 
-button:hover {
+button:hover,
+.button:hover {
   font-weight: bold;
   filter: drop-shadow(2px 2px 2px gray);
+}
+
+.form_controls {
+  text-align: center;
 }
