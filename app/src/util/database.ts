@@ -28,7 +28,11 @@ class Database {
   }
 
   // Get application-wide specific collections
+  // Get the users collection
   users() { return this.collection('users'); }
+
+  // Get the courses collection
+  courses() { return this.collection('courses'); }
 }
 
 // Exports the Singleton Database instance

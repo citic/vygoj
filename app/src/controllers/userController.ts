@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { NextFunction } from 'express-serve-static-core';
 import { User } from '../models/user.js';
 
 // Adds the user reference to the session data
@@ -22,6 +23,15 @@ class UserController {
       stylesheet: 'user',
       user: req.session.user,
     });
+  }
+
+  // Change database user by a User instance object
+  // eslint-disable-next-line class-methods-use-this
+  setRequestUser(req: Request, res: Response, next: NextFunction) {
+    if (req.session.user) {
+      req.session.user = User.factory(req.session.user);
+    }
+    next();
   }
 
   // POST /user/login

@@ -25,6 +25,10 @@ router.use(session({
   resave: false,
   saveUninitialized: false,
 }));
+// Change database user by a User instance object
+router.use((req, res, next) => {
+  userController.setRequestUser(req, res, next);
+});
 
 // Homepage
 router.get('/', (req, res) => { courseController.getIndex(req, res); });

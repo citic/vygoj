@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import Course from '../models/course.js';
 import errorController from './errorController.js';
-import { User } from '../models/user.js';
 
 /**
  * Controls the Courses homepage.
@@ -18,7 +17,7 @@ class CourseController {
     res.render('courses', {
       stylesheet: 'courses',
       title: 'Vygotsky Online Judge (Vygoj)',
-      user: User.factory(req.session.user),
+      user: req.session.user,
       breadcumbs: [
       ],
       // The list of user's courses
