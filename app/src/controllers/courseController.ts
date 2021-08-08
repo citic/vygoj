@@ -14,7 +14,7 @@ class CourseController {
   // eslint-disable-next-line class-methods-use-this
   getIndex(req: Request, res: Response) {
     // Show the homepage
-    res.render('courses', {
+    res.render('courses/courses', {
       stylesheet: 'courses',
       title: 'Vygotsky Online Judge (Vygoj)',
       user: req.session.user,
@@ -33,7 +33,7 @@ class CourseController {
     const courseId = req.params.courseId as string;
     const course = Course.findById(courseId);
     if (course) {
-      res.render('course', {
+      res.render('courses/course', {
         stylesheet: 'courses',
         title: `${course.title} - Vygoj`,
         user: req.session.user,
