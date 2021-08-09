@@ -12,7 +12,7 @@
               <input type="url" id="new_repo_url" name="new_repo_url" placeholder="URL" minlength="10" required="required"/>
               <small>If this repository is private, <a href="/help/course/admin">give access to Vygoj</a> before adding it.</small>
               <p class="button_bar">
-                <button id="add_button" class="button confirm small" type="submit" name="action" value="add">Add Repository</button>
+                <button id="add_button" class="button confirm small" type="submit" name="action" value="add_repo">Add Repository</button>
               </p>
             </fieldset>
           </form>

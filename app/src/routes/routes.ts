@@ -52,6 +52,10 @@ router.post('/user/preferences', (req, res) => {
 router.get('/course/admin', (req, res) => {
   courseController.getAdminCourse(req, res);
 });
+// Professor added/changed a repository or enabled/disabled a course
+router.post('/course/admin', (req, res) => {
+  courseController.postAdminCourse(req, res);
+});
 router.get('/course/:courseId', (req, res) => {
   courseController.getCourse(req, res);
 });

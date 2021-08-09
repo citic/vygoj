@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import Course from '../models/course.js';
+import git from '../util/git.js';
 import errorController from './errorController.js';
 
 /**
@@ -39,6 +40,25 @@ class CourseController {
         { href: '/course/admin', text: 'Admin my courses' },
       ],
     });
+  }
+
+  // Professor added/changed a repository or enabled/disabled a course
+  // eslint-disable-next-line class-methods-use-this
+  async postAdminCourse(req: Request, res: Response) {
+    // Get the action
+    const action = req.body.action as string;
+    const repoUrl = req.body.new_repo_url as string;
+    if (action === 'add_repo') {
+      try {
+        // TODO: log this event
+        console.log(`Cloning ${repoUrl}...`);
+        await git.gitClient.clone(repoUrl);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    // Show the homepage
+    res.redirect('/course/admin');
   }
 
   // Get the contents page for a course
