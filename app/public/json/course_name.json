@@ -1,0 +1,37 @@
+{
+  "code": "CI0110",
+  "title": "Procedural programming in C",
+  "image": "path/course_image.svg",
+  "contents": [
+    {
+      "name": "IO",
+      "title": "Input/output",
+      "folder": "1.1_intro_io",
+      "contents": [
+        {
+          "title": "Lost integers in the space",
+          "folder": "lost_in_space_ints"
+        },
+        {
+          "title": "Enclose the lines",
+          "folder": "enclosing_lines"
+        }
+      ]
+    },
+    {
+      "name": "expr_cond",
+      "title": "Expressions and conditionals",
+      "folder": "1.2_expressions_if",
+      "contents": [
+        {
+          "title": "Line numbers",
+          "folder": "line_numbers"
+        },
+        {
+          "title": "Normalizing hours, minutes, seconds",
+          "folder": "hours_mins_secs"
+        }
+      ]
+    }
+  ]
+}
