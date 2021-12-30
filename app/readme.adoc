@@ -118,13 +118,33 @@ npm run restart
 
 == Development
 
-For setting a development environment, consider the following advices. First `tsc-watch` can detect any change in `.ts` files, incrementally compile them, and restart the server:
+For setting a development environment, consider the following toolchain. link:https://code.visualstudio.com/[Visual Studio Code^] is suggested as the preferred IDE.
+
+The TypeScript monitor `tsc-watch` can detect any change in `.ts` files, incrementally compile them, and restart the server:
 
 [source,sh]
 ----
 sudo npm i -g tsc-watch
 npm run dev
 ----
+
+Your IDE may detect the linters configuration files included in the project's files. For TypeScript linting, link:https://eslint.org/[ESLint^] is used with the AirBnb settings. If you want to run it on the command line:
+
+[source,sh]
+----
+sudo npm i -g eslint
+npm run lint
+----
+
+For CSS code the link:https://stylelint.io/[Stylelint^] tool is used. 
+
+[source,sh]
+----
+sudo npm i -g stylelint
+npm run stylelint
+----
+
+
 
 
 
@@ -135,6 +155,14 @@ JavaScript files that start with uppercase, e.g `Course.js`, export a class. Cam
 
 . link:common/[] contains common code used by front and backend
 
-. link:public/[] contains static XHTML, CSS, JS, images, sound, video files.
+. link:public/[] contains static XHTML, CSS, JS, images, sound, video files that are sent to clients with no changes.
 
-. link:views/[] contains XHTML templates using TBD engine.
+. link:views/[] contains XHTML templates using linkg:https://eta.js.org/[eta^] engine.
+
+. link:routes/[] routes the HTTP requests to the respective controller looking into the HTTP method and URI parts.
+
+. link:controllers/[] contains singleton objects for controlling the big parts of the judge, such as users, courses, questions, and problems. They manage the model objets for fetching the data, filling out the templates, and respond to clients.
+
+. link:models/[] contains classes for managing the domain data (persistence) and logic of users, courses, questions, problems, and so on.
+
+. link:util/[] contains classes for miscelaneous tasks, such as configuration and database management.
