@@ -153,16 +153,16 @@ npm run stylelint
 
 JavaScript files that start with uppercase, e.g `Course.js`, export a class. Camel-case files that start with lowercase, e.g `courseController.js` export a symbol, usually a singleton object.
 
-. link:common/[] contains common code used by front and backend
+. link:src/common/[common] contains common code used by front and backend
 
-. link:public/[] contains static XHTML, CSS, JS, images, sound, video files that are sent to clients with no changes.
+. link:src/public/[public] contains static XHTML, CSS, JS, images, sound, video files that are sent to clients with no changes.
 
-. link:views/[] contains XHTML templates using linkg:https://eta.js.org/[eta^] engine.
+. link:src/views/[views] contains XHTML templates using linkg:https://eta.js.org/[eta^] engine.
 
-. link:routes/[] routes the HTTP requests to the respective controller looking into the HTTP method and URI parts.
+. link:src/routes/[routes] routes the HTTP requests to the respective controller looking into the HTTP method and URI parts.
 
-. link:controllers/[] contains singleton objects for controlling the big parts of the judge, such as users, courses, questions, and problems. They manage the model objets for fetching the data, filling out the templates, and respond to clients.
+. link:src/controllers/[controllers] contains singleton objects for controlling the big parts of the judge, such as users, courses, questions, and problems. They manage the model objets for fetching the data, filling out the templates, and respond to clients.
 
-. link:models/[] contains classes for managing the domain data (persistence) and logic of users, courses, questions, problems, and so on.
+. link:src/models/[models] contains classes for managing the domain data (persistence) and logic of users, courses, questions, problems, and so on.
 
-. link:util/[] contains classes for miscelaneous tasks, such as configuration and database management.
+. link:src/util/[util] contains classes for miscelaneous tasks, such as configuration and database management.

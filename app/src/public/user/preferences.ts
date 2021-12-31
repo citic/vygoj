@@ -15,6 +15,7 @@ class Preferences {
     const email = document.getElementById('email') as HTMLInputElement;
     const message = 'Please confirm that you want to delete your account by entering your email. This action can be undone only by an active administrator';
     // TODO: Replace confirm by a custom dialog
+    // eslint-disable-next-line no-alert
     if (window.prompt(message) !== email.value) {
       event.preventDefault();
     }
