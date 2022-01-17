@@ -39,7 +39,10 @@ export class User {
   // Getter methods
   isAdmin() { return this.role === Role.admin; }
 
-  isProfessor() { return this.role === Role.professor; }
+  isProfessor() {
+    // TODO: ugly fix, considering admins as profesors
+    return this.role === Role.professor || this.isAdmin();
+  }
 
   isStudent() { return this.role === Role.student; }
 

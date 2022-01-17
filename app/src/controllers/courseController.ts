@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import Course from '../models/course.js';
+import database from '../util/database.js';
 import git from '../util/git.js';
 import errorController from './errorController.js';
 
@@ -48,16 +49,25 @@ class CourseController {
     // Get the action
     const action = req.body.action as string;
     const repoUrl = req.body.new_repo_url as string;
-    if (action === 'add_repo') {
+    if (action === 'add_repo' && req.session.user) {
       try {
         // TODO: log this event
         console.log(`Cloning ${repoUrl}...`);
         await git.gitClient.clone(repoUrl);
+        // The clone was successful, add this repo to the user inthe database
+        database.users().updateOne({ _id: req.session.user._id }, {
+          $addToSet: {
+            repositories: {
+              url: repoUrl,
+              courses: [],
+            },
+          },
+        });
       } catch (error) {
         console.error(error);
       }
     }
-    // Show the homepage
+    // Show the same page again
     res.redirect('/course/admin');
   }
 
