@@ -6,5 +6,12 @@
         </article>
         <section class="problem__solution">
           <h4>Your C/C++ solution</h4>
+          <div id="editor">#include &lt;iostream&gt;
+
+int main() {
+  std::cout &lt;&lt; "Hello world!" &lt;&lt; std::endl;
+  return 0;
+}
+</div>
         </section>
       </main>

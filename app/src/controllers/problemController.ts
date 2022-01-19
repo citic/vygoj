@@ -40,7 +40,8 @@ class ProblemController {
         ],
         problem,
         scripts: [
-          '<script src="https://pagecdn.io/lib/ace/1.4.13/ace.min.js" crossorigin="anonymous" integrity="sha256-GjtAsBCI/KPlEYQf0I8yNimcThRoWMnk7Vpi+dUt+GY="></script>'
+          '<script src="https://pagecdn.io/lib/ace/1.4.13/ace.js" crossorigin="anonymous" integrity="sha256-bS3VAQePcKYmsvI+8BdG2QJAVb9FbiZLgM5vK2/+TcM=" async="async"></script>',
+          '<script src="/js/problem/problem.js" type="module" async="async"></script>',
         ],
       });
     } catch (error) {

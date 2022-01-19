@@ -33,3 +33,8 @@
   padding: 0.5em 1rem;  
   font-size: smaller;
 }
+
+#editor {
+  height: 65vh;
+  min-height: 240px;
+}

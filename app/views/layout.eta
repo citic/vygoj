@@ -58,7 +58,7 @@
     </footer>
 <% if (it.scripts) { %>
 <%   it.scripts.forEach((script) => { %>
-  <%~ script %>
+    <%~ script %>
 <%   }); %>
 <% } else { %>
     <script src="/js/site.js" type="module" async="async"></script>
