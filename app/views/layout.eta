@@ -58,10 +58,11 @@
     </footer>
 <% if (it.scripts) { %>
 <%   it.scripts.forEach((script) => { %>
-    <script src="<%= script %>" type="module" async="async"></script>
+  <%~ script %>
 <%   }); %>
 <% } else { %>
     <script src="/js/site.js" type="module" async="async"></script>
 <% } %>
+
   </body>
 </html>

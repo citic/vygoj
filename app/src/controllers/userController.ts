@@ -66,7 +66,9 @@ class UserController {
       res.render('user/preferences', {
         title: 'User preferences',
         stylesheet: 'user',
-        scripts: ['/js/user/preferences.js'],
+        scripts: [
+          '<script src="/js/user/preferences.js" type="module" async="async"></script>'
+        ],
         user: User.factory(req.session.user),
         errorMessage,
       });

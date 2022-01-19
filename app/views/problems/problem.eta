@@ -4,4 +4,7 @@
           <h3 class="problem__title"><%= it.problem.title %></h3>
           <div class="problem__statement"><%~ it.problem.statement %></div>
         </article>
+        <section class="problem__solution">
+          <h4>Your C/C++ solution</h4>
+        </section>
       </main>

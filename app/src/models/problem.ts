@@ -26,6 +26,8 @@ export default class Problem {
   // TODO: use problem.{en|es|...}.{md|adoc|html} files instead
   statement: string;
 
+  // TODO: enabled programming languages, e.g: c,cpp,py,...
+
   // Load the fields of this object from the given JSON file path
   constructor(relativePath: string, json: ProblemInterface) {
     this.relativePath = relativePath;

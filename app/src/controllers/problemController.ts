@@ -39,6 +39,9 @@ class ProblemController {
           { href: `/problem/${problem.relativePath}`, text: problem.name },
         ],
         problem,
+        scripts: [
+          '<script src="https://pagecdn.io/lib/ace/1.4.13/ace.min.js" crossorigin="anonymous" integrity="sha256-GjtAsBCI/KPlEYQf0I8yNimcThRoWMnk7Vpi+dUt+GY="></script>'
+        ],
       });
     } catch (error) {
       console.error(error);
