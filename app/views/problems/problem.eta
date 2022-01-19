@@ -19,7 +19,26 @@ int main() {
             <p><button id="run_button" class="button confirm" name="run" value="run">Run</button></p>
             <p id="score">
               <span id="passed_test_count">0</span>/<span id="total_test_count"><%= it.problem.tests.length %></span>
-              test cases passed (<span id="points">0</span> points)</p>
+              test cases passed (<span id="user_points">0</span>/<span id="total_points">0</span> points)</p>
+          </div>
+          <div id="test_cases">
+<% it.problem.tests.forEach((test, index) => { %>
+            <button class="button small" name="button_test_<%= index %>" value="<%= index + 1 %>"><%= index + 1 %></button>
+<% }); %>
+          </div>
+          <div id="active_test" class="row">
+            <div id="active_test_input_wrapper">
+              <i id="active_test_input_label">Input</i>
+              <div id="active_test_input"></div>
+            </div>
+            <div id="active_test_expected_output_wrapper">
+              <i id="active_test_expected_output_label">Expected output</i>
+              <div id="active_test_expected_output"></div>
+            </div>
+            <div id="active_test_user_output_wrapper">
+              <i id="active_test_user_output_label">Your output</i>
+              <div id="active_test_user_output"></div>
+            </div>
           </div>
         </section>
       </main>
