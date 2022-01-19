@@ -38,7 +38,7 @@ export default class Problem {
   // eg: 'uint64_adder'
   static async load(problemPath: string) {
     // Problems are stored in data/path/vygoj.json
-    const absPath = path.join(process.cwd(), 'data', problemPath, 'vygoj.json');
+    const absPath = path.join(process.cwd(), 'examples/problems', problemPath, 'vygoj.json');
     // Read the contents of the file
     const content = await fs.readFile(absPath, 'utf-8');
     // Load the fields from the json file

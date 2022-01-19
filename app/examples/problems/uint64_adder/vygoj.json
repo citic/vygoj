@@ -1,0 +1,5 @@
+{
+  "name": "uint64_adder",
+  "title": "Parallel unsigned 64-bits adder",
+  "statement": "<p>Escriba un sumador paralelo de enteros sin signo de 64 bits. Su programa lee de la entrada estándar parejas de números, uno por línea, hasta encontrar el fin de archivo. Por cada pareja se debe imprimir el resultado de la suma en el mismo orden.</p><div><i>Ejemplo de entrada</i></div><pre>82 22\n-38 38\n11 -25</pre><div><i>Ejemplo de salida</i></div><pre>104\n0\n-14</pre><p>Su programa debe crear tantos hilos de ejecución como CPUs hayan disponibles en la máquina. Distribuya las sumas lo más equitativamente posible entre los hilos.</p>"
+}
