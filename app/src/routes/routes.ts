@@ -8,6 +8,7 @@ import backendController from '../controllers/backendController.js';
 import courseController from '../controllers/courseController.js';
 import errorController from '../controllers/errorController.js';
 import log from '../controllers/log.js';
+import problemController from '../controllers/problemController.js';
 import userController from '../controllers/userController.js';
 
 // Create an express router that communicates with app object and provides
@@ -74,6 +75,13 @@ router.get('/course/:courseId', (req, res) => {
 // Problems: judge0 backend status web service
 router.get('/status', (req, res) => {
   backendController.getStatus(req, res);
+});
+
+// Problems -------------------------------------------------------------------
+// User asked for the problem page
+// GET method allows users to bookmark, search engines to index, and so on
+router.get('/problem/:path', (req, res) => {
+  problemController.getProblem(req, res);
 });
 
 // Misc -----------------------------------------------------------------------

@@ -1,0 +1,6 @@
+<% layout('./layout') %>
+      <main class="problem">
+        <article class="problem__description">
+          <h3 class="problem__title"><%= it.problem.title %></h3>
+        </article>
+      </main>
