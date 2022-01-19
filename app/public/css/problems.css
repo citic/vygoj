@@ -35,6 +35,5 @@
 }
 
 #editor {
-  height: 65vh;
-  min-height: 240px;
+  min-height: 90px;
 }
