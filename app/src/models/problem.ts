@@ -2,10 +2,16 @@
 import fs from 'fs/promises';
 import path from 'path';
 
+interface Test {
+  input: string;
+  output: string;
+}
+
 interface ProblemInterface {
   name: string;
   title: string;
   statement: string;
+  tests: Test[];
 }
 
 /**
@@ -26,6 +32,9 @@ export default class Problem {
   // TODO: use problem.{en|es|...}.{md|adoc|html} files instead
   statement: string;
 
+  // A list of test cases
+  tests: Test[];
+
   // TODO: enabled programming languages, e.g: c,cpp,py,...
 
   // Load the fields of this object from the given JSON file path
@@ -34,6 +43,7 @@ export default class Problem {
     this.name = json.name;
     this.title = json.title;
     this.statement = json.statement;
+    this.tests = json.tests;
   }
 
   // Creates a new Problem object from the given relative path problem

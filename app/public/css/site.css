@@ -149,3 +149,9 @@ code {
   font-family: 'JetBrains Mono', monospace;
   font-size: smaller;
 }
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}

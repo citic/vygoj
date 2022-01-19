@@ -14,4 +14,12 @@ int main() {
 }
 </div>
         </section>
+        <section class="solution__evaluation">
+          <div class="row">
+            <p><button id="run_button" class="button confirm" name="run" value="run">Run</button></p>
+            <p id="score">
+              <span id="passed_test_count">0</span>/<span id="total_test_count"><%= it.problem.tests.length %></span>
+              test cases passed (<span id="points">0</span> points)</p>
+          </div>
+        </section>
       </main>
