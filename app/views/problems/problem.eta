@@ -2,5 +2,6 @@
       <main class="problem">
         <article class="problem__description">
           <h3 class="problem__title"><%= it.problem.title %></h3>
+          <div class="problem__statement"><%~ it.problem.statement %></div>
         </article>
       </main>

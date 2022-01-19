@@ -5,6 +5,7 @@ import path from 'path';
 interface ProblemInterface {
   name: string;
   title: string;
+  statement: string;
 }
 
 /**
@@ -21,11 +22,16 @@ export default class Problem {
   // Title describing the problem, eg "Unsigned 64-bits adder"
   title: string;
 
+  // Problem statement in HTML code
+  // TODO: use problem.{en|es|...}.{md|adoc|html} files instead
+  statement: string;
+
   // Load the fields of this object from the given JSON file path
   constructor(relativePath: string, json: ProblemInterface) {
     this.relativePath = relativePath;
     this.name = json.name;
     this.title = json.title;
+    this.statement = json.statement;
   }
 
   // Creates a new Problem object from the given relative path problem
