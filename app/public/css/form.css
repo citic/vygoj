@@ -56,6 +56,11 @@ a.button {
   background: red;
 }
 
+.action {
+  color: #fff;
+  background: #409635;
+}
+
 button:hover,
 .button:hover {
   font-weight: bold;
