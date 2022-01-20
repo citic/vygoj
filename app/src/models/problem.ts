@@ -5,6 +5,7 @@ import path from 'path';
 interface Test {
   input: string;
   output: string;
+  points: number;
 }
 
 interface ProblemInterface {
@@ -56,5 +57,15 @@ export default class Problem {
     // Load the fields from the json file
     const json = JSON.parse(content);
     return new Problem(problemPath, json);
+  }
+
+  // Calculates the total amount of points from the test cases
+  calculateTotalPoints() {
+    let total = 0;
+    this.tests.forEach((test) => {
+      // If test has no a points property, we use 0
+      total += test.points ?? 0;
+    });
+    return total;
   }
 }

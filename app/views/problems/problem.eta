@@ -22,7 +22,7 @@ int main() {
             </p>
             <p id="score">
               <span id="passed_test_count">0</span>/<span id="total_test_count"><%= it.problem.tests.length %></span>
-              test cases passed (<span id="user_points">0</span>/<span id="total_points">0</span> points)</p>
+              test cases passed (<span id="user_points">0</span>/<span id="total_points"><%= it.problem.calculateTotalPoints() %></span> points)</p>
           </div>
           <div id="test_cases">
 <% it.problem.tests.forEach((test, index) => { %>
