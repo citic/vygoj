@@ -37,3 +37,12 @@
 #editor {
   min-height: 90px;
 }
+
+.editor_wrapper {
+  width: 100%;
+  margin-right: 1px;
+}
+
+#active_test .editor {
+  min-height: 100px;
+}

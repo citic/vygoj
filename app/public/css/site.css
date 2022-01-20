@@ -155,3 +155,11 @@ code {
   justify-content: space-between;
   align-items: flex-end;
 }
+
+.row.top {
+  align-items: flex-start;
+}
+
+.editor {
+  border: 1px solid black;
+}

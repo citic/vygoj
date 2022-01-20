@@ -67,7 +67,7 @@ class UserController {
         title: 'User preferences',
         stylesheet: 'user',
         scripts: [
-          '<script src="/js/user/preferences.js" type="module" async="async"></script>'
+          '<script src="/js/user/preferences.js" type="module" async="async"></script>',
         ],
         user: User.factory(req.session.user),
         errorMessage,
