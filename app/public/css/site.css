@@ -163,3 +163,9 @@ code {
 .editor {
   border: 1px solid black;
 }
+
+@media (max-width: 640px) {
+  .row {
+    flex-direction: column;
+  }
+}
