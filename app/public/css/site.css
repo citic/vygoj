@@ -145,7 +145,7 @@ a:hover {
   display: inline;
 }
 
-code {
+pre, code {
   font-family: 'JetBrains Mono', monospace;
   font-size: smaller;
 }
@@ -160,8 +160,13 @@ code {
   align-items: flex-start;
 }
 
-.editor {
+pre, .editor {
   border: 1px solid black;
+}
+
+pre {
+  margin-top: 0;
+  padding: 0.5em;
 }
 
 @media (max-width: 640px) {
