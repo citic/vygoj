@@ -19,6 +19,7 @@ class Problem {
     if (window.ace) {
       this.setupEditor();
       this.setupTestCases();
+      this.loadCode();
     } else {
       console.error('Ace Code Editor library not found');
     }
@@ -48,6 +49,36 @@ class Problem {
     // editor.setOption('maxLines', 15);
     editor.resize();
     this.editors.push(editor);
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async loadCode() {
+    try {
+      const problem = await Problem.sendJson({ action: 'fetch_problem' });
+      console.log(problem);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  static async sendJson(object: Object, uri = '') {
+    const params = Problem.createMessage(object);
+    const response = await fetch(uri || window.location.href, params);
+    const json = await response.json();
+    return json;
+  }
+
+  static createMessage(object: Object, method = 'POST') {
+    return {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(object),
+    };
+  }
+
+  static getName() {
+    const mainElement = document.getElementById('problem');
+    return mainElement?.dataset.name;
   }
 }
 

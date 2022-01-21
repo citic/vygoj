@@ -2,6 +2,11 @@ import { Request, Response } from 'express';
 import errorController from './errorController.js';
 import Problem from '../models/problem.js';
 
+interface Message {
+  action: string;
+  error?: string;
+}
+
 /**
  * Controls problems
  *
@@ -48,6 +53,28 @@ class ProblemController {
       console.error(error);
       errorController.getNotFound(req, res);
     }
+  }
+
+  // Client JavaScript asked for an action: fetch a problem, run user solution,
+  // save user code, ... All communication is made with JSON objects
+  async postProblem(req: Request, res: Response) {
+    try {
+      const problemPath = req.params.path as string;
+      console.log(req.body);
+      const message = req.body as Message;
+      switch (message.action) {
+        case 'fetch_problem': await this.fetchProblem(problemPath, res); break;
+        default: res.json({ error: 'invalid action' }); break;
+      }
+    } catch (error) {
+      res.json({ error: 'invalid action' });
+    }
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async fetchProblem(problemPath: string, res: Response) {
+    const problem = await Problem.load(problemPath);
+    res.json(problem);
   }
 } // class
 

@@ -20,6 +20,8 @@ const router = express.Router();
 router.use((req, res, next) => {
   log.appendHttpRequest(req); next();
 });
+// Wait for the body of POST HTTP-Requests and parse it as JSON objects
+router.use(express.json());
 // Wait for the body of POST HTTP-Requests and parse it as att1=val1&att2=val2
 router.use(express.urlencoded({ extended: false }));
 
@@ -72,16 +74,21 @@ router.get('/course/:courseId', (req, res) => {
   courseController.getCourse(req, res);
 });
 
-// Problems: judge0 backend status web service
+// Problems -------------------------------------------------------------------
+// judge0 backend status web service
 router.get('/status', (req, res) => {
   backendController.getStatus(req, res);
 });
 
-// Problems -------------------------------------------------------------------
 // User asked for the problem page
 // GET method allows users to bookmark, search engines to index, and so on
 router.get('/problem/:path', (req, res) => {
   problemController.getProblem(req, res);
+});
+
+// Client JavaScript asked for an action: fetch problem, run code, save code...
+router.post('/problem/:path', (req, res) => {
+  problemController.postProblem(req, res);
 });
 
 // Misc -----------------------------------------------------------------------
