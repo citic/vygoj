@@ -1,6 +1,3 @@
-// eslint-disable-next-line no-var
-declare var ace: any; // TODO: npm install @types/ace
-
 class Problem {
   // References to all editors used in the problem page
   editors: Object[];
@@ -28,7 +25,7 @@ class Problem {
   }
 
   setupEditor() {
-    const editor = ace.edit('editor');
+    const editor = window.ace.edit('editor');
     editor.setTheme(this.theme);
     editor.session.setMode('ace/mode/c_cpp');
     // Automatically adjust height to the number of lines typed by user
