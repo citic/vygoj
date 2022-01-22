@@ -146,14 +146,25 @@ class ProblemManager {
   }
 
   loadUserCode() {
-    console.assert(this.problem);
     // TODO: add language combo box
     const language = 'C';
-    let initialCode = undefined;
+    console.assert(this.problem);
+
     // 1. Local storage
+    let initialCode = window.localStorage.getItem(window.location.pathname);
+
     // 2. Problem's initial code for the proramming language
+    if (initialCode === null && this.problem?.initialCodeFor
+      && this.problem?.initialCodeFor[language]) {
+      initialCode = this.problem?.initialCodeFor[language]!;
+    }
+
     // 3. Default code for the programming language
-    initialCode = defaultCodeFor[language];
+    if (!initialCode) {
+      initialCode = defaultCodeFor[language];
+    }
+
+    // Show the initial code in the editor
     initialCode = initialCode || '';
     this.editors[0].setValue(initialCode, -1);
   }
