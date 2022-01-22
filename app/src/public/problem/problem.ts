@@ -19,6 +19,14 @@ int main() {
 `,
 };
 
+function loadConfig(key: string) {
+  return window.localStorage.getItem(`${key}:${window.location.pathname}`);
+}
+
+function saveConfig(key: string, value: string) {
+  window.localStorage.setItem(`${key}:${window.location.pathname}`, value);
+}
+
 class ProblemManager {
   // Singleton instance
   static instance: ProblemManager = new ProblemManager();
@@ -69,7 +77,7 @@ class ProblemManager {
     editor.setOption('tabSize', 2); // Google code style
     this.editors.push(editor);
     editor.on('change', () => {
-      window.localStorage.setItem(window.location.pathname, editor.getValue());
+      saveConfig('code', editor.getValue());
     });
   }
 
@@ -124,7 +132,8 @@ class ProblemManager {
       });
     }
     if (buttons.length > 0) {
-      this.showTestCase(0);
+      this.activeTestCaseIndex = parseInt(loadConfig('test') || '0', 10);
+      this.showTestCase(this.activeTestCaseIndex);
     }
   }
 
@@ -146,6 +155,7 @@ class ProblemManager {
     this.activeTestCaseIndex = index;
     console.assert(index < buttons.length);
     buttons[index].classList.add('selected');
+    saveConfig('test', `${index}`);
   }
 
   loadUserCode() {
@@ -154,7 +164,7 @@ class ProblemManager {
     console.assert(this.problem);
 
     // 1. Local storage
-    let initialCode = window.localStorage.getItem(window.location.pathname);
+    let initialCode = loadConfig('code');
 
     // 2. Problem's initial code for the proramming language
     if (initialCode === null && this.problem?.initialCodeFor
