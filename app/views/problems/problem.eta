@@ -24,7 +24,7 @@
           </div>
           <div id="test_cases">
 <% it.problem.tests.forEach((test, index) => { %>
-            <button class="test_button button small" name="button_test_<%= index %>" value="<%= index + 1 %>"><%= index + 1 %></button>
+            <button class="test_button button small" title="Test case <%= index + 1 %>"><%= index + 1 %></button>
 <% }); %>
           </div>
           <div id="active_test" class="row top">

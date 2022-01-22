@@ -1,4 +1,3 @@
-import { assert } from 'console';
 import { ProblemInterface } from '../../common/vygoj.js';
 
 // Default given code for each supported programming language
@@ -32,6 +31,9 @@ class ProblemManager {
 
   // The problem model fetched from server
   problem: ProblemInterface | null;
+
+  // Index of the current shown test case
+  activeTestCaseIndex: number = 0;
 
   constructor() {
     this.editors = [];
@@ -126,9 +128,21 @@ class ProblemManager {
   showTestCase(index: number) {
     console.assert(this.problem);
     console.assert(this.editors.length === 4);
+
+    // Show input, expected output, and user output for this test case
     this.editors[1].setValue(this.problem?.tests[index].input || '', -1);
     this.editors[2].setValue(this.problem?.tests[index].output || '', -1);
     // this.editors[3].setValue(this.problem?.tests[index].userOutput, -1);
+
+    // Deselect previous test case number
+    const buttons = document.getElementsByClassName('test_button');
+    console.assert(this.activeTestCaseIndex < buttons.length);
+    buttons[this.activeTestCaseIndex].classList.remove('selected');
+
+    // Mark this test case as the active in the interface
+    this.activeTestCaseIndex = index;
+    console.assert(index < buttons.length);
+    buttons[index].classList.add('selected');
   }
 
   loadUserCode() {

@@ -67,6 +67,10 @@ button:hover,
   filter: drop-shadow(2px 2px 2px gray);
 }
 
+.button.selected {
+  filter: contrast(0.5);
+}
+
 .form_controls {
   text-align: center;
 }
