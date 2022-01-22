@@ -1,25 +1,33 @@
-class Problem {
+import { ProblemInterface } from '../../common/vygoj.js';
+
+class ProblemManager {
+  // Singleton instance
+  static instance: ProblemManager = new ProblemManager();
+
   // References to all editors used in the problem page
   editors: Object[];
 
   // Theme style in all editors
   theme: string;
 
+  // The problem model fetched from server
+  problem: ProblemInterface | null;
+
   constructor() {
     this.editors = [];
     this.theme = 'ace/theme/xcode'; // monokai
+    this.problem = null;
   }
 
   static main() {
-    const problem = new Problem();
-    problem.setup();
+    ProblemManager.instance.setup();
   }
 
   setup() {
     if (window.ace) {
       this.setupEditor();
       this.setupTestCases();
-      this.loadCode();
+      this.loadProblem();
     } else {
       console.error('Ace Code Editor library not found');
     }
@@ -51,18 +59,18 @@ class Problem {
     this.editors.push(editor);
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  async loadCode() {
+  async loadProblem() {
     try {
-      const problem = await Problem.sendJson({ action: 'fetch_problem' });
-      console.log(problem);
+      console.assert(this.problem === null);
+      this.problem = await ProblemManager.sendJson({ action: 'fetch_problem' });
+      console.log(this.problem);
     } catch (error) {
       console.error(error);
     }
   }
 
   static async sendJson(object: Object, uri = '') {
-    const params = Problem.createMessage(object);
+    const params = ProblemManager.createMessage(object);
     const response = await fetch(uri || window.location.href, params);
     const json = await response.json();
     return json;
@@ -82,4 +90,4 @@ class Problem {
   }
 }
 
-window.addEventListener('load', Problem.main);
+window.addEventListener('load', ProblemManager.main);

@@ -1,19 +1,7 @@
 // import { ObjectId } from 'mongodb';
 import fs from 'fs/promises';
 import path from 'path';
-
-interface Test {
-  input: string;
-  output: string;
-  points: number;
-}
-
-interface ProblemInterface {
-  name: string;
-  title: string;
-  statement: string;
-  tests: Test[];
-}
+import { TestInterface, ProblemInterface } from '../common/vygoj.js';
 
 /**
  * A problem
@@ -34,7 +22,7 @@ export default class Problem {
   statement: string;
 
   // A list of test cases
-  tests: Test[];
+  tests: TestInterface[];
 
   // TODO: enabled programming languages, e.g: c,cpp,py,...
 
