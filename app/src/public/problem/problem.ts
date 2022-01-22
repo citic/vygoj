@@ -1,4 +1,24 @@
+import { assert } from 'console';
 import { ProblemInterface } from '../../common/vygoj.js';
+
+// Default given code for each supported programming language
+// It may be a Map<string, string>
+const defaultCodeFor = {
+  C: `#include <stdio.h>
+
+int main(void) {
+  printf("Hello world!\\n");
+  return 0;
+}
+`,
+  'C++': `#include <iostream>
+  
+int main() {
+  std::cout << "Hello world!" << std::endl;
+  return 0;
+}
+`,
+};
 
 class ProblemManager {
   // Singleton instance
@@ -31,7 +51,7 @@ class ProblemManager {
       this.setupEditor();
       this.setupTestCaseEditors();
       await this.fetchProblem();
-      // this.loadUserCode();
+      this.loadUserCode();
       this.loadTestCases();
     } catch (error) {
       console.error(error);
@@ -109,6 +129,19 @@ class ProblemManager {
     this.editors[1].setValue(this.problem?.tests[index].input || '', -1);
     this.editors[2].setValue(this.problem?.tests[index].output || '', -1);
     // this.editors[3].setValue(this.problem?.tests[index].userOutput, -1);
+  }
+
+  loadUserCode() {
+    console.assert(this.problem);
+    // TODO: add language combo box
+    const language = 'C';
+    let initialCode = undefined;
+    // 1. Local storage
+    // 2. Problem's initial code for the proramming language
+    // 3. Default code for the programming language
+    initialCode = defaultCodeFor[language];
+    initialCode = initialCode || '';
+    this.editors[0].setValue(initialCode, -1);
   }
 }
 
