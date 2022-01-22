@@ -6,7 +6,7 @@
         </article>
         <section class="problem__solution">
           <h4>Your C/C++ solution</h4>
-          <div id="editor" class="editor"></div>
+          <div id="code_editor" class="editor"></div>
         </section>
         <section class="solution__evaluation">
           <div class="row">

@@ -50,7 +50,7 @@ class ProblemManager {
       if (!window.ace) {
         throw new Error('Ace Code Editor library not found');
       }
-      this.setupEditor();
+      this.setupCodeEditor();
       this.setupTestCaseEditors();
       await this.fetchProblem();
       this.loadUserCode();
@@ -60,14 +60,17 @@ class ProblemManager {
     }
   }
 
-  setupEditor() {
-    const editor = window.ace.edit('editor');
+  setupCodeEditor() {
+    const editor = window.ace.edit('code_editor');
     editor.setTheme(this.theme);
     editor.session.setMode('ace/mode/c_cpp');
     // Automatically adjust height to the number of lines typed by user
     editor.setOption('maxLines', 50); // Infinity
     editor.setOption('tabSize', 2); // Google code style
     this.editors.push(editor);
+    editor.on('change', () => {
+      window.localStorage.setItem(window.location.pathname, editor.getValue());
+    });
   }
 
   setupTestCaseEditors() {
