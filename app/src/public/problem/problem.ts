@@ -5,7 +5,7 @@ class ProblemManager {
   static instance: ProblemManager = new ProblemManager();
 
   // References to all editors used in the problem page
-  editors: Object[];
+  editors: AceAjax.Editor[];
 
   // Theme style in all editors
   theme: string;
@@ -23,13 +23,18 @@ class ProblemManager {
     ProblemManager.instance.setup();
   }
 
-  setup() {
-    if (window.ace) {
+  async setup() {
+    try {
+      if (!window.ace) {
+        throw new Error('Ace Code Editor library not found');
+      }
       this.setupEditor();
-      this.setupTestCases();
-      this.loadProblem();
-    } else {
-      console.error('Ace Code Editor library not found');
+      this.setupTestCaseEditors();
+      await this.fetchProblem();
+      // this.loadUserCode();
+      this.loadTestCases();
+    } catch (error) {
+      console.error(error);
     }
   }
 
@@ -43,7 +48,7 @@ class ProblemManager {
     this.editors.push(editor);
   }
 
-  setupTestCases() {
+  setupTestCaseEditors() {
     this.setupTestCaseEditor('active_test_input');
     this.setupTestCaseEditor('active_test_expected_output');
     this.setupTestCaseEditor('active_test_user_output');
@@ -59,14 +64,9 @@ class ProblemManager {
     this.editors.push(editor);
   }
 
-  async loadProblem() {
-    try {
-      console.assert(this.problem === null);
-      this.problem = await ProblemManager.sendJson({ action: 'fetch_problem' });
-      console.log(this.problem);
-    } catch (error) {
-      console.error(error);
-    }
+  async fetchProblem() {
+    console.assert(this.problem === null);
+    this.problem = await ProblemManager.sendJson({ action: 'fetch_problem' });
   }
 
   static async sendJson(object: Object, uri = '') {
@@ -87,6 +87,28 @@ class ProblemManager {
   static getName() {
     const mainElement = document.getElementById('problem');
     return mainElement?.dataset.name;
+  }
+
+  loadTestCases() {
+    console.assert(this.problem);
+    const buttons = document.getElementsByClassName('test_button');
+    console.assert(buttons.length === this.problem?.tests.length);
+    for (let index = 0; index < buttons.length; index += 1) {
+      buttons[index].addEventListener('click', () => {
+        this.showTestCase(index);
+      });
+    }
+    if (buttons.length > 0) {
+      this.showTestCase(0);
+    }
+  }
+
+  showTestCase(index: number) {
+    console.assert(this.problem);
+    console.assert(this.editors.length === 4);
+    this.editors[1].setValue(this.problem?.tests[index].input || '', -1);
+    this.editors[2].setValue(this.problem?.tests[index].output || '', -1);
+    // this.editors[3].setValue(this.problem?.tests[index].userOutput, -1);
   }
 }
 

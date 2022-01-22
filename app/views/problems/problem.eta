@@ -30,17 +30,17 @@ int main() {
           </div>
           <div id="test_cases">
 <% it.problem.tests.forEach((test, index) => { %>
-            <button class="button small" name="button_test_<%= index %>" value="<%= index + 1 %>"><%= index + 1 %></button>
+            <button class="test_button button small" name="button_test_<%= index %>" value="<%= index + 1 %>"><%= index + 1 %></button>
 <% }); %>
           </div>
           <div id="active_test" class="row top">
             <div id="active_test_input_wrapper" class="editor_wrapper">
               <em id="active_test_input_label">Input</em>
-              <div id="active_test_input" class="editor"><%= it.problem.tests.length > 0 ? it.problem.tests[0].input : "" %></div>
+              <div id="active_test_input" class="editor"></div>
             </div>
             <div id="active_test_expected_output_wrapper" class="editor_wrapper">
               <em id="active_test_expected_output_label">Expected output</em>
-              <div id="active_test_expected_output" class="editor"><%= it.problem.tests.length > 0 ? it.problem.tests[0].output : "" %></div>
+              <div id="active_test_expected_output" class="editor"></div>
             </div>
             <div id="active_test_user_output_wrapper" class="editor_wrapper">
               <em id="active_test_user_output_label">Your output</em>
