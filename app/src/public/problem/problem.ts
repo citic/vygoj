@@ -212,12 +212,16 @@ class ProblemManager {
     console.assert(this.editors.length > 0);
 
     this.runButton!.addEventListener('click', async () => {
+      this.runButton!.disabled = true;
+      this.runButton!.textContent = 'Running';
       this.result = await ProblemManager.sendJson({
         action: 'run',
         language,
         code: this.editors[0].getValue(),
       });
       this.updateResult();
+      this.runButton!.textContent = 'Run';
+      this.runButton!.disabled = false;
     });
   }
 

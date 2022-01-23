@@ -91,7 +91,8 @@ class ProblemController {
         { passed: false, output: 'world!\n' },
       ],
     };
-    res.json(result);
+    setTimeout(() => { res.json(result); }, 3000);
+    // res.json(result);
   }
 } // class
 
