@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import errorController from './errorController.js';
 import Problem from '../models/problem.js';
+import { RunResultInterface } from '../common/vygoj.js';
 
 interface Message {
   action: string;
@@ -64,6 +65,7 @@ class ProblemController {
       const message = req.body as Message;
       switch (message.action) {
         case 'fetch_problem': await this.fetchProblem(problemPath, res); break;
+        case 'run': await this.runUserCode(problemPath, res); break;
         default: res.json({ error: 'invalid action' }); break;
       }
     } catch (error) {
@@ -75,6 +77,21 @@ class ProblemController {
   async fetchProblem(problemPath: string, res: Response) {
     const problem = await Problem.load(problemPath);
     res.json(problem);
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async runUserCode(problemPath: string, res: Response) {
+    // const problem = await Problem.load(problemPath);
+    const result: RunResultInterface = {
+      totalDuration: 0.420019,
+      threadCount: 1,
+      outputs: [
+        { passed: false, output: 'Hello\n' },
+        { passed: true, output: '0' },
+        { passed: false, output: 'world!\n' },
+      ],
+    };
+    res.json(result);
   }
 } // class
 

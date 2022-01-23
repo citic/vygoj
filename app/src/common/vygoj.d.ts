@@ -20,3 +20,15 @@ export interface ProblemInterface {
   // Map<string, string> but not supported by JSON
   initialCodeFor?: InitialCodeInterface;
 }
+
+// The output for a test case
+export interface OutputInterface {
+  passed: boolean;
+  output: string;
+}
+
+export interface RunResultInterface {
+  totalDuration: number;
+  threadCount: number;
+  outputs: OutputInterface[];
+}

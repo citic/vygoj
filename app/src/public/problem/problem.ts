@@ -1,4 +1,4 @@
-import { ProblemInterface } from '../../common/vygoj.js';
+import { ProblemInterface, RunResultInterface } from '../../common/vygoj.js';
 
 // Default given code for each supported programming language
 // It may be a Map<string, string>
@@ -43,6 +43,12 @@ class ProblemManager {
   // Index of the current shown test case
   activeTestCaseIndex: number = 0;
 
+  // The Run button element
+  runButton: HTMLButtonElement | null = null;
+
+  // The result after running the user code
+  result: RunResultInterface | null = null;
+
   constructor() {
     this.editors = [];
     this.theme = 'ace/theme/xcode'; // monokai
@@ -55,16 +61,25 @@ class ProblemManager {
 
   async setup() {
     try {
-      if (!window.ace) {
-        throw new Error('Ace Code Editor library not found');
-      }
+      this.setupReferences();
       this.setupCodeEditor();
       this.setupTestCaseEditors();
       await this.fetchProblem();
       this.loadUserCode();
       this.loadTestCases();
+      this.setupRunEnvironment();
     } catch (error) {
       console.error(error);
+    }
+  }
+
+  setupReferences() {
+    if (!window.ace) {
+      throw new Error('Ace Code Editor library not found');
+    }
+    this.runButton = document.getElementById('run_button') as HTMLButtonElement;
+    if (!this.runButton) {
+      throw Error('could not find run_button element');
     }
   }
 
@@ -77,7 +92,11 @@ class ProblemManager {
     editor.setOption('tabSize', 2); // Google code style
     this.editors.push(editor);
     editor.on('change', () => {
-      saveConfig('code', editor.getValue());
+      const code = editor.getValue();
+      saveConfig('code', code);
+      if (this.runButton) {
+        this.runButton.disabled = code.trim().length === 0;
+      }
     });
   }
 
@@ -180,6 +199,30 @@ class ProblemManager {
     // Show the initial code in the editor
     initialCode = initialCode || '';
     this.editors[0].setValue(initialCode, -1);
+
+    if (this.runButton) {
+      this.runButton.disabled = initialCode.trim().length === 0;
+    }
+  }
+
+  setupRunEnvironment() {
+    // TODO: add language combo box
+    const language = 'C';
+    console.assert(this.runButton);
+    console.assert(this.editors.length > 0);
+
+    this.runButton!.addEventListener('click', async () => {
+      this.result = await ProblemManager.sendJson({
+        action: 'run',
+        language,
+        code: this.editors[0].getValue(),
+      });
+      this.updateResult();
+    });
+  }
+
+  updateResult() {
+    console.log(this.result);
   }
 }
 

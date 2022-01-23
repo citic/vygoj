@@ -11,7 +11,7 @@
         <section class="solution__evaluation">
           <div class="row">
             <p>
-              <button id="run_button" class="button action" name="run" value="run" title="Run my solution against the test cases">Run</button>
+              <button id="run_button" class="button action" disabled="disabled" title="Run my solution against the test cases">Run</button>
               <button id="finish_button" class="button confirm" name="finish" value="finish" title="Return to the course">Finish</button>
             </p>
             <p id="score">

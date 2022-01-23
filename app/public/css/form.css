@@ -61,10 +61,15 @@ a.button {
   background: #409635;
 }
 
-button:hover,
-.button:hover {
+button:hover:not([disabled]),
+.button:hover:not([disabled]) {
   font-weight: bold;
   filter: drop-shadow(2px 2px 2px gray);
+}
+
+button:disabled {
+  filter: opacity(0.5);
+  cursor: default;
 }
 
 .button.selected {
