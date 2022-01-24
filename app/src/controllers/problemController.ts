@@ -1,12 +1,21 @@
 import { Request, Response } from 'express';
+import * as nodeFetch from 'node-fetch';
+import fetch from 'node-fetch';
 import errorController from './errorController.js';
+import config from '../util/config.js';
 import Problem from '../models/problem.js';
-import { RunResultInterface } from '../common/vygoj.js';
+import * as vyg from '../common/vygoj.js';
 
-interface Message {
-  action: string;
-  error?: string;
-}
+const languageDefaults: vyg.LanguageDefaults = {
+  C: {
+    id: 50,
+    compiler_options: '-g -Wall -Wextra -std=gnu17 -pthread',
+  },
+  'C++': {
+    id: 54,
+    compiler_options: '-g -Wall -Wextra -std=gnu++17 -pthread',
+  },
+};
 
 /**
  * Controls problems
@@ -62,10 +71,10 @@ class ProblemController {
     try {
       const problemPath = req.params.path as string;
       console.log(req.body);
-      const message = req.body as Message;
+      const message = req.body as vyg.Message;
       switch (message.action) {
         case 'fetch_problem': await this.fetchProblem(problemPath, res); break;
-        case 'run': await this.runUserCode(problemPath, res); break;
+        case 'run': await this.runUserCode(problemPath, res, message); break;
         default: res.json({ error: 'invalid action' }); break;
       }
     } catch (error) {
@@ -80,9 +89,42 @@ class ProblemController {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  async runUserCode(problemPath: string, res: Response) {
-    // const problem = await Problem.load(problemPath);
-    const result: RunResultInterface = {
+  async runUserCode(problemPath: string, res: Response, message: vyg.Message) {
+    const problem = await Problem.load(problemPath);
+    const result = await this.runTestCases(problem, message);
+    setTimeout(() => { res.json(result); }, 3000);
+    // res.json(result);
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async runTestCases(problem: Problem, message:vyg. Message) {
+    // The user program is executed once for each test case
+    // Create an array of promises of results, one for each test case
+    const language = (message.language || 'C') as keyof vyg.LanguageDefaults;
+    const executions: Promise<nodeFetch.Response>[] = [];
+    problem.tests.forEach((test: vyg.TestInterface) => {
+      const submission: vyg.Judge0Submission = {
+        source_code: message.code || '',
+        language_id: languageDefaults[language].id,
+        compiler_options: languageDefaults[language].compiler_options,
+        stdin: test.input,
+      };
+      // TODO: change wait to false, see https://ce.judge0.com/#submissions
+      const uri = `${config.getBackend()}/submissions?base64_encoded=true&wait=true`;
+      const options: nodeFetch.RequestInit = {
+        method: 'post',
+        body: JSON.stringify(submission),
+        headers: { 'Content-Type': 'application/json' },
+      };
+      executions.push(fetch(uri, options));
+    });
+    const results = await Promise.all(executions)
+      .then(async (responses) => Promise.all(responses.map(async (body) => {
+        await body.json();
+      })));
+    /*
+    console.log(results);
+    const result: vyg.RunResultInterface = {
       totalDuration: 0.420019,
       threadCount: 1,
       outputs: [
@@ -91,8 +133,8 @@ class ProblemController {
         { passed: false, output: 'world!\n' },
       ],
     };
-    setTimeout(() => { res.json(result); }, 3000);
-    // res.json(result);
+    */
+    return results;
   }
 } // class
 

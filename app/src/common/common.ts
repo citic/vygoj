@@ -7,6 +7,7 @@ export default {
 };
 
 // Simulates a browser fetch() function
+// TODO: replace usages by node-fetch module
 export function fetch(url: string) {
   return new Promise((resolve, reject) => {
     http.get(url, (response) => {
