@@ -98,43 +98,55 @@ class ProblemController {
 
   // eslint-disable-next-line class-methods-use-this
   async runTestCases(problem: Problem, message:vyg. Message) {
-    // The user program is executed once for each test case
-    // Create an array of promises of results, one for each test case
-    const language = (message.language || 'C') as keyof vyg.LanguageDefaults;
-    const executions: Promise<nodeFetch.Response>[] = [];
-    problem.tests.forEach((test: vyg.TestInterface) => {
-      const submission: vyg.Judge0Submission = {
-        source_code: message.code || '',
-        language_id: languageDefaults[language].id,
-        compiler_options: languageDefaults[language].compiler_options,
-        stdin: test.input,
+    try {
+      // The user program is executed once for each test case
+      // Create an array of promises of results, one for each test case
+      const language = (message.language || 'C') as keyof vyg.LanguageDefaults;
+      //- const executions: Promise<nodeFetch.Response>[] = [];
+      const executions: { uri: string; options: Object}[] = [];
+      problem.tests.forEach((test: vyg.TestInterface) => {
+        const submission: vyg.Judge0Submission = {
+          source_code: message.code || '',
+          language_id: languageDefaults[language].id,
+          compiler_options: languageDefaults[language].compiler_options,
+          stdin: test.input,
+        };
+        // TODO: change wait to false, see https://ce.judge0.com/#submissions
+        const uri = `${config.getBackend()}/submissions?base64_encoded=false&wait=true`;
+        const options: nodeFetch.RequestInit = {
+          method: 'post',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(submission),
+        };
+        //- executions.push(fetch(uri, options));
+        executions.push( { uri, options } );
+        console.log('uri::', uri, 'SUBMISSION::', submission);
+      });
+      // const results = await Promise.all(executions)
+      //   .then(async (responses) => Promise.all(responses.map(async (body) => {
+      //     await body.json();
+      //   })));
+      for (let index = 0; index < executions.length; ++index) {
+        const response = await fetch(executions[index].uri, executions[index].options);
+        const result = await response.json();
+        console.log(result);
+      }
+      /*
+      const result: vyg.RunResultInterface = {
+        totalDuration: 0.420019,
+        threadCount: 1,
+        outputs: [
+          { passed: false, output: 'Hello\n' },
+          { passed: true, output: '0' },
+          { passed: false, output: 'world!\n' },
+        ],
       };
-      // TODO: change wait to false, see https://ce.judge0.com/#submissions
-      const uri = `${config.getBackend()}/submissions?base64_encoded=true&wait=true`;
-      const options: nodeFetch.RequestInit = {
-        method: 'post',
-        body: JSON.stringify(submission),
-        headers: { 'Content-Type': 'application/json' },
-      };
-      executions.push(fetch(uri, options));
-    });
-    const results = await Promise.all(executions)
-      .then(async (responses) => Promise.all(responses.map(async (body) => {
-        await body.json();
-      })));
-    /*
-    console.log(results);
-    const result: vyg.RunResultInterface = {
-      totalDuration: 0.420019,
-      threadCount: 1,
-      outputs: [
-        { passed: false, output: 'Hello\n' },
-        { passed: true, output: '0' },
-        { passed: false, output: 'world!\n' },
-      ],
-    };
-    */
-    return results;
+      */
+      return executions;
+    } catch (error) {
+      console.error(error);
+      return error;
+    }
   }
 } // class
 

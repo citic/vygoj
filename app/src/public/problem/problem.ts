@@ -51,6 +51,7 @@ class ProblemManager {
 
   constructor() {
     this.editors = [];
+    // Default theme: https://github.com/ajaxorg/ace/tree/master/lib/ace/theme
     this.theme = 'ace/theme/xcode'; // monokai
     this.problem = null;
   }
