@@ -102,35 +102,41 @@ class ProblemController {
       // The user program is executed once for each test case
       // Create an array of promises of results, one for each test case
       const language = (message.language || 'C') as keyof vyg.LanguageDefaults;
+      // TODO: store executions in array of promises and run them in parallel Promise.all()
       //- const executions: Promise<nodeFetch.Response>[] = [];
-      const executions: { uri: string; options: Object}[] = [];
-      problem.tests.forEach((test: vyg.TestInterface) => {
+      const results = [];
+      for (let index = 0; index < problem.tests.length; ++index) {
+        const test: vyg.TestInterface = problem.tests[index];
+        // TODO: change wait to false, see https://ce.judge0.com/#submissions
+        const uri = `${config.getBackend()}/submissions?base64_encoded=false&wait=true`;
+        // The JSON object to be sent in the body of the POST message
         const submission: vyg.Judge0Submission = {
           source_code: message.code || '',
           language_id: languageDefaults[language].id,
           compiler_options: languageDefaults[language].compiler_options,
           stdin: test.input,
         };
-        // TODO: change wait to false, see https://ce.judge0.com/#submissions
-        const uri = `${config.getBackend()}/submissions?base64_encoded=false&wait=true`;
+        // The options of the fetch(uri, options) message
         const options: nodeFetch.RequestInit = {
           method: 'post',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(submission),
         };
         //- executions.push(fetch(uri, options));
-        executions.push( { uri, options } );
+        // executions.push( { uri, options } );
+        // TODO: log the run in database
         console.log('uri::', uri, 'SUBMISSION::', submission);
-      });
+        // Execute the code in the backend
+        const response = await fetch(uri, options);
+        const result = await response.json();
+        // TODO: log the result in database
+        console.log(result);
+        results.push(result);
+      }
       // const results = await Promise.all(executions)
       //   .then(async (responses) => Promise.all(responses.map(async (body) => {
       //     await body.json();
       //   })));
-      for (let index = 0; index < executions.length; ++index) {
-        const response = await fetch(executions[index].uri, executions[index].options);
-        const result = await response.json();
-        console.log(result);
-      }
       /*
       const result: vyg.RunResultInterface = {
         totalDuration: 0.420019,
@@ -142,7 +148,7 @@ class ProblemController {
         ],
       };
       */
-      return executions;
+      return results;
     } catch (error) {
       console.error(error);
       return error;
