@@ -1,4 +1,4 @@
-import { ProblemInterface, RunResultInterface } from '../../common/vygoj.js';
+import { ProblemInterface, ExecutionResult } from '../../common/vygoj.js';
 
 // Default given code for each supported programming language
 // It may be a Map<string, string>
@@ -47,7 +47,7 @@ class ProblemManager {
   runButton: HTMLButtonElement | null = null;
 
   // The result after running the user code
-  result: RunResultInterface | null = null;
+  result: ExecutionResult | null = null;
 
   constructor() {
     this.editors = [];
