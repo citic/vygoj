@@ -185,8 +185,12 @@ export interface TestCaseResult {
 }
 
 export interface ExecutionResult {
+  // Count of passed test cases
+  passedTestCount: number;
+  // Points gained by this solution
+  points: number;
   // Wall time of the largest test case
-  totalDuration: number;
+  maxWallTime: number;
   // Results of each test case
   results: TestCaseResult[];
 }

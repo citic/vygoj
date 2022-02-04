@@ -1,4 +1,15 @@
-import { ProblemInterface, ExecutionResult } from '../../common/vygoj.js';
+import { ExecutionResult, ProblemInterface } from '../../common/vygoj.js';
+
+// Execution status enumeration
+export enum Status {
+  pending = 'pending',
+  passed = 'passed',
+  wrong = 'wrong',
+  timeout = 'timeout',
+  compilerError = 'compilerError',
+  runtimeError = 'runtimeError',
+  internalError = 'internalError',
+};
 
 // Default given code for each supported programming language
 // It may be a Map<string, string>
@@ -212,22 +223,61 @@ class ProblemManager {
     console.assert(this.runButton);
     console.assert(this.editors.length > 0);
 
+    // When the Run button is pressed
     this.runButton!.addEventListener('click', async () => {
+      // Disable the Run button while the backend is running the code
       this.runButton!.disabled = true;
       this.runButton!.textContent = 'Running';
+      // Send the code to the backend and wait the result
       this.result = await ProblemManager.sendJson({
         action: 'run',
         language,
         code: this.editors[0].getValue(),
       });
+      // The result has been received, update the test cases
       this.updateResult();
+      // Enable the Run button again
       this.runButton!.textContent = 'Run';
       this.runButton!.disabled = false;
     });
   }
 
   updateResult() {
+    console.assert(this.result);
     console.log(this.result);
+    this.updateStatistics();
+    this.updateTestCases();
+  }
+
+  updateStatistics() {
+    const passedTestElement = document.getElementById('passed_test_count');
+    console.assert(passedTestElement);
+    if (passedTestElement) {
+      passedTestElement.textContent = String(this.result?.passedTestCount);
+    }
+    const totalPointsElement = document.getElementById('user_points');
+    console.assert(totalPointsElement);
+    if (totalPointsElement) {
+      totalPointsElement.textContent = String(this.result?.points);
+    }
+  }
+  
+  updateTestCases() {
+    // Update the test case handlers (buttons) to show if passed or failed
+    const buttons = document.querySelectorAll('#test_cases button');
+    console.assert(this.result);
+    console.assert(this.result!.results.length == buttons.length);
+    for (let index = 0; index < this.result!.results.length; ++index) {
+      const test = this.result!.results[index];
+      const button = buttons[index];
+      button.classList.remove('danger');
+      button.classList.remove('action');
+      if (test.status === Status.passed) {
+        button.classList.add('action');
+      } else {
+        button.classList.add('danger');
+      }
+    }
   }
 }
 
