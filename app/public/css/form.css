@@ -65,6 +65,7 @@ button:hover:not([disabled]),
 .button:hover:not([disabled]) {
   font-weight: bold;
   filter: drop-shadow(2px 2px 2px gray);
+  border: 1px dashed;
 }
 
 button:disabled {
@@ -73,7 +74,7 @@ button:disabled {
 }
 
 .button.selected {
-  filter: contrast(0.5);
+  border: 1px solid;
 }
 
 .form_controls {
@@ -82,4 +83,12 @@ button:disabled {
 
 .button_bar {
   margin-bottom: 0;
+}
+
+.passed {
+  background: #40963581;
+}
+
+.failed {
+  background: rgba(255, 0, 0, 0.5);
 }

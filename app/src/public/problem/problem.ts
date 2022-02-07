@@ -317,12 +317,12 @@ class ProblemManager {
     for (let index = 0; index < this.result!.results.length; ++index) {
       const test = this.result!.results[index];
       const button = buttons[index];
-      button.classList.remove('danger');
-      button.classList.remove('action');
+      button.classList.remove('failed');
+      button.classList.remove('passed');
       if (test.status === Status.passed) {
-        button.classList.add('action');
+        button.classList.add('passed');
       } else {
-        button.classList.add('danger');
+        button.classList.add('failed');
       }
     }
     // Updates the standard output/error of the selected test case
