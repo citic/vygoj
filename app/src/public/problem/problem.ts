@@ -1,6 +1,7 @@
 import { ExecutionResult, ProblemInterface } from '../../common/vygoj.js';
 
 // Execution status enumeration
+// TODO: this enumartion is duplicated from common/vygoj.ts
 export enum Status {
   pending = 'pending',
   passed = 'passed',
@@ -36,6 +37,27 @@ function loadConfig(key: string) {
 
 function saveConfig(key: string, value: string) {
   window.localStorage.setItem(`${key}:${window.location.pathname}`, value);
+}
+
+function clientEncode(text: string) {
+  // text: 'int main(int argc, char* argv[]) {\n  return atoi(argv[--argc]);\n}\n'
+  // btoa: 'aW50IG1haW4oaW50IGFyZ2MsIGNoYXIqIGFyZ3ZbXSkgewogIHJldHVybiBhdG9pKGFyZ3ZbLS1hcmdjXSk7Cn0K'
+  return window.btoa(text);
+  // Judge0 uses: btoa(unescape(encodeURIComponent(text)) but unescape reverses encodeURIComponent
+  // encodeURIComponent: 'int%20main(int%20argc%2C%20char*%20argv%5B%5D)%20%7B%0A%20%20return%20atoi(argv%5B--argc%5D)%3B%0A%7D%0A'
+  // encodeURI: 'int%2520main(int%2520argc%252C%2520char*%2520argv%255B%255D)%2520%257B%250A%2520%2520return%2520atoi(argv%255B--argc%255D)%253B%250A%257D%250A'
+  // btoa: 'aW50JTI1MjBtYWluKGludCUyNTIwYXJnYyUyNTJDJTI1MjBjaGFyKiUyNTIwYXJndiUyNTVCJTI1NUQpJTI1MjAlMjU3QiUyNTBBJTI1MjAlMjUyMHJldHVybiUyNTIwYXRvaShhcmd2JTI1NUItLWFyZ2MlMjU1RCklMjUzQiUyNTBBJTI1N0QlMjUwQQ=='
+  // return window.btoa(window.encodeURI(window.encodeURIComponent(text)));
+}
+
+function clientDecode(data: string) {
+  return window.atob(data);
+  // try {
+  //   return window.decodeURIComponent(window.decodeURI(window.atob(data)));
+  // } catch (error) {
+  //   console.error(error);
+  //   return window.atob(data);
+  // }
 }
 
 class ProblemManager {
@@ -218,28 +240,43 @@ class ProblemManager {
   }
 
   setupRunEnvironment() {
-    // TODO: add language combo box
-    const language = 'C';
     console.assert(this.runButton);
     console.assert(this.editors.length > 0);
 
     // When the Run button is pressed
     this.runButton!.addEventListener('click', async () => {
-      // Disable the Run button while the backend is running the code
-      this.runButton!.disabled = true;
-      this.runButton!.textContent = 'Running';
-      // Send the code to the backend and wait the result
-      this.result = await ProblemManager.sendJson({
-        action: 'run',
-        language,
-        code: this.editors[0].getValue(),
-      });
-      // The result has been received, update the test cases
-      this.updateResult();
-      // Enable the Run button again
-      this.runButton!.textContent = 'Run';
-      this.runButton!.disabled = false;
+      await this.runSolution();
     });
+  }
+
+  async runSolution() {
+    // TODO: add language combo box
+    const language = 'C';
+    // Disable the Run button while the backend is running the code
+    this.runButton!.disabled = true;
+    this.runButton!.textContent = 'Running';
+    // Send the code to the backend and wait the result
+    this.result = await ProblemManager.sendJson({
+      action: 'run',
+      language,
+      code: clientEncode(this.editors[0].getValue()),
+    });
+    // The result has been received, decode it and update the test cases
+    this.decodeResult();
+    this.updateResult();
+    // Enable the Run button again
+    this.runButton!.textContent = 'Run';
+    this.runButton!.disabled = false;
+  }
+
+  decodeResult() {
+    for (let index = 0; index < this.result!.results.length; ++index) {
+      const test = this.result!.results[index];
+      test.compileOutput = clientDecode(test.compileOutput || '');
+      test.message = clientDecode(test.message || '');
+      test.stderr = clientDecode(test.stderr || '');
+      test.stdout = clientDecode(test.stdout || '');
+    }
   }
 
   updateResult() {

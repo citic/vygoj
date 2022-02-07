@@ -33,6 +33,16 @@ const judge0status = [
   'Exec Format Error', // 14  
 ];
 
+function serverEncode(text: string) {
+  // See https://stackoverflow.com/a/69992416
+  return Buffer.from(text, 'utf8').toString('base64');
+}
+
+function serverDecode(data: string) {
+  // See https://stackoverflow.com/a/69992416
+  return Buffer.from(data, 'base64').toString('utf8');
+}
+
 /**
  * Controls an execution of the user solution against only one test case. Input:
  * 
@@ -72,13 +82,13 @@ export default class Execution {
     const test: vyg.TestInterface = this.problem.tests[index];
     // The uri to call the backed using fetch(uri, options)
     // TODO: change wait to false, see https://ce.judge0.com/#submissions
-    const uri = `${config.getBackend()}/submissions?base64_encoded=false&wait=true`;
+    const uri = `${config.getBackend()}/submissions?base64_encoded=true&wait=true`;
     // The JSON object to be sent in the body of the POST message
     const submission: vyg.Judge0Submission = {
       source_code: this.message.code || '',
       language_id: languageDefaults[this.language].id,
       compiler_options: languageDefaults[this.language].compiler_options,
-      stdin: test.input,
+      stdin: serverEncode(test.input),
     };
     // The options of the fetch(uri, options) message
     const options: nodeFetch.RequestInit = {
