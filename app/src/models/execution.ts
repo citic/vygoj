@@ -89,6 +89,7 @@ export default class Execution {
       language_id: languageDefaults[this.language].id,
       compiler_options: languageDefaults[this.language].compiler_options,
       stdin: serverEncode(test.input),
+      expected_output: serverEncode(test.output),
     };
     // The options of the fetch(uri, options) message
     const options: nodeFetch.RequestInit = {

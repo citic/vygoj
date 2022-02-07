@@ -111,6 +111,7 @@ export interface Judge0Submission {
   stdin: string; // stdinValue,
   command_line_arguments?: string; /// commandLineArguments,
   redirect_stderr_to_stdout?: boolean; // redirectStderrToStdout
+  expected_output?: string;
 }
 
 export type text = string | null;
