@@ -197,7 +197,7 @@ class ProblemManager {
     // Show input, expected output, and user output for this test case
     this.editors[1].setValue(this.problem?.tests[index].input || '', -1);
     this.editors[2].setValue(this.problem?.tests[index].output || '', -1);
-    // this.editors[3].setValue(this.problem?.tests[index].userOutput, -1);
+    this.showTestOutput(index);
 
     // Deselect previous test case number
     const buttons = document.getElementsByClassName('test_button');
@@ -209,6 +209,14 @@ class ProblemManager {
     console.assert(index < buttons.length);
     buttons[index].classList.add('selected');
     saveConfig('test', `${index}`);
+  }
+
+  // Shows the standard output and error of the given test case after a run
+  showTestOutput(index: number) {
+    if (this.result) {
+      console.assert(index < this.result.results.length);
+      this.editors[3].setValue(this.result.results[index].stdout || '', -1);
+    }
   }
 
   loadUserCode() {
@@ -286,6 +294,7 @@ class ProblemManager {
     this.updateTestCases();
   }
 
+  // Updates the count of passed test cases and points after a run
   updateStatistics() {
     const passedTestElement = document.getElementById('passed_test_count');
     console.assert(passedTestElement);
@@ -299,6 +308,7 @@ class ProblemManager {
     }
   }
   
+  // Updates the test cases buttons after a run
   updateTestCases() {
     // Update the test case handlers (buttons) to show if passed or failed
     const buttons = document.querySelectorAll('#test_cases button');
@@ -315,6 +325,8 @@ class ProblemManager {
         button.classList.add('danger');
       }
     }
+    // Updates the standard output/error of the selected test case
+    this.showTestOutput(this.activeTestCaseIndex);
   }
 }
 
