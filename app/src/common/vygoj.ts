@@ -48,7 +48,9 @@
 */
 export interface LanguageDefault {
   id: number;
+  compiler: string;
   compiler_options: string;
+  file_extension: string;
 }
 
 export interface LanguageDefaults {
@@ -82,6 +84,8 @@ export interface ProblemInterface {
   languages: string[]; // C, C++, Java, Python...
   // Map<string, string> but not supported by JSON
   initialCodeFor?: InitialCodeInterface;
+  minThreads?: number;
+  maxThreads?: number;
 }
 
 // Execution status enumeration

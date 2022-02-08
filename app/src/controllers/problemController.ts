@@ -100,6 +100,8 @@ class ProblemController {
         const result = await execution.run(index);
         // Store the result in the array to be retorned to the client
         results.push(result);
+        // Remove temporary directory and files used by the execution
+        await execution.rmDir();
       }  
       // TODO: store executions in array of promises and run them in parallel Promise.all()
       // const executions: Promise<nodeFetch.Response>[] = [];

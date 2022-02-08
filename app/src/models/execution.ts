@@ -1,17 +1,28 @@
 import * as nodeFetch from 'node-fetch';
+import * as child_process from 'child_process';
 import fetch from 'node-fetch';
+import fs from 'fs/promises';
+import os from 'os';
+import path from 'path';
+import util from 'util';
 import config from '../util/config.js';
 import Problem from '../models/problem.js';
 import * as vyg from '../common/vygoj.js';
 
+const exec = util.promisify(child_process.exec);
+
 const languageDefaults: vyg.LanguageDefaults = {
   C: {
     id: 50,
+    compiler: 'gcc',
     compiler_options: '-g -Wall -Wextra -std=gnu17 -fsanitize=thread -fno-diagnostics-color -pthread',
+    file_extension: 'c',
   },
   'C++': {
     id: 54,
+    compiler: 'g++',
     compiler_options: '-g -Wall -Wextra -std=gnu++17 -fsanitize=thread -fno-diagnostics-color -fmessage-length=80 -pthread',
+    file_extension: 'cpp',
   },
 };
 
@@ -64,10 +75,14 @@ export default class Execution {
   // The problem to be solved
   problem: Problem;
   // Needed?
-  message:vyg.Message;
+  message: vyg.Message;
+  // Directory where the executable and test cases are stored
+  dir: string = '';
+  // Executable full path for extra proofs
+  executable: string | null = null;
   
   // Constructor
-  constructor(problem: Problem, message:vyg.Message) {
+  constructor(problem: Problem, message: vyg.Message) {
     // Language is sent by client, but if omitted, we suppose 'C'
     this.language = (message.language || 'C') as keyof vyg.LanguageDefaults;
     this.problem = problem;
@@ -112,9 +127,9 @@ export default class Execution {
     // Convert Judge0 result to Vygoj result
     const testCaseResult = this.convertTo(judge0result);
     // If there futher proofs, execute them
-    // if (testCaseResult.status === vyg.Status.passed && this.problem.hasProofs()) {
-    //   await this.runProofs(testCaseResult);
-    // }
+    if (testCaseResult.status === vyg.Status.passed && this.problem.hasProofs()) {
+      await this.runProofs(index, testCaseResult);
+    }
     // If result passed test cases
     return testCaseResult;
   }
@@ -164,6 +179,84 @@ export default class Execution {
     return result;
   }
 
-  // TODO: Judge0 does not provide info about threading, build a post-backend
-  // e.g `gdb -q -ex=r -ex=q --args ./exe | grep 'New Thread' | wc -l` for thread count
+  // Judge0 does not provide info about threading. This is a naive post-backend implementation
+  // Run the extra proofs for the given solution and store the result in the given object
+  async runProofs(index: number, result: vyg.TestCaseResult) {
+    try {
+      await this.buildExecutable();
+      await this.runThreadCountProof(index, result);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  // Compiles the user solution and generates an executable, if it is not already compiled
+  async buildExecutable() {
+    if (this.executable === null) {
+      // TODO: use language from message
+      const language = 'C';
+      const compiler = languageDefaults[language].compiler;
+      const options = languageDefaults[language].compiler_options;
+      const extension = languageDefaults[language].file_extension;
+      // Create a temporary directory to store executable and test cases
+      this.dir = await fs.mkdtemp(path.join(os.tmpdir(), 'vyg_'));
+      // Copy source code to a file
+      // TODO: support for multiple source files
+      const source = path.join(this.dir, `main.${extension}`);
+      await fs.writeFile(source, serverDecode(this.message.code || ''));
+      // Compiler invocation
+      const exe = path.join(this.dir, `solution`);
+      const cmd = `${compiler} ${options} ${source} -o ${exe}`;
+      console.log(cmd);
+      const { stdout, stderr } = await exec(cmd, { timeout: 3000 });
+      console.log(`compiler stdout: ${stdout}`);
+      console.error(`compiler stderr: ${stderr}`);
+      // Success
+      this.executable = exe;
+    }
+  }
+
+  // Remove temporary directory and files used by the execution
+  async rmDir() {
+    if (this.executable) {
+      await fs.rm(this.dir, { force: true, recursive: true });
+      this.dir = '';
+      this.executable = null;
+    }
+  }
+
+  // Checks that user solution create the required count of threads
+  async runThreadCountProof(index: number, result: vyg.TestCaseResult) {
+    // Get the test case
+    console.assert(index < this.problem.tests.length);
+    const test = this.problem.tests[index];
+    // Copy stdin to a file
+    const stdin = path.join(this.dir, `input${index}.txt`);
+    console.log(stdin);
+    await fs.writeFile(stdin, test.input);
+
+    // To get the number of created threads, we use GDB: -q quiet, -ex runs a command as if user
+    // types it in interactive mode. We count output lines that report New Thread events:
+    // gdb -q -ex=r -ex=q --args ./exe | grep 'New Thread' | wc -l
+    const exe = this.executable;
+    const cmd = `gdb -q '-ex=r < ${stdin}' -ex=q --args ${exe} | grep 'New Thread' | wc -l`;
+    console.log(cmd);
+    const { stdout, stderr } = await exec(cmd, { timeout: 3000 });
+    console.log(stdout);
+    console.log(stderr);
+
+    // Standard output must contain the number of created threads
+    result.threadCount = parseInt(stdout, 10);
+    // Check it is in range
+    const inRange = this.problem.minThreads <= result.threadCount &&
+      result.threadCount <= this.problem.maxThreads;
+    // If user did not create the asked amount of threads
+    if (!inRange) {
+      // Mark the test case failed
+      result.status = vyg.Status.runtimeError;
+      // Provide a descriptive message
+      result.message = result.message ? `${result.message} ` : '';
+      result.message += serverEncode(`Invalid amount of secondary threads (${result.threadCount})`);
+    }
+  }
 }

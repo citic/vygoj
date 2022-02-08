@@ -16,5 +16,6 @@
       "points": 2
     }
   ],
-  "languages": [ "C", "C++" ]
+  "languages": [ "C", "C++" ],
+  "minThreads": 2
 }
