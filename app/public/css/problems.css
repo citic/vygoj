@@ -30,7 +30,7 @@
   background-color: rgb(228, 227, 227);
   border: 1px solid gray;
   border-radius: 5px;
-  padding: 0.5em 1rem;  
+  padding: 0.5em 1rem;
   font-size: smaller;
 }
 
@@ -45,4 +45,19 @@
 
 #active_test .editor {
   min-height: 100px;
+}
+
+.passed {
+  background: #40963581;
+}
+
+.failed {
+  background: rgba(255, 0, 0, 0.5);
+}
+
+#diagnostics {
+  height: auto;
+  max-height: 200px;
+  overflow: auto;
+  background-color: rgb(228, 227, 227);
 }

@@ -7,11 +7,11 @@ import * as vyg from '../common/vygoj.js';
 const languageDefaults: vyg.LanguageDefaults = {
   C: {
     id: 50,
-    compiler_options: '-g -Wall -Wextra -std=gnu17 -fsanitize=thread -pthread',
+    compiler_options: '-g -Wall -Wextra -std=gnu17 -fsanitize=thread -fno-diagnostics-color -pthread',
   },
   'C++': {
     id: 54,
-    compiler_options: '-g -Wall -Wextra -std=gnu++17 -fsanitize=thread -pthread',
+    compiler_options: '-g -Wall -Wextra -std=gnu++17 -fsanitize=thread -fno-diagnostics-color -fmessage-length=80 -pthread',
   },
 };
 

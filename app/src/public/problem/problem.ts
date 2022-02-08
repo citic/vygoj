@@ -281,6 +281,8 @@ class ProblemManager {
     for (let index = 0; index < this.result!.results.length; ++index) {
       const test = this.result!.results[index];
       test.compileOutput = clientDecode(test.compileOutput || '');
+      // TODO: Change LC_ALL=en_US in compiler environment to avoid Unicode quotes
+      test.compileOutput = test.compileOutput.replace(/â/g, '‘');
       test.message = clientDecode(test.message || '');
       test.stderr = clientDecode(test.stderr || '');
       test.stdout = clientDecode(test.stdout || '');
@@ -291,6 +293,7 @@ class ProblemManager {
     console.assert(this.result);
     console.log(this.result);
     this.updateStatistics();
+    this.updateCompileOutput();
     this.updateTestCases();
   }
 
@@ -305,6 +308,29 @@ class ProblemManager {
     console.assert(totalPointsElement);
     if (totalPointsElement) {
       totalPointsElement.textContent = String(this.result?.points);
+    }
+  }
+
+  // Shows the compiler diagnostics (warnings or errors), if any
+  updateCompileOutput() {
+    // The DOM element where the output will be shown
+    const diagnosticsWrapper = document.getElementById('diagnostics_wrapper');
+    const diagnosticsElement = document.getElementById('diagnostics');
+    console.assert(diagnosticsWrapper);
+    console.assert(diagnosticsElement);
+    // The compiler output text
+    let compileOutput = null;
+    console.assert(this.result);
+    // Compiler output should be identical for each test case, we take the first one
+    if (this.result && this.result.results.length > 0) {
+      compileOutput = this.result.results[0].compileOutput;
+    }
+    // If there is a diagnostic, show it
+    if (compileOutput && compileOutput.length > 0) {
+      diagnosticsElement!.textContent = compileOutput;
+      diagnosticsWrapper!.classList.remove('hidden');
+    } else {
+      diagnosticsWrapper!.classList.add('hidden');
     }
   }
   

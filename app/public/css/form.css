@@ -84,11 +84,3 @@ button:disabled {
 .button_bar {
   margin-bottom: 0;
 }
-
-.passed {
-  background: #40963581;
-}
-
-.failed {
-  background: rgba(255, 0, 0, 0.5);
-}
