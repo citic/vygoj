@@ -74,6 +74,7 @@ button:disabled {
 }
 
 .button.selected {
+  position: relative;
   border: 1px solid;
 }
 

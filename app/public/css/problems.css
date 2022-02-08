@@ -61,3 +61,15 @@
   overflow: auto;
   background-color: rgb(228, 227, 227);
 }
+
+.button.selected:after {
+  /* Triangle below active test case https://stackoverflow.com/a/41328158 */
+  border-right: solid 10px transparent;
+  border-left: solid 10px transparent;
+  border-top: solid 10px black;
+  transform: translateX(-50%);
+  position: absolute;
+  content: '';
+  top: 100%;
+  left: 50%;
+}
