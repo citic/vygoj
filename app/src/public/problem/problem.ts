@@ -97,6 +97,9 @@ class ProblemManager {
   // The result after running the user code
   result: ExecutionResult | null = null;
 
+  // Shows the diff between expected output and user standard output
+  differ: AceDiff | null = null;
+
   constructor() {
     this.editors = [];
     // Default theme: https://github.com/ajaxorg/ace/tree/master/lib/ace/theme
@@ -388,6 +391,7 @@ class ProblemManager {
     console.assert(index < this.result!.results.length);
     const userOutput = this.result!.results[index].stdout;
 
+    // TODO: Use AceDiff always and decrease gutter width
     if (this.result!.results[index].status == Status.wrong) {
       // Hide expected output and user output and show diff element
       hideElement('active_test_expected_output_wrapper');
@@ -395,13 +399,18 @@ class ProblemManager {
       showElement('output_diff_wrapper');
 
       // Create a Ace Diff in output_diff element
-      const differ = new AceDiff({
+      this.differ = new AceDiff({
         // ace: window.ace,
         element: '#output_diff',
+        diffGranularity: 'specific',
         left: {
+          editable: false,
+          // copyLinkEnabled: false,
           content: expectedOutput,
         },
         right: {
+          editable: false,
+          // copyLinkEnabled: false,
           content: userOutput,
         },
       });
@@ -410,6 +419,11 @@ class ProblemManager {
       hideElement('output_diff_wrapper');
       showElement('active_test_expected_output_wrapper');
       showElement('active_test_user_output_wrapper');
+
+      if (this.differ) {
+        this.differ.destroy();
+        this.differ = null;
+      }
     }
   }
   
