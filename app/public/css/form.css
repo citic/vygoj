@@ -65,17 +65,11 @@ button:hover:not([disabled]),
 .button:hover:not([disabled]) {
   font-weight: bold;
   filter: drop-shadow(2px 2px 2px gray);
-  border: 1px dashed;
 }
 
 button:disabled {
   filter: opacity(0.5);
   cursor: default;
-}
-
-.button.selected {
-  position: relative;
-  border: 1px solid;
 }
 
 .form_controls {

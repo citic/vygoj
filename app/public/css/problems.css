@@ -67,7 +67,16 @@
   position: relative;
 }
 
-.button.selected:after {
+.test_button:hover:not(.disabled):not(.selected) {
+  border: 1px dashed;
+}
+
+.test_button.selected {
+  position: relative;
+  border: 1px solid;
+}
+
+.test_button.selected:after {
   /* Triangle below active test case https://stackoverflow.com/a/41328158 */
   border-right: solid 10px transparent;
   border-left: solid 10px transparent;
