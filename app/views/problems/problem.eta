@@ -49,5 +49,6 @@
             <em class="error">Standard error output</em>
             <pre id="stderr" class="output"></pre>
           </div>
+          <div id="test_verdict"></div>
         </section>
       </main>

@@ -240,6 +240,8 @@ class ProblemManager {
       this.showOutputDiff(index);
       // Show standard error
       this.updateErrorOutput(index);
+      // Show message if nay
+      this.updateVerdict(index);
     }
   }
 
@@ -320,6 +322,7 @@ class ProblemManager {
     this.updateCompileOutput();
     this.updateTestCases();
     this.updateErrorOutput(this.activeTestCaseIndex);
+    this.updateVerdict(this.activeTestCaseIndex);
   }
 
   // Updates the count of passed test cases and points after a run
@@ -421,7 +424,7 @@ class ProblemManager {
       showElement('active_test_user_output_wrapper');
 
       if (this.differ) {
-        this.differ.destroy();
+        // this.differ.destroy();
         this.differ = null;
       }
     }
@@ -446,6 +449,44 @@ class ProblemManager {
     }
     // Updates the standard output/error of the selected test case
     this.showTestOutput(this.activeTestCaseIndex);
+  }
+
+  // Shows or updates the verdict message
+  updateVerdict(index: number) {
+    // The DOM element where the verdict will be shown
+    const verdictElement = document.getElementById('test_verdict');
+    console.assert(verdictElement);
+    // The verdict text for the active test case
+    let verdict = null;
+    console.assert(this.result);
+    console.assert(index < this.result!.results.length);
+    // Compiler output should be identical for each test case, we take the first one
+    if (this.result && index < this.result!.results.length) {
+      const test = this.result.results[index];
+      verdict = `Test case ${index + 1} verdict: ${test.status}`;
+      if (test.message) {
+        verdict += `: ${test.message}`;
+      }
+      const time = test.wallTime || test.cpuTime || '';
+      if (time.length > 0) {
+        verdict += `. It took ${time}s`;
+      }
+      if (test.memory) {
+        verdict += `, ${test.memory}B`;
+      }
+      if (test.threadCount) {
+        verdict += `, ${test.threadCount} secondary threads`;
+      }
+      if (test.exitCode) {
+        verdict += `, and exited with code ${test.exitCode}`;
+      }
+    }
+    // If there is output text, show it
+    if (verdict && verdict.length > 0) {
+      verdictElement!.textContent = verdict;
+    } else {
+      verdictElement!.textContent = '';
+    }
   }
 }
 
