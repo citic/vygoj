@@ -40,6 +40,10 @@
               <em id="active_test_user_output_label">Your output</em>
               <div id="active_test_user_output" class="editor"></div>
             </div>
+            <div id="output_diff_wrapper" class="editor_wrapper hidden">
+              <div class="row"><em>Expected output</em><em>Your output</em></div>
+              <div id="output_diff" class="editor"></div>
+            </div>
           </div>
           <div id="stderr_wrapper" class="hidden">
             <em class="error">Standard error output</em>

@@ -1,4 +1,7 @@
 import { ExecutionResult, ProblemInterface } from '../../common/vygoj.js';
+// import AceDiff from 'ace-diff';
+
+const AceDiff = window.AceDiff;
 
 // Execution status enumeration
 // TODO: this enumartion is duplicated from common/vygoj.ts
@@ -58,6 +61,18 @@ function clientDecode(data: string) {
   //   console.error(error);
   //   return window.atob(data);
   // }
+}
+
+function hideElement(id: string) {
+  const element = document.getElementById(id);
+  console.assert(element);
+  element!.classList.add('hidden');
+}
+
+function showElement(id: string) {
+  const element = document.getElementById(id);
+  console.assert(element);
+  element!.classList.remove('hidden');
 }
 
 class ProblemManager {
@@ -214,8 +229,13 @@ class ProblemManager {
   // Shows the standard output and error of the given test case after a run
   showTestOutput(index: number) {
     if (this.result) {
+      // Show standard output
       console.assert(index < this.result.results.length);
-      this.editors[3].setValue(this.result.results[index].stdout || '', -1);
+      const test = this.result.results[index];
+      this.editors[3].setValue(test.stdout || '', -1);
+      // But if test case was failed, show diff instead
+      this.showOutputDiff(index);
+      // Show standard error
       this.updateErrorOutput(index);
     }
   }
@@ -316,9 +336,7 @@ class ProblemManager {
   // Shows the compiler diagnostics (warnings or errors), if any
   updateCompileOutput() {
     // The DOM element where the output will be shown
-    const diagnosticsWrapper = document.getElementById('diagnostics_wrapper');
     const diagnosticsElement = document.getElementById('diagnostics');
-    console.assert(diagnosticsWrapper);
     console.assert(diagnosticsElement);
     // The compiler output text
     let compileOutput = null;
@@ -330,18 +348,16 @@ class ProblemManager {
     // If there is a diagnostic, show it
     if (compileOutput && compileOutput.length > 0) {
       diagnosticsElement!.textContent = compileOutput;
-      diagnosticsWrapper!.classList.remove('hidden');
+      showElement('diagnostics_wrapper');
     } else {
-      diagnosticsWrapper!.classList.add('hidden');
+      hideElement('diagnostics_wrapper');
     }
   }
 
   // Shows standard error output for the selected test case
   updateErrorOutput(index: number) {
     // The DOM element where the output will be shown
-    const stderrWrapper = document.getElementById('stderr_wrapper');
     const stderrElement = document.getElementById('stderr');
-    console.assert(stderrWrapper);
     console.assert(stderrElement);
     // The program stderr output text for the active test case
     let stderrOutput = null;
@@ -354,9 +370,46 @@ class ProblemManager {
     // If there is output text, show it
     if (stderrOutput && stderrOutput.length > 0) {
       stderrElement!.textContent = stderrOutput;
-      stderrWrapper!.classList.remove('hidden');
+      showElement('stderr_wrapper');
     } else {
-      stderrWrapper!.classList.add('hidden');
+      hideElement('stderr_wrapper');
+    }
+  }
+
+  // Shows a diff output instead of standard output
+  showOutputDiff(index: number) {
+    // Expected output
+    console.assert(this.problem);
+    console.assert(index < this.problem!.tests.length);
+    const expectedOutput = this.problem!.tests[index].output;
+
+    // User output
+    console.assert(this.result);
+    console.assert(index < this.result!.results.length);
+    const userOutput = this.result!.results[index].stdout;
+
+    if (this.result!.results[index].status == Status.wrong) {
+      // Hide expected output and user output and show diff element
+      hideElement('active_test_expected_output_wrapper');
+      hideElement('active_test_user_output_wrapper');
+      showElement('output_diff_wrapper');
+
+      // Create a Ace Diff in output_diff element
+      const differ = new AceDiff({
+        // ace: window.ace,
+        element: '#output_diff',
+        left: {
+          content: expectedOutput,
+        },
+        right: {
+          content: userOutput,
+        },
+      });
+    } else {
+      // Show expected output and user output and hide diff element
+      hideElement('output_diff_wrapper');
+      showElement('active_test_expected_output_wrapper');
+      showElement('active_test_user_output_wrapper');
     }
   }
   

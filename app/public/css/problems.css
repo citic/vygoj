@@ -1,5 +1,6 @@
 @import url('site.css');
 @import url('form.css');
+@import url('https://unpkg.com/ace-diff@^3.0.0/dist/ace-diff.min.css');
 
 .problem_section__header {
   display: flex;
@@ -60,6 +61,10 @@
   max-height: 200px;
   overflow: auto;
   background-color: rgb(228, 227, 227);
+}
+
+#output_diff {
+  position: relative;
 }
 
 .button.selected:after {
