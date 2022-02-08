@@ -216,6 +216,7 @@ class ProblemManager {
     if (this.result) {
       console.assert(index < this.result.results.length);
       this.editors[3].setValue(this.result.results[index].stdout || '', -1);
+      this.updateErrorOutput(index);
     }
   }
 
@@ -295,6 +296,7 @@ class ProblemManager {
     this.updateStatistics();
     this.updateCompileOutput();
     this.updateTestCases();
+    this.updateErrorOutput(this.activeTestCaseIndex);
   }
 
   // Updates the count of passed test cases and points after a run
@@ -331,6 +333,30 @@ class ProblemManager {
       diagnosticsWrapper!.classList.remove('hidden');
     } else {
       diagnosticsWrapper!.classList.add('hidden');
+    }
+  }
+
+  // Shows standard error output for the selected test case
+  updateErrorOutput(index: number) {
+    // The DOM element where the output will be shown
+    const stderrWrapper = document.getElementById('stderr_wrapper');
+    const stderrElement = document.getElementById('stderr');
+    console.assert(stderrWrapper);
+    console.assert(stderrElement);
+    // The program stderr output text for the active test case
+    let stderrOutput = null;
+    console.assert(this.result);
+    console.assert(index < this.result!.results.length);
+    // Compiler output should be identical for each test case, we take the first one
+    if (this.result && index < this.result!.results.length) {
+      stderrOutput = this.result.results[index].stderr;
+    }
+    // If there is output text, show it
+    if (stderrOutput && stderrOutput.length > 0) {
+      stderrElement!.textContent = stderrOutput;
+      stderrWrapper!.classList.remove('hidden');
+    } else {
+      stderrWrapper!.classList.add('hidden');
     }
   }
   
