@@ -31,6 +31,10 @@ export default class Problem {
   // There is no limit for the default number of secondary threads
   maxThreads: number | string = Number.MAX_SAFE_INTEGER;
 
+  // Considers valid an output that has different order than the expected
+  // Supported values: 'lines'
+  allowIndeterminism: string | null = null;
+
   // TODO: enabled programming languages, e.g: c,cpp,py,...
 
   // Load the fields of this object from the given JSON file path
@@ -42,6 +46,7 @@ export default class Problem {
     this.tests = json.tests;
     this.minThreads = json.minThreads || 1;
     this.maxThreads = json.maxThreads || Number.MAX_SAFE_INTEGER;
+    this.allowIndeterminism = json.allowIndeterminism || null;
   }
 
   // Creates a new Problem object from the given relative path problem

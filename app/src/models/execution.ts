@@ -58,6 +58,13 @@ function serverDecode(data: string) {
   return Buffer.from(data, 'base64').toString('utf8');
 }
 
+// Return true if two arrays have the same elements
+function arrayEquals(array1: any[], array2: any[]) {
+  return array1.length === array2.length && array1.every((value, index) => {
+    return value === array2[index];
+  });
+}
+
 /**
  * Controls an execution of the user solution against only one test case. Input:
  * 
@@ -130,6 +137,8 @@ export default class Execution {
     console.log(judge0result);
     // Convert Judge0 result to Vygoj result
     const testCaseResult = this.convertTo(judge0result);
+    // If indeterminism is allowed, compare output again
+    this.checkIndeterminism(index, testCaseResult);
     // If there futher proofs, execute them
     if (testCaseResult.status === vyg.Status.passed && this.problem.hasProofs()) {
       await this.runProofs(index, testCaseResult);
@@ -270,6 +279,21 @@ export default class Execution {
       // Provide a descriptive message
       result.message = result.message ? `${result.message} ` : '';
       result.message += serverEncode(`Invalid amount of secondary threads (${result.threadCount})`);
+    }
+  }
+
+  // If indeterminism is allowed, compare output again
+  checkIndeterminism(index: number, result: vyg.TestCaseResult) {
+    if (this.problem.allowIndeterminism === 'lines') {
+      const test = this.problem.tests[index];
+      const expectedOutput = test.output.split('\n').sort();
+      const userOutput = (serverDecode(result.stdout || '').split('\n')).sort();
+      console.log(userOutput, expectedOutput);
+      if (arrayEquals(userOutput, expectedOutput)) {
+        result.status = vyg.Status.passed;
+        // result.message = '';
+        console.log('test case fixed to passed ignoring indeterminism');
+      }
     }
   }
 }

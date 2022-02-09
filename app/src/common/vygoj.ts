@@ -86,6 +86,7 @@ export interface ProblemInterface {
   initialCodeFor?: InitialCodeInterface;
   minThreads?: number | string;
   maxThreads?: number | string;
+  allowIndeterminism?: string;
 }
 
 // Execution status enumeration

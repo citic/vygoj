@@ -111,6 +111,8 @@ class ProblemManager {
     ProblemManager.instance.setup();
   }
 
+  // TODO: Problem statement may have source code snippets, highlight them using a client library
+  // such as highlight.js or prismjs
   async setup() {
     try {
       this.setupReferences();
