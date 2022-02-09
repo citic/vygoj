@@ -1,0 +1,24 @@
+{
+  "name": "c_thrd_sleep",
+  "title": "Hilos durmientes en C",
+  "statement": "<p>Otra ventaja de los hilos estándar de C11 es que pueden dormir (bloquearse) por un periodo de tiempo sin tener que recurrir a funciones dependientes del sistema operativo como <code>sleep()</code> o <code>usleep()</code>. La capacidad de dormir es una funcionalidad  necesaria para ciertos problemas, como animaciones y simulaciones. El siguiente ejemplo hace al hilo principal dormir por un segundo:</p><pre>#include &lt;stdio.h&gt;\n#include &lt;threads.h&gt;\n\nint main(void) {\n  // 1 second, 0 nanoseconds\n  struct timespec delay = {1, 0};\n  thrd_sleep(&amp;delay, NULL);\n}</pre><p>El encabezado <code>&lt;threads.h&gt;</code> incluye la función <code>thrd_sleep()</code> que recibe dos punteros. El primer puntero, llamado <code>duration</code>, es la dirección de memoria hacia un registro que indica en sus dos campos la cantidad de segundos y nanosegundos que el hilo debe dormir. La función <code>thrd_sleep()</code> hará que el hilo duerma por al menos este tiempo. En caso de que hilo tenga que ser despertado antes de este tiempo, el segundo puntero permite escribir en un segundo registro el tiempo que le faltaba al hilo para ser despertado. A este segundo parámetro se le llama <code>remaining</code> y puede obviarse si se envía <code>NULL</code> como se hizo en el ejemplo anterior.</p><p>Haga un programa lea de la entrada estándar un número entero y cree tantos hilos como indique este número. Cada hilo está numerado (<i>rank</i>). Los hilos deben dormir un rato y luego despertarse para saludar. Cada hilo debe dormir <i>10000 * rank</i> nanosegundos, de esta forma, se esperaría que los hilos saluden en orden.</p><div><i>Ejemplo de entrada</i></div><pre>3</pre><div><i>Ejemplo de salida</i></div><pre>Hello from main thread\nHello from secondary thread 0\nHello from secondary thread 1\nHello from secondary thread 2</pre><p>Nota: Asegúrese de que los hilos realmente se ejecuten en paralelo.</p>",
+  "tests": [ {
+      "input": "3",
+      "output": "Hello from main thread\nHello from secondary thread 0\nHello from secondary thread 1\nHello from secondary thread 2\n",
+      "points": 2
+    }, {
+      "input": "0",
+      "output": "Hello from main thread\n",
+      "points": 2
+    }, {
+      "input": "1",
+      "output": "Hello from main thread\nHello from secondary thread 0\n",
+      "points": 2
+    }
+  ],
+  "languages": [ "C" ],
+  "initialCodeFor": {
+    "C": "#include &lt;threads.h&gt;\n#include &lt;stdio.h&gt;\n#include &lt;stdlib.h&gt;\n\nint greet(void* data);\n\nint main(void) {\n  thrd_t thread;\n  int error = thrd_create(&amp;thread, greet, (void*)NULL);\n  if (error == thrd_success) {\n    printf(\"Hello from main thread\\n\");\n    thrd_join(thread, NULL);\n  } else {\n    fprintf(stderr, \"Error: could not create secondary thread\\n\");\n  }\n  return error;\n}\n\nint greet(void* data) {\n  (void)data;\n  printf(\"Hello from secondary thread\\n\");\n  return 0;\n}\n"
+  },
+  "minThreads": "stdin"
+}

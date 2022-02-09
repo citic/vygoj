@@ -114,10 +114,10 @@ const allCourses = [
         type: 'problem',
         folder: 'c_hello_std',
       }, {
-        name: 'enclosing_lines',
-        title: 'Encerrar las líneas',
+        name: 'c_thrd_sleep',
+        title: 'Hilos durmientes en C',
         type: 'problem',
-        folder: 'enclosing_lines',
+        folder: 'c_thrd_sleep',
       }, ],
     }, {
       name: 'cppstdthr',
