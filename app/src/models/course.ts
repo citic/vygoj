@@ -88,6 +88,54 @@ const allCourses = [
     contents: [
     ],
   },
+  {
+    id: 'stdthr',
+    code: 'CI0117a',
+    title: 'Hilos estándar en C/C++',
+    image: '/img/logo2.svg',
+    repo: '',
+    instructors: [
+      { id: 'u13', name: 'Jeisson Hidalgo-Céspedes' },
+    ],
+    statistics: {
+      students: 20,
+      sections: 2,
+      problems: 7,
+      questions: 0,
+    },
+    contents: [ {
+      name: 'cstdthr',
+      title: 'Hilos estándar en C',
+      type: 'folder',
+      folder: 'problem',
+      contents: [ {
+        name: 'c_hello_std',
+        title: 'Hola mundo estándar en C',
+        type: 'problem',
+        folder: 'c_hello_std',
+      }, {
+        name: 'enclosing_lines',
+        title: 'Encerrar las líneas',
+        type: 'problem',
+        folder: 'enclosing_lines',
+      }, ],
+    }, {
+      name: 'cppstdthr',
+      title: 'Hilos estándar en C++',
+      type: 'folder',
+      contents: [ {
+        name: 'uint64_adder',
+        title: 'Sumador paralelo 64-bits sin signo',
+        type: 'problem',
+        folder: 'uint64_adder',
+      }, {
+        name: 'enclosing_lines',
+        title: 'Encerrar las líneas',
+        type: 'problem',
+        folder: 'enclosing_lines',
+      }, ],
+    }, ],
+  },
 ];
 
 /**
@@ -117,12 +165,13 @@ export default class Course {
   // todo: filter params: state
   static fetchMyCourses() {
     // todo: this test will be replaced by a database query
-    return [Course.findById('c17')];
+    return [Course.findById('stdthr')];
   }
 
   static fetchAllCourses() {
     // todo: this test will be replaced by a database query
-    return [Course.findById('c1'), Course.findById('c08')];
+    // return [Course.findById('c1'), Course.findById('c08')];
+    return [];
   }
 
   static findById(id: string) {

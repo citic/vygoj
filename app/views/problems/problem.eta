@@ -5,7 +5,7 @@
           <div class="problem__statement"><%~ it.problem.statement %></div>
         </article>
         <section class="problem__solution">
-          <h4>Your C/C++ solution</h4>
+          <h4>Your solution</h4>
           <div id="code_editor" class="editor"></div>
         </section>
         <section class="solution__evaluation">

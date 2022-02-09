@@ -11,17 +11,21 @@ import * as vyg from '../common/vygoj.js';
 
 const exec = util.promisify(child_process.exec);
 
+// -fsanitize=thread does not work with standard C11 threads:
+// https://github.com/google/sanitizers/issues/1195
+// TODO: override default compiler options with problem.compilerOptionsFor[lang]
+// -fno-diagnostics-color
 const languageDefaults: vyg.LanguageDefaults = {
   C: {
     id: 50,
     compiler: 'gcc',
-    compiler_options: '-g -Wall -Wextra -std=gnu17 -fsanitize=thread -fno-diagnostics-color -pthread',
+    compiler_options: '-g -Wall -Wextra -std=gnu17 -fmessage-length=80 -pthread',
     file_extension: 'c',
   },
   'C++': {
     id: 54,
     compiler: 'g++',
-    compiler_options: '-g -Wall -Wextra -std=gnu++17 -fsanitize=thread -fno-diagnostics-color -fmessage-length=80 -pthread',
+    compiler_options: '-g -Wall -Wextra -std=gnu++17 -fmessage-length=80 -pthread',
     file_extension: 'cpp',
   },
 };
