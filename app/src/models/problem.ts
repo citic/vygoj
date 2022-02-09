@@ -1,5 +1,6 @@
 // import { ObjectId } from 'mongodb';
 import fs from 'fs/promises';
+import { type } from 'os';
 import path from 'path';
 import * as vyg from '../common/vygoj.js';
 
@@ -24,6 +25,12 @@ export default class Problem {
   // A list of test cases
   tests: vyg.TestInterface[];
 
+  // Allowed programming languages for this problem
+  languages: string[] = [ ];
+
+  // The given initial source code for the problem and programming language
+  initialCodeFor: vyg.InitialCodeInterface = { };
+
   // Minimum number of secondary threads to solve the problem. If this number
   // is one or more, additional runs will be conducted for each test case
   minThreads: number | string = 0;
@@ -44,9 +51,26 @@ export default class Problem {
     this.title = json.title;
     this.statement = json.statement;
     this.tests = json.tests;
+    this.languages = json.languages || [ ];
+    this.initialCodeFor = json.initialCodeFor || { };
     this.minThreads = json.minThreads || 1;
     this.maxThreads = json.maxThreads || Number.MAX_SAFE_INTEGER;
     this.allowIndeterminism = json.allowIndeterminism || null;
+
+    // Remove HTML escaping
+    // TODO: Traverse all languages
+    // for (const key of Object.keys(this.initialCodeFor)) {
+    //   let code = this.initialCodeFor[key] as string;
+    //   this.initialCodeFor[key] = code;
+    // }
+    const key: keyof vyg.InitialCodeInterface = 'C';
+    let code = this.initialCodeFor[key];
+    if (code) {
+      code = code.replaceAll('&amp;', '&');
+      code = code.replaceAll('&lt;', '<');
+      code = code.replaceAll('&gt;', '>');
+      this.initialCodeFor[key] = code;
+    }
   }
 
   // Creates a new Problem object from the given relative path problem
