@@ -20,5 +20,5 @@
   "initialCodeFor": {
     "C": "#include &lt;threads.h&gt;\n#include &lt;stdio.h&gt;\n#include &lt;stdlib.h&gt;\n\nint greet(void* data);\n\nint main(void) {\n  thrd_t thread;\n  int error = thrd_create(&amp;thread, greet, (void*)NULL);\n  if (error == thrd_success) {\n    printf(\"Hello from main thread\\n\");\n    thrd_join(thread, NULL);\n  } else {\n    fprintf(stderr, \"Error: could not create secondary thread\\n\");\n  }\n  return error;\n}\n\nint greet(void* data) {\n  (void)data;\n  printf(\"Hello from secondary thread\\n\");\n  return 0;\n}\n"
   },
-  "minThreads": 2
+  "minThreads": "stdin"
 }

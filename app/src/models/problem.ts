@@ -26,10 +26,10 @@ export default class Problem {
 
   // Minimum number of secondary threads to solve the problem. If this number
   // is one or more, additional runs will be conducted for each test case
-  minThreads: number = 0;
+  minThreads: number | string = 0;
 
   // There is no limit for the default number of secondary threads
-  maxThreads: number = Number.MAX_SAFE_INTEGER;
+  maxThreads: number | string = Number.MAX_SAFE_INTEGER;
 
   // TODO: enabled programming languages, e.g: c,cpp,py,...
 

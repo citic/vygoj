@@ -84,8 +84,8 @@ export interface ProblemInterface {
   languages: string[]; // C, C++, Java, Python...
   // Map<string, string> but not supported by JSON
   initialCodeFor?: InitialCodeInterface;
-  minThreads?: number;
-  maxThreads?: number;
+  minThreads?: number | string;
+  maxThreads?: number | string;
 }
 
 // Execution status enumeration

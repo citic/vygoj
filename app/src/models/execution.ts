@@ -19,13 +19,13 @@ const languageDefaults: vyg.LanguageDefaults = {
   C: {
     id: 50,
     compiler: 'gcc',
-    compiler_options: '-g -Wall -Wextra -std=gnu17 -fmessage-length=80 -pthread',
+    compiler_options: '-g -Wall -Wextra -std=gnu17 -fsanitize=address -fmessage-length=80 -pthread',
     file_extension: 'c',
   },
   'C++': {
     id: 54,
     compiler: 'g++',
-    compiler_options: '-g -Wall -Wextra -std=gnu++17 -fmessage-length=80 -pthread',
+    compiler_options: '-g -Wall -Wextra -std=gnu++17 -fsanitize=address -fmessage-length=80 -pthread',
     file_extension: 'cpp',
   },
 };
@@ -251,8 +251,17 @@ export default class Execution {
 
     // Standard output must contain the number of created threads
     result.threadCount = parseInt(stdout, 10);
+
+    // Get the accepted range
+    let minThreads = 0;
+    if (typeof this.problem.minThreads === 'number') {
+      minThreads = this.problem.minThreads;
+    } else if (this.problem.minThreads === 'stdin') {
+      // The number of threads is given as first value of stdin
+      minThreads = parseInt(this.problem.tests[index].input, 10);
+    }
     // Check it is in range
-    const inRange = this.problem.minThreads <= result.threadCount &&
+    const inRange = minThreads <= result.threadCount &&
       result.threadCount <= this.problem.maxThreads;
     // If user did not create the asked amount of threads
     if (!inRange) {
