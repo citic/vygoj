@@ -38,6 +38,8 @@ class ProblemController {
         title: `${problem.title} - Vygoj`,
         user: req.session.user,
         breadcumbs: [
+          // TODO: course
+          { href: `/course/stdthr`, text: 'CI0117a' },
           { href: `/problem/${problem.relativePath}`, text: problem.name },
         ],
         problem,
