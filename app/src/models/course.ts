@@ -109,6 +109,11 @@ const allCourses = [
       type: 'folder',
       folder: 'problem',
       contents: [ {
+        name: 'intro_vygoj',
+        title: 'Introducción al juez en línea',
+        type: 'problem',
+        folder: 'intro_vygoj',
+      }, {
         name: 'c_hello_std',
         title: 'Hola mundo estándar en C',
         type: 'problem',
@@ -118,23 +123,48 @@ const allCourses = [
         title: 'Hilos durmientes en C',
         type: 'problem',
         folder: 'c_thrd_sleep',
+      }, {
+        name: 'c_thrd_mtx',
+        title: 'Exclusión mutua en C',
+        type: 'problem',
+        folder: 'c_thrd_mtx',
+      }, {
+        name: 'c_local_storage',
+        title: 'Local storage en C',
+        type: 'problem',
+        folder: 'c_local_storage',
+      }, {
+        name: 'c_prime_counter',
+        title: 'Contador de primos en C',
+        type: 'problem',
+        folder: 'c_prime_counter',
       }, ],
-    }, {
+    }, /* {
       name: 'cppstdthr',
       title: 'Hilos estándar en C++',
       type: 'folder',
       contents: [ {
-        name: 'uint64_adder',
-        title: 'Sumador paralelo 64-bits sin signo',
+        name: 'c_hello_std',
+        title: 'Hola mundo estándar en C++',
         type: 'problem',
-        folder: 'uint64_adder',
+        folder: 'c_hello_std',
       }, {
-        name: 'enclosing_lines',
-        title: 'Encerrar las líneas',
+        name: 'c_thrd_sleep',
+        title: 'Hilos durmientes en C++',
         type: 'problem',
-        folder: 'enclosing_lines',
+        folder: 'c_thrd_sleep',
+      }, {
+        name: 'c_thrd_mtx',
+        title: 'Exclusión mutua en C++',
+        type: 'problem',
+        folder: 'c_thrd_mtx',
+      }, {
+        name: 'c_local_storage',
+        title: 'Local storage en C++',
+        type: 'problem',
+        folder: 'c_local_storage',
       }, ],
-    }, ],
+    }, */ ],
   },
 ];
 
