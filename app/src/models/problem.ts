@@ -53,7 +53,7 @@ export default class Problem {
     this.tests = json.tests;
     this.languages = json.languages || [ ];
     this.initialCodeFor = json.initialCodeFor || { };
-    this.minThreads = json.minThreads || 1;
+    this.minThreads = json.minThreads || 0;
     this.maxThreads = json.maxThreads || Number.MAX_SAFE_INTEGER;
     this.allowIndeterminism = json.allowIndeterminism || null;
 
@@ -97,6 +97,6 @@ export default class Problem {
 
   // Returns true if this problem requires the solution to pass extra proofs
   hasProofs() {
-    return this.minThreads >= 1;
+    return (typeof this.maxThreads === 'number' && this.minThreads >= 1) || this.minThreads;
   }
 }
