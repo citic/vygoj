@@ -137,6 +137,8 @@ export default class Execution {
     console.log(judge0result);
     // Convert Judge0 result to Vygoj result
     const testCaseResult = this.convertTo(judge0result);
+    // Check expected empty output
+    this.checkEmptyExpectedOutput(index, testCaseResult);
     // If indeterminism is allowed, compare output again
     this.checkIndeterminism(index, testCaseResult);
     // If there futher proofs, execute them
@@ -190,6 +192,15 @@ export default class Execution {
       wallTime: judge0result.wall_time ?? '',
     };
     return result;
+  }
+
+  // Judge0 always consider empty output as failed even thought the expected output is empty too
+  checkEmptyExpectedOutput(index: number, result: vyg.TestCaseResult) {
+    const expected = this.problem.tests[index].output.trim();
+    const userOutput = serverDecode(result.stdout || '').trim();
+    if (userOutput === expected) {
+      result.status = vyg.Status.passed;
+    }
   }
 
   // Judge0 does not provide info about threading. This is a naive post-backend implementation
