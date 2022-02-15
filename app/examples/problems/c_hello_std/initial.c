@@ -1,12 +1,8 @@
-#include <threads.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <threads.h>
 
-int greet(void* data) {
-  (void)data;
-  printf("Hello from secondary thread\n");
-  return 0;
-}
+int greet(void* data);
 
 int main(void) {
   thrd_t thread;
@@ -18,4 +14,10 @@ int main(void) {
     fprintf(stderr, "Error: could not create secondary thread\n");
   }
   return error;
+}
+
+int greet(void* data) {
+  (void)data;
+  printf("Hello from secondary thread\n");
+  return 0;
 }
