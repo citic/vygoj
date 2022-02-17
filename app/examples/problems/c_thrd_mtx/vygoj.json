@@ -1,36 +1,36 @@
 {
   "name": "c_thrd_mtx",
   "title": "Exclusión mutua en C",
-  "statement": "<p>La <a href=\"https://en.cppreference.com/w/c/thread\" target=\"_blank\">biblioteca estándar de hilos de C11</a> incluye dos mecanismos de control de concurrencia: exclusión mutua (<i>mutex</i>) y variables de condición. El siguiente ejemplo hace que los dos hilos secundarios incrementen una variable global sin provocar una condición de carrera:</p><pre>#include &lt;threads.h&gt;\n#include &lt;stdio.h&gt;\n#include &lt;stdlib.h&gt;\n\nmtx_t can_access_count;\nsize_t count = 0;\n\nint increase(void* data) {\n  (void)data;\n  mtx_lock(&amp;can_access_count);\n  ++count;\n  mtx_unlock(&amp;can_access_count);\n  return EXIT_SUCCESS;\n}\n\nint main(void) {\n  mtx_init(&amp;can_access_count, mtx_plain);\n  thrd_t thread[2];\n  thrd_create(&amp;thread[0], increase, (void*)NULL);\n  thrd_create(&amp;thread[1], increase, (void*)NULL);\n  thrd_join(thread[0], NULL);\n  thrd_join(thread[1], NULL);\n  printf(\"count = %zu\\n\", count);\n  mtx_destroy(&amp;can_access_count);\n  return EXIT_SUCCESS;\n}\n</pre><p>El tipo de datos <code>mtx_t</code> declarado en el encabezado <code>&lt;threads.h&gt;</code> define un <i>mutex</i>. Antes de usarlo, debe ser inicializado con la función <code>mtx_init()</code> que recibe un puntero al mutex y su tipo. Al inicio de <code>main()</code> en el código de arriba se creó un mutex de tipo simple (<code>mtx_plain</code>). Sin embargo se puede pedir otros tipos de <i>mutex</i> con características adicionales, como permitir bloquear el <i>mutex</i> por un periodo de tiempo (<code>mtx_timed</code>) y permitir bloquear el <i>mutex</i> recursivamente (<code>mtx_recursive</code>). Una vez que ya no se va a usar más un <i>mutex</i>, se debe destruir con <code>mtx_destroy()</code>, como se hizo al final del <code>main()</code>. Para bloquear (esperar) y desbloquear el <i>mutex</i> se usan las funciones <code>mtx_lock()</code> y <code>mtx_unlock()</code> que reciben un puntero al <i>mutex</i>.</p><p>El código dado crea la cantidad de hilos indicada en la entrada estándar. Los hilos con número (<i>rank</i>) par suman este número (<i>rank</i>) a la suma global, mientras que los impares lo restan. Una vez que un hilo ha hecho su aporte a la suma global se cansa y necesita dormir exactamente 1 milisegundo. Una vez que despierta el hilo deja rastro si su aporte dejó a la suma global en positivo o negativo. Finalmente el hilo principal debe imprimir en la salida estándar el resultado de la suma, la cantidad de hilos que dejaron la suma en negativo, y la cantidad que lo dejaron en positivo.</p><div><i>Ejemplo de entrada</i></div><pre>3</pre><div><i>Ejemplo de salida</i></div><pre>1 1 2</pre><p>En el ejemplo anterior el resultado de la suma es <code>1</code> porque se crearon tres hilos: el hilo 0 suma 0 (deja en positivo), el hilo 1 suma -1 (deja en negativo), y el hilo 2 suma 2 (deja en positivo), es decir, 0 + -1 + 2 = 1. Además un hilo vio su resultado en negativo y . <b>Nota 1</b>: Puede crear más variables globales para resolver este problema. <b>Nota 2</b>: Desdichadamente las herramientas de detección de anomalías como Valgrind y Thread Sanitizer aún no soportan los hilos estándar de C11, lo que limita a este juez reportar condiciones de carrera en el corto plazo.</p>",
+  "statement": "<p>La <a href=\"https://en.cppreference.com/w/c/thread\" target=\"_blank\">biblioteca estándar de hilos de C11</a> incluye dos mecanismos de control de concurrencia: exclusión mutua (<i>mutex</i>) y variables de condición. El siguiente ejemplo hace que los dos hilos secundarios incrementen una variable global sin provocar una condición de carrera:</p><pre>#include &lt;threads.h&gt;\n#include &lt;stdio.h&gt;\n#include &lt;stdlib.h&gt;\n\nmtx_t can_access_count;\nsize_t count = 0;\n\nint increase(void* data) {\n  (void)data;\n  mtx_lock(&amp;can_access_count);\n  ++count;\n  mtx_unlock(&amp;can_access_count);\n  return EXIT_SUCCESS;\n}\n\nint main(void) {\n  mtx_init(&amp;can_access_count, mtx_plain);\n  thrd_t thread[2];\n  thrd_create(&amp;thread[0], increase, (void*)NULL);\n  thrd_create(&amp;thread[1], increase, (void*)NULL);\n  thrd_join(thread[0], NULL);\n  thrd_join(thread[1], NULL);\n  printf(\"count = %zu\\n\", count);\n  mtx_destroy(&amp;can_access_count);\n  return EXIT_SUCCESS;\n}\n</pre><p>El tipo de datos <code>mtx_t</code> declarado en el encabezado <code>&lt;threads.h&gt;</code> define un <i>mutex</i>. Antes de usarlo, debe ser inicializado con la función <code>mtx_init()</code> que recibe un puntero al mutex y su tipo. Al inicio de <code>main()</code> en el código de arriba se creó un mutex de tipo simple (<code>mtx_plain</code>). Sin embargo se puede pedir otros tipos de <i>mutex</i> con características adicionales, como permitir bloquear el <i>mutex</i> por un periodo de tiempo (<code>mtx_timed</code>) y permitir bloquear el <i>mutex</i> recursivamente (<code>mtx_recursive</code>). Una vez que ya no se va a usar más un <i>mutex</i>, se debe destruir con <code>mtx_destroy()</code>, como se hizo al final del <code>main()</code>. Para bloquear (esperar) y desbloquear el <i>mutex</i> se usan las funciones <code>mtx_lock()</code> y <code>mtx_unlock()</code> que reciben la dirección de memoria del <i>mutex</i>.</p><p>El problema a resolver es el siguiente. El hilo principal se quedó sin dinero y pidió ayuda a sus amigos, los hilos secundarios, quienes decidieron hacer una colecta. En la entrada estándar se indica la cantidad de amigos que tiene el hilo principal y la cantidad de dinero que necesita recolectar, medida en dólares. Al igual que los humanos, no todos los hilos son igual de generosos. Suponga que un hilo está dispuesto a aportar hasta un máximo de <code>rank + 1</code> dólares. Por ejemplo, el hilo 0 es el más tacaño de todos y estaría dispuesto a aportar máximo $1, le sigue el hilo 1 que aportaría máximo $2, y así sucesivamente.<p><p>Al igual que los humanos, no se sabe cuál amigo va a aportar primero ni en qué orden lo harán. Cada vez que un hilo va a hacer su aporte lo hace de la siguiente manera. Primero el hilo revisa cuánto dinero le hace falta a lo ya recolectado para alcanzar el monto que necesita el hilo principal. Luego, el hilo decide cuánto va a aportar, que puede ser lo que hace falta si está dentro de sus posibilidades o su máximo personal. Acto seguido el hilo consigue el dinero, que puede requerir ir al cajero. Para simular este paso haga al hilo dormir por exactamente 1 milisegundo. Una vez que el hilo haya conseguido el efectivo, lo aporta a la colecta global y termina su ejecución. Una vez que todos los hilos secundarios hayan hecho su aporte, el hilo principal imprime la cantidad de dinero que sus amigos le recolectaron. Puede ocurrir que esta cantidad no alcance el monto solicitado por el hilo principal, pero nunca debe sobrepasarla.</p><div><i>Ejemplo de entrada</i></div><pre>3 7.5</pre><div><i>Ejemplo de salida</i></div><pre>6</pre><p>En el ejemplo anterior el hilo principal solicitó $7.5 que supera el monto máximo que sus tres amigos están dispuestos a aportar: $1 + $2 + $3 = $6. <b>Nota 1</b>: Puede crear más variables globales para resolver este problema. <b>Nota 2</b>: Desdichadamente las herramientas de detección de anomalías como Valgrind y Thread Sanitizer a la fecha no soportan los hilos estándar de C11, lo que limita a este juez reportar condiciones de carrera.</p>",
   "tests": [ {
-      "input": "3",
+      "input": "3 7.5",
+      "output": "6\n",
+      "points": 2
+    }, {
+      "input": "3 5.5",
+      "output": "5.5\n",
+      "points": 2
+    }, {
+      "input": "0 10",
+      "output": "0\n",
+      "points": 2
+    }, {
+      "input": "1 10",
       "output": "1\n",
       "points": 2
     }, {
-      "input": "10",
-      "output": "-5\n",
+      "input": "10 10",
+      "output": "10\n",
       "points": 2
     }, {
-      "input": "0",
-      "output": "0\n",
-      "points": 2
-    }, {
-      "input": "1",
-      "output": "0\n",
-      "points": 2
-    }, {
-      "input": "43",
-      "output": "21\n",
-      "points": 2
-    }, {
-      "input": "48",
-      "output": "-24\n",
+      "input": "10 100",
+      "output": "55\n",
       "points": 2
     }
   ],
   "languages": [ "C" ],
   "initialCodeFor": {
-    "C": "#include <assert.h>\n#include <stdio.h>\n#include <stdlib.h>\n#include <threads.h>\n\nsize_t thread_count = 0;\nsize_t work_count = 0;\nsize_t* work_units = NULL;\nsize_t next_unit = 0;\n\nint simulate_work(void* data);\n\nint main(void) {\n  int error = thrd_success;\n  // Read work units\n  scanf(\"%zu %zu\", &thread_count, &work_count);\n  work_units = (size_t*) calloc(work_count, sizeof(size_t));\n  assert(work_units);\n  for (size_t index = 0; index < work_count; ++index) {\n    scanf(\"%zu\", &work_units[index]);\n  }\n  // Create secondary threads\n  thrd_t* threads = (thrd_t*) calloc(thread_count, sizeof(thrd_t));\n  assert(threads);\n  for (size_t index = 0; index < thread_count; ++index) {\n    error = thrd_create(&threads[index], simulate_work, (void*)index);\n    assert(error == thrd_success);\n  }\n  // Wait for secondary threads\n  for (size_t index = 0; index < thread_count; ++index) {\n    thrd_join(threads[index], NULL);\n  }\n  // Release resources\n  free(threads);\n  free(work_units);\n  return error;\n}\n\nint simulate_work(void* data) {\n  const size_t rank = (size_t)data;\n  // While there is pending work\n  size_t my_unit = next_unit++;\n  while (my_unit < work_count) {\n    // I got a work unit, simulate it by sleeping\n    const size_t milliseconds = work_units[my_unit];\n    const struct timespec delay = { 0, 1000000 * milliseconds };\n    thrd_sleep(&delay, NULL);\n    // I finished my work unit, report it\n    printf(\"Thread %zu completed work %zu: %zu\\n\", rank, my_unit, milliseconds);\n    // Try to get the next available work unit\n    my_unit = next_unit++;\n  }\n  return 0;\n}\n"
+    "C": "#include <assert.h>\n#include <stdio.h>\n#include <stdlib.h>\n#include <threads.h>\n\nsize_t thread_count = 0;\ndouble required = 0.0;\ndouble contribution = 0.0;\n\nint contribute(void* data);\n\nint main(void) {\n  int error = thrd_success;\n  // Create secondary threads\n  scanf(\"%zu %lg\", &thread_count, &required);\n  thrd_t* threads = (thrd_t*) calloc(thread_count, sizeof(thrd_t));\n  assert(threads);\n  for (size_t index = 0; index < thread_count; ++index) {\n    error = thrd_create(&threads[index], contribute, (void*)index);\n    assert(error == thrd_success);\n  }\n  // Wait for secondary threads\n  for (size_t index = 0; index < thread_count; ++index) {\n    thrd_join(threads[index], NULL);\n  }\n  printf(\"%lg\\n\", contribution);\n  // Release resources\n  free(threads);\n  return error;\n}\n\nint contribute(void* data) {\n  const size_t rank = (size_t)data;\n  const double my_contribution = rank;\n  struct timespec milisecond = {0, 1000000};\n  thrd_sleep(&milisecond, NULL);\n  contribution += my_contribution;\n  return EXIT_SUCCESS;\n}\n"
   },
   "minThreads": "stdin",
   "mustContain": [ "thrd_create", "thrd_join", "mtx_init", "mtx_destroy" ]
