@@ -4,50 +4,37 @@
 #include <threads.h>
 
 size_t thread_count = 0;
-size_t duration = 0;
-mtx_t can_access_force;
-long force = 0;
+mtx_t can_access_count;
+long count = 0;
 
-int pull_rope(void* data);
+int contribute(void* data);
 
 int main(void) {
-  int error = mtx_init(&can_access_force, mtx_plain);
-  scanf("%zu %zu", &thread_count, &duration);
+  int error = thrd_success;
+  mtx_init(&can_access_count, mtx_plain);
   // Create secondary threads
+  scanf("%zu", &thread_count);
   thrd_t* threads = (thrd_t*) calloc(thread_count, sizeof(thrd_t));
   assert(threads);
-  for (size_t index = 1; index < thread_count; ++index) {
-    error = thrd_create(&threads[index], pull_rope, (void*)index);
+  for (size_t index = 0; index < thread_count; ++index) {
+    error = thrd_create(&threads[index], contribute, (void*)index);
     assert(error == thrd_success);
   }
   // Wait for secondary threads
-  for (size_t index = 1; index < thread_count; ++index) {
+  for (size_t index = 0; index < thread_count; ++index) {
     thrd_join(threads[index], NULL);
   }
-  // Report game result
-  const char* winner = force > 0 ? "even won" : force < 0 ? "odd won" : "tie"; 
-  printf("Result %ld: %s\n", force, winner);
+  printf("%ld\n", count);
   // Release resources
-  mtx_destroy(&can_access_force);
+  mtx_destroy(&can_access_count);
   free(threads);
   return error;
 }
 
-int pull_rope(void* data) {
+int contribute(void* data) {
   const size_t rank = (size_t)data;
-  const long my_force = rank % 2 == 0 ? rank : -(long)rank;
-  // While game is active
-  size_t my_time = 0;
-  while (my_time < duration) {
-    // Rest to get force
-    const size_t milliseconds = 10 * rank;
-    const struct timespec delay = { 0, 1000000 * milliseconds };
-    thrd_sleep(&delay, NULL);
-    my_time += rank;
-    // Pull the rope
-    mtx_lock(&can_access_force);
-    force += my_force;
-    mtx_unlock(&can_access_force);
-  }
-  return 0;
+//  mtx_lock(&can_access_count);
+  count += rank % 2 == 0 ? (long)rank : -(long)rank;
+//  mtx_unlock(&can_access_count);
+  return EXIT_SUCCESS;
 }
