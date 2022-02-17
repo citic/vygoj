@@ -31,9 +31,12 @@ int main(void) {
 
 int contribute(void* data) {
   const size_t rank = (size_t)data;
+  // Decide how much I am going to contribute
   const double my_contribution = rank;
+  // Get that money
   struct timespec milisecond = {0, 1000000};
   thrd_sleep(&milisecond, NULL);
+  // Contribute it to the global amount
   contribution += my_contribution;
   return EXIT_SUCCESS;
 }

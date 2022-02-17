@@ -37,11 +37,14 @@ int main(void) {
 int contribute(void* data) {
   const size_t rank = (size_t)data;
   mtx_lock(&can_access_contribution);
+  // Decide how much I am going to contribute
   const double left = required - contribution;
   const double my_max = rank + 1;
   const double my_contribution = MIN(left, my_max);
+  // Get that money
   struct timespec milisecond = {0, 1000000};
   thrd_sleep(&milisecond, NULL);
+  // Contribute it to the global amount
   contribution += my_contribution;
   mtx_unlock(&can_access_contribution);
   return EXIT_SUCCESS;
