@@ -1,18 +1,30 @@
 {
   "name": "c_thrd_mtx",
   "title": "Exclusión mutua en C",
-  "statement": "<p>La <a href=\"https://en.cppreference.com/w/c/thread\" target=\"_blank\">biblioteca estándar de hilos de C11</a> incluye dos mecanismos de control de concurrencia: exclusión mutua (<i>mutex</i>) y variables de condición. El siguiente ejemplo hace que los dos hilos secundarios incrementen una variable global sin provocar una condición de carrera:</p><pre>#include &lt;threads.h&gt;\n#include &lt;stdio.h&gt;\n#include &lt;stdlib.h&gt;\n\nmtx_t can_access_count;\nsize_t count = 0;\n\nint increase(void* data) {\n  (void)data;\n  mtx_lock(&amp;can_access_count);\n  ++count;\n  mtx_unlock(&amp;can_access_count);\n  return EXIT_SUCCESS;\n}\n\nint main(void) {\n  mtx_init(&amp;can_access_count, mtx_plain);\n  thrd_t thread[2];\n  thrd_create(&amp;thread[0], increase, (void*)NULL);\n  thrd_create(&amp;thread[1], increase, (void*)NULL);\n  thrd_join(thread[0], NULL);\n  thrd_join(thread[1], NULL);\n  printf(\"count = %zu\\n\", count);\n  mtx_destroy(&amp;can_access_count);\n  return EXIT_SUCCESS;\n}\n</pre><p>El tipo de datos <code>mtx_t</code> declarado en el encabezado <code>&lt;threads.h&gt;</code> define un <i>mutex</i>. Antes de usarlo, debe ser inicializado con la función <code>mtx_init()</code> que recibe un puntero al mutex y su tipo. Al inicio de <code>main()</code> en el código de arriba se creó un mutex de tipo simple (<code>mtx_plain</code>). Sin embargo se puede pedir otros tipos de <i>mutex</i> con características adicionales, como permitir bloquear el <i>mutex</i> por un periodo de tiempo (<code>mtx_timed</code>) y permitir bloquear el <i>mutex</i> recursivamente (<code>mtx_recursive</code>). Una vez que ya no se va a usar más un <i>mutex</i>, se debe destruir con <code>mtx_destroy()</code>, como se hizo al final del <code>main()</code>. Para bloquear (esperar) y desbloquear el <i>mutex</i> se usan las funciones <code>mtx_lock()</code> y <code>mtx_unlock()</code> que reciben un puntero al <i>mutex</i>.</p><p>Modifique el código dado para crear una simulación de mapeo dinámico <em>sin condiciones de carrera</em>. El programa recibe de la entrada estándar la cantidad de hilos que debe crear, seguido de la cantidad de trabajo a repartir. Luego cada unidad de trabajo se lee en un arreglo. Los hilos deben repartirse las unidades de trabajo dinámicamente hasta que estas se acaben. Cada vez que un hilo consigue una unidad de trabajo, duerme por este tiempo medido en milisegundos, y reporta en la salida estándar que concluyó con esa unidad de trabajo antes de continuar con la siguiente.</p><div><i>Ejemplo de entrada</i></div><pre>2 3\n200\n100\n50</pre><div><i>Ejemplo de salida</i></div><pre>Thread 1 completed work 1: 100\nThread 1 completed work 2: 50\nThread 0 completed work 0: 200\n</pre><p><b>Nota 1</b>: Puede crear más variables globales para resolver este problema. <b>Nota 2</b>: Desdichadamente las herramientas de detección de anomalías como Valgrind y Thread Sanitizer aún no soportan los hilos estándar de C11, por lo que este juez tampoco las reportará.</p>",
+  "statement": "<p>La <a href=\"https://en.cppreference.com/w/c/thread\" target=\"_blank\">biblioteca estándar de hilos de C11</a> incluye dos mecanismos de control de concurrencia: exclusión mutua (<i>mutex</i>) y variables de condición. El siguiente ejemplo hace que los dos hilos secundarios incrementen una variable global sin provocar una condición de carrera:</p><pre>#include &lt;threads.h&gt;\n#include &lt;stdio.h&gt;\n#include &lt;stdlib.h&gt;\n\nmtx_t can_access_count;\nsize_t count = 0;\n\nint increase(void* data) {\n  (void)data;\n  mtx_lock(&amp;can_access_count);\n  ++count;\n  mtx_unlock(&amp;can_access_count);\n  return EXIT_SUCCESS;\n}\n\nint main(void) {\n  mtx_init(&amp;can_access_count, mtx_plain);\n  thrd_t thread[2];\n  thrd_create(&amp;thread[0], increase, (void*)NULL);\n  thrd_create(&amp;thread[1], increase, (void*)NULL);\n  thrd_join(thread[0], NULL);\n  thrd_join(thread[1], NULL);\n  printf(\"count = %zu\\n\", count);\n  mtx_destroy(&amp;can_access_count);\n  return EXIT_SUCCESS;\n}\n</pre><p>El tipo de datos <code>mtx_t</code> declarado en el encabezado <code>&lt;threads.h&gt;</code> define un <i>mutex</i>. Antes de usarlo, debe ser inicializado con la función <code>mtx_init()</code> que recibe un puntero al mutex y su tipo. Al inicio de <code>main()</code> en el código de arriba se creó un mutex de tipo simple (<code>mtx_plain</code>). Sin embargo se puede pedir otros tipos de <i>mutex</i> con características adicionales, como permitir bloquear el <i>mutex</i> por un periodo de tiempo (<code>mtx_timed</code>) y permitir bloquear el <i>mutex</i> recursivamente (<code>mtx_recursive</code>). Una vez que ya no se va a usar más un <i>mutex</i>, se debe destruir con <code>mtx_destroy()</code>, como se hizo al final del <code>main()</code>. Para bloquear (esperar) y desbloquear el <i>mutex</i> se usan las funciones <code>mtx_lock()</code> y <code>mtx_unlock()</code> que reciben un puntero al <i>mutex</i>.</p><p>Modifique el código dado para crear la cantidad de hilos indicada en la entrada estándar. Los hilos con número (<i>rank</i>) par deben sumar este número al contador global, mientras que los impares deben restarlo. Finalmente el hilo principal debe imprimir el resultado de la suma en la salida estándar.</p><div><i>Ejemplo de entrada</i></div><pre>3</pre><div><i>Ejemplo de salida</i></div><pre>1</pre><p>En el ejemplo anterior el resultado es <code>1</code> porque se crearon tres hilos: el hilo 0 suma 0, el hilo 1 suma -1, y el hilo 2 suma 2, es decir, 0 + -1 + 2 = 1. <b>Nota 1</b>: Puede crear más variables globales para resolver este problema. <b>Nota 2</b>: Desdichadamente las herramientas de detección de anomalías como Valgrind y Thread Sanitizer aún no soportan los hilos estándar de C11, lo que limita a este juez reportar condiciones de carrera en el corto plazo.</p>",
   "tests": [ {
-      "input": "2 3\n200\n100\n50",
-      "output": "Thread 1 completed work 1: 100\nThread 1 completed work 2: 50\nThread 0 completed work 0: 200\n",
+      "input": "3",
+      "output": "1\n",
       "points": 2
     }, {
-      "input": "1 3\n200\n100\n50",
-      "output": "Thread 0 completed work 0: 200\nThread 0 completed work 1: 100\nThread 0 completed work 2: 50\n",
+      "input": "10",
+      "output": "-5\n",
       "points": 2
     }, {
-      "input": "3 3\n200\n100\n50",
-      "output": "Thread 2 completed work 2: 50\nThread 1 completed work 1: 100\nThread 0 completed work 0: 200\n",
+      "input": "0",
+      "output": "0\n",
+      "points": 2
+    }, {
+      "input": "1",
+      "output": "0\n",
+      "points": 2
+    }, {
+      "input": "43",
+      "output": "21\n",
+      "points": 2
+    }, {
+      "input": "48",
+      "output": "-24\n",
       "points": 2
     }
   ],
@@ -21,5 +33,5 @@
     "C": "#include <assert.h>\n#include <stdio.h>\n#include <stdlib.h>\n#include <threads.h>\n\nsize_t thread_count = 0;\nsize_t work_count = 0;\nsize_t* work_units = NULL;\nsize_t next_unit = 0;\n\nint simulate_work(void* data);\n\nint main(void) {\n  int error = thrd_success;\n  // Read work units\n  scanf(\"%zu %zu\", &thread_count, &work_count);\n  work_units = (size_t*) calloc(work_count, sizeof(size_t));\n  assert(work_units);\n  for (size_t index = 0; index < work_count; ++index) {\n    scanf(\"%zu\", &work_units[index]);\n  }\n  // Create secondary threads\n  thrd_t* threads = (thrd_t*) calloc(thread_count, sizeof(thrd_t));\n  assert(threads);\n  for (size_t index = 0; index < thread_count; ++index) {\n    error = thrd_create(&threads[index], simulate_work, (void*)index);\n    assert(error == thrd_success);\n  }\n  // Wait for secondary threads\n  for (size_t index = 0; index < thread_count; ++index) {\n    thrd_join(threads[index], NULL);\n  }\n  // Release resources\n  free(threads);\n  free(work_units);\n  return error;\n}\n\nint simulate_work(void* data) {\n  const size_t rank = (size_t)data;\n  // While there is pending work\n  size_t my_unit = next_unit++;\n  while (my_unit < work_count) {\n    // I got a work unit, simulate it by sleeping\n    const size_t milliseconds = work_units[my_unit];\n    const struct timespec delay = { 0, 1000000 * milliseconds };\n    thrd_sleep(&delay, NULL);\n    // I finished my work unit, report it\n    printf(\"Thread %zu completed work %zu: %zu\\n\", rank, my_unit, milliseconds);\n    // Try to get the next available work unit\n    my_unit = next_unit++;\n  }\n  return 0;\n}\n"
   },
   "minThreads": "stdin",
-  "allowIndeterminism": "words"
+  "mustContain": [ "thrd_create", "thrd_join", "mtx_init", "mtx_destroy" ]
 }
