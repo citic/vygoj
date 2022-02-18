@@ -117,6 +117,9 @@ export interface Judge0Submission {
   command_line_arguments?: string; /// commandLineArguments,
   redirect_stderr_to_stdout?: boolean; // redirectStderrToStdout
   expected_output?: string;
+  cpu_time_limit?: number;
+  cpu_extra_time?: number;
+  wall_time_limit?: number;
 }
 
 export type text = string | null;

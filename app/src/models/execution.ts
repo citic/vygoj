@@ -19,13 +19,13 @@ const languageDefaults: vyg.LanguageDefaults = {
   C: {
     id: 50,
     compiler: 'gcc',
-    compiler_options: '-g -Wall -Wextra -std=gnu17 -fsanitize=address -fmessage-length=80 -pthread',
+    compiler_options: '-g -Wall -Wextra -std=gnu17 -fsanitize=address -fmessage-length=80 -pthread -lm',
     file_extension: 'c',
   },
   'C++': {
     id: 54,
     compiler: 'g++',
-    compiler_options: '-g -Wall -Wextra -std=gnu++17 -fsanitize=address -fmessage-length=80 -pthread',
+    compiler_options: '-g -Wall -Wextra -std=gnu++17 -fsanitize=address -fmessage-length=80 -pthread -lm',
     file_extension: 'cpp',
   },
 };
@@ -116,6 +116,8 @@ export default class Execution {
       compiler_options: languageDefaults[this.language].compiler_options,
       stdin: serverEncode(test.input),
       expected_output: serverEncode(test.output),
+      cpu_extra_time: 0.0,
+      wall_time_limit: 2.0,
     };
     // The options of the fetch(uri, options) message
     const options: nodeFetch.RequestInit = {
