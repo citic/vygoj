@@ -2,10 +2,12 @@ import database from './database.js';
 import { User, Role } from '../models/user.js';
 
 // The default users database
-const user = new User(Role.admin, 'Admin', 'admin@vygoj.com', 'adminvyg');
-// new User(Role.professor, 'Professor', 'prof@vygoj.com', 'profvyg');
-// new User(Role.student, 'Student', 'student@vygoj.com', 'studvyg');
-// new User(Role.assistant, 'Assistant', 'assistant@vygoj.com', 'assistvyg');
+const users = [
+  new User(Role.admin, 'Admin', 'admin@vygoj.com', 'adminvyg'),
+  // new User(Role.professor, 'Professor', 'prof@vygoj.com', 'profvyg'),
+  // new User(Role.student, 'Student', 'student@vygoj.com', 'studvyg'),
+  // new User(Role.assistant, 'Assistant', 'assistant@vygoj.com', 'assistvyg'),
+];
 
 /**
  * Creates the admin user in the database using default values. This procedure
@@ -21,12 +23,15 @@ async function createUser() {
   // TODO: If there is a least an admin user, stop unless -f is given
   // TODO: If user already exists raise an error
   // Insert the user into the database
-  await database.users().insertOne(user);
-  // Start listening for connections, HTTP requests, and manage them
-  console.log(`${user.role} user ${user.name} <${user.email}> created with password ${user.password}`);
-  console.log();
-  console.log('Log in with this user using a web browser and change its password.');
-  console.log('Then you can create more users using the web interface.');
+  for (let index = 0; index < users.length; ++index) {
+    const user = users[index];
+    await database.users().insertOne(user);
+    // Start listening for connections, HTTP requests, and manage them
+    console.log(`${user.role} user ${user.name} <${user.email}> created with password ${user.password}`);
+    console.log();
+    console.log('Log in with this user using a web browser and change its password.');
+    console.log('Then you can create more users using the web interface.');
+  }
   process.exit(0);
 }
 

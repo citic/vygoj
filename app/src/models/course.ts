@@ -128,11 +128,11 @@ const allCourses = [
         title: 'Exclusión mutua en C',
         type: 'problem',
         folder: 'c_thrd_mtx',
-      }, {
+      /* }, {
         name: 'c_local_storage',
         title: 'Local storage en C',
         type: 'problem',
-        folder: 'c_local_storage',
+        folder: 'c_local_storage', */
       }, {
         name: 'c_prime_counter',
         title: 'Contador de primos en C',
