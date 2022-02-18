@@ -75,10 +75,11 @@ class CourseController {
 
   // Get the contents page for a course
   // eslint-disable-next-line class-methods-use-this
-  getCourse(req: Request, res: Response) {
+  async getCourse(req: Request, res: Response) {
     const courseId = req.params.courseId as string;
     const course = Course.findById(courseId);
-    if (course) {
+    if (course && req.session.user) {
+      await req.session.user.loadProgress();
       res.render('courses/course', {
         stylesheet: 'courses',
         title: `${course.title} - Vygoj`,
@@ -87,6 +88,7 @@ class CourseController {
           { href: `/course/${course.id}`, text: course.code },
         ],
         course,
+        progress: req.session.user.progress,
       });
     } else {
       errorController.getNotFound(req, res);

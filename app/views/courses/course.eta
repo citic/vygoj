@@ -9,7 +9,10 @@ function showContent(content, indent = 0, repo = '') {
     result += ' '.repeat(2 * (indent + 2));
     const path = `${repo}/${item.folder}`;
     let link = item.title;
-    if (item.type && item.type === 'problem') link = `<a href="${path}">${link}</a> [0%]`;
+    if (item.type && item.type === 'problem') {
+      const percent = (it.progress[item.name] ?? 0).toFixed(0);
+      link = `[${percent}%] <a href="${path}">${link}</a>`;
+    }
     result += `<p class="course__activity">${link}</p>\n`;
     result += showContent(item.contents, indent + 2, path);
     result += ' '.repeat(2 * (indent + 1)) + '</li>\n';

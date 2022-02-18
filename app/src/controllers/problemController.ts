@@ -64,7 +64,7 @@ class ProblemController {
       const message = req.body as vyg.Message;
       switch (message.action) {
         case 'fetch_problem': await this.fetchProblem(problemPath, res); break;
-        case 'run': await this.runUserCode(problemPath, res, message); break;
+        case 'run': await this.runUserCode(problemPath, req, res, message); break;
         default: res.json({ error: 'invalid action' }); break;
       }
     } catch (error) {
@@ -79,14 +79,17 @@ class ProblemController {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  async runUserCode(problemPath: string, res: Response, message: vyg.Message) {
+  async runUserCode(problemPath: string, req: Request, res: Response, message: vyg.Message) {
     // Load the problem
     const problem = await Problem.load(problemPath);
     // Run the test cases and wait for the array of results
     const results = await this.runTestCases(problem, message) as vyg.TestCaseResult[];
     // Embed the results into a object with statistics
     const result = this.createResult(problem, results);
-    // setTimeout(() => { res.json(result); }, 3000);
+    // Store progress
+    console.assert(req.session.user);
+    let progress = 100 * result.points / result.totalPoints;
+    await req.session.user?.storeProgress(problem.name, progress);
     res.json(result);
   }
 
@@ -126,6 +129,7 @@ class ProblemController {
     // The result object has some statistics
     let passedTestCount = 0;
     let points = 0;
+    let totalPoints = 0;
     let maxWallTime = -Infinity;
     // Calculate them
     for (let index = 0; index < results.length; ++index) {
@@ -136,6 +140,7 @@ class ProblemController {
         ++passedTestCount;
         points += problem.tests[index].points;
       }
+      totalPoints += problem.tests[index].points;
       // If this test case lasted longer than the longest known
       const testTime = parseFloat(test.wallTime || test.cpuTime || '');
       if (testTime > maxWallTime) {
@@ -146,6 +151,7 @@ class ProblemController {
     return {
       passedTestCount,
       points,
+      totalPoints,
       maxWallTime,
       results
     };

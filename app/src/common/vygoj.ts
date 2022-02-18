@@ -198,6 +198,8 @@ export interface ExecutionResult {
   passedTestCount: number;
   // Points gained by this solution
   points: number;
+  // Total points (sum of all test cases)
+  totalPoints: number;
   // Wall time of the largest test case
   maxWallTime: number;
   // Results of each test case
