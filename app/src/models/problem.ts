@@ -42,6 +42,9 @@ export default class Problem {
   // Supported values: 'lines'
   allowIndeterminism: string | null = null;
 
+  // Considers invalid a solution if it does NOT contains these words
+  mustContain: Array<string> | null = null;
+
   // TODO: enabled programming languages, e.g: c,cpp,py,...
 
   // Load the fields of this object from the given JSON file path
@@ -56,6 +59,7 @@ export default class Problem {
     this.minThreads = json.minThreads || 0;
     this.maxThreads = json.maxThreads || Number.MAX_SAFE_INTEGER;
     this.allowIndeterminism = json.allowIndeterminism || null;
+    this.mustContain = json.mustContain || null;
 
     // Remove HTML escaping
     // TODO: Traverse all languages

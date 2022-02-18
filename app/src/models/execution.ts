@@ -134,6 +134,8 @@ export default class Execution {
     this.checkEmptyExpectedOutput(index, testCaseResult);
     // If indeterminism is allowed, compare output again
     this.checkIndeterminism(index, testCaseResult);
+    // Run static analysis checks
+    this.checkStaticAnalysis(index, testCaseResult);
     // If there futher proofs, execute them
     if (testCaseResult.status === vyg.Status.passed && this.problem.hasProofs()) {
       await this.runProofs(index, testCaseResult);
@@ -193,6 +195,40 @@ export default class Execution {
     const userOutput = common.serverDecode(result.stdout || '').trim();
     if (userOutput === expected) {
       result.status = vyg.Status.passed;
+    }
+  }
+
+  // If professor asked to do static analsys, eg: check some words are in code
+  checkStaticAnalysis(index: number, result: vyg.TestCaseResult) {
+    if (this.problem.mustContain && result.status === vyg.Status.passed) {
+      const code = common.serverDecode(this.message.code || '');
+      for (let tokenIndex = 0; tokenIndex < this.problem.mustContain.length; ++tokenIndex) {
+        const token = this.problem.mustContain[tokenIndex];
+        if (code.indexOf(token) === -1) {
+          // console.log(`:::::::${token}`);
+          // The token is missing
+          result.status = vyg.Status.wrong;
+          // Provide a descriptive message
+          result.message = result.message ? `${result.message} ` : '';
+          result.message += common.serverEncode(`Missing ${token} in solution`);
+          break;
+        }
+      }
+    }
+  }
+
+  // If indeterminism is allowed, compare output again
+  checkIndeterminism(index: number, result: vyg.TestCaseResult) {
+    if (this.problem.allowIndeterminism === 'lines') {
+      const test = this.problem.tests[index];
+      const expectedOutput = test.output.split('\n').sort();
+      const userOutput = (common.serverDecode(result.stdout || '').split('\n')).sort();
+      console.log(userOutput, expectedOutput);
+      if (arrayEquals(userOutput, expectedOutput)) {
+        result.status = vyg.Status.passed;
+        // result.message = '';
+        console.log('test case fixed to passed ignoring indeterminism');
+      }
     }
   }
 
@@ -283,21 +319,6 @@ export default class Execution {
       // Provide a descriptive message
       result.message = result.message ? `${result.message} ` : '';
       result.message += common.serverEncode(`Invalid amount of secondary threads (${result.threadCount})`);
-    }
-  }
-
-  // If indeterminism is allowed, compare output again
-  checkIndeterminism(index: number, result: vyg.TestCaseResult) {
-    if (this.problem.allowIndeterminism === 'lines') {
-      const test = this.problem.tests[index];
-      const expectedOutput = test.output.split('\n').sort();
-      const userOutput = (common.serverDecode(result.stdout || '').split('\n')).sort();
-      console.log(userOutput, expectedOutput);
-      if (arrayEquals(userOutput, expectedOutput)) {
-        result.status = vyg.Status.passed;
-        // result.message = '';
-        console.log('test case fixed to passed ignoring indeterminism');
-      }
     }
   }
 }

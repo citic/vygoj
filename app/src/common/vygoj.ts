@@ -87,6 +87,7 @@ export interface ProblemInterface {
   minThreads?: number | string;
   maxThreads?: number | string;
   allowIndeterminism?: string;
+  mustContain?: Array<string>;
 }
 
 // Execution status enumeration
