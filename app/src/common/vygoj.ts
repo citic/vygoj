@@ -73,6 +73,8 @@ export interface TestInterface {
   output: string;
   points: number;
   hidden: boolean; // TODO: clear it from server side
+  minThreads?: number;
+  maxThreads?: number;
   minDuration?: number;
   maxDuration?: number;
 }

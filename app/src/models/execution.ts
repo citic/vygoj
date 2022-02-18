@@ -325,16 +325,17 @@ export default class Execution {
     result.threadCount = parseInt(stdout, 10);
 
     // Get the accepted range
+    const minThreadsText = this.problem.tests[index].minThreads ?? this.problem.minThreads;
+    const maxThreads = this.problem.tests[index].minThreads ?? this.problem.maxThreads;
     let minThreads = 0;
-    if (typeof this.problem.minThreads === 'number') {
-      minThreads = this.problem.minThreads;
-    } else if (this.problem.minThreads === 'stdin') {
+    if (typeof minThreadsText === 'number') {
+      minThreads = minThreadsText;
+    } else if (minThreadsText === 'stdin') {
       // The number of threads is given as first value of stdin
       minThreads = parseInt(this.problem.tests[index].input, 10);
     }
     // Check it is in range
-    const inRange = minThreads <= result.threadCount &&
-      result.threadCount <= this.problem.maxThreads;
+    const inRange = minThreads <= result.threadCount && result.threadCount <= maxThreads;
     // If user did not create the asked amount of threads
     if (!inRange) {
       // Mark the test case failed
