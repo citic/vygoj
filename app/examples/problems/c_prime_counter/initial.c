@@ -1,54 +1,63 @@
 #include <assert.h>
+#include <math.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <threads.h>
 
 size_t thread_count = 0;
-size_t work_count = 0;
-size_t* work_units = NULL;
-size_t next_unit = 0;
+size_t number_count = 0;
+size_t* numbers = NULL;
+size_t prime_count = 0;
 
-int simulate_work(void* data);
+void find_primes(void);
+bool is_prime(size_t number);
 
 int main(void) {
-  int error = thrd_success;
-  // Read work units
-  scanf("%zu %zu", &thread_count, &work_count);
-  work_units = (size_t*) calloc(work_count, sizeof(size_t));
-  assert(work_units);
-  for (size_t index = 0; index < work_count; ++index) {
-    scanf("%zu", &work_units[index]);
+  // Read numbers
+  scanf("%zu %zu", &thread_count, &number_count);
+  numbers = (size_t*) calloc(number_count, sizeof(size_t));
+  assert(numbers);
+  for (size_t index = 0; index < number_count; ++index) {
+    scanf("%zu", &numbers[index]);
   }
-  // Create secondary threads
-  thrd_t* threads = (thrd_t*) calloc(thread_count, sizeof(thrd_t));
-  assert(threads);
-  for (size_t index = 0; index < thread_count; ++index) {
-    error = thrd_create(&threads[index], simulate_work, (void*)index);
-    assert(error == thrd_success);
-  }
-  // Wait for secondary threads
-  for (size_t index = 0; index < thread_count; ++index) {
-    thrd_join(threads[index], NULL);
+  // Find primes
+  find_primes();
+  // Print report
+  printf("%zu primes:\n", prime_count);
+  for (size_t index = 0; index < number_count; ++index) {
+    if (numbers[index]) {
+      printf("%zu\n", numbers[index]);
+    }
   }
   // Release resources
-  free(threads);
-  free(work_units);
-  return error;
+  free(numbers);
+  return EXIT_SUCCESS;
 }
 
-int simulate_work(void* data) {
-  const size_t rank = (size_t)data;
-  // While there is pending work
-  size_t my_unit = next_unit++;
-  while (my_unit < work_count) {
-    // I got a work unit, simulate it by sleeping
-    const size_t milliseconds = work_units[my_unit];
-    const struct timespec delay = { 0, 1000000 * milliseconds };
-    thrd_sleep(&delay, NULL);
-    // I finished my work unit, report it
-    printf("Thread %zu completed work %zu: %zu\n", rank, my_unit, milliseconds);
-    // Try to get the next available work unit
-    my_unit = next_unit++;
+void find_primes(void) {
+  // Traverse all numbers
+  for (size_t index = 0; index < number_count; ++index) {
+    // If number is prime, increase the counter
+    if (is_prime(numbers[index])) {
+      ++prime_count;
+    } else {
+      // Number is not prime, mark it to avoid printing it later
+      numbers[index] = 0;
+    }
   }
-  return 0;
+}
+
+bool is_prime(size_t number) {
+  if (number < 2) return false;
+  if (number == 2) return true;
+  if (number % 2 == 0) return false;
+
+  size_t last = sqrt(number);
+  for (size_t i = 3; i <= last; i += 2) {
+    if (number % i == 0) {
+      return false;
+    }
+  }
+
+  return true;
 }
