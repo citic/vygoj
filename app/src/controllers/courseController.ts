@@ -15,6 +15,8 @@ class CourseController {
   // Get the homepage view
   // eslint-disable-next-line class-methods-use-this
   getIndex(req: Request, res: Response) {
+    // Show courses only for logged in users
+    const courses = req.session.user ? Course.fetchMyCourses() : [];
     // Show the homepage
     res.render('courses/courses', {
       stylesheet: 'courses',
@@ -23,7 +25,7 @@ class CourseController {
       breadcumbs: [
       ],
       // The list of user's courses
-      myCourses: Course.fetchMyCourses(),
+      myCourses: courses,
       // The list of available courses for this user
       availableCourses: Course.fetchAllCourses(),
     });
