@@ -10,7 +10,7 @@ class Log {
   }
 
   append(message: string, type = 'info', category = '') {
-    const date = new Date();
+    const date = new Date().toLocaleString('es-CR').replace(' ', '\t');
     const line = `${date}\t${type}\t${category}\t${message}\n`;
     fs.appendFile(this.filename, line, (error) => {
       if (error) {
@@ -20,8 +20,10 @@ class Log {
   }
 
   appendHttpRequest(req: Request) {
-    const message = `${req.method} ${req.url}`;
-    console.log(message);
+    console.log(`${req.method}\t${req.url}`);
+    const user = req.session.user?.email ?? '';
+    const body = req.body ? JSON.stringify(req.body) : '';
+    const message = `${req.ip}\t${req.method}\t${req.url}\t${user}\t${body}`;
     this.append(message, 'info', 'req');
   }
 }

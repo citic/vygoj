@@ -16,10 +16,6 @@ import userController from '../controllers/userController.js';
 const router = express.Router();
 
 // General -------------------------------------------------------------------
-// Log each HTTP request
-router.use((req, res, next) => {
-  log.appendHttpRequest(req); next();
-});
 // Wait for the body of POST HTTP-Requests and parse it as JSON objects
 router.use(express.json());
 // Wait for the body of POST HTTP-Requests and parse it as att1=val1&att2=val2
@@ -34,6 +30,10 @@ router.use(session({
 // Change database user by a User instance object
 router.use((req, res, next) => {
   userController.setRequestUser(req, res, next);
+});
+// Log each HTTP request
+router.use((req, res, next) => {
+  log.appendHttpRequest(req); next();
 });
 
 // Homepage -------------------------------------------------------------------
