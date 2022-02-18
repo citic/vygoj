@@ -17,7 +17,8 @@
     }, {
       "input": "10",
       "output": "Hello from secondary thread 0\nHello from secondary thread 1\nHello from secondary thread 2\nHello from secondary thread 3\nHello from secondary thread 4\nHello from secondary thread 5\nHello from secondary thread 6\nHello from secondary thread 7\nHello from secondary thread 8\nHello from secondary thread 9\n",
-      "points": 5
+      "points": 5,
+      "minDuration": 0.009
     }
   ],
   "languages": [ "C" ],

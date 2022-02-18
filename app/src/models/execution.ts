@@ -134,6 +134,8 @@ export default class Execution {
     this.checkEmptyExpectedOutput(index, testCaseResult);
     // If indeterminism is allowed, compare output again
     this.checkIndeterminism(index, testCaseResult);
+    // Check solution is in time range
+    this.checkTimeRange(index, testCaseResult);
     // Run static analysis checks
     this.checkStaticAnalysis(index, testCaseResult);
     // If there futher proofs, execute them
@@ -198,6 +200,27 @@ export default class Execution {
     }
   }
 
+  checkTimeRange(index: number, result: vyg.TestCaseResult) {
+    if (result.status !== vyg.Status.passed) return;
+    const durationString = result.wallTime || result.cpuTime;
+    if (!durationString) return;
+    const duration = parseFloat(durationString);
+    const minDuration = this.problem.tests[index].minDuration ?? this.problem.minDuration;
+    const maxDuration = this.problem.tests[index].maxDuration ?? this.problem.maxDuration;
+    if (minDuration && duration < minDuration) {
+      result.status = vyg.Status.runtimeError;
+      // Provide a descriptive message
+      result.message = result.message ? `${result.message} ` : '';
+      result.message += common.serverEncode(`Faster than expected`);
+    }
+    if (maxDuration && duration > maxDuration) {
+      result.status = vyg.Status.runtimeError;
+      // Provide a descriptive message
+      result.message = result.message ? `${result.message} ` : '';
+      result.message += common.serverEncode(`Slower than expected`);
+    }
+  }
+
   // If professor asked to do static analsys, eg: check some words are in code
   checkStaticAnalysis(index: number, result: vyg.TestCaseResult) {
     if (this.problem.mustContain && result.status === vyg.Status.passed) {
@@ -219,7 +242,7 @@ export default class Execution {
 
   // If indeterminism is allowed, compare output again
   checkIndeterminism(index: number, result: vyg.TestCaseResult) {
-    if (this.problem.allowIndeterminism === 'lines') {
+    if (this.problem.allowIndeterminism === 'lines' && result.status === vyg.Status.wrong) {
       const test = this.problem.tests[index];
       const expectedOutput = test.output.split('\n').sort();
       const userOutput = (common.serverDecode(result.stdout || '').split('\n')).sort();

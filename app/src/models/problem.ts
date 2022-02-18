@@ -45,6 +45,10 @@ export default class Problem {
   // Considers invalid a solution if it does NOT contains these words
   mustContain: Array<string> | null = null;
 
+  // Allowed time range in seconds specified by professor for all test cases
+  minDuration: number | null = null;
+  maxDuration: number | null = null;
+
   // TODO: enabled programming languages, e.g: c,cpp,py,...
 
   // Load the fields of this object from the given JSON file path
@@ -60,6 +64,8 @@ export default class Problem {
     this.maxThreads = json.maxThreads || Number.MAX_SAFE_INTEGER;
     this.allowIndeterminism = json.allowIndeterminism || null;
     this.mustContain = json.mustContain || null;
+    this.minDuration = json.minDuration || null;
+    this.maxDuration = json.maxDuration || null;
 
     // Remove HTML escaping
     // TODO: Traverse all languages

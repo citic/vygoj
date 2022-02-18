@@ -73,6 +73,8 @@ export interface TestInterface {
   output: string;
   points: number;
   hidden: boolean; // TODO: clear it from server side
+  minDuration?: number;
+  maxDuration?: number;
 }
 
 // A problem
@@ -88,6 +90,8 @@ export interface ProblemInterface {
   maxThreads?: number | string;
   allowIndeterminism?: string;
   mustContain?: Array<string>;
+  minDuration?: number;
+  maxDuration?: number;
 }
 
 // Execution status enumeration
