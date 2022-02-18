@@ -7,6 +7,7 @@ import path from 'path';
 import util from 'util';
 import config from '../util/config.js';
 import Problem from '../models/problem.js';
+import * as common from '../common/common.js';
 import * as vyg from '../common/vygoj.js';
 
 const exec = util.promisify(child_process.exec);
@@ -47,16 +48,6 @@ const judge0status = [
   'Internal Error', // 13
   'Exec Format Error', // 14  
 ];
-
-function serverEncode(text: string) {
-  // See https://stackoverflow.com/a/69992416
-  return Buffer.from(text, 'utf8').toString('base64');
-}
-
-function serverDecode(data: string) {
-  // See https://stackoverflow.com/a/69992416
-  return Buffer.from(data, 'base64').toString('utf8');
-}
 
 // Return true if two arrays have the same elements
 function arrayEquals(array1: any[], array2: any[]) {
@@ -114,8 +105,8 @@ export default class Execution {
       source_code: this.message.code || '',
       language_id: languageDefaults[this.language].id,
       compiler_options: languageDefaults[this.language].compiler_options,
-      stdin: serverEncode(test.input),
-      expected_output: serverEncode(test.output),
+      stdin: common.serverEncode(test.input),
+      expected_output: common.serverEncode(test.output),
       cpu_extra_time: 0.0,
       wall_time_limit: 2.0,
     };
@@ -199,7 +190,7 @@ export default class Execution {
   // Judge0 always consider empty output as failed even thought the expected output is empty too
   checkEmptyExpectedOutput(index: number, result: vyg.TestCaseResult) {
     const expected = this.problem.tests[index].output.trim();
-    const userOutput = serverDecode(result.stdout || '').trim();
+    const userOutput = common.serverDecode(result.stdout || '').trim();
     if (userOutput === expected) {
       result.status = vyg.Status.passed;
     }
@@ -229,7 +220,7 @@ export default class Execution {
       // Copy source code to a file
       // TODO: support for multiple source files
       const source = path.join(this.dir, `main.${extension}`);
-      await fs.writeFile(source, serverDecode(this.message.code || ''));
+      await fs.writeFile(source, common.serverDecode(this.message.code || ''));
       // Compiler invocation
       const exe = path.join(this.dir, `solution`);
       const cmd = `${compiler} ${options} ${source} -o ${exe}`;
@@ -291,7 +282,7 @@ export default class Execution {
       result.status = vyg.Status.runtimeError;
       // Provide a descriptive message
       result.message = result.message ? `${result.message} ` : '';
-      result.message += serverEncode(`Invalid amount of secondary threads (${result.threadCount})`);
+      result.message += common.serverEncode(`Invalid amount of secondary threads (${result.threadCount})`);
     }
   }
 
@@ -300,7 +291,7 @@ export default class Execution {
     if (this.problem.allowIndeterminism === 'lines') {
       const test = this.problem.tests[index];
       const expectedOutput = test.output.split('\n').sort();
-      const userOutput = (serverDecode(result.stdout || '').split('\n')).sort();
+      const userOutput = (common.serverDecode(result.stdout || '').split('\n')).sort();
       console.log(userOutput, expectedOutput);
       if (arrayEquals(userOutput, expectedOutput)) {
         result.status = vyg.Status.passed;

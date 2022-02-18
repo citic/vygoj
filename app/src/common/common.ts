@@ -32,3 +32,13 @@ export async function fetchJson(url: string) {
   const data = await fetch(url) as string;
   return JSON.parse(data);
 }
+
+export function serverEncode(text: string) {
+  // See https://stackoverflow.com/a/69992416
+  return Buffer.from(text, 'utf8').toString('base64');
+}
+
+export function serverDecode(data: string) {
+  // See https://stackoverflow.com/a/69992416
+  return Buffer.from(data, 'base64').toString('utf8');
+}
