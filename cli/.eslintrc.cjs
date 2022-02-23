@@ -6,16 +6,13 @@ module.exports = {
     node: true,
   },
   extends: [
-    'airbnb-typescript',
+    'airbnb',
   ],
-  parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaVersion: 12,
     sourceType: 'module',
-    project: './tsconfig.json',
   },
   plugins: [
-    '@typescript-eslint',
   ],
   rules: {
     // Allow modifying properties through function's params
