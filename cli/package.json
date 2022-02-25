@@ -6,6 +6,7 @@
   "license": "ISC",
   "type": "module",
   "main": "vyg.js",
+  "bin": "./src/vyg.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "npx eslint src --ext .js,.jsx"

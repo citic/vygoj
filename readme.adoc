@@ -18,7 +18,13 @@ The results of each executed program are fetched from the _app_ module and shown
 
 Currently the _Code Execution Service_ is provided by link:https://judge0.com/[Jutge0^]. But in future phases an own service may be designed for meeting the concurrent and distributed programming requirements.
 
-A command-line interface tool is provided to do some batch operations, such as, extract logs to analyzable data, and help building courses, compound of programming problems. This tools is in `cli/` folder.
+A command-line interface tool named `vyg` is provided to do some batch operations, such as, extract logs to analyzable data, and help building courses, compound of programming problems. This tools is in `cli/` folder. To install it globally do:
+
+[source,sh]
+----
+cd cli/
+sudo npm i -g
+----
 
 
 
