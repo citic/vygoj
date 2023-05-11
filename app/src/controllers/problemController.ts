@@ -44,8 +44,8 @@ class ProblemController {
         ],
         problem,
         scripts: [
-          '<script src="https://pagecdn.io/lib/ace/1.4.13/ace.js" crossorigin="anonymous" integrity="sha256-bS3VAQePcKYmsvI+8BdG2QJAVb9FbiZLgM5vK2/+TcM=" async="async"></script>',
-          '<script src="https://unpkg.com/ace-diff@^3.0.0"></script>',
+          '<script src="https://cdn.jsdelivr.net/npm/ace-builds@1.4.13/src-min/ace.js" crossorigin="anonymous" integrity="sha256-bS3VAQePcKYmsvI+8BdG2QJAVb9FbiZLgM5vK2/+TcM=" async="async"></script>',
+          '<script src="https://cdn.jsdelivr.net/npm/ace-diff@3.0.3/dist/ace-diff.min.js" async="async"></script>',
           '<script src="/js/problem/problem.js" type="module" async="async"></script>',
         ],
       });
