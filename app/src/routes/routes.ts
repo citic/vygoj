@@ -33,7 +33,8 @@ router.use((req, res, next) => {
 });
 // Log each HTTP request
 router.use((req, res, next) => {
-  log.appendHttpRequest(req); next();
+  log.appendHttpRequest(req);
+  next();
 });
 
 // Homepage -------------------------------------------------------------------
