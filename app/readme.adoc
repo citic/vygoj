@@ -25,7 +25,7 @@ cd vygoj/app
 
 === Dependencies
 
-For convenience, the following commands suppose that dependencies installed globally, therefore you can reuse them for other projects. However you can remove `sudo` and `-g` if you prefer installing them as project dependencies.
+For convenience, the following commands suppose that dependencies installed globally, therefore you can reuse them for other projects. However you can remove `-g` if you prefer installing them as project dependencies. For Linux you may run the following commands with `sudo` privileges if you want these commands are available for other projects and users.
 
 
 .Global dependencies
@@ -37,10 +37,10 @@ For convenience, the following commands suppose that dependencies installed glob
 |(your preferred one)
 
 |link:https://www.npmjs.com/package/typescript[TypeScript compiler^]
-|`sudo npm i -g typescript`.
+|`npm i -g typescript`.
 
 |link:https://www.npmjs.com/package/pm2[Process Manager 2^]
-|`sudo npm i -g pm2`
+|`npm i -g pm2`
 |===
 
 
@@ -122,13 +122,13 @@ npm run restart
 
 == Development
 
-For setting a development environment, consider the following toolchain. link:https://code.visualstudio.com/[Visual Studio Code^] is suggested as the preferred IDE.
+For setting a development environment, consider the following toolchain. link:https://code.visualstudio.com/[Visual Studio Code^] is suggested as IDE.
 
-The TypeScript monitor `tsc-watch` can detect any change in `.ts` files, incrementally compile them, and restart the server:
+The TypeScript monitor `tsc-watch` can detect any change in `.ts` files, incrementally compile them, and restart the server. For Linux you may want to install `tsc-watch` with `sudo` privileges (also `eslint` and `stylelint`).
 
 [source,sh]
 ----
-sudo npm i -g tsc-watch
+npm i -g tsc-watch
 npm run dev
 ----
 
@@ -136,7 +136,7 @@ Your IDE may detect the linters configuration files included in the project's fi
 
 [source,sh]
 ----
-sudo npm i -g eslint
+npm i -g eslint
 npm run lint
 ----
 
@@ -144,11 +144,47 @@ For CSS code the link:https://stylelint.io/[Stylelint^] tool is used.
 
 [source,sh]
 ----
-sudo npm i -g stylelint
+npm i -g stylelint
 npm run stylelint
 ----
 
 
+
+== Database
+
+You may want to create a local database for development in order to avoid interfering your production environment. MongoDB is used as database management system. You can follow the link:https://www.mongodb.com/docs/manual/administration/install-community/[official instructions^] to locally install MongoDB. Then, create a connection URL for a new database:
+
+[source,sh]
+----
+$ mongosh
+
+> use <database_name>
+> db.createUser({
+  user: "<username>",
+  pwd: "<password>",
+  roles: [ "dbOwner" ]
+});
+> exit
+$
+----
+
+Your connection URL will be:
+
+[source,js]
+----
+"mongodb://<username>:<password>@0.0.0.0:27017/<database_name>"
+----
+
+Copy the `config/config-example.json` file to `config/config.json` and set the URL for the `"database"` field.
+
+Create the VygOJ admin user by running the following command:
+
+[source,sh]
+----
+$ node dist/util/createUser.js
+----
+
+Now you can visit the VygOJ app website, by default on link:http://localhost:8080[http://localhost:8080^] by using a web browser. Login using the VygOJ admin credentials, and create professor users. They can create their own courses and invite their students.
 
 
 
