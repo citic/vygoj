@@ -37,6 +37,6 @@ async function createUser() {
 
 try {
   await createUser();
-} catch (error) {
+} catch (error: any) {
   console.error(`Error: ${error.message}`);
 }

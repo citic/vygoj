@@ -1,6 +1,5 @@
 // import { ObjectId } from 'mongodb';
 import fs from 'fs/promises';
-import { type } from 'os';
 import path from 'path';
 import * as vyg from '../common/vygoj.js';
 
@@ -26,17 +25,17 @@ export default class Problem {
   tests: vyg.TestInterface[];
 
   // Allowed programming languages for this problem
-  languages: string[] = [ ];
+  languages: string[] = [];
 
   // The given initial source code for the problem and programming language
   initialCodeFor: vyg.InitialCodeInterface = { };
 
   // Minimum number of secondary threads to solve the problem. If this number
   // is one or more, additional runs will be conducted for each test case
-  minThreads: number | string = 0;
+  minThreads: number = 0;
 
   // There is no limit for the default number of secondary threads
-  maxThreads: number | string = Number.MAX_SAFE_INTEGER;
+  maxThreads: number = Number.MAX_SAFE_INTEGER;
 
   // Considers valid an output that has different order than the expected
   // Supported values: 'lines'
@@ -47,6 +46,7 @@ export default class Problem {
 
   // Allowed time range in seconds specified by professor for all test cases
   minDuration: number | null = null;
+
   maxDuration: number | null = null;
 
   // TODO: enabled programming languages, e.g: c,cpp,py,...
@@ -58,7 +58,7 @@ export default class Problem {
     this.title = json.title;
     this.statement = json.statement;
     this.tests = json.tests;
-    this.languages = json.languages || [ ];
+    this.languages = json.languages || [];
     this.initialCodeFor = json.initialCodeFor || { };
     this.minThreads = json.minThreads || 0;
     this.maxThreads = json.maxThreads || Number.MAX_SAFE_INTEGER;
@@ -107,6 +107,6 @@ export default class Problem {
 
   // Returns true if this problem requires the solution to pass extra proofs
   hasProofs() {
-    return (typeof this.maxThreads === 'number' && this.minThreads >= 1) || this.minThreads;
+    return this.minThreads >= 1;
   }
 }
