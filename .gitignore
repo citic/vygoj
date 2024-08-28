@@ -1,4 +1,6 @@
 *.tsv
+bin/
+build/
 data/
 dist/
 node_modules/
