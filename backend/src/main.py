@@ -1,16 +1,20 @@
 """ Start backend execution """
 import flask
 
+# Flask web application instance requires the name of the application (this filename)
 app = flask.Flask(__name__)
 
 # with app.app_context():
-#     g.token = '200d1e038'
+#     flask.g.token = '200d1e038'
 
 token = 0
 
+# @app.route decorator calls the view function index() each time we receive an http request asking
+# for path "/". It is converted to app.add_url_rule('/', 'index', index)
 @app.route('/')
 def index():
     """ Homepage provide help """
+    # The return value of a view function is the response to the client
     return '<p>Help</p>\n'
 
 @app.post('/submissions')
