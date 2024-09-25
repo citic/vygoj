@@ -1,3 +1,19 @@
-= Vygoj Code Execution Service
+= Vygoj backend
 
-The Code Execution Service is a backend module that provides a web service to allow web applications to run source code into a sandboxed environment. This module will be developed in the future to support concurrent and distributed programming.
+The Vygoj backend is a Code Execution Service because provides a web service to allow web applications to run source code into a sandboxed environment. It supports tests for concurrent and distributed programming.
+
+== Installation
+
+The backend is developed in Python and requires Flask. A `Makefile` is provided to ease this process. The default rule creates a Python virtual environment, installs dependencies, and run the backend for debugging.
+
+[source,bash]
+----
+$ make
+----
+
+You can remove the virtual environment
+
+[source,bash]
+----
+$ make clean
+----
