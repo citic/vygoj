@@ -22,11 +22,10 @@ def create_submission():
     """ Create a new submission to evaluate a problem solution. A submission token (id) is returned
     that is used to check the submission status later. """
     global token
-    if flask.request.headers.get('Content-Type').lower() == 'application/json':
-        submission = flask.request.get_json()
-        # submission['token'] = g.token
-        token += 1
-        submission['token'] = token
-        return flask.jsonify(submission)
-    else:
-        return 'Error: content-type must be application/json\n', 415
+    if flask.request.headers.get('Content-Type').lower() != 'application/json':
+        flask.abort(415, 'Error: content-type must be application/json\n')
+    submission = flask.request.get_json()
+    # submission['token'] = g.token
+    token += 1
+    submission['token'] = token
+    return flask.jsonify(submission)
