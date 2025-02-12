@@ -5,7 +5,7 @@ SRC=src#Folder where web application source code is
 MAIN=$(SRC)/main.py# Start point of the backend source code
 DEPS=flask# Python dependecies to be installed with pip install
 SHELL:=/bin/bash# Use bash to run complex commands
-HOST=0.0.0.0# Allow external connections, localhost does not
+HOST=localhost# 0.0.0.0 allows external connections, localhost does not
 PORT=2358# Port where the backed will listen for connections
 PY=python3# Command to run python
 

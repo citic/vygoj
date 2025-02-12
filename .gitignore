@@ -1,3 +1,6 @@
+*.pyc
+*.pyd
+*.pyo
 *.tsv
 bin/
 build/

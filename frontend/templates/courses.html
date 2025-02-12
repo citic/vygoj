@@ -1,0 +1,44 @@
+{% import 'macros.html' as macros %}
+{% extends 'base.html' %}
+      <main class="courses">
+{% if 'user' in it and it['user'].role == 'admin' %}
+        <article id="admin_article" class="courses_section admin_article">
+          <header class="course_section__header">
+            <h3>Administration</h3>
+          </header>
+          <div id="admin_panel" class="panel">
+            <a class="icon_control" href="/users/admin">
+              <img class="icon_control__image" src="/icon/user-detail.svg" alt="Admin Users"/>
+              <span class="icon_control__caption">Users</span>
+            </a>
+          </div>
+        </article>
+{% endif %}
+{% if it['my_courses']|length > 0 %}
+        <article id="my_courses" class="courses_section courses--mine">
+          <header class="course_section__header">
+            <h3 class="course_section__title">My courses</h3>
+{% if 'user' in it and it['user'].role == 'professor' %}
+            <a href="/course/admin" class="button confirm small">Add Course</a>
+{% endif %}
+          </header>
+          <div class="course_list">
+{% for course in it['my_courses'] %}
+{{   macros.course_entry(course) }}
+{% endfor %}
+          </div>
+        </article>
+{% endif %}
+{% if it['available_courses']|length > 0 %}
+        <article id="available_courses" class="course_section courses--available">
+          <header class="course_section__header">
+            <h3 class="course_section__title">Available courses</h3>
+          </header>
+          <div class="course_list">
+{% for course in it['available_courses'] %}
+{{   macros.course_entry(course) }}
+{% endfor %}
+          </div>
+        </article>
+{% endif %}
+      </main>

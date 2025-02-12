@@ -4,14 +4,21 @@ The Vygoj backend is a Code Execution Service because provides a web service to 
 
 == Installation
 
-The backend is developed in Python and requires Flask. A `Makefile` is provided to ease this process. The default rule creates a Python virtual environment, installs dependencies, and run the backend for debugging.
+The backend is developed in Python and requires Flask. A `Makefile` is provided to ease this process on Linux. The default rule creates a Python virtual environment, installs dependencies, and run the backend for debugging:
 
 [source,bash]
 ----
 $ make
 ----
 
-You can remove the virtual environment
+In production server, you can run the backend with no debug reporting:
+
+[source,bash]
+----
+$ make release
+----
+
+You can remove the virtual environment:
 
 [source,bash]
 ----
