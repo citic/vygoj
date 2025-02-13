@@ -215,7 +215,7 @@ class Course:
         ''' Return the list of all available courses to enroll '''
         # TODO(jhc): this test will be replaced by a database query
         #return [Course.findById('c1'), Course.findById('c08')]
-        return []
+        return allCourses
 
     @staticmethod
     def get_index():
@@ -224,15 +224,13 @@ class Course:
         courses = Course.fetch_my_courses() #if flask.q.session.user else []
         # Show the homepage
         it = {
-            'stylesheet': 'courses',
-            'title': 'Vygotsky Online Judge (Vygoj)',
-            'user': 'You', #flask.q.session.user,
-            'breadcumbs': [
+            'user': {'name': 'You', 'role': 'admin'}, #flask.q.session.user,
+            'breadcrumbs': [
             ],
             # The list of user's courses
-            'myCourses': courses,
+            'my_courses': courses,
             # The list of available courses for this user
-            'availableCourses': Course.fetch_all_courses(),
+            'available_courses': Course.fetch_all_courses(),
         }
         print(json.dumps(it, indent=2))
         return flask.render_template('courses.html', it=it)

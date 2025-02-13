@@ -2,15 +2,14 @@
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="utf-8"/>
-    <title>{{ it.get('title', 'Vygotsky Online Judge') }}</title>
+    <title>{%block title %}{{ it.get('title', 'Vygotsky Online Judge') }}{% endblock %} - VygOJ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <meta name="author" content="Jeisson Hidalgo-Céspedes"/>
     <meta name="description" content="An educative online judge for teaching and learning computing programming with emphasis in concurrent programming paradigm"/>
     <link rel="preload" href="/css/site.css" as="style"/>
-{%- if 'stylesheet' in it %}
-    <link rel="preload" href="/css/{{ it['stylesheet'] }}.css" as="style"/>
-{%- endif %}
-    <link rel="stylesheet" href="/css/{{ it.get('stylesheet', 'site') }}.css"/>
+{%- block styles %}
+    <link rel="stylesheet" href="/css/site.css"/>
+{%- endblock %}
     <link rel="icon" type="image/svg+xml" href="/img/logo.svg"/>
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="crossorigin"/>
@@ -21,9 +20,9 @@
       <div class="site_header--row">
         <a href="/"><img class="site_logo" src="/img/logo.svg" alt="Site logo" width="64" height="64"/></a>
         <h1 class="site_header__title">Vygotsky Online Judge</h1>
-        <a class="icon_control" href="/user/{{ it['user']._id or 'login' }}">
+        <a class="icon_control" href="/user/{{ it.user._id or 'login' }}">
           <img class="icon_control__image" src="/icon/user.svg" alt="User control" width="44" height="44"/>
-          <span class="icon_control__caption">{{ it['user'].name or 'User' }}</span>
+          <span class="icon_control__caption">{{ it.user.name or 'User' }}</span>
         </a>
       </div>
       <nav class="breadcumbs filled">
@@ -31,8 +30,8 @@
           <li class="breadcumb__item">
             <a href="/">Home</a>
           </li>
-{%- if 'breadcumbs' in it %}
-{%-   for link in it['breadcumbs'] %}
+{%- if it.breadcrumbs %}
+{%-   for link in it.breadcrumbs %}
           <li class="breadcumb__item">
             <a href="{{ link.href }}">{{ link.text }}</a>
           </li>
@@ -42,7 +41,9 @@
       </nav>
     </header>
     <div class="page_content">
-{{- it['body'] | safe }}
+{%- block main %}
+{{- it.body | safe }}
+{%- endblock %}
     </div>
     <footer class="site_footer filled">
       <span id="software_version" class="software_version">Vygoj v0.0.1</span>
@@ -56,12 +57,14 @@
       </span>
       <span class="help_controls"><a href="/help">Help</a></span>
     </footer>
-{%- if 'scripts' in it %}
-{%-   for script in it['scripts'] %}
+{%- block scripts %}
+{%- if it.scripts %}
+{%-   for script in it.scripts %}
     {{ script | safe }}
 {%-   endfor %}
 {%- else %}
     <script src="/js/site.js" type="module" async="async"></script>
 {%- endif %}
+{%- endblock %}
   </body>
 </html>
