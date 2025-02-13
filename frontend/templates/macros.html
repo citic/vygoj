@@ -9,9 +9,9 @@
         </a>
       </h4>
       <p class="course__instructors">
-  {% for instructor in course.instructors %}
+  {%- for instructor in course.instructors %}
         <a href="/prof/{{ instructor.id }}">{{ instructor.name }}</a>
-  {% endfor %}
+  {%- endfor %}
       </p>
       <p class="course_statistics">{{ course.statistics.students }} students, {{ course.statistics.sections }} sections, {{ course.statistics.problems }} problems, {{ course.statistics.questions }} questions.</p>
     </div>

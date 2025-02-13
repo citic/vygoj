@@ -7,9 +7,9 @@
     <meta name="author" content="Jeisson Hidalgo-Céspedes"/>
     <meta name="description" content="An educative online judge for teaching and learning computing programming with emphasis in concurrent programming paradigm"/>
     <link rel="preload" href="/css/site.css" as="style"/>
-{% if 'stylesheet' in it %}
+{%- if 'stylesheet' in it %}
     <link rel="preload" href="/css/{{ it['stylesheet'] }}.css" as="style"/>
-{% endif %}
+{%- endif %}
     <link rel="stylesheet" href="/css/{{ it.get('stylesheet', 'site') }}.css"/>
     <link rel="icon" type="image/svg+xml" href="/img/logo.svg"/>
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -31,37 +31,37 @@
           <li class="breadcumb__item">
             <a href="/">Home</a>
           </li>
-{% if 'breadcumbs' in it %}
-{%   for link in it['breadcumbs'] %}
+{%- if 'breadcumbs' in it %}
+{%-   for link in it['breadcumbs'] %}
           <li class="breadcumb__item">
             <a href="{{ link.href }}">{{ link.text }}</a>
           </li>
-{%   endfor %}
-{% endif %}
+{%-   endfor %}
+{%- endif %}
         </ul>
       </nav>
     </header>
     <div class="page_content">
-{{ it['body'] | safe }}
+{{- it['body'] | safe }}
     </div>
     <footer class="site_footer filled">
       <span id="software_version" class="software_version">Vygoj v0.0.1</span>
       <span id="backend_status">
         <span id="backend_offline" class="hidden">
-          <img src="/icon/cloud_offline.svg"/>
+          <img src="/icon/cloud_offline.svg" alt="Not connected to backend"/>
         </span>
         <span id="backend_online" class="hidden">
-          <img src="/icon/cloud_online.svg"/>
+          <img src="/icon/cloud_online.svg" alt="Connected to backend"/>
         </span>
       </span>
       <span class="help_controls"><a href="/help">Help</a></span>
     </footer>
-{% if 'scripts' in it %}
-{%   for script in it['scripts'] %}
+{%- if 'scripts' in it %}
+{%-   for script in it['scripts'] %}
     {{ script | safe }}
-{%   endfor %}
-{% else %}
+{%-   endfor %}
+{%- else %}
     <script src="/js/site.js" type="module" async="async"></script>
-{% endif %}
+{%- endif %}
   </body>
 </html>
