@@ -246,7 +246,7 @@ class Course:
         it = {
             'user': {'name': 'You', 'role': 'professor'}, # TODO(i): session.user
             'breadcrumbs': [
-                { 'href': f'/course/{course['id']}', 'text': course['code'] },
+                { 'href': f"/course/{course['id']}", 'text': course['code'] },
             ],
             'course': course,
             # TODO(i): 'progress': progress,
