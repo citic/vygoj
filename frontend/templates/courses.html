@@ -27,19 +27,19 @@
 {%- endif %}
           </header>
           <div class="course_list">
-{%- for course in it['my_courses'] %}
+{%- for course in it.my_courses %}
 {{-   macros.course_entry(course) }}
 {%- endfor %}
           </div>
         </article>
 {%- endif %}
-{%- if it['available_courses']|length > 0 %}
+{%- if it.available_courses|length > 0 %}
         <article id="available_courses" class="course_section courses--available">
           <header class="course_section__header">
             <h3 class="course_section__title">Available courses</h3>
           </header>
           <div class="course_list">
-{%- for course in it['available_courses'] %}
+{%- for _, course in it.available_courses.items() %}
 {{-   macros.course_entry(course) }}
 {%- endfor %}
           </div>

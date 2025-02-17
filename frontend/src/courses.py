@@ -1,8 +1,9 @@
 import flask
 import json
 
-allCourses = [
-  {
+# TODO(jhc): Move to database or fetch from filesystem
+allCourses = {
+  'c17': {
     'id': 'c17',
     'code': 'CI0117',
     'title': 'Programación paralela y concurrente',
@@ -22,7 +23,7 @@ allCourses = [
     'contents': [
     ],
   },
-  {
+  'c1': {
     'id': 'c1',
     'code': 'CI0112',
     'title': 'Programación I en C',
@@ -77,7 +78,7 @@ allCourses = [
       },
     ],
   },
-  {
+  'c08': {
     'id': 'c08',
     'code': 'CI0113',
     'title': 'Programación II',
@@ -94,7 +95,7 @@ allCourses = [
     'contents': [
     ],
   },
-  {
+  'stdthr': {
     'id': 'stdthr',
     'code': 'CI0117a',
     'title': 'Hilos estándar en C/C++',
@@ -177,7 +178,7 @@ allCourses = [
     # },
     ],
   },
-]
+}
 
 class Course:
     '''
@@ -208,7 +209,7 @@ class Course:
     def fetch_my_courses():
         ''' Return the list of courses where current user is enrolled '''
         # TODO(jhc): this test will be replaced by a database query
-        return [ allCourses[3] ]
+        return [ allCourses['stdthr'] ]
 
     @staticmethod
     def fetch_all_courses():
@@ -224,13 +225,31 @@ class Course:
         courses = Course.fetch_my_courses() #if flask.q.session.user else []
         # Show the homepage
         it = {
-            'user': {'name': 'You', 'role': 'admin'}, #flask.q.session.user,
+            'user': {'name': 'You', 'role': 'admin'}, # TODO(i): flask.q.session.user,
             'breadcrumbs': [
             ],
             # The list of user's courses
             'my_courses': courses,
             # The list of available courses for this user
             'available_courses': Course.fetch_all_courses(),
+        }
+        print(json.dumps(it, indent=2))
+        return flask.render_template('courses.html', it=it)
+
+    @staticmethod
+    def get_course(course_id):
+        ''' User clicked a course '''
+        course = allCourses[course_id] if course_id in allCourses else None
+        if not course: # TODO(i): and user logged in
+            flask.abort(404)
+        # TODO(i): progress = user.load_progress()
+        it = {
+            'user': {'name': 'You', 'role': 'professor'}, # TODO(i): session.user
+            'breadcrumbs': [
+                { 'href': f'/course/{course.id}', 'text': course.code },
+            ],
+            'course': course,
+            # TODO(i): 'progress': progress,
         }
         print(json.dumps(it, indent=2))
         return flask.render_template('courses.html', it=it)

@@ -31,6 +31,12 @@ def get_index():
     # The return value of a view function is the response to the client
     return Course.get_index()
 
+@app.route('/course/<course_id>')
+def get_course(course_id):
+    """ Homepage: list of my courses and available courses """
+    # The return value of a view function is the response to the client
+    return Course.get_course(course_id)
+
 # Users -------------------------------------------------------------------------------------------
 
 @app.route('/user/login')
@@ -42,6 +48,13 @@ def get_login():
 def post_login():
     """ User provided credentials for logging in """
     return User.post_login()
+
+# Errors ------------------------------------------------------------------------------------------
+
+@app.errorhandler(404)
+def get_not_found(error):
+    ''' Get the not found page for a 404 error '''
+    return flask.render_template('not_found.html', it={ }), 404
 
 # Logging -----------------------------------------------------------------------------------------
 
