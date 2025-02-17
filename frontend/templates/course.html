@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{%- macro course_content(content, indent, repo) %}
+  {%- if content %}
+    {{ '  ' * (indent - 2) }}<ol class="course__sections">
+    {%- for item in content %}
+      {{ '  ' * (indent - 2) }}<li class="course__section">
+      {%- set path = repo + '/' + item.folder %}
+      {{ '  ' * (indent - 1) }}<p class="course__activity">
+      {%- if item.type == 'problem' -%}
+        [{{ it.progress and it.progress.get(item.name, 0) or 0 }}%] <a href="{{ path }}">{{ item.title }}</a>
+      {%- else %}
+        {{- item.title }}
+      {%- endif %}</p>
+      {{- course_content(item.contents, indent + 2, path) }}
+      {{ '  ' * (indent - 2) }}</li>
+    {%- endfor %}
+    {{ '  ' * (indent - 2) }}</ol>
+  {%- endif %}
+{%- endmacro %}
+
+{%- block main %}
+      <main class="course">
+        <article class="course__description">
+          <h3 class="course__title">{{ it.course.title }}</h3>
+          <p class="course__code line">Code: {{ it.course.code }}</p>
+          <p class="course__instructors">Instructors:
+{%- for instructor in it.course.instructors %}
+            <a class="course__instructor" href="/prof/{{ instructor.id }}">{{ instructor.name }}</a>
+{%- endfor %}
+          </p>
+          <section class="course__contents">
+            <h4 class="course__contents--title">Course contents</h4>
+{{- course_content(it.course.contents, 6, it.course.repo) }}
+          </section>
+        </article>
+      </main>
+{%- endblock %}

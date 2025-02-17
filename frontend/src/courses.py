@@ -233,23 +233,23 @@ class Course:
             # The list of available courses for this user
             'available_courses': Course.fetch_all_courses(),
         }
-        print(json.dumps(it, indent=2))
+        # print(json.dumps(it, indent=2))
         return flask.render_template('courses.html', it=it)
 
     @staticmethod
     def get_course(course_id):
         ''' User clicked a course '''
-        course = allCourses[course_id] if course_id in allCourses else None
+        course = allCourses.get(course_id)
         if not course: # TODO(i): and user logged in
             flask.abort(404)
         # TODO(i): progress = user.load_progress()
         it = {
             'user': {'name': 'You', 'role': 'professor'}, # TODO(i): session.user
             'breadcrumbs': [
-                { 'href': f'/course/{course.id}', 'text': course.code },
+                { 'href': f'/course/{course['id']}', 'text': course['code'] },
             ],
             'course': course,
             # TODO(i): 'progress': progress,
         }
         print(json.dumps(it, indent=2))
-        return flask.render_template('courses.html', it=it)
+        return flask.render_template('course.html', it=it)

@@ -52,7 +52,7 @@ def post_login():
 # Errors ------------------------------------------------------------------------------------------
 
 @app.errorhandler(404)
-def get_not_found(error):
+def get_not_found(_): # error
     ''' Get the not found page for a 404 error '''
     return flask.render_template('not_found.html', it={ }), 404
 
