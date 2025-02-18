@@ -45,6 +45,11 @@ def get_problem(path):
     """ User asked for the problem page """
     return ProblemController.get_problem(path)
 
+@app.route('/problem/<path>', methods=['POST'])
+def post_problem(path):
+    """ Client JavaScript asked for an action: fetch problem, run code, save code... """
+    return ProblemController.post_problem(path)
+
 
 # Users -------------------------------------------------------------------------------------------
 

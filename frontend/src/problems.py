@@ -9,8 +9,8 @@ MAX_THREADS = 2**16
 #   title: string;
 #   statement: string;
 #   tests: TestInterface[];
-#   languages: string[]; // C, C++, Java, Python...
-#   // Map<string, string> but not supported by JSON
+#   languages: string[]; # C, C++, Java, Python...
+#   # Map<string, string> but not supported by JSON
 #   initialCodeFor?: InitialCodeInterface;
 #   minThreads?: number;
 #   maxThreads?: number;
@@ -23,20 +23,36 @@ MAX_THREADS = 2**16
 #   input: string;
 #   output: string;
 #   points: number;
-#   hidden: boolean; // TODO: clear it from server side
+#   hidden: boolean; # TODO: clear it from server side
 #   minThreads?: number;
 #   maxThreads?: number;
 #   minDuration?: number;
 #   maxDuration?: number;
 
+# Messages exchanged between the client and server
+# interface Message {
+#   action: string;
+#   error?: string;
+#   code?: string;
+#   language?: string;
+
+
 # TODO(jhc): Move to common
 def get_app_path():
+    """ Return the path where the frontend app is located """
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def get_problem_path():
+    """ Return subfolder where programming problems are stored """
     return os.path.join(get_app_path(), 'problems')
 
+def to_json(data_object):
+    """ Convert the given Python object to JSON string """
+    # See https://docs.python.org/3/library/json.html#json.dump
+    return json.dumps(data_object, default=lambda obj: obj.__dict__)
 
+# Attributes of this class are shared with JS client code and use the JS name convention
+# pylint: disable=invalid-name
 class Problem:
     """ Represents a programming problem with statement, source code, and test cases """
     def __init__(self, relative_path, json_dict):
@@ -56,26 +72,26 @@ class Problem:
         # Allowed programming languages for this problem
         self.languages = json_dict.get('languages', [])
         # The given initial source code for the problem and programming language
-        self.initial_code_for = json_dict.get('initialCodeFor', { })
+        self.initialCodeFor = json_dict.get('initialCodeFor', { })
         # Minimum number of secondary threads to solve the problem. If this number
         # is one or more, additional runs will be conducted for each test case
-        self.min_threads = json_dict.get('minThreads', 0)
+        self.minThreads = json_dict.get('minThreads', 0)
         # There is no limit for the default number of secondary threads
-        self.max_threads = json_dict.get('maxThreads', MAX_THREADS)
+        self.maxThreads = json_dict.get('maxThreads', MAX_THREADS)
         # Considers valid an output that has different order than the expected
         # Supported values: 'lines'
-        self.allow_indeterminism = json_dict.get('allowIndeterminism')
+        self.allowIndeterminism = json_dict.get('allowIndeterminism')
         # Considers invalid a solution if it does NOT contains words in this array
-        self.must_contain = json_dict.get('mustContain')
+        self.mustContain = json_dict.get('mustContain')
         # Allowed time range in seconds specified by professor for all test cases
-        self.min_duration = json_dict.get('minDuration')
-        self.max_duration = json_dict.get('maxDuration')
+        self.minDuration = json_dict.get('minDuration')
+        self.maxDuration = json_dict.get('maxDuration')
         # Remove HTML escaping for all languages
-        for lang, code in self.initial_code_for.items():
+        for lang, code in self.initialCodeFor.items():
             code = code.replace('&amp;', '&')
             code = code.replace('&lt;', '<')
             code = code.replace('&gt;', '>')
-            self.initial_code_for[lang] = code
+            self.initialCodeFor[lang] = code
 
     @staticmethod
     def load(problem_path):
@@ -85,8 +101,8 @@ class Problem:
         # Read the contents of the file
         with open(abs_path, encoding='utf8') as file:
             # Load the fields from the json file
-            json_dic = json.load(file)
-            return Problem(problem_path, json_dic)
+            json_dict = json.load(file)
+            return Problem(problem_path, json_dict)
 
     def calculate_total_points(self):
         """ Calculates the total amount of points from the test cases """
@@ -98,8 +114,9 @@ class Problem:
 
     def has_proofs(self):
         """ Returns true if this problem requires the solution to pass extra proofs """
-        return self.min_threads >= 1
+        return self.minThreads >= 1
 
+# pylint: enable=invalid-name
 
 class ProblemController:
     """Controls problems
@@ -151,3 +168,42 @@ class ProblemController:
                 '<script src="/js/problem/problem.js" type="module" async="async"></script>',
             ],
         })
+
+    @staticmethod
+    def post_problem(problem_path):
+        """Client JavaScript asked for an action: fetch a problem, run user solution,
+        save user code, ... All communication is made with JSON objects
+        """
+        # try:
+        message = json.loads(flask.request.get_data()) # as vyg.Message
+        print(problem_path, ' --> ', message)
+        match message['action']:
+            case 'fetch_problem': return ProblemController.fetch_problem(problem_path)
+            case 'run': return ProblemController.run_user_code(problem_path, message)
+            case _: return flask.jsonify({ 'error': 'invalid action' })
+        # except Exception:
+        #     return flask.jsonify({ 'error': 'invalid action' })
+
+    @staticmethod
+    def fetch_problem(problem_path: str):
+        """ Return a JSON version of the problem """
+        problem = Problem.load(problem_path)
+        json_result = to_json(problem)
+        print(json_result)
+        #return flask.jsonify(problem)
+        return json_result
+
+    @staticmethod
+    def run_user_code(problem_path: str, message):
+        """ Called when user input a source code solution and press Run button """
+        # # Load the problem
+        # problem = Problem.load(problem_path)
+        # # Run the test cases and wait for the array of results
+        # results = ProblemController.run_test_cases(problem, message) # as vyg.TestCaseResult[]
+        # # Embed the results into a object with statistics
+        # result = ProblemController.createResult(problem, results)
+        # # Store progress
+        # # TODO(I): assert req.session.user
+        # #progress = 100.0 * result.points / result.totalPoints
+        # # TODO(I): req.session.user?.storeProgress(problem.name, progress);
+        # return flask.jsonify(result)
