@@ -5,8 +5,9 @@ import os
 import time
 from logging.handlers import RotatingFileHandler
 
-from users import User
 from courses import Course
+from problems import ProblemController
+from users import User
 
 # Constants ---------------------------------------------------------------------------------------
 DATA_DIR = './data'
@@ -36,6 +37,14 @@ def get_course(course_id):
     """ Homepage: list of my courses and available courses """
     # The return value of a view function is the response to the client
     return Course.get_course(course_id)
+
+# Problems ----------------------------------------------------------------------------------------
+
+@app.route('/problem/<path>')
+def get_problem(path):
+    """ User asked for the problem page """
+    return ProblemController.get_problem(path)
+
 
 # Users -------------------------------------------------------------------------------------------
 
