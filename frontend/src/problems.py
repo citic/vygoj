@@ -1,6 +1,8 @@
+import enum
 import flask
 import json
-import os
+import requests
+import vyg
 
 MAX_THREADS = 2**16
 
@@ -29,33 +31,37 @@ MAX_THREADS = 2**16
 #   minDuration?: number;
 #   maxDuration?: number;
 
-# Messages exchanged between the client and server
-# interface Message {
-#   action: string;
-#   error?: string;
-#   code?: string;
-#   language?: string;
+class ExecutionStatus(str, enum.Enum):
+    """ Status of the execution of a programming solution.
+    The str inheritance eases the translation to and from JSON """
+    pending = 'pending'
+    passed = 'passed'
+    wrong = 'wrong'
+    timeout = 'timeout'
+    compilerError = 'compilerError'
+    runtimeError = 'runtimeError'
+    internalError = 'internalError'
 
-
-# TODO(jhc): Move to common
-def get_app_path():
-    """ Return the path where the frontend app is located """
-    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-def get_problem_path():
-    """ Return subfolder where programming problems are stored """
-    return os.path.join(get_app_path(), 'problems')
-
-def to_json(data_object):
-    """ Convert the given Python object to JSON string """
-    # See https://docs.python.org/3/library/json.html#json.dump
-    return json.dumps(data_object, default=lambda obj: obj.__dict__)
-
-# Attributes of this class are shared with JS client code and use the JS name convention
+# Attributes of these classes are shared with JS client code and use the JS name convention
 # pylint: disable=invalid-name
+
+class ExecutionResult:
+    """ Result of running student solution against all test cases """
+    def __init__(self):
+        # Count of passed test cases
+        self.passedTestCount = 0
+        # Points gained by this solution
+        self.points = 0
+        # Total points (sum of all test cases)
+        self.totalPoints = 0
+        # Wall time of the largest test case
+        self.maxWallTime = float('-inf')
+        # Results of each test case
+        self.results = [] # TestCaseResult[]
+
 class Problem:
     """ Represents a programming problem with statement, source code, and test cases """
-    def __init__(self, relative_path, json_dict):
+    def __init__(self, relative_path:str, json_dict: dict):
         """Load the fields of this object from the given JSON file path"""
         # The relative path that identifies the problem
         self.relative_path = relative_path
@@ -94,10 +100,10 @@ class Problem:
             self.initialCodeFor[lang] = code
 
     @staticmethod
-    def load(problem_path):
+    def load(problem_path:str):
         """ Creates a new Problem object from the given relative path problem eg: uint64_adder """
         # Problems are stored in data/path/vygoj.json
-        abs_path = f'{get_problem_path()}/{problem_path}/vygoj.json'
+        abs_path = f'{vyg.get_problem_path()}/{problem_path}/vygoj.json'
         # Read the contents of the file
         with open(abs_path, encoding='utf8') as file:
             # Load the fields from the json file
@@ -175,9 +181,9 @@ class ProblemController:
         save user code, ... All communication is made with JSON objects
         """
         # try:
-        message = json.loads(flask.request.get_data()) # as vyg.Message
-        print(problem_path, ' --> ', message)
-        match message['action']:
+        message = vyg.Message(json.loads(flask.request.get_data()))
+        print(problem_path, ' --> ', message.__dict__)
+        match message.action:
             case 'fetch_problem': return ProblemController.fetch_problem(problem_path)
             case 'run': return ProblemController.run_user_code(problem_path, message)
             case _: return flask.jsonify({ 'error': 'invalid action' })
@@ -188,22 +194,61 @@ class ProblemController:
     def fetch_problem(problem_path: str):
         """ Return a JSON version of the problem """
         problem = Problem.load(problem_path)
-        json_result = to_json(problem)
+        json_result = vyg.to_json(problem)
         print(json_result)
         #return flask.jsonify(problem)
         return json_result
 
     @staticmethod
-    def run_user_code(problem_path: str, message):
+    def run_user_code(problem_path: str, message: vyg.Message):
         """ Called when user input a source code solution and press Run button """
-        # # Load the problem
-        # problem = Problem.load(problem_path)
-        # # Run the test cases and wait for the array of results
-        # results = ProblemController.run_test_cases(problem, message) # as vyg.TestCaseResult[]
-        # # Embed the results into a object with statistics
-        # result = ProblemController.createResult(problem, results)
-        # # Store progress
-        # # TODO(I): assert req.session.user
-        # #progress = 100.0 * result.points / result.totalPoints
-        # # TODO(I): req.session.user?.storeProgress(problem.name, progress);
-        # return flask.jsonify(result)
+        # Load the problem
+        problem = Problem.load(problem_path)
+        # Run the test cases and wait for the array of results
+        results = ProblemController.run_test_cases(problem, message) # as vyg.TestCaseResult[]
+        # Embed the results into a object with statistics
+        result = ProblemController.create_result(problem, results)
+        # Store progress
+        # TODO(I): assert req.session.user
+        #progress = 100.0 * result.points / result.totalPoints
+        # TODO(I): req.session.user?.storeProgress(problem.name, progress);
+        return vyg.to_json(result)
+
+    @staticmethod
+    def run_test_cases(problem: Problem, solution: vyg.Message):
+        """ Compile solution and run it against all test cases. Return an array of verdicts """
+        submission = {'problem': problem.__dict__, 'solution': solution.__dict__}
+        # Create an array of results, one for each test case
+        # TODO(jhc): get these args from config
+        results = requests.post('http://localhost:9090/run', timeout=1000, json=submission).json()
+        # The user program is executed once for each test case
+        # TODO(jhc): Run in parallel
+        # for index in range(len(problem.tests)):
+        # Create an execution object, run it, and wait its execution result
+        #student_execution = execution.Execution(problem, solution)
+        #result = student_execution.run(index)
+        # Store the result in the array to be returned to the client
+        #results.append(result)
+        # Remove temporary directory and files used by the execution
+        # student_execution.rm_dir()
+        return results
+
+    @staticmethod
+    def create_result(problem: Problem, results): # results:TestCaseResult[] -> ExecutionResult
+        """ Generates a Execution result summary from the test cases results """
+        # The result object has some statistics
+        execution_result = ExecutionResult()
+        # Calculate them
+        #assert len(results) == len(problem.tests)
+        for index, test in enumerate(results.get('outputs')):
+            # If the test was passed
+            if test.get('status') == ExecutionStatus.passed:
+                # Increase the count of passed test cases and accumulate the points
+                execution_result.passedTestCount += 1
+                execution_result.points += problem.tests[index].points
+                execution_result.totalPoints += problem.tests[index].points
+            # If this test case lasted longer than the longest known
+            #test_time = float(test.wallTime or test.cpuTime or '')
+            #execution_result.maxWallTime = max(results.get('totalDuration'), test_time)
+        # Build the result object
+        return execution_result

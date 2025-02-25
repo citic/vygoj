@@ -3,10 +3,10 @@ VENV=.venv# Folder where the virtual environment is installed
 ACT=. $(VENV)/bin/activate# Python command to activate the virtual environment
 SRC=src#Folder where web application source code is
 MAIN=$(SRC)/main.py# Start point of the backend source code
-DEPS=flask# Python dependecies to be installed with pip install
+DEPS=flask# Python dependencies to be installed with pip install
 SHELL:=/bin/bash# Use bash to run complex commands
 HOST=localhost# 0.0.0.0 allows external connections, localhost does not
-PORT=2358# Port where the backed will listen for connections
+PORT=9090# Port where the backend will listen for connections
 PY=python3# Command to run python
 
 # Phony targets

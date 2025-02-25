@@ -251,5 +251,5 @@ class Course:
             'course': course,
             # TODO(i): 'progress': progress,
         }
-        print(json.dumps(it, indent=2))
+        # print(json.dumps(it, indent=2))
         return flask.render_template('course.html', it=it)

@@ -7,8 +7,6 @@ app = flask.Flask(__name__)
 # with app.app_context():
 #     flask.g.token = '200d1e038'
 
-token = 0
-
 # @app.route decorator calls the view function index() each time we receive an http request asking
 # for path "/". It is converted to app.add_url_rule('/', 'index', index)
 @app.route('/')
@@ -17,15 +15,22 @@ def index():
     # The return value of a view function is the response to the client
     return '<p>Help</p>\n'
 
-@app.post('/submissions')
-def create_submission():
+RESULT = {
+    'totalDuration': 0.420019,
+    'threadCount': 1,
+    'outputs': [
+        { 'passed': False, 'output': 'Hello\n' },
+        { 'passed': True, 'output': '0' },
+        { 'passed': False, 'output': 'world!\n' },
+    ],
+}
+
+@app.post('/run')
+def run_solution():
     """ Create a new submission to evaluate a problem solution. A submission token (id) is returned
     that is used to check the submission status later. """
-    global token
     if flask.request.headers.get('Content-Type').lower() != 'application/json':
         flask.abort(415, 'Error: content-type must be application/json\n')
     submission = flask.request.get_json()
-    # submission['token'] = g.token
-    token += 1
-    submission['token'] = token
-    return flask.jsonify(submission)
+    print(submission)
+    return flask.jsonify(RESULT)
