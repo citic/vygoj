@@ -17,6 +17,9 @@ clean:
 # Install Docker client and server using standard Debian packages
 install:
 	sudo apt install docker.io
+	sudo groupadd docker || true
+	sudo usermod -aG docker $(USER) || true
+	newgrp docker || true
 
 # Uninstall potential installed versions with apt
 # for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; do sudo apt-get remove $pkg; done
