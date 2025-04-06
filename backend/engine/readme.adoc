@@ -1,3 +1,53 @@
 = Vygoj Code Execution Engine
 
-The Code Execution Engine is a backend module that executes code into a sandboxed enviroment. This module will be developed in a future in order to support concurrent and distributed programming.
+The Code Execution Engine is a backend module that executes code into a sandboxed environment using Docker containers. It supports the concurrent programming paradigm. That is, it allows the creation of execution threads and provides statistics to the frontend about the concurrent resources used. Distributed programming may be provided in the future.
+
+
+[[setup]]
+== Set up
+
+The Vygoj Code Execution Engine is developed in Python and requires Docker. A `Makefile` is provided to ease the installation and run on Debian-based distributions. If you do not have Docker installed, the following command installs an older version from Debian repositories using `apt`:
+
+[source,sh]
+----
+sudo make install
+----
+
+Alternatively you may install the latest Docker version from Docker's official repositories using:
+
+[source,sh]
+----
+sudo make official-install
+----
+
+VygOJ Code Execution Engine requires a Debian-based Docker's image called `debian-vygoj`. This image has common tools for development in the supported programming languages by VygOJ. The recipes to create this image are in the link:Dockerfile[Dockerfile]. To build the image run:
+
+[source,sh]
+----
+make build
+----
+
+
+[[run]]
+== Interactive run
+
+You can create a container from the `debian-vygoj` image an run commands interactively with:
+
+[source,sh]
+----
+make run
+----
+
+The `make run` is the default rule, therefore you may just type `make`.
+
+
+[[clean]]
+== Cleaning
+
+The following command stops and removes all containers and finally removes the image. Please be sure the VygOJ backend is stopped in order to avoid data corruption and affecting real users.
+
+[source,sh]
+----
+make clean
+----
+

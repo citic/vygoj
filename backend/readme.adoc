@@ -1,10 +1,26 @@
-= Vygoj backend
+= Vygoj Backend
 
-The Vygoj backend is a Code Execution Service because provides a web service to allow web applications to run source code into a sandboxed environment. It supports tests for concurrent and distributed programming.
+The Vygoj Backend is a Code Execution Service because provides a web service to allow web applications to run source code into a sandboxed environment. It supports tests for concurrent programming. Distributed programming may be supported in the future. The following steps run it on a Debian-based distribution:
 
-== Installation
+[source,bash]
+----
+# Install Docker and create a Debian image
+$ cd engine
+$ sudo make install  # If Docker is not already installed
+$ make build
+$ cd ..
 
-The backend is developed in Python and requires Flask. A `Makefile` is provided to ease this process on Linux. The default rule creates a Python virtual environment, installs dependencies, and run the backend for debugging:
+# Install dependencies and run the backend. Requires Python 3
+$ sudo apt install python3
+$ make release
+----
+
+
+
+[user_manual]
+== User manual
+
+The backend is developed in Python and requires Flask. A `Makefile` is provided to ease this process on Debian-based distributions. The default rule creates a Python virtual environment, installs dependencies, and run the backend for debugging:
 
 [source,bash]
 ----
@@ -18,7 +34,7 @@ In production server, you can run the backend with no debug reporting:
 $ make release
 ----
 
-You can remove the virtual environment:
+You can remove the virtual environment when it is no longer needed:
 
 [source,bash]
 ----
