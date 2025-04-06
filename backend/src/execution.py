@@ -1,8 +1,3 @@
-import flask
-
-#import config
-#import problem
-#import solution
 import base64
 import docker
 import io
@@ -109,7 +104,7 @@ class Execution:
     def execute(self):
         """ Execute the solution against all test cases """
         try:
-            # TODO: log the run in database
+            # TODO(jhc): log the run in database
             print('SUBMISSION::', self.problem, self.solution)
             # Do not run code directly on the OS, isolate student code into a Docker container
             self.create_container()
@@ -131,24 +126,42 @@ class Execution:
 
     def create_container(self):
         """ Create a Docker container and set it to self.container reference """
-        # Create a container and run it but we do not wait until it finishes to run the command, the
-        # detach=True argument that returns immediately. We run 'sleep infinity' to be sure the
+        # Create a container and run it but do not wait until it finishes to run the command, the
+        # detach=True argument returns immediately. We run 'sleep infinity' to be sure the
         # command will last forever and keep the container running, but not consuming resources.
         # We will use the container to compile the student solution and run against all the test
-        # cases defined in the Problem. Therefore we need to run several commands in the container.
-        # This may be not the best solution, but it provides a good balance between security and
-        # efficiency. After the student solution is run against all test cases, the container is
-        # is removed by the remove_container() method. Many of provided arguments are used to
-        # constraint the container in order to run unsecure code coming from users.
+        # cases defined in the Problem. Therefore we need to run several other commands in the
+        # container. This may be not the best approach, but it provides a good balance between
+        # security and efficiency. After the student solution is run against all test cases, the
+        # container is is removed by the remove_container() method. Many of provided arguments are
+        # used to constraint the container in order to run unsecure code coming from users.
         # Doc: https://docker-py.readthedocs.io/en/stable/containers.html
         # TODO(jhc): Run for the amount of seconds indicated by the problem or default for language
         # TODO(jhc): More arguments: auto_remove=True, hostname=<str>, isolation=<str>,
         # kernel_memory=<int|str>, log_config, mem_reservation=<int|str>, memswap_limit=<int|str>,
         # name=<str>, nano_cpus=<int>, security_opt=<list>, stop_signal=<str>, sysctls=<dict>,
         # ulimits=<list>
-        self.container = docker_client.containers.run(image='debian-dev:latest', detach=True,
-            command='sleep infinity', tty=True, mem_limit='512m', network_disabled=True,
-            privileged=False, read_only=True, user='student')
+        self.container = docker_client.containers.run(
+            # Image can be created running the Makefile inside the engine/ subfolder
+            image='debian-dev:latest',
+            # Do not wait until the command finishes, just return the reference to the container
+            detach=True,
+            # A dummy command to start the container
+            command='sleep infinity',
+            # TODO(jhc): Limit memory from the Problem configuration
+            mem_limit='512m',
+            # TODO(jhc): Support the distributed programming paradigm
+            network_disabled=True,
+            # Student solutions do not have root privileges
+            privileged=False,
+            # The root filesystem is read-only. Students can only write on /home/student or /tmp
+            read_only=True,
+            # Enable to run linux-perf without root privileges in current session
+            sysctls={'kernel.perf_event_paranoid': 1},
+            # Simulate a terminal to capture stdout and stderr
+            tty=True,
+            # Log in as the student user
+            user='student')
 
     def remove_container(self):
         """ Stop the container if it is running and destroy it """
@@ -162,9 +175,10 @@ class Execution:
     def copy_files(self):
         """ Copy the student solution and test cases to the container """
         # Docker do not allow to copy individual files from host to container. Wee need to
-        # prepare a directory on host to store the files, compress them to a tar file, ask
-        # Docker to extract the tar file in the container, and finally, remove the temp dir
+        # prepare a temp directory on host to store the files, compress them to a tar file, ask
+        # Docker to extract the tar file in the container, and finally, remove the temp dir.
         tmp_dir = tempfile.TemporaryDirectory()
+        print('---temp_dir', tmp_dir)
         flags = languageDefaults[self.solution.language]
         # Copy student solution from JSON object to a file on temporary directory
         self.source_file = f'solution.{flags.file_extension}'
@@ -182,6 +196,8 @@ class Execution:
         mem_tar.seek(0)
         # Extract the tar file in the container
         self.container.put_archive(path='/home/student', data=mem_tar)
+        # Remove temporary folder
+        os.rmdir(tmp_dir)
 
     def run_in_container(self, command, timeout):
         """

@@ -8,19 +8,13 @@ RUN apt update && \
     checkstyle \
     clang \
     doxygen \
+    linux-perf \
     python3 \
     valgrind
 
 # Future packages
     # libgmp-dev \
-    # linux-perf \
     # mpich \
-
-# Enable to run linux-perf without root in current session
-# TODO(jhc): Fails because read-only file system
-#RUN echo 1 > /proc/sys/kernel/perf_event_paranoid
-# Makes the change permanent
-#RUN echo kernel.perf_event_paranoid=1 > /etc/sysctl.d/local.conf
 
 # Create a non-root user to run students' solutions
 RUN useradd -m -s /bin/bash student
