@@ -1,4 +1,3 @@
-import enum
 import flask
 import json
 import requests
@@ -30,17 +29,6 @@ MAX_THREADS = 2**16
 #   maxThreads?: number;
 #   minDuration?: number;
 #   maxDuration?: number;
-
-class ExecutionStatus(str, enum.Enum):
-    """ Status of the execution of a programming solution.
-    The str inheritance eases the translation to and from JSON """
-    pending = 'pending'
-    passed = 'passed'
-    wrong = 'wrong'
-    timeout = 'timeout'
-    compilerError = 'compilerError'
-    runtimeError = 'runtimeError'
-    internalError = 'internalError'
 
 # Attributes of these classes are shared with JS client code and use the JS name convention
 # pylint: disable=invalid-name
@@ -185,7 +173,7 @@ class ProblemController:
         print(problem_path, ' --> ', message.__dict__)
         match message.action:
             case 'fetch_problem': return ProblemController.fetch_problem(problem_path)
-            case 'run': return ProblemController.run_user_code(problem_path, message)
+            case 'run': return ProblemController.judge_solution(problem_path, message)
             case _: return flask.jsonify({ 'error': 'invalid action' })
         # except Exception:
         #     return flask.jsonify({ 'error': 'invalid action' })
@@ -200,7 +188,7 @@ class ProblemController:
         return json_result
 
     @staticmethod
-    def run_user_code(problem_path: str, message: vyg.Message):
+    def judge_solution(problem_path: str, message: vyg.Message):
         """ Called when user input a source code solution and press Run button """
         # Load the problem
         problem = Problem.load(problem_path)
@@ -217,20 +205,12 @@ class ProblemController:
     @staticmethod
     def run_test_cases(problem: Problem, solution: vyg.Message):
         """ Compile solution and run it against all test cases. Return an array of verdicts """
-        submission = {'problem': problem.__dict__, 'solution': solution.__dict__}
+        submission = { 'problem': problem.__dict__, 'solution': solution.__dict__ }
         # Create an array of results, one for each test case
         # TODO(jhc): get these args from config
         results = requests.post('http://localhost:9090/run', timeout=1000, json=submission).json()
         # The user program is executed once for each test case
         # TODO(jhc): Run in parallel
-        # for index in range(len(problem.tests)):
-        # Create an execution object, run it, and wait its execution result
-        #student_execution = execution.Execution(problem, solution)
-        #result = student_execution.run(index)
-        # Store the result in the array to be returned to the client
-        #results.append(result)
-        # Remove temporary directory and files used by the execution
-        # student_execution.rm_dir()
         return results
 
     @staticmethod
@@ -242,7 +222,7 @@ class ProblemController:
         #assert len(results) == len(problem.tests)
         for index, test in enumerate(results.get('outputs')):
             # If the test was passed
-            if test.get('status') == ExecutionStatus.passed:
+            if test.get('status') == vyg.ExecutionStatus.PASSED:
                 # Increase the count of passed test cases and accumulate the points
                 execution_result.passedTestCount += 1
                 execution_result.points += problem.tests[index].points

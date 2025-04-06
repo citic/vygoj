@@ -1,11 +1,21 @@
-""" Common classes for VygOJ """
-
-import base64
+""" Common classes for VygOJ backend and frontend server """
+import enum
 import json
 import os
 
+class Status(str, enum.Enum):
+    """ Status of the execution of a programming solution.
+    The str inheritance eases the translation to and from JSON """
+    PENDING = 'pending'
+    PASSED = 'passed'
+    WRONG = 'wrong'
+    TIMEOUT = 'timeout'
+    COMPILER_ERROR = 'compilerError'
+    RUNTIME_ERROR = 'runtimeError'
+    INTERNAL_ERROR = 'internalError'
+
 def get_app_path():
-    """ Return the path where the frontend app is located """
+    """ Return the path where the docker app is located """
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def get_problem_path():
@@ -15,6 +25,7 @@ def get_problem_path():
 def to_json(data_object):
     """ Convert the given Python object to JSON string """
     # See https://docs.python.org/3/library/json.html#json.dump
+    # TODO(jhc): Check if Flask provides automatic dict-to-json conversion
     return json.dumps(data_object, default=lambda obj: obj.__dict__)
 
 class Message:

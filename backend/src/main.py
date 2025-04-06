@@ -1,6 +1,8 @@
 """ Start backend execution """
 import flask
 
+import execution
+
 # Flask web application instance requires the name of the application (this filename)
 app = flask.Flask(__name__)
 
@@ -15,16 +17,6 @@ def index():
     # The return value of a view function is the response to the client
     return '<p>Help</p>\n'
 
-RESULT = {
-    'totalDuration': 0.420019,
-    'threadCount': 1,
-    'outputs': [
-        { 'passed': False, 'output': 'Hello\n' },
-        { 'passed': True, 'output': '0' },
-        { 'passed': False, 'output': 'world!\n' },
-    ],
-}
-
 @app.post('/run')
 def run_solution():
     """ Create a new submission to evaluate a problem solution. A submission token (id) is returned
@@ -33,4 +25,8 @@ def run_solution():
         flask.abort(415, 'Error: content-type must be application/json\n')
     submission = flask.request.get_json()
     print(submission)
-    return flask.jsonify(RESULT)
+    problem_json = submission.get('problem')
+    solution_json = submission.get('solution')
+    if problem_json and solution_json:
+        return execution.Execution(problem_json, solution_json).execute()
+    flask.abort(403, '')
