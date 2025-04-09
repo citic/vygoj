@@ -1,10 +1,11 @@
-import base64
 import docker
 import io
 import os
 import tarfile
 import tempfile
 import vyg
+
+IMAGE='debian-vygoj'
 
 # Docker is a server, we need a client to use it. from_env() creates a client that connects to the
 # server using the default socket or configuration in your environment variables. from_env() gives
@@ -73,13 +74,13 @@ class Execution:
     """
     def __init__(self, problem_json, solution_json):
         """ Constructor """
+        # The problem to be solved
+        self.problem = vyg.Problem('', problem_json)
+        # The solution submitted by user
+        self.solution = vyg.Message(solution_json)
         # The programming language used by user to write the code solution
         # Language is sent by client, but if omitted, we suppose 'C'
-        self.language = solution_json.language or 'C'
-        # The problem to be solved
-        self.problem = problem_json # Problem(problem_json)
-        # Needed?
-        self.solution = solution_json # Solution(solution_json)
+        self.language = self.solution.language or 'C'
         # Directory where the executable and test cases are stored in the container. If empty
         # the /home/student directory is used
         self.dir = ''
@@ -105,22 +106,21 @@ class Execution:
         """ Execute the solution against all test cases """
         try:
             # TODO(jhc): log the run in database
-            print('SUBMISSION::', self.problem, self.solution)
             # Do not run code directly on the OS, isolate student code into a Docker container
             self.create_container()
             # Copy the student solution and test cases to the container
             self.copy_files()
             # If the solution is in a language that should be compiled, compile it
-            self.compile()
+#            self.compile()
             # Run all test cases
-            for index in range(len(self.problem.tests)):
+#            for index in range(len(self.problem.tests)):
                 # Create an execution object, run it, and wait its execution result
-                self.run_test_case(index)
+#                self.run_test_case(index)
             # Remove Docker container
             self.remove_container()
             # Return the array of results as a JSON string
             return vyg.to_json(self.result)
-        except docker.errors.Error as error:
+        except Exception as error:
             # TODO(jhc): Communicate errors to admins, professors, or students
             raise error
 
@@ -157,7 +157,7 @@ class Execution:
             # The root filesystem is read-only. Students can only write on /home/student or /tmp
             read_only=True,
             # Enable to run linux-perf without root privileges in current session
-            sysctls={'kernel.perf_event_paranoid': 1},
+            #sysctls={'kernel.perf_event_paranoid': 1},
             # Simulate a terminal to capture stdout and stderr
             tty=True,
             # Log in as the student user
@@ -179,16 +179,17 @@ class Execution:
         # Docker to extract the tar file in the container, and finally, remove the temp dir.
         tmp_dir = tempfile.TemporaryDirectory()
         print('---temp_dir', tmp_dir)
+        assert self.solution.language in languageDefaults
         flags = languageDefaults[self.solution.language]
         # Copy student solution from JSON object to a file on temporary directory
         self.source_file = f'solution.{flags.file_extension}'
         with open(os.path.join(tmp_dir.name, self.source_file), 'w', encoding='utf8') as file:
-            file.write(base64.b64decode(self.solution.source_code))
+            file.write(vyg.decode(self.solution.code))
         # Copy input files of all test cases to the temporary directory
         for index, test in enumerate(self.problem.tests):
             input_file = f'input{index:03}.txt'
             with open(os.path.join(tmp_dir.name, input_file,), 'w', encoding='utf8') as file:
-                file.write(base64.b64decode(test.input))
+                file.write(vyg.decode(test.input))
         # Compress the temporary directory to a tar file in memory
         mem_tar = io.BytesIO()
         with tarfile.open(fileobj=mem_tar, mode='w|gz') as tar_file:
@@ -197,7 +198,7 @@ class Execution:
         # Extract the tar file in the container
         self.container.put_archive(path='/home/student', data=mem_tar)
         # Remove temporary folder
-        os.rmdir(tmp_dir)
+        #os.rmdir(tmp_dir)
 
     def run_in_container(self, command, timeout):
         """
@@ -257,8 +258,8 @@ class Execution:
         # Copy the stdin to a file
         args = test.commandLineArguments or ''
         input_file = f'input{index:03}.txt'
-        expected_output = base64.b64decode(test.output) if test.output else ''
-        expected_error = base64.b64decode(test.stderr) if test.stderr else ''
+        expected_output = vyg.decode(test.output) if test.output else ''
+        expected_error = vyg.decode(test.stderr) if test.stderr else ''
         wall_time_limit = 2 # seconds
         perf_cmd = 'perf stat -o stat.txt'
         timeout = f'timeout {wall_time_limit}'
@@ -275,7 +276,7 @@ class Execution:
         # Check solution is in time range
         self.check_time_range(index)
         # If there further proofs, execute them
-        if self.result['status'] == vyg.Status.PASSED and self.problem.hasProofs():
+        if self.result['status'] == vyg.Status.PASSED and self.problem.has_proofs():
             self.run_thread_count_proof(index, input_file)
         # Store the result in the array to be returned to the client
         # TODO(jhc): Each step should save into the self.result dictionary
@@ -306,17 +307,17 @@ class Execution:
             self.result['status'] = vyg.Status.RUNTIME_ERROR
             # Provide a descriptive message
             self.result['message'] = f"{self.result['message']} " if self.result['message'] else ''
-            self.result['message'] += base64.b64encode('Faster than expected')
+            self.result['message'] += vyg.encode('Faster than expected')
         if max_duration and duration > max_duration:
             self.result['status'] = vyg.Status.RUNTIME_ERROR
             # Provide a descriptive message
             self.result['message'] = f"${self.result['message']} " if self.result['message'] else ''
-            self.result['message'] += base64.b64encode('Slower than expected')
+            self.result['message'] += vyg.encode('Slower than expected')
 
     def check_static_analysis(self):
         """ If professor asked to do static analysis, eg: check some words are in code"""
         if (self.problem.mustContain and self.result['status'] == vyg.Status.PASSED):
-            code = base64.b64decode(self.solution.source_code or '')
+            code = vyg.decode(self.solution.code or '')
             for token in self.problem.mustContain:
                 if not token in code:
                     # console.log(`:::::::${token}`)
@@ -325,7 +326,7 @@ class Execution:
                     # Provide a descriptive message
                     self.result['message'] = (f'{self.result['message']} '
                             if self.result['message'] else '')
-                    self.result['message'] += base64.b64encode(f'Missing {token} in solution')
+                    self.result['message'] += vyg.encode(f'Missing {token} in solution')
                     break
 
     def run_thread_count_proof(self, index:int, stdin:str):
@@ -355,5 +356,5 @@ class Execution:
             self.result['status'] = vyg.Status.RUNTIME_ERROR
             # Provide a descriptive message
             self.result['message'] = f'${self.result['message']} ' if self.result['message'] else ''
-            self.result['message'] += base64.b64encode(
+            self.result['message'] += vyg.encode(
                     f"Invalid amount of secondary threads ({self.result['threadCount']})")
