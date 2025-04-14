@@ -33,29 +33,19 @@ languageDefaults = {
         '-g -Wall -Wextra -std=gnu++17 -fsanitize=address -fmessage-length=80 -pthread -lm'),
 }
 
-# class Judge0Submission:
-#     def __init__(self, problem:Problem, solution:Solution):
-#         self.source_code = ''
-#         self.language_id = 0
-#         # Compiler flags: string (max. 512 chars)
-#         self.compiler_options = ''
-#         self.stdin = '' # stdinValue,
-#         self.command_line_arguments = '' # commandLineArguments,
-#         self.redirect_stderr_to_stdout = '' # redirectStderrToStdout
-#         self.expected_output = ''
-#         self.cpu_time_limit = 0
-#         self.cpu_extra_time = 0
-#         self.wall_time_limit = -1
-
-# RunResultInterface = {
-#     totalDuration: 0.420019,
-#     threadCount: 1,
-#     outputs: [
-#         { passed: false, output: 'Hello\n' },
-#         { passed: true, output: '0' },
-#         { passed: false, output: 'world!\n' },
-#     ],
-# }
+class FailedSolution(Exception):
+    """ An object of this class is launched immediately we know student code failed in order
+        to stop the execution of the test case. The message is used internally, not reported to
+        user. The Execution.report object carries the status and its message """
+    def __init__(self, result:vyg.ExecutionResult, status:vyg.Status, message:str):
+        """ Constructor. result: reference to the result object that will be modified.
+            status: the status to be assigned in the result object. The message to be
+            assigned to the result object. No other exceptions should be launched after this
+            one, otherwise the result object will reflect the last one """
+        super().__init__(message)
+        self.message = message # needed?
+        result.status = status
+        result.message = vyg.append(result.message, message, '\n')
 
 class Execution:
     """Controls an execution of the user solution against only one or several test cases. Input:
@@ -74,10 +64,10 @@ class Execution:
     """
     def __init__(self, problem_json, solution_json):
         """ Constructor """
-        # The problem to be solved
-        self.problem = vyg.Problem('', problem_json)
-        # The solution submitted by user
-        self.solution = vyg.Message(solution_json)
+        # The problem to be solved, sent by VygOJ frontend
+        self.problem = vyg.Problem('', problem_json).decode()
+        # The solution submitted by user, sent by VygOJ frontend as a message
+        self.solution = vyg.Message(solution_json).decode()
         # The programming language used by user to write the code solution
         # Language is sent by client, but if omitted, we suppose 'C'
         self.language = self.solution.language or 'C'
@@ -90,39 +80,51 @@ class Execution:
         self.executable = ''
         # Docker container to compiler and run test cases
         self.container:docker.Container = None
-        # The result of all test cases, a dictionary that will be returned to frontend
-        #self.result = ExecutionResult()
-        self.result = {
-            'totalDuration': 0.420019,
-            'threadCount': 1,
-            'outputs': [
-                { 'passed': False, 'output': 'Hello\n' },
-                { 'passed': True, 'output': '0' },
-                { 'passed': False, 'output': 'world!\n' },
-            ],
-        }
+        # The execution result of each test case and a brief to be returned to frontend
+        self.result = vyg.ExecutionResult()
 
     def execute(self):
         """ Execute the solution against all test cases """
         try:
             # TODO(jhc): log the run in database
+            # Run static analysis checks before compiling and run the test cases
+            self.check_static_analysis()
             # Do not run code directly on the OS, isolate student code into a Docker container
             self.create_container()
             # Copy the student solution and test cases to the container
             self.copy_files()
             # If the solution is in a language that should be compiled, compile it
-#            self.compile()
-            # Run all test cases
-#            for index in range(len(self.problem.tests)):
+            self.compile()
+            # Run all test cases. TODO(jhc): test in parallel? needed?
+            for index0, test_case in enumerate(self.problem.tests):
                 # Create an execution object, run it, and wait its execution result
-#                self.run_test_case(index)
-            # Remove Docker container
-            self.remove_container()
-            # Return the array of results as a JSON string
-            return vyg.to_json(self.result)
+                self.run_test_case(index0, test_case)
+            # Execution finished, encode the result to JSON and send it to frontend
+            # TODO(jhc): self.build_message() for the entire execution result
+            return self.result.encode()
+        except FailedSolution:
+            # Student's code does not solve the problem, report to backend
+            return self.result.encode()
         except Exception as error:
             # TODO(jhc): Communicate errors to admins, professors, or students
+            self.result.status = vyg.Status.INTERNAL_ERROR
+            self.result.message = vyg.append(self.result.message, str(error), '\n')
+            #return self.result.encode()
             raise error
+        finally:
+            # Stop and remove Docker container if it was created
+            self.remove_container()
+
+    def check_static_analysis(self):
+        """ If professor asked to do static analysis, eg: check some words are in code"""
+        if not self.problem.mustContain:
+            return
+        code = self.solution.code or ''
+        for token in self.problem.mustContain:
+            if not token in code:
+                # console.log(`:::::::${token}`)
+                # The token is missing, launch an exception to stop the execution
+                raise FailedSolution(self.result, vyg.Status.WRONG, f'Missing {token} in solution')
 
     def create_container(self):
         """ Create a Docker container and set it to self.container reference """
@@ -165,16 +167,16 @@ class Execution:
 
     def remove_container(self):
         """ Stop the container if it is running and destroy it """
-        assert self.container
-        # Stop the execution of the container
-        self.container.stop()
-        # Remove the container, we force to remove it if stopping failed
-        self.container.remove(force=True)
-        self.container = None
+        if self.container:
+            # Stop the execution of the container
+            self.container.stop()
+            # Remove the container, we force to remove it if stopping failed
+            self.container.remove(force=True)
+            self.container = None
 
     def copy_files(self):
         """ Copy the student solution and test cases to the container """
-        # Docker do not allow to copy individual files from host to container. Wee need to
+        # Docker does not allow to copy individual files from host to container. Wee need to
         # prepare a temp directory on host to store the files, compress them to a tar file, ask
         # Docker to extract the tar file in the container, and finally, remove the temp dir.
         tmp_dir = tempfile.TemporaryDirectory()
@@ -200,23 +202,19 @@ class Execution:
         # Remove temporary folder
         #os.rmdir(tmp_dir)
 
-    def run_in_container(self, command, timeout):
+    def run_in_container(self, command, timeout, prefix = ''):
         """
-        Executes a command in a Docker container and returns stdout, stderr, and exit code.
-
-        Args:
-            command: Command to run (str or list)
-            timeout: Maximum allowed duration in milliseconds
-        
-        Returns:
-            tuple: (stdout, stderr, exit_code)
-
-        Adapted from DeepSeek
+        Executes a command in a Docker container and returns stdout, stderr, and exit code. Args:
+        - command: Command to run (str or list)
+        - timeout: Maximum allowed duration in seconds (can contain decimals)
+        Returns a tuple: (stdout, stderr, exit_code)
         """
         # TODO(jhc): Use or remove timeout parameter
         # Execute the command, demux separates stdout and stderr into an array result.output[]
         # TODO(jhc): stdin=True?,tty=True,stream=<bool>,workdir=<str>
         # Doc: https://docker-py.readthedocs.io/en/stable/containers.html
+        command = f'timeout {timeout} {command}' if timeout else command
+        command = vyg.prepend(command, prefix)
         result = self.container.exec_run(cmd=command, stdout=True, stderr=True, demux=True,
                 user='student')
         # Decode stdout and stderr (if they exist)
@@ -227,9 +225,8 @@ class Execution:
     def compile(self):
         """ Compile the solution if its language is compiled, e.g: C, C++, Java... """
         if self.solution.language not in self.problem.languages:
-            raise RuntimeError(f'Not allowed language for problem: {self.solution.language}')
-        # Run static analysis checks
-        self.check_static_analysis()
+            message = f'Not allowed language for problem: {self.solution.language}'
+            raise FailedSolution(self.result, vyg.Status.COMPILER_ERROR, message)
         # Compile the solution
         if self.solution.language in languageDefaults:
             flags = languageDefaults[self.solution.language]
@@ -239,122 +236,119 @@ class Execution:
             cmd = (f'{flags.compiler} {flags.compiler_options} {self.source_file}'
                     f' -o {self.executable}')
             # Run the compilation command, if it fails, report to frontend
-            #compiler_output = self.container.exec(cmd)
-            _, stderr, exit_code = self.run_in_container(cmd, 2000)
+            stdout, stderr, exit_code = self.run_in_container(cmd, 2)
             if exit_code != 0:
-                # TODO(jhc): Catch exceptions and update the result
-                raise RuntimeError(stderr)
+                # Student code produced compiling errors
+                raise FailedSolution(self.result, vyg.Status.COMPILER_ERROR,
+                        vyg.append(stdout, stderr, '\n'))
             # TODO(jhc): Check if the executable is created
             # TODO(jhc): Create a snapshot (commit/image) of the container in order to restore it
             # after running the student solution against each test case. Disabled until efficiency
             # could be measured
             # self.container.commit(repository='vyg', tag='after_compile', message='')
+        else:
+            raise FailedSolution(self.result, vyg.Status.COMPILER_ERROR,
+                    f'Not supported language by backend: {self.solution.language}')
 
-    def run_test_case(self, index:int):
+    def run_test_case(self, index0:int, test_case:vyg.TestCase):
         """ Runs a test case of the problem given in the constructor """
         # Get the test case to run
-        assert index < self.problem.tests.length
-        test = self.problem.tests[index] # TestCase(self.problem.tests[index])
+        assert index0 < len(self.problem.tests)
         # Copy the stdin to a file
-        args = test.commandLineArguments or ''
-        input_file = f'input{index:03}.txt'
-        expected_output = vyg.decode(test.output) if test.output else ''
-        expected_error = vyg.decode(test.stderr) if test.stderr else ''
+        args = test_case.commandLineArguments or ''
+        input_file = f'input{index0 + 1:03}.txt'
+        expected_output = vyg.decode(test_case.output) if test_case.output else ''
+        expected_error = vyg.decode(test_case.stderr) if test_case.stderr else ''
+        # TODO(jhc): get wall time limit from min(problem, max_for_language)
         wall_time_limit = 2 # seconds
         perf_cmd = 'perf stat -o stat.txt'
-        timeout = f'timeout {wall_time_limit}'
         # Prepare run command: perf stat -o stat.txt timeout 2 ./solution < input.txt
-        cmd = f'{perf_cmd} {timeout} {self.executable} {args} < {input_file}'
-        stdout, stderr, _ = self.run_in_container(cmd, wall_time_limit)
+        cmd = f'{self.executable} {args} < {input_file}'
+        test_result = vyg.TestCaseResult()
+        test_result.stdout, test_result.stderr, test_result.exitCode = (
+                self.run_in_container(cmd, wall_time_limit, perf_cmd))
         #print(exit_code, stdout, stderr) # TODO(jhc): log the result
         # Fetch the duration measured by perf stat
+        # TODO(jhc): Fetch CPU time, used RAM
         cmd = "grep 'seconds time elapsed' stat.txt | { read first _; echo $first; }"
-        self.result['totalDuration'] = float(self.run_in_container(cmd, 2000)[0])
+        test_result.wallTime = float(self.run_in_container(cmd, 2)[0])
         # If indeterminism is allowed, compare output again
-        self.compare_output(stdout, expected_output)
-        self.compare_output(stderr, expected_error)
+        self.compare_output(test_result.stdout, expected_output, test_result)
+        self.compare_output(test_result.stderr, expected_error, test_result)
         # Check solution is in time range
-        self.check_time_range(index)
+        self.check_time_range(index0, test_result)
         # If there further proofs, execute them
-        if self.result['status'] == vyg.Status.PASSED and self.problem.has_proofs():
-            self.run_thread_count_proof(index, input_file)
+        if self.result.status == vyg.Status.PASSED and self.problem.has_proofs():
+            self.run_thread_count_proof(index0, input_file)
         # Store the result in the array to be returned to the client
         # TODO(jhc): Each step should save into the self.result dictionary
-        #test_results.append(test_result)
+        self.result.results.append(test_result)
+        # If the test was passed
+        if test_result.status == vyg.Status.PASSED:
+            # Increase the count of passed test cases and accumulate the points
+            self.result.passedTestCount += 1
+            self.result.points += test_case.points
+            self.result.totalPoints += test_case.points
+        # If this test case lasted longer than the longest known
+        test_time = float(test_case.wallTime or test_case.cpuTime or float('-inf'))
+        self.result.maxWallTime = max(self.result.maxWallTime, test_time)
 
-    def compare_output(self, student_output, expected_output):
+    def compare_output(self, student_output:str, expected_output:str,
+                test_result:vyg.TestCaseResult):
         """ Compare student stdout or stderr considering if indeterminism is allowed """
         if self.problem.allowIndeterminism == 'lines':
             student_output = student_output.split('\n').sort()
             expected_output = expected_output.split('\n').sort()
         print(student_output, expected_output)
-        if student_output == expected_output:
-            self.result['status'] = vyg.Status.PASSED
-            # self.result['message'] = ''
-            #print('test case fixed to passed ignoring indeterminism')
-        else:
-            self.result['status'] = vyg.Status.WRONG
+        if student_output != expected_output:
+            test_result.status = vyg.Status.WRONG
+            self.result.status = vyg.Status.WRONG
 
-    def check_time_range(self, index: int):
+    def check_time_range(self, index0:int, test_result:vyg.TestCaseResult):
         """ Check if the solution run within the time range allowed by the problem """
-        if self.result['status'] != vyg.Status.PASSED:
+        assert 0 <= index0 < len(self.problem.tests)
+        if self.result.status != vyg.Status.PASSED:
             return
-        assert self.result['totalDuration'] # TODO(jhc): result.wallTime or result.cpuTime
-        duration = self.result['totalDuration']
-        min_duration = self.problem.tests[index].minDuration or self.problem.minDuration
-        max_duration = self.problem.tests[index].maxDuration or self.problem.maxDuration
+        duration = self.result.maxWallTime or float('-inf') # or self.result.maxCpuTime
+        assert duration >= 0.0
+        test_case = self.problem.tests[index0]
+        min_duration = test_case.minDuration or self.problem.minDuration
+        max_duration = test_case.maxDuration or self.problem.maxDuration
         if min_duration and duration < min_duration:
-            self.result['status'] = vyg.Status.RUNTIME_ERROR
-            # Provide a descriptive message
-            self.result['message'] = f"{self.result['message']} " if self.result['message'] else ''
-            self.result['message'] += vyg.encode('Faster than expected')
+            self.result.status = test_result.status = vyg.Status.RUNTIME_ERROR
+            test_result.message = vyg.append(test_result.message,
+                    f'Test case {index0 + 1} faster than expected')
         if max_duration and duration > max_duration:
-            self.result['status'] = vyg.Status.RUNTIME_ERROR
-            # Provide a descriptive message
-            self.result['message'] = f"${self.result['message']} " if self.result['message'] else ''
-            self.result['message'] += vyg.encode('Slower than expected')
-
-    def check_static_analysis(self):
-        """ If professor asked to do static analysis, eg: check some words are in code"""
-        if (self.problem.mustContain and self.result['status'] == vyg.Status.PASSED):
-            code = vyg.decode(self.solution.code or '')
-            for token in self.problem.mustContain:
-                if not token in code:
-                    # console.log(`:::::::${token}`)
-                    # The token is missing
-                    self.result['status'] = vyg.Status.WRONG
-                    # Provide a descriptive message
-                    self.result['message'] = (f'{self.result['message']} '
-                            if self.result['message'] else '')
-                    self.result['message'] += vyg.encode(f'Missing {token} in solution')
-                    break
+            self.result.status = test_result.status = vyg.Status.RUNTIME_ERROR
+            test_result.message = vyg.append(test_result.message,
+                    f'Test case {index0 + 1} slower than expected')
 
     def run_thread_count_proof(self, index:int, stdin:str):
         """ Checks that user solution created the required count of threads """
         # Get the test case
-        assert 0 < index < self.problem.tests.length
+        assert 0 <= index < len(self.problem.tests)
         # To get the number of created threads, we use GDB: -q quiet, -ex runs a command as if user
         # types it in interactive mode. We count output lines that report New Thread events:
         # gdb -q -ex=r -ex=q --args ./exe | grep 'New Thread' | wc -l
         exe = self.executable
         cmd = f"gdb -q '-ex=r < {stdin}' -ex=q --args {exe} | grep 'New Thread' | wc -l"
         print(cmd)
-        stdout, stderr, _ = self.run_in_container(cmd, 3000)
+        stdout, stderr, _ = self.run_in_container(cmd, 3)
         print(stdout)
         print(stderr)
         # Standard output must contain the number of created threads
-        self.result['threadCount'] = int(stdout)
+        self.result.threadCount = int(stdout)
         # Get the accepted range, min may be stdin
         min_threads_text = self.problem.tests[index].minThreads or self.problem.minThreads
         min_threads = int(self.problem.tests[index].input if min_threads_text == 'stdin' else '1')
         max_threads = self.problem.tests[index].minThreads or self.problem.maxThreads
         # Check it is in range
-        in_range = min_threads <= self.result['threadCount'] <= max_threads
+        in_range = min_threads <= self.result.threadCount <= max_threads
         # If user did not create the asked amount of threads
         if not in_range:
             # Mark the test case failed
-            self.result['status'] = vyg.Status.RUNTIME_ERROR
+            self.result.status = vyg.Status.RUNTIME_ERROR
             # Provide a descriptive message
-            self.result['message'] = f'${self.result['message']} ' if self.result['message'] else ''
-            self.result['message'] += vyg.encode(
-                    f"Invalid amount of secondary threads ({self.result['threadCount']})")
+            self.result.message = f'${self.result.message} ' if self.result.message else ''
+            self.result.message += vyg.encode(
+                    f'Invalid amount of secondary threads ({self.result.threadCount})')

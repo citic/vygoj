@@ -42,6 +42,15 @@ def decode(text:str):
     """ De-codifies the given text in base64 to plain text """
     return str(base64.b64decode(text))
 
+def prepend(text, prefix, sep = ' '):
+    """ Prepends the prefix to the text separated by sep if prefix is not empty """
+    return f'{prefix}{sep}{text}' if prefix else text
+
+def append(text, suffix, sep = ' '):
+    """ Appends the suffix to the text separated by sep if suffix is not empty """
+    return f'{text}{sep}{suffix}' if suffix else text
+
+
 class Message:
     """ All mMessages exchanged between the JS client and Python server are generic.
         Send { } as json_dict to init Message to empty fields """
@@ -56,22 +65,105 @@ class Message:
         #self.code = base64.b64decode(json_dict.get('code', ''))
         self.code = json_dict.get('code', '')
 
+    def encode(self):
+        """ Converts the object to JSON string. Text fields that may have new lines or
+            other special characters are encoded to base64. Therefore this object is modified
+            after this method is called. It should be called only once, before sending"""
+        self.error = encode(self.error)
+        self.code = encode(self.code)
+        return to_json(self)
+
+    def decode(self):
+        """ Converts the object from JSON string. Text fields that may have new lines or
+            other special characters are decoded from base64. Therefore this object is modified
+            after this method is called. It should be called only once, after receiving"""
+        self.error = decode(self.error)
+        self.code = decode(self.code)
+        return self
+
 # Attributes of these classes are shared with JS client code and use the JS name convention
 # pylint: disable=invalid-name
+
+class TestCaseResult:
+    """ Result of running a test case """
+    def __init__(self):
+        # An enumeration value code of the verdict, see vyg.Status
+        self.status = Status.PENDING # Status
+        # A human-readable verdict emitted by the judge
+        self.message = '' # text
+        # CPU time, i.e all threads added up
+        self.cpuTime = '' # text
+        # Exit code reported by the program to the operating system after running this test case
+        self.exitCode = 0 # number
+        # Memory used by the process (bytes)
+        self.memory = 0 # number
+        # TODO(jhc): number_of_runs?
+        # Text produced by the user solution in the standard error
+        self.stderr = '' # text
+        # Text produced by the user solution in the standard output
+        self.stdout = '' # text
+        # Number of threads created by solution for this test case
+        self.threadCount = 0 # number
+        # Elapsed wall time running this test case in seconds
+        self.wallTime = '' # text
+
+    def encode(self):
+        """ Converts the object to JSON string. Text fields that may have new lines or
+            other special characters are encoded to base64. Therefore this object is modified
+            after this method is called. It should be called only once, before sending"""
+        self.message = encode(self.message)
+        self.stderr = encode(self.stderr)
+        self.stdout = encode(self.stdout)
+        return self
+
+    def decode(self):
+        """ Converts the object from JSON string. Text fields that may have new lines or
+            other special characters are decoded from base64. Therefore this object is modified
+            after this method is called. It should be called only once, after receiving"""
+        self.message = decode(self.message)
+        self.stderr = decode(self.stderr)
+        self.stdout = decode(self.stdout)
 
 class ExecutionResult:
     """ Result of running student solution against all test cases """
     def __init__(self):
+        # We suppose student's code solves the problem, until a test fails
+        self.status = Status.PASSED
+        # A human-readable verdict emitted by the judge
+        self.message = '' # text
+        # Compiler output or null if no output was generated
+        self.compileOutput = '' # text
         # Count of passed test cases
         self.passedTestCount = 0
         # Points gained by this solution
+        # TODO(jhc): used?
         self.points = 0
         # Total points (sum of all test cases)
         self.totalPoints = 0
         # Wall time of the largest test case
         self.maxWallTime = float('-inf')
         # Results of each test case
-        self.results = [] # TestCaseResult[]
+        self.results:TestCaseResult = []
+
+    def encode(self):
+        """ Converts the object to JSON string. Text fields that may have new lines or
+            other special characters are encoded to base64. Therefore this object is modified
+            after this method is called. It should be called only once, before sending"""
+        self.message = encode(self.message)
+        self.compileOutput = encode(self.compileOutput)
+        for test_case in self.results:
+            test_case.encode()
+        return to_json(self)
+
+    def decode(self):
+        """ Converts the object from JSON string. Text fields that may have new lines or
+            other special characters are decoded from base64. Therefore this object is modified
+            after this method is called. It should be called only once, after receiving"""
+        self.message = decode(self.message)
+        self.compileOutput = decode(self.compileOutput)
+        for test_case in self.results:
+            test_case.decode()
+        return self
 
 class TestCase:
     """
@@ -95,6 +187,22 @@ class TestCase:
         self.minDuration = json_dict.get('minDuration', 0)
         # Maximum wall time duration that user solution must spent to consider it correct
         self.maxDuration = json_dict.get('maxDuration', MAX_DURATION)
+
+    def encode(self):
+        """ Converts the object to JSON string. Text fields that may have new lines or
+            other special characters are encoded to base64. Therefore this object is modified
+            after this method is called. It should be called only once, before sending"""
+        self.input = encode(self.input)
+        self.output = encode(self.output)
+        return to_json(self)
+
+    def decode(self):
+        """ Converts the object from JSON string. Text fields that may have new lines or
+            other special characters are decoded from base64. Therefore this object is modified
+            after this method is called. It should be called only once, after receiving"""
+        self.input = decode(self.input)
+        self.output = decode(self.output)
+        return self
 
 class Problem:
     """ Represents a programming problem with statement, source code, and test cases """
@@ -131,11 +239,11 @@ class Problem:
         self.minDuration = json_dict.get('minDuration')
         self.maxDuration = json_dict.get('maxDuration')
         # Remove HTML escaping for all languages
-        for lang, code in self.initialCodeFor.items():
-            code = code.replace('&amp;', '&')
-            code = code.replace('&lt;', '<')
-            code = code.replace('&gt;', '>')
-            self.initialCodeFor[lang] = code
+        # for lang, code in self.initialCodeFor.items():
+        #     code = code.replace('&amp;', '&')
+        #     code = code.replace('&lt;', '<')
+        #     code = code.replace('&gt;', '>')
+        #     self.initialCodeFor[lang] = code
 
     @staticmethod
     def load_tests(json_tests):
@@ -167,5 +275,31 @@ class Problem:
     def has_proofs(self):
         """ Returns true if this problem requires the solution to pass extra proofs """
         return self.minThreads >= 1
+
+    def encode(self):
+        """ Converts the object to JSON string. Text fields that may have new lines or
+            other special characters are encoded to base64. Therefore this object is modified
+            after this method is called. It should be called only once, before sending"""
+        self.title = encode(self.title)
+        self.statement = encode(self.statement)
+        self.mustContain = encode(self.mustContain)
+        for lang, code in self.initialCodeFor.items():
+            self.initialCodeFor[lang] = encode(code)
+        for test in self.tests:
+            test.encode()
+        return to_json(self)
+
+    def decode(self):
+        """ Converts the object from JSON string. Text fields that may have new lines or
+            other special characters are decoded from base64. Therefore this object is modified
+            after this method is called. It should be called only once, after receiving"""
+        self.title = decode(self.title)
+        self.statement = decode(self.statement)
+        self.mustContain = decode(self.mustContain)
+        for lang, code in self.initialCodeFor.items():
+            self.initialCodeFor[lang] = decode(code)
+        for test in self.tests:
+            test.decode()
+        return self
 
 # pylint: enable=invalid-name

@@ -84,9 +84,7 @@ class ProblemController:
         # Load the problem
         problem = vyg.Problem.load(problem_path)
         # Run the test cases and wait for the array of results
-        results = ProblemController.run_test_cases(problem, message) # as vyg.TestCaseResult[]
-        # Embed the results into a object with statistics
-        result = ProblemController.create_result(problem, results)
+        result = ProblemController.run_solution(problem, message)
         # Store progress
         # TODO(I): assert req.session.user
         #progress = 100.0 * result.points / result.totalPoints
@@ -94,7 +92,7 @@ class ProblemController:
         return vyg.to_json(result)
 
     @staticmethod
-    def run_test_cases(problem: vyg.Problem, solution: vyg.Message):
+    def run_solution(problem: vyg.Problem, solution: vyg.Message):
         """ Compile solution and run it against all test cases. Return an array of verdicts """
         submission = { 'problem': problem.__dict__, 'solution': solution.__dict__ }
         # Create an array of results, one for each test case
@@ -103,23 +101,3 @@ class ProblemController:
         # The user program is executed once for each test case
         # TODO(jhc): Run in parallel
         return results
-
-    @staticmethod
-    def create_result(problem: vyg.Problem, results): # results:TestCaseResult[] -> ExecutionResult
-        """ Generates a Execution result summary from the test cases results """
-        # The result object has some statistics
-        execution_result = vyg.ExecutionResult()
-        # Calculate them
-        #assert len(results) == len(problem.tests)
-        for index, test in enumerate(results.get('outputs')):
-            # If the test was passed
-            if test.get('status') == vyg.Status.PASSED:
-                # Increase the count of passed test cases and accumulate the points
-                execution_result.passedTestCount += 1
-                execution_result.points += problem.tests[index].points
-                execution_result.totalPoints += problem.tests[index].points
-            # If this test case lasted longer than the longest known
-            #test_time = float(test.wallTime or test.cpuTime or '')
-            #execution_result.maxWallTime = max(results.get('totalDuration'), test_time)
-        # Build the result object
-        return execution_result
