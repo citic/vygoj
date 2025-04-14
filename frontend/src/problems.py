@@ -59,24 +59,21 @@ class ProblemController:
         """Client JavaScript asked for an action: fetch a problem, run user solution,
         save user code, ... All communication is made with JSON objects
         """
-        # try:
-        message = vyg.Message(json.loads(flask.request.get_data()))
-        print(problem_path, ' --> ', message.__dict__)
-        match message.action:
-            case 'fetch_problem': return ProblemController.fetch_problem(problem_path)
-            case 'run': return ProblemController.judge_solution(problem_path, message)
-            case _: return flask.jsonify({ 'error': 'invalid action' })
-        # except Exception:
-        #     return flask.jsonify({ 'error': 'invalid action' })
+        try:
+            message = vyg.Message(json.loads(flask.request.get_data())).decode()
+            print(problem_path, ' --> ', message.__dict__)
+            match message.action:
+                case 'fetch_problem': return ProblemController.fetch_problem(problem_path)
+                case 'run': return ProblemController.judge_solution(problem_path, message)
+                case _: return flask.jsonify({ 'error': 'invalid action' })
+        except Exception as error:
+            return flask.jsonify({ 'error': 'invalid action: ' + str(error) })
 
     @staticmethod
     def fetch_problem(problem_path: str):
         """ Return a JSON version of the problem """
         problem = vyg.Problem.load(problem_path)
-        json_result = vyg.to_json(problem)
-        print(json_result)
-        #return flask.jsonify(problem)
-        return json_result
+        return problem.encode()
 
     @staticmethod
     def judge_solution(problem_path: str, message: vyg.Message):
@@ -94,10 +91,17 @@ class ProblemController:
     @staticmethod
     def run_solution(problem: vyg.Problem, solution: vyg.Message):
         """ Compile solution and run it against all test cases. Return an array of verdicts """
-        submission = { 'problem': problem.__dict__, 'solution': solution.__dict__ }
+        problem.encode()
+        solution.encode()
+        json_text = vyg.to_json({ 'problem': problem, 'solution': solution })
+        print('-----------------------json_text----------------\n', json_text, '\n------------------------------------------')
+        submission = json.loads(json_text)
+        problem.decode()
+        solution.decode()
         # Create an array of results, one for each test case
         # TODO(jhc): get these args from config
-        results = requests.post('http://localhost:9090/run', timeout=1000, json=submission).json()
+        plain_result = requests.post('http://localhost:9090/run', timeout=1000, json=submission)
+        print('-----------------------plain_result----------------\n', plain_result, '\n------------------------------------------')
         # The user program is executed once for each test case
         # TODO(jhc): Run in parallel
-        return results
+        return plain_result.json()

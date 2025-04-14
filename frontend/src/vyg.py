@@ -36,11 +36,11 @@ def to_json(data_object):
 
 def encode(text:str):
     """ Codifies the given text to base64 in order to transport it as a JSON value """
-    return str(base64.b64encode(text))
+    return str(base64.b64encode(text.encode('utf-8')))
 
 def decode(text:str):
     """ De-codifies the given text in base64 to plain text """
-    return str(base64.b64decode(text))
+    return base64.b64decode(text).decode('utf-8')
 
 def prepend(text, prefix, sep = ' '):
     """ Prepends the prefix to the text separated by sep if prefix is not empty """
@@ -153,6 +153,7 @@ class ExecutionResult:
         self.compileOutput = encode(self.compileOutput)
         for test_case in self.results:
             test_case.encode()
+        print('-----------------------ExecutionResult----------------\n', to_json(self), '\n------------------------------------------')
         return to_json(self)
 
     def decode(self):
@@ -282,7 +283,8 @@ class Problem:
             after this method is called. It should be called only once, before sending"""
         self.title = encode(self.title)
         self.statement = encode(self.statement)
-        self.mustContain = encode(self.mustContain)
+        if self.mustContain:
+            self.mustContain = encode(self.mustContain)
         for lang, code in self.initialCodeFor.items():
             self.initialCodeFor[lang] = encode(code)
         for test in self.tests:
@@ -295,7 +297,8 @@ class Problem:
             after this method is called. It should be called only once, after receiving"""
         self.title = decode(self.title)
         self.statement = decode(self.statement)
-        self.mustContain = decode(self.mustContain)
+        if self.mustContain:
+            self.mustContain = decode(self.mustContain)
         for lang, code in self.initialCodeFor.items():
             self.initialCodeFor[lang] = decode(code)
         for test in self.tests:

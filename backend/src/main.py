@@ -24,7 +24,7 @@ def run_solution():
     if flask.request.headers.get('Content-Type').lower() != 'application/json':
         flask.abort(415, 'Error: content-type must be application/json\n')
     submission = flask.request.get_json()
-    print(submission)
+    print('-----------------------submission----------------\n', submission, '\n------------------------------------------')
     problem_json = submission.get('problem')
     solution_json = submission.get('solution')
     if problem_json and solution_json:
