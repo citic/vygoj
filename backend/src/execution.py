@@ -81,7 +81,7 @@ class Execution:
         # Docker container to compiler and run test cases
         self.container:docker.Container = None
         # The execution result of each test case and a brief to be returned to frontend
-        self.result = vyg.ExecutionResult()
+        self.result = vyg.ExecutionResult({})
 
     def execute(self):
         """ Execute the solution against all test cases """
@@ -101,15 +101,15 @@ class Execution:
                 self.run_test_case(index0, test_case)
             # Execution finished, encode the result to JSON and send it to frontend
             # TODO(jhc): self.build_message() for the entire execution result
-            return self.result.encode()
+            return vyg.to_json(self.result)
         except FailedSolution:
             # Student's code does not solve the problem, report to backend
-            return self.result.encode()
+            return vyg.to_json(self.result)
         except Exception as error:
             # TODO(jhc): Communicate errors to admins, professors, or students
             self.result.status = vyg.Status.INTERNAL_ERROR
             self.result.message = vyg.append(self.result.message, str(error), '\n')
-            #return self.result.encode()
+            #return vyg.to_json(self.result)
             raise error
         finally:
             # Stop and remove Docker container if it was created
@@ -264,7 +264,7 @@ class Execution:
         perf_cmd = 'perf stat -o stat.txt'
         # Prepare run command: perf stat -o stat.txt timeout 2 ./solution < input.txt
         cmd = f'{self.executable} {args} < {input_file}'
-        test_result = vyg.TestCaseResult()
+        test_result = vyg.TestCaseResult({})
         test_result.stdout, test_result.stderr, test_result.exitCode = (
                 self.run_in_container(cmd, wall_time_limit, perf_cmd))
         #print(exit_code, stdout, stderr) # TODO(jhc): log the result
@@ -349,6 +349,5 @@ class Execution:
             # Mark the test case failed
             self.result.status = vyg.Status.RUNTIME_ERROR
             # Provide a descriptive message
-            self.result.message = f'${self.result.message} ' if self.result.message else ''
-            self.result.message += vyg.encode(
+            self.result.message = vyg.append(self.result.message,
                     f'Invalid amount of secondary threads ({self.result.threadCount})')

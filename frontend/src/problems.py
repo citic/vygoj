@@ -60,7 +60,7 @@ class ProblemController:
         save user code, ... All communication is made with JSON objects
         """
         try:
-            message = vyg.Message(json.loads(flask.request.get_data())).decode()
+            message = vyg.Message(json.loads(flask.request.get_data()))
             print(problem_path, ' --> ', message.__dict__)
             match message.action:
                 case 'fetch_problem': return ProblemController.fetch_problem(problem_path)
@@ -72,8 +72,7 @@ class ProblemController:
     @staticmethod
     def fetch_problem(problem_path: str):
         """ Return a JSON version of the problem """
-        problem = vyg.Problem.load(problem_path)
-        return problem.encode()
+        return vyg.to_json(vyg.Problem.load(problem_path))
 
     @staticmethod
     def judge_solution(problem_path: str, message: vyg.Message):
@@ -91,13 +90,8 @@ class ProblemController:
     @staticmethod
     def run_solution(problem: vyg.Problem, solution: vyg.Message):
         """ Compile solution and run it against all test cases. Return an array of verdicts """
-        problem.encode()
-        solution.encode()
-        json_text = vyg.to_json({ 'problem': problem, 'solution': solution })
-        print('-----------------------json_text----------------\n', json_text, '\n------------------------------------------')
-        submission = json.loads(json_text)
-        problem.decode()
-        solution.decode()
+        submission = vyg.to_json({ 'problem': problem, 'solution': solution })
+        print('-----------------------submission----------------\n', submission, '\n------------------------------------------')
         # Create an array of results, one for each test case
         # TODO(jhc): get these args from config
         plain_result = requests.post('http://localhost:9090/run', timeout=1000, json=submission)
