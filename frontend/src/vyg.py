@@ -32,7 +32,7 @@ def encode(value:str|dict):
     """ Codifies the given text to base64 in order to transport it as a JSON value """
     if isinstance(value, dict):
         return encode_dict(value)
-    return str(base64.b64encode(value.encode('utf-8')))
+    return str(base64.b64encode(value.encode('utf-8')))[2:-1] if value else ''
 
 def encode_dict(json_dict:dict):
     """ Codifies the values of dictionary to base64 in order to transport it as a JSON value """
@@ -173,13 +173,13 @@ class TestCase:
     def __init__(self, json_dict:dict, should_decode=True):
         """ Construct this object getting values from the given dictionary """
         # Command line arguments
-        self.args = decode_if(json_dict.get('args', ''), should_decode)
+        self.commandLineArguments = decode_if(json_dict.get('args', ''), should_decode)
         # Text to send to user solution through stdin
         self.input = decode_if(json_dict.get('input', ''), should_decode)
         # Expected output
         self.output = decode_if(json_dict.get('output', ''), should_decode)
         # Expected error
-        self.output = decode_if(json_dict.get('error', ''), should_decode)
+        self.stderr = decode_if(json_dict.get('error', ''), should_decode)
         # Points that user earn if its solution matches the expected output
         self.points = json_dict.get('points', 0)
         # If true, the test case is hidden for users, so they cannot see what is in it

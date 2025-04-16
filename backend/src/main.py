@@ -1,5 +1,6 @@
 """ Start backend execution """
 import flask
+import json
 
 import execution
 
@@ -23,7 +24,7 @@ def run_solution():
     that is used to check the submission status later. """
     if flask.request.headers.get('Content-Type').lower() != 'application/json':
         flask.abort(415, 'Error: content-type must be application/json\n')
-    submission = flask.request.get_json()
+    submission = json.loads(flask.request.get_json())
     print('-----------------------submission----------------\n', submission, '\n------------------------------------------')
     problem_json = submission.get('problem')
     solution_json = submission.get('solution')

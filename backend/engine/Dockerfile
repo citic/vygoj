@@ -17,7 +17,7 @@ RUN apt update && \
     # mpich \
 
 # Create a non-root user to run students' solutions
-RUN useradd -m -s /bin/bash student
+RUN useradd -m -s /bin/bash student -G dialout
 
 # Switch to the student user
 USER student

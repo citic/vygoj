@@ -65,9 +65,9 @@ class Execution:
     def __init__(self, problem_json, solution_json):
         """ Constructor """
         # The problem to be solved, sent by VygOJ frontend
-        self.problem = vyg.Problem('', problem_json)#.decode()
+        self.problem = vyg.Problem('', problem_json)
         # The solution submitted by user, sent by VygOJ frontend as a message
-        self.solution = vyg.Message(solution_json)#.decode()
+        self.solution = vyg.Message(solution_json)
         # The programming language used by user to write the code solution
         # Language is sent by client, but if omitted, we suppose 'C'
         self.language = self.solution.language or 'C'
@@ -95,20 +95,24 @@ class Execution:
             self.copy_files()
             # If the solution is in a language that should be compiled, compile it
             self.compile()
+            print('-----------------------compile----------------\n', str(self.container.exec_run('ls -alR')), '\n------------------------------------------')            
             # Run all test cases. TODO(jhc): test in parallel? needed?
             for index0, test_case in enumerate(self.problem.tests):
                 # Create an execution object, run it, and wait its execution result
                 self.run_test_case(index0, test_case)
             # Execution finished, encode the result to JSON and send it to frontend
             # TODO(jhc): self.build_message() for the entire execution result
+            print('-----------------------result----------------\n', vyg.to_json(self.result), '\n------------------------------------------')            
             return vyg.to_json(self.result)
         except FailedSolution:
             # Student's code does not solve the problem, report to backend
+            print('-----------------------FailedSolution----------------\n', vyg.to_json(self.result), '\n------------------------------------------')            
             return vyg.to_json(self.result)
         except Exception as error:
             # TODO(jhc): Communicate errors to admins, professors, or students
             self.result.status = vyg.Status.INTERNAL_ERROR
             self.result.message = vyg.append(self.result.message, str(error), '\n')
+            print('-----------------------Error----------------\n', vyg.to_json(self.result), '\n------------------------------------------')            
             #return vyg.to_json(self.result)
             raise error
         finally:
@@ -155,9 +159,9 @@ class Execution:
             # TODO(jhc): Support the distributed programming paradigm
             network_disabled=True,
             # Student solutions do not have root privileges
-            privileged=False,
-            # The root filesystem is read-only. Students can only write on /home/student or /tmp
-            read_only=True,
+            privileged=True,
+            # The /home/student or /tmp are writable
+            read_only=False,
             # Enable to run linux-perf without root privileges in current session
             #sysctls={'kernel.perf_event_paranoid': 1},
             # Simulate a terminal to capture stdout and stderr
@@ -176,31 +180,35 @@ class Execution:
 
     def copy_files(self):
         """ Copy the student solution and test cases to the container """
+        assert self.solution.language in languageDefaults
         # Docker does not allow to copy individual files from host to container. Wee need to
         # prepare a temp directory on host to store the files, compress them to a tar file, ask
         # Docker to extract the tar file in the container, and finally, remove the temp dir.
         tmp_dir = tempfile.TemporaryDirectory()
         print('---temp_dir', tmp_dir)
-        assert self.solution.language in languageDefaults
-        flags = languageDefaults[self.solution.language]
-        # Copy student solution from JSON object to a file on temporary directory
-        self.source_file = f'solution.{flags.file_extension}'
-        with open(os.path.join(tmp_dir.name, self.source_file), 'w', encoding='utf8') as file:
-            file.write(vyg.decode(self.solution.code))
-        # Copy input files of all test cases to the temporary directory
-        for index, test in enumerate(self.problem.tests):
-            input_file = f'input{index:03}.txt'
-            with open(os.path.join(tmp_dir.name, input_file,), 'w', encoding='utf8') as file:
-                file.write(vyg.decode(test.input))
         # Compress the temporary directory to a tar file in memory
         mem_tar = io.BytesIO()
         with tarfile.open(fileobj=mem_tar, mode='w|gz') as tar_file:
-            tar_file.add(tmp_dir, arcname=os.path.basename(tmp_dir.name))
+            flags = languageDefaults[self.solution.language]
+            # Copy student solution from JSON object to a file on temporary directory
+            self.source_file = f'solution.{flags.file_extension}'
+            source_path = os.path.join(tmp_dir.name, self.source_file)
+            with open(source_path, 'w', encoding='utf8') as file:
+                file.write(self.solution.code)
+            tar_file.add(source_path, arcname=self.source_file)
+            # Copy input files of all test cases to the temporary directory
+            for index1, test in enumerate(self.problem.tests, 1):
+                input_file = f'input{index1:03}.txt'
+                input_path = os.path.join(tmp_dir.name, input_file)
+                with open(input_path, 'w', encoding='utf8') as file:
+                    file.write(test.input)
+                tar_file.add(input_path, arcname=input_file)
+        # Mover cursor to the beginning of the tar file to read it
         mem_tar.seek(0)
         # Extract the tar file in the container
-        self.container.put_archive(path='/home/student', data=mem_tar)
-        # Remove temporary folder
-        #os.rmdir(tmp_dir)
+        self.container.put_archive(path='/home/student', data=mem_tar.read())
+        self.run_in_container(f'chown -R student:student /home/student', 0)
+        # tempfile package auto removes the temporary folder in host backend's machine
 
     def run_in_container(self, command, timeout, prefix = ''):
         """
@@ -215,6 +223,7 @@ class Execution:
         # Doc: https://docker-py.readthedocs.io/en/stable/containers.html
         command = f'timeout {timeout} {command}' if timeout else command
         command = vyg.prepend(command, prefix)
+        print(f'$$$$ {command} $$$$')
         result = self.container.exec_run(cmd=command, stdout=True, stderr=True, demux=True,
                 user='student')
         # Decode stdout and stderr (if they exist)
@@ -233,7 +242,8 @@ class Execution:
             # Target file is the executable
             self.executable = 'solution'
             # Prepare compilation command
-            cmd = (f'{flags.compiler} {flags.compiler_options} {self.source_file}'
+            source_path = self.source_file
+            cmd = (f'{flags.compiler} {flags.compiler_options} {source_path}'
                     f' -o {self.executable}')
             # Run the compilation command, if it fails, report to frontend
             stdout, stderr, exit_code = self.run_in_container(cmd, 2)
@@ -257,20 +267,20 @@ class Execution:
         # Copy the stdin to a file
         args = test_case.commandLineArguments or ''
         input_file = f'input{index0 + 1:03}.txt'
-        expected_output = vyg.decode(test_case.output) if test_case.output else ''
-        expected_error = vyg.decode(test_case.stderr) if test_case.stderr else ''
+        expected_output = test_case.output
+        expected_error = test_case.stderr
         # TODO(jhc): get wall time limit from min(problem, max_for_language)
         wall_time_limit = 2 # seconds
-        perf_cmd = 'perf stat -o stat.txt'
+        perf_cmd = '/bin/bash -c "perf stat -o stat.txt'
         # Prepare run command: perf stat -o stat.txt timeout 2 ./solution < input.txt
-        cmd = f'{self.executable} {args} < {input_file}'
+        cmd = f'./{self.executable} {args} < {input_file}"'
         test_result = vyg.TestCaseResult({})
         test_result.stdout, test_result.stderr, test_result.exitCode = (
                 self.run_in_container(cmd, wall_time_limit, perf_cmd))
         #print(exit_code, stdout, stderr) # TODO(jhc): log the result
         # Fetch the duration measured by perf stat
         # TODO(jhc): Fetch CPU time, used RAM
-        cmd = "grep 'seconds time elapsed' stat.txt | { read first _; echo $first; }"
+        cmd = "/bin/bash -c \"grep 'seconds time elapsed' stat.txt | { read first _; echo $first; }\""
         test_result.wallTime = float(self.run_in_container(cmd, 2)[0])
         # If indeterminism is allowed, compare output again
         self.compare_output(test_result.stdout, expected_output, test_result)
@@ -290,8 +300,7 @@ class Execution:
             self.result.points += test_case.points
             self.result.totalPoints += test_case.points
         # If this test case lasted longer than the longest known
-        test_time = float(test_case.wallTime or test_case.cpuTime or float('-inf'))
-        self.result.maxWallTime = max(self.result.maxWallTime, test_time)
+        self.result.maxWallTime = max(self.result.maxWallTime, test_result.wallTime)
 
     def compare_output(self, student_output:str, expected_output:str,
                 test_result:vyg.TestCaseResult):
