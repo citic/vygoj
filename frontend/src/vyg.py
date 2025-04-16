@@ -118,7 +118,7 @@ class TestCaseResult:
     def __init__(self, json_dict:dict):
         """ Construct this object getting values from the given dictionary """
         # An enumeration value code of the verdict, see vyg.Status
-        self.status = Status(json_dict.get('status', Status.PENDING))
+        self.status = Status(json_dict.get('status', Status.PASSED))
         # A human-readable verdict emitted by the judge
         self.message = decode(json_dict.get('message', ''))
         # CPU time, i.e all threads added up
@@ -179,6 +179,7 @@ class TestCase:
         # Expected output
         self.output = decode_if(json_dict.get('output', ''), should_decode)
         # Expected error
+        # TODO(jhc): If missing (None), allow using stderr for debug, '' must match
         self.stderr = decode_if(json_dict.get('error', ''), should_decode)
         # Points that user earn if its solution matches the expected output
         self.points = json_dict.get('points', 0)

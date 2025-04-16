@@ -95,7 +95,7 @@ class Execution:
             self.copy_files()
             # If the solution is in a language that should be compiled, compile it
             self.compile()
-            print('-----------------------compile----------------\n', str(self.container.exec_run('ls -alR')), '\n------------------------------------------')            
+            print('-----------------------compile----------------\n', str(self.container.exec_run('ls -alR')).replace('\\n', '\n'), '\n------------------------------------------')            
             # Run all test cases. TODO(jhc): test in parallel? needed?
             for index0, test_case in enumerate(self.problem.tests):
                 # Create an execution object, run it, and wait its execution result
@@ -247,6 +247,7 @@ class Execution:
                     f' -o {self.executable}')
             # Run the compilation command, if it fails, report to frontend
             stdout, stderr, exit_code = self.run_in_container(cmd, 2)
+            self.result.compileOutput = stdout + stderr
             if exit_code != 0:
                 # Student code produced compiling errors
                 raise FailedSolution(self.result, vyg.Status.COMPILER_ERROR,
@@ -263,7 +264,7 @@ class Execution:
     def run_test_case(self, index0:int, test_case:vyg.TestCase):
         """ Runs a test case of the problem given in the constructor """
         # Get the test case to run
-        assert index0 < len(self.problem.tests)
+        assert 0 <= index0 < len(self.problem.tests)
         # Copy the stdin to a file
         args = test_case.commandLineArguments or ''
         input_file = f'input{index0 + 1:03}.txt'
@@ -271,20 +272,22 @@ class Execution:
         expected_error = test_case.stderr
         # TODO(jhc): get wall time limit from min(problem, max_for_language)
         wall_time_limit = 2 # seconds
-        perf_cmd = '/bin/bash -c "perf stat -o stat.txt'
+        prefix = '/bin/bash -c "perf stat -o stat.txt'
         # Prepare run command: perf stat -o stat.txt timeout 2 ./solution < input.txt
         cmd = f'./{self.executable} {args} < {input_file}"'
         test_result = vyg.TestCaseResult({})
         test_result.stdout, test_result.stderr, test_result.exitCode = (
-                self.run_in_container(cmd, wall_time_limit, perf_cmd))
+                self.run_in_container(cmd, wall_time_limit, prefix))
         #print(exit_code, stdout, stderr) # TODO(jhc): log the result
         # Fetch the duration measured by perf stat
         # TODO(jhc): Fetch CPU time, used RAM
         cmd = "/bin/bash -c \"grep 'seconds time elapsed' stat.txt | { read first _; echo $first; }\""
         test_result.wallTime = float(self.run_in_container(cmd, 2)[0])
+        # If this test case lasted longer than the longest known, even if it failed
+        self.result.maxWallTime = max(self.result.maxWallTime, test_result.wallTime)
         # If indeterminism is allowed, compare output again
-        self.compare_output(test_result.stdout, expected_output, test_result)
-        self.compare_output(test_result.stderr, expected_error, test_result)
+        self.compare_output('stdout', expected_output, test_result)
+        self.compare_output('stderr', expected_error, test_result)
         # Check solution is in time range
         self.check_time_range(index0, test_result)
         # If there further proofs, execute them
@@ -299,38 +302,45 @@ class Execution:
             self.result.passedTestCount += 1
             self.result.points += test_case.points
             self.result.totalPoints += test_case.points
-        # If this test case lasted longer than the longest known
-        self.result.maxWallTime = max(self.result.maxWallTime, test_result.wallTime)
+        print(f'------{test_result.status}-------\n')
 
-    def compare_output(self, student_output:str, expected_output:str,
+    def compare_output(self, output_type:str, expected_output:str,
                 test_result:vyg.TestCaseResult):
         """ Compare student stdout or stderr considering if indeterminism is allowed """
+        assert hasattr(test_result, output_type)
+        expected_output = expected_output.strip()
+        student_output = getattr(test_result, output_type).strip()
         if self.problem.allowIndeterminism == 'lines':
             student_output = student_output.split('\n').sort()
             expected_output = expected_output.split('\n').sort()
-        print(student_output, expected_output)
-        if student_output != expected_output:
+        # Do not consider stderr mismatch if expected stderr is empty (it can be used for debug)
+        must_match = output_type == 'stdout' or expected_output != ''
+        if must_match and student_output != expected_output:
             test_result.status = vyg.Status.WRONG
             self.result.status = vyg.Status.WRONG
+            test_result.message = f'Wrong {output_type}'
+            #self.result.message = vyg.append(self.result.message, test_result.message)
+        print(f'\n------expect {output_type}-------\n', expected_output)
+        print(f'------output {output_type}-------\n', student_output)
 
     def check_time_range(self, index0:int, test_result:vyg.TestCaseResult):
         """ Check if the solution run within the time range allowed by the problem """
         assert 0 <= index0 < len(self.problem.tests)
         if self.result.status != vyg.Status.PASSED:
             return
-        duration = self.result.maxWallTime or float('-inf') # or self.result.maxCpuTime
+        duration = self.result.maxWallTime # or self.result.maxCpuTime
         assert duration >= 0.0
         test_case = self.problem.tests[index0]
         min_duration = test_case.minDuration or self.problem.minDuration
         max_duration = test_case.maxDuration or self.problem.maxDuration
         if min_duration and duration < min_duration:
-            self.result.status = test_result.status = vyg.Status.RUNTIME_ERROR
+            self.result.status = test_result.status = vyg.Status.TIMEOUT
             test_result.message = vyg.append(test_result.message,
-                    f'Test case {index0 + 1} faster than expected')
+                    'Execution faster than expected')
         if max_duration and duration > max_duration:
-            self.result.status = test_result.status = vyg.Status.RUNTIME_ERROR
+            self.result.status = test_result.status = vyg.Status.TIMEOUT
             test_result.message = vyg.append(test_result.message,
-                    f'Test case {index0 + 1} slower than expected')
+                    'Execution slower than expected')
 
     def run_thread_count_proof(self, index:int, stdin:str):
         """ Checks that user solution created the required count of threads """
