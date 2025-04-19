@@ -69,8 +69,10 @@ export interface InitialCodeInterface {
 
 // A test case
 export interface TestInterface {
+  commandLineArguments: string;
   input: string;
   output: string;
+  stderr: string;
   points: number;
   hidden: boolean; // TODO: clear it from server side
   minThreads?: number;
@@ -81,6 +83,7 @@ export interface TestInterface {
 
 // A problem
 export interface ProblemInterface {
+  // relative_path: string;
   name: string;
   title: string;
   statement: string;
@@ -111,8 +114,8 @@ export enum Status {
 export interface Message {
   action: string;
   error?: string;
-  code?: string;
   language?: string;
+  code?: string;
 }
 
 export interface Judge0Submission {
@@ -177,22 +180,20 @@ export interface Judge0Response {
 
 // Result of running a test case
 export interface TestCaseResult {
-  // Compiler output or null if no output was generated
-  compileOutput: text;
+  // An enumeration value code of the verdict, see vyg.Status
+  status: Status;
+  // A human-readable verdict emitted by the judge
+  message: text;
   // CPU time, i.e all threads added
   cpuTime: text;
   // Exit code reported by the program to the operating system after running this test case
   exitCode: number;
   // Memory used by the process (bytes)
   memory: number;
-  // A human-readable verdict emitted by the judge
-  message: text;
-  // An enumeration value code of the verdict, see vyg.Status
-  status: Status;
   // number_of_runs?
-  // Text sent by the user solution to the standar error
+  // Text sent by the user solution to the standard error
   stderr: text;
-  // Text sent by the user solution to the standar output
+  // Text sent by the user solution to the standard output
   stdout: text;
   // Number of threads created by solution for this test case
   threadCount: number;
@@ -201,6 +202,12 @@ export interface TestCaseResult {
 }
 
 export interface ExecutionResult {
+  // An enumeration value code of the verdict, see vyg.Status
+  status: Status;
+  // A human-readable verdict emitted by the judge
+  message: text;
+  // Compiler output or null if no output was generated
+  compileOutput: text;
   // Count of passed test cases
   passedTestCount: number;
   // Points gained by this solution

@@ -4,7 +4,7 @@ import { ExecutionResult, ProblemInterface } from '../../common/vygoj.js';
 const AceDiff = window.AceDiff;
 
 // Execution status enumeration
-// TODO: this enumartion is duplicated from common/vygoj.ts
+// TODO: this enumeration is duplicated from common/vygoj.ts
 export enum Status {
   pending = 'pending',
   passed = 'passed',
@@ -78,25 +78,18 @@ function showElement(id: string) {
 class ProblemManager {
   // Singleton instance
   static instance: ProblemManager = new ProblemManager();
-
   // References to all editors used in the problem page
   editors: AceAjax.Editor[];
-
   // Theme style in all editors
   theme: string;
-
   // The problem model fetched from server
   problem: ProblemInterface | null;
-
   // Index of the current shown test case
   activeTestCaseIndex: number = 0;
-
   // The Run button element
   runButton: HTMLButtonElement | null = null;
-
   // The result after running the user code
   result: ExecutionResult | null = null;
-
   // Shows the diff between expected output and user standard output
   differ: AceDiff | null = null;
 
@@ -124,6 +117,8 @@ class ProblemManager {
       this.setupRunEnvironment();
     } catch (error) {
       console.error(error);
+      const message = error instanceof Error ? error.message : String(error);
+      this.updateCompileOutput(message);
     }
   }
 
@@ -306,11 +301,12 @@ class ProblemManager {
   }
 
   decodeResult() {
+    console.assert(this.result);
+    this.result!.compileOutput = clientDecode(this.result!.compileOutput || '');
+    // TODO: Change LC_ALL=en_US in compiler environment to avoid Unicode quotes
+    this.result!.compileOutput = this.result!.compileOutput.replace(/â/g, '‘');
     for (let index = 0; index < this.result!.results.length; ++index) {
       const test = this.result!.results[index];
-      test.compileOutput = clientDecode(test.compileOutput || '');
-      // TODO: Change LC_ALL=en_US in compiler environment to avoid Unicode quotes
-      test.compileOutput = test.compileOutput.replace(/â/g, '‘');
       test.message = clientDecode(test.message || '');
       test.stderr = clientDecode(test.stderr || '');
       test.stdout = clientDecode(test.stdout || '');
@@ -342,16 +338,15 @@ class ProblemManager {
   }
 
   // Shows the compiler diagnostics (warnings or errors), if any
-  updateCompileOutput() {
+  updateCompileOutput(message: string | null = null) {
     // The DOM element where the output will be shown
     const diagnosticsElement = document.getElementById('diagnostics');
     console.assert(diagnosticsElement);
     // The compiler output text
-    let compileOutput = null;
-    console.assert(this.result);
-    // Compiler output should be identical for each test case, we take the first one
-    if (this.result && this.result.results.length > 0) {
-      compileOutput = this.result.results[0].compileOutput;
+    let compileOutput = message;
+    // If no message was provided, get the compiler output from the result
+    if (message === null && this.result) {
+      compileOutput = this.result.compileOutput;
     }
     // If there is a diagnostic, show it
     if (compileOutput && compileOutput.length > 0) {

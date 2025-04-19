@@ -10,6 +10,7 @@ RUN apt update && \
     doxygen \
     linux-perf \
     python3 \
+    time \
     valgrind
 
 # Future packages

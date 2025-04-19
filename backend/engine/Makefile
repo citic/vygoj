@@ -43,7 +43,7 @@ clean: remove-image
 
 # Stop all containers created with the image
 stop:
-	docker stop $(shell docker ps -q --filter ancestor=$(IMAGE))
+	docker stop $(shell docker ps -aq --filter ancestor=$(IMAGE))
 
 # Stop and remove all containers, but not the image
 remove-containers: stop

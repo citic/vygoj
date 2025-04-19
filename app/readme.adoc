@@ -6,7 +6,7 @@ The web application component allows professors to create courses and students t
 . The frontend is an XHTML/CSS/JS application for running on web browsers.
 . The backend is a Node.js application using Express framework and written in TypeScript.
 
-Therefore you need command-line access to the machine where the app will be installed. The following instructions assume a Unix-like enviroment.
+Therefore you need command-line access to the machine where the app will be installed. The following instructions assume a Unix-like environment.
 
 
 
@@ -197,7 +197,7 @@ JavaScript files that start with uppercase, e.g `Course.js`, export a class. Cam
 
 . link:src/public/[public] contains static XHTML, CSS, JS, images, sound, video files that are sent to clients with no changes.
 
-. link:src/views/[views] contains XHTML templates using linkg:https://eta.js.org/[eta^] engine.
+. link:src/views/[views] contains XHTML templates using link:https://eta.js.org/[eta^] engine.
 
 . link:src/routes/[routes] routes the HTTP requests to the respective controller looking into the HTTP method and URI parts.
 

@@ -18,13 +18,10 @@ interface Status {
 class Site {
   // The SVG shown when the backend is offline or user disconnected
   backendOfflineElement: HTMLSpanElement;
-
   // The SVG shown when the backend is online and user connected
   backendOnlineElement: HTMLSpanElement;
-
   // True if show backend state instead of app version
   wantsBackendDetails: boolean = true;
-
   // A copy of the last status received
   status: Status = { status: 'offline' };
 
