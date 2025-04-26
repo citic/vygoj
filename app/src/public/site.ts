@@ -1,17 +1,19 @@
 // TODO: Remove redundancy with backend.ts, a backend.d.ts file?
-interface Queue {
-  queue: string;
-  size: number;
-  available: number;
-  idle: number;
-  working: number;
-  paused: number;
-  failed: number;
-}
+// interface Queue {
+//   queue: string;
+//   size: number;
+//   available: number;
+//   idle: number;
+//   working: number;
+//   paused: number;
+//   failed: number;
+// }
 
 interface Status {
   status: string;
-  workers?: Queue[];
+  version?: string;
+  jobs?: number;
+  // workers?: Queue[];
 }
 
 /** Common behavior for all site pages */
@@ -39,6 +41,7 @@ class Site {
   }
 
   setup() {
+    // Update the backend status indicator each minute
     this.checkBackendStatus();
     window.setInterval(() => {
       this.checkBackendStatus();
@@ -74,14 +77,16 @@ class Site {
 
   buildBackendDetails() {
     let message = '';
-    if (this.status.workers) {
-      this.status.workers.forEach((queue: Queue) => {
-        message += `${queue.queue} p${queue.size} f${queue.failed}`;
-        message += ` a${queue.available} w${queue.working} p${queue.paused} i${queue.idle}`;
-      });
-    } else {
-      message = this.status.status;
-    }
+    // if (this.status.workers) {
+    //   this.status.workers.forEach((queue: Queue) => {
+    //     message += `${queue.queue} p${queue.size} f${queue.failed}`;
+    //     message += ` a${queue.available} w${queue.working} p${queue.paused} i${queue.idle}`;
+    //   });
+    // } else {
+    //   message = this.status.status;
+    // }
+    message += this.status.version || '';
+    message += this.status.jobs ? (' J=' + this.status.jobs) : '';
     return message;
   }
 
