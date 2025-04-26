@@ -1,4 +1,4 @@
-import { ExecutionResult, ProblemInterface } from '../../common/vygoj.js';
+import { ExecutionResult, ProblemInterface } from '../vygoj.js';
 // import AceDiff from 'ace-diff';
 
 const AceDiff = window.AceDiff;

@@ -2,6 +2,7 @@
 import flask
 import logging
 import os
+import requests
 import time
 from logging.handlers import RotatingFileHandler
 
@@ -62,6 +63,14 @@ def get_login():
 def post_login():
     """ User provided credentials for logging in """
     return User.post_login()
+
+# Misc --------------------------------------------------------------------------------------------
+
+@app.route('/status', methods=['GET'])
+def get_status():
+    """ Client JS asked for backend status, propagate it """
+    return requests.get('http://localhost:9090/status', timeout=1000).json()
+
 
 # Errors ------------------------------------------------------------------------------------------
 

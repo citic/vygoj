@@ -51,6 +51,7 @@ class ProblemController:
                 ('<script src="https://cdn.jsdelivr.net/npm/ace-diff@3.0.3/dist/ace-diff.min.js"'
                     'async="async"></script>'),
                 '<script src="/js/problem/problem.js" type="module" async="async"></script>',
+                '<script src="/js/site.js" type="module" async="async"></script>',
             ],
         })
 

@@ -6,9 +6,10 @@ bin/
 build/
 data/
 dist/
-node_modules/
+node_modules
 config.json
 .DS_Store
 .venv/
 .vscode/
 __pycache__
+frontend/static/js/

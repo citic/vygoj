@@ -11,7 +11,8 @@ PY=python3# Command to run python
 
 # Phony targets
 .PHONY: clean debug install release
-default: debug
+default: all
+
 debug: export FLASK_DEBUG=1
 debug: run
 
