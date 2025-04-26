@@ -1,4 +1,7 @@
 {% extends 'base.html' %}
+{%- block styles %}
+    <link rel="stylesheet" href="/css/problems.css"/>
+{%- endblock %}
 {%- block main %}
       <main id="problem" class="problem" data-name="{{ it.problem.name }}">
         <article class="problem__description">

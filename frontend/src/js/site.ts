@@ -76,16 +76,8 @@ class Site {
   }
 
   buildBackendDetails() {
-    let message = '';
-    // if (this.status.workers) {
-    //   this.status.workers.forEach((queue: Queue) => {
-    //     message += `${queue.queue} p${queue.size} f${queue.failed}`;
-    //     message += ` a${queue.available} w${queue.working} p${queue.paused} i${queue.idle}`;
-    //   });
-    // } else {
-    //   message = this.status.status;
-    // }
-    message += this.status.version || '';
+    let message = 'VygOJ';
+    message += this.status.version ? (' v' + this.status.version) : '';
     message += this.status.jobs ? (' J=' + this.status.jobs) : '';
     return message;
   }

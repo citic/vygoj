@@ -46,21 +46,10 @@ function clientEncode(text: string) {
   // text: 'int main(int argc, char* argv[]) {\n  return atoi(argv[--argc]);\n}\n'
   // btoa: 'aW50IG1haW4oaW50IGFyZ2MsIGNoYXIqIGFyZ3ZbXSkgewogIHJldHVybiBhdG9pKGFyZ3ZbLS1hcmdjXSk7Cn0K'
   return window.btoa(text);
-  // Judge0 uses: btoa(unescape(encodeURIComponent(text)) but unescape reverses encodeURIComponent
-  // encodeURIComponent: 'int%20main(int%20argc%2C%20char*%20argv%5B%5D)%20%7B%0A%20%20return%20atoi(argv%5B--argc%5D)%3B%0A%7D%0A'
-  // encodeURI: 'int%2520main(int%2520argc%252C%2520char*%2520argv%255B%255D)%2520%257B%250A%2520%2520return%2520atoi(argv%255B--argc%255D)%253B%250A%257D%250A'
-  // btoa: 'aW50JTI1MjBtYWluKGludCUyNTIwYXJnYyUyNTJDJTI1MjBjaGFyKiUyNTIwYXJndiUyNTVCJTI1NUQpJTI1MjAlMjU3QiUyNTBBJTI1MjAlMjUyMHJldHVybiUyNTIwYXRvaShhcmd2JTI1NUItLWFyZ2MlMjU1RCklMjUzQiUyNTBBJTI1N0QlMjUwQQ=='
-  // return window.btoa(window.encodeURI(window.encodeURIComponent(text)));
 }
 
 function clientDecode(data: string) {
   return window.atob(data);
-  // try {
-  //   return window.decodeURIComponent(window.decodeURI(window.atob(data)));
-  // } catch (error) {
-  //   console.error(error);
-  //   return window.atob(data);
-  // }
 }
 
 function hideElement(id: string) {
@@ -168,6 +157,19 @@ class ProblemManager {
   async fetchProblem() {
     console.assert(this.problem === null);
     this.problem = await ProblemManager.sendJson({ action: 'fetch_problem' });
+    // Decode problem fields
+    if (this.problem) {
+      this.problem!.title = clientDecode(this.problem?.title || '');
+      this.problem!.statement = clientDecode(this.problem?.statement || '');
+      this.problem!.tests.forEach((test) => {
+        test.commandLineArguments = clientDecode(test.commandLineArguments || '');
+        test.input = clientDecode(test.input || '');
+        test.output = clientDecode(test.output || '');
+        test.stderr = clientDecode(test.stderr || '');
+      });
+      // this.problem!.initialCodeFor = clientDecode(this.problem?.initialCodeFor || '');
+      // this.problem!.mustContain = clientDecode(this.problem?.mustContain || '');
+    }
   }
 
   static async sendJson(object: Object, uri = '') {
@@ -302,6 +304,7 @@ class ProblemManager {
 
   decodeResult() {
     console.assert(this.result);
+    this.result!.message = clientDecode(this.result!.message || '');
     this.result!.compileOutput = clientDecode(this.result!.compileOutput || '');
     // TODO: Change LC_ALL=en_US in compiler environment to avoid Unicode quotes
     this.result!.compileOutput = this.result!.compileOutput.replace(/â/g, '‘');
@@ -315,7 +318,7 @@ class ProblemManager {
 
   updateResult() {
     console.assert(this.result);
-    console.log(this.result);
+    console.dir(this.result);
     this.updateStatistics();
     this.updateCompileOutput();
     this.updateTestCases();
@@ -329,6 +332,11 @@ class ProblemManager {
     console.assert(passedTestElement);
     if (passedTestElement) {
       passedTestElement.textContent = String(this.result?.passedTestCount);
+    }
+    const totalTestCount = document.getElementById('total_test_count');
+    console.assert(totalTestCount);
+    if (totalTestCount) {
+      totalTestCount.textContent = String(this.result?.results.length);
     }
     const totalPointsElement = document.getElementById('user_points');
     console.assert(totalPointsElement);
