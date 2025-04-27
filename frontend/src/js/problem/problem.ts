@@ -232,9 +232,9 @@ class ProblemManager {
   showTestOutput(index: number) {
     if (this.result) {
       // Show standard output
-      console.assert(index < this.result.results.length);
-      const test = this.result.results[index];
-      this.editors[3].setValue(test.stdout || '', -1);
+      const test = index < this.result.results.length ? this.result.results[index] : null;
+      const output = test?.stdout || '';
+      this.editors[3].setValue(output, -1);
       // But if test case was failed, show diff instead
       this.showOutputDiff(index);
       // Show standard error
@@ -373,10 +373,12 @@ class ProblemManager {
     // The program stderr output text for the active test case
     let stderrOutput = null;
     console.assert(this.result);
-    console.assert(index < this.result!.results.length);
-    // Compiler output should be identical for each test case, we take the first one
-    if (this.result && index < this.result!.results.length) {
-      stderrOutput = this.result.results[index].stderr;
+    // If the test case result exists, get its message, otherwise (compilation error?) clear field
+    if (index < this.result!.results.length) {
+      // Compiler output should be identical for each test case, we take the first one
+      if (this.result && index < this.result!.results.length) {
+        stderrOutput = this.result.results[index].stderr;
+      }
     }
     // If there is output text, show it
     if (stderrOutput && stderrOutput.length > 0) {
@@ -396,11 +398,14 @@ class ProblemManager {
 
     // User output
     console.assert(this.result);
-    console.assert(index < this.result!.results.length);
-    const userOutput = this.result!.results[index].stdout;
+    // If the test case result exists, get its message, otherwise (compilation error?) clear field
+    let userOutput = null;
+    if (index < this.result!.results.length) {
+      userOutput = this.result!.results[index].stdout;
+    }
 
     // TODO: Use AceDiff always and decrease gutter width
-    if (this.result!.results[index].status == Status.wrong) {
+    if (userOutput && this.result!.results[index].status == Status.wrong) {
       // Hide expected output and user output and show diff element
       hideElement('active_test_expected_output_wrapper');
       hideElement('active_test_user_output_wrapper');
@@ -440,20 +445,21 @@ class ProblemManager {
     // Update the test case handlers (buttons) to show if passed or failed
     const buttons = document.querySelectorAll('#test_cases button');
     console.assert(this.result);
-    console.assert(this.result!.results.length == buttons.length);
-    for (let index = 0; index < this.result!.results.length; ++index) {
-      const test = this.result!.results[index];
+    for (let index = 0; index < buttons.length; ++index) {
+      const test = index < this.result!.results.length ? this.result!.results[index] : null;
       const button = buttons[index];
       button.classList.remove('failed');
       button.classList.remove('passed');
-      if (test.status === Status.passed) {
+      if (test === null) {
+        // Do not add any class to the button, possible compilaition error, no test case were run
+      } else if (test.status === Status.passed) {
         button.classList.add('passed');
       } else {
         button.classList.add('failed');
       }
+      // Updates the standard output/error of the selected test case
+      this.showTestOutput(this.activeTestCaseIndex);
     }
-    // Updates the standard output/error of the selected test case
-    this.showTestOutput(this.activeTestCaseIndex);
   }
 
   // Shows or updates the verdict message
@@ -464,7 +470,6 @@ class ProblemManager {
     // The verdict text for the active test case
     let verdict = null;
     console.assert(this.result);
-    console.assert(index < this.result!.results.length);
     // Compiler output should be identical for each test case, we take the first one
     if (this.result && index < this.result!.results.length) {
       const test = this.result.results[index];

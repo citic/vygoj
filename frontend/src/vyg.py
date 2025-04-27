@@ -158,7 +158,7 @@ class ExecutionResult:
         # Total points (sum of all test cases)
         self.totalPoints = json_dict.get('totalPoints', 0)
         # Wall time of the largest test case
-        self.maxWallTime = json_dict.get('maxWallTime', float('-inf'))
+        self.maxWallTime = json_dict.get('maxWallTime', -1.0)
         # Results of each test case
         self.results:TestCaseResult = []
         for test_result_json in json_dict.get('results', []):
