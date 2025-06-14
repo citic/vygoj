@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{%- block main %}
+      <main class="login">
+        <form class="login_form" action="/user/login" method="post">
+          <fieldset class="login_credentials">
+            <legend>User credentials</legend>
+            {{ it.form.hidden_tag() }}
+            {{ it.form.email.label }} {{ it.form.email() }}
+            {{ it.form.password.label }} {{ it.form.password() }}
+          </fieldset>
+          <p><small>By pressing the Login button you are accepting the use of cookies in this site to keep your session active.</small></p>
+          {{ it.form.submit() }}
+        </form>
+      </main>
+{%- endblock %}
+{%- block styles %}
+    <link rel="stylesheet" href="/css/user.css"/>
+{%- endblock %}

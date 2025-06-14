@@ -1,9 +1,9 @@
-DEPS+=requests# Python dependencies to be installed with pip install
-
 all: dev debug
 install: node_modules
 
 include ../common/Makefile
+
+DEPS+=flask-sqlalchemy flask-wtf requests
 
 .PHONY: dev
 dev:

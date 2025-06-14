@@ -15,4 +15,5 @@
 .login_credentials {
   display: flex;
   flex-direction: column;
+  padding-bottom: 2em;
 }

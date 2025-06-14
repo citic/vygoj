@@ -8,7 +8,8 @@ from logging.handlers import RotatingFileHandler
 
 from courses import Course
 from problems import ProblemController
-from users import User
+from users import LoginForm
+from db import db
 
 # Constants ---------------------------------------------------------------------------------------
 DATA_DIR = './data'
@@ -24,6 +25,22 @@ static_path = os.path.join(app_path, 'static/')
 # Flask web application instance requires the name of the application (this filename)
 app = flask.Flask(__name__, template_folder=template_path,
         static_url_path='', static_folder=static_path)
+
+# Secret encription key used by Flask-WTF extension to protect sessions against cross-site request
+# forgery (CSRF) attacks
+# TODO(jhc): Store secret key in environment variable
+app.config['SECRET_KEY'] = 'skFVgOf.1sBi0ffM$'
+
+# Database ----------------------------------------------------------------------------------------
+
+# Database is stored in vygoj/frontend/data/frontend.sqlite
+db_pathname = os.path.join(app_path, 'data/frontend.sqlite')
+# SQLAlchemy looks for the database URI in configuration variable
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_pathname}'
+# Disable watching object changes to reduce resource consumption
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# The database object maps Python objects to DB's tuples (ORM, object-relational mapping)
+db.init_app(app)
 
 # Courses -----------------------------------------------------------------------------------------
 
@@ -57,12 +74,12 @@ def post_problem(path):
 @app.route('/user/login')
 def get_login():
     """ Get the login dialog """
-    return User.get_login()
+    return LoginForm.get_login()
 
 @app.route('/user/login', methods=['POST'])
 def post_login():
     """ User provided credentials for logging in """
-    return User.post_login()
+    return LoginForm.post_login()
 
 # Misc --------------------------------------------------------------------------------------------
 
