@@ -2,6 +2,7 @@
 *.pyd
 *.pyo
 *.tsv
+*/config/config.py
 bin/
 build/
 data/

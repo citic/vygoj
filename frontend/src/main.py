@@ -8,7 +8,7 @@ from logging.handlers import RotatingFileHandler
 
 from courses import Course
 from problems import ProblemController
-from users import LoginForm
+from users import LoginForm, UserPreferencesForm
 from db import db
 
 # Constants ---------------------------------------------------------------------------------------
@@ -26,10 +26,8 @@ static_path = os.path.join(app_path, 'static/')
 app = flask.Flask(__name__, template_folder=template_path,
         static_url_path='', static_folder=static_path)
 
-# Secret encription key used by Flask-WTF extension to protect sessions against cross-site request
-# forgery (CSRF) attacks
-# TODO(jhc): Store secret key in environment variable
-app.config['SECRET_KEY'] = 'skFVgOf.1sBi0ffM$'
+# Load configuration from a Python file with constants
+app.config.from_pyfile('config/config.py')
 
 # Database ----------------------------------------------------------------------------------------
 
@@ -80,6 +78,11 @@ def get_login():
 def post_login():
     """ User provided credentials for logging in """
     return LoginForm.post_login()
+
+@app.route('/user/<user_id>')
+def get_user_preferences():
+    """ User may change preferences, like light/dark mode, and other settings """
+    return UserPreferencesForm.show_form()
 
 # Misc --------------------------------------------------------------------------------------------
 

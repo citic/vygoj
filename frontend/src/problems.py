@@ -1,7 +1,9 @@
 import flask
 import json
+import random
 import requests
 import vyg
+from flask import current_app as app
 
 class ProblemController:
     """Controls problems
@@ -95,8 +97,17 @@ class ProblemController:
         print('-----------------------submission----------------\n', submission, '\n------------------------------------------')
         # Create an array of results, one for each test case
         # TODO(jhc): get these args from config
-        plain_result = requests.post('http://localhost:9090/run', timeout=1000, json=submission)
+        uri = f'{ProblemController.select_random_backend()}/run'
+        plain_result = requests.post(uri, timeout=10000, json=submission)
         print('-----------------------plain_result----------------\n', plain_result, '\n------------------------------------------')
         # The user program is executed once for each test case
         # TODO(jhc): Run in parallel
         return plain_result.json()
+    
+    @staticmethod
+    def select_random_backend():
+        """ Choose a random URI from the configuration BACKENDS array """
+        backends = app.config['BACKENDS']
+        if not backends or len(backends) == 0:
+            backends = ['http://localhost:9090']
+        return random.choice(backends)
