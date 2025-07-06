@@ -11,6 +11,10 @@ Monospace:
 :root {
   --bg-color: rgb(53, 104, 100);
   --head-foot-border: 1px solid gray;
+  --success: #4CAF50;
+  --error: #F44336;
+  --warning: #FF9800;
+  --info: #2196F3;
 }
 
 html {
@@ -173,4 +177,53 @@ pre {
   .row {
     flex-direction: column;
   }
+}
+
+.flash_messages {
+  list-style: none;
+  padding: 0;
+}
+
+.flash_message {
+  display: flex;
+  align-items: center;
+  padding: 0.5em 1em;
+  color: white;
+  background-color: var(--success);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Different message types */
+.flash_message.success {
+  background-color: var(--success);
+}
+
+.flash_message.info {
+  background-color: var(--info);
+}
+
+.flash_message.warning {
+  background-color: var(--warning);
+}
+
+.flash_message.error {
+  background-color: var(--error);
+}
+
+.flash_message__text {
+  flex: 1 1 auto;
+}
+
+.flash_message__close {
+  background: transparent;
+  padding: 0;
+  border: none;
+  color: inherit;
+  font-size: x-large;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.flash_message__close:hover {
+  filter: none;
 }

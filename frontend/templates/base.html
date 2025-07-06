@@ -41,6 +41,18 @@
       </nav>
     </header>
     <div class="page_content">
+{%- with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+      <ul class="flash_messages">
+      {%- for category, message in messages %}
+        <li class="flash_message {{ category }}">
+          <span class="flash_message__text">{{ message }}</span>
+          <button class="flash_message__close" type="button" aria-label="Close">&times;</button>
+        </li>
+      {%- endfor %}
+      </ul>
+  {%- endif %}
+{%- endwith %}
 {%- block main %}
 {{- it.body | safe }}
 {%- endblock %}

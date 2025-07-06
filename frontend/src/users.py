@@ -51,7 +51,7 @@ class UserForm(flask_wtf.FlaskForm):
     # The 'User name' is the field lab
     #username = wtforms.StringField('User name', validators=[validators.DataRequired()])
     email = wtforms.StringField('Email', validators=[validators.DataRequired(),
-        validators.Length(6, 128)]) # validators.Email(), 
+        validators.Length(6, 128)]) # validators.Email(),
     # Password is required to login or to change password
     password = wtforms.PasswordField('Password')
     # Used only when user wants to change password
@@ -81,10 +81,8 @@ class UserForm(flask_wtf.FlaskForm):
         """ Show the login or preferences form to the user """
         form = UserForm()
         user = flask.session.get('user')
-        print('>>>>>>>', user)
         # If user accepted the dialog
         if form.validate_on_submit():
-            print('>>>>>>>validated on submit')
             # If user was logged in, update preferences
             if user:
                 # TODO(I): Update user preferences in the database
@@ -99,7 +97,6 @@ class UserForm(flask_wtf.FlaskForm):
                 }
                 flask.session['user'] = user
                 flask.flash('Logged in successfully.', 'success')
-        print('<<<<<<<', user)
         if user:
             # User is logged in, and wants to change preferences, update some labels
             form.password.label = 'Current password'

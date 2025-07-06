@@ -46,6 +46,8 @@ class Site {
     window.setInterval(() => {
       this.checkBackendStatus();
     }, 60000);
+    // Register event handlers for flash messages' close buttons
+    this.setupFlashMessages();
   }
 
   // Called at some intervals to pull the backend status
@@ -98,6 +100,25 @@ class Site {
     }
     element.className = status;
     element.title = message;
+  }
+
+  setupFlashMessages() {
+    // Find all close buttons
+    const closeButtons = document.querySelectorAll('.flash_message__close');
+    // Add click event to each button
+    closeButtons.forEach(button => {
+      button.addEventListener('click', function(element) {
+        const flashMessage = button.closest('.flash_message');
+        if (flashMessage) {
+          flashMessage.remove();
+          // If no more flash messages, remove the container
+          const flashContainer = document.querySelector('.flash_messages');
+          if (flashContainer && flashContainer.children.length === 0) {
+            flashContainer.remove();
+          }
+        }
+      });
+    });
   }
 }
 

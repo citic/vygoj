@@ -225,7 +225,7 @@ class Course:
         courses = Course.fetch_my_courses() #if flask.q.session.user else []
         # Show the homepage
         it = {
-            'user': {'name': 'You', 'role': 'admin'}, # TODO(i): flask.q.session.user,
+            'user': flask.session.get('user'),
             'breadcrumbs': [
             ],
             # The list of user's courses
@@ -244,7 +244,7 @@ class Course:
             flask.abort(404)
         # TODO(i): progress = user.load_progress()
         it = {
-            'user': {'name': 'You', 'role': 'professor'}, # TODO(i): session.user
+            'user': flask.session.get('user'),
             'breadcrumbs': [
                 { 'href': f"/course/{course['id']}", 'text': course['code'] },
             ],

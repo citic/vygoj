@@ -1,9 +1,11 @@
-import flask
+""" Problem management module """
 import json
 import random
 import requests
-import vyg
+import flask
 from flask import current_app as app
+
+import vyg
 
 class ProblemController:
     """Controls problems
@@ -103,7 +105,7 @@ class ProblemController:
         # The user program is executed once for each test case
         # TODO(jhc): Run in parallel
         return plain_result.json()
-    
+
     @staticmethod
     def select_random_backend():
         """ Choose a random URI from the configuration BACKENDS array """
