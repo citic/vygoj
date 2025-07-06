@@ -28,7 +28,7 @@ def get_problem_path():
     """ Return subfolder where programming problems are stored """
     return os.path.join(get_app_path(), 'problems')
 
-def encode(value:str|dict):
+def encode(value): # :str|dict
     """ Codifies the given text to base64 in order to transport it as a JSON value """
     if isinstance(value, dict):
         return encode_dict(value)
@@ -40,7 +40,7 @@ def encode_dict(json_dict:dict):
         json_dict[key] = encode(json_dict[key])
     return json_dict
 
-def decode(value:str|dict):
+def decode(value): # :str|dict
     """ De-codifies the given text in base64 to plain text """
     if isinstance(value, dict):
         return decode_dict(value)

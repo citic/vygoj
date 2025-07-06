@@ -67,10 +67,12 @@ class ProblemController:
         try:
             message = vyg.Message(json.loads(flask.request.get_data()))
             print(problem_path, ' --> ', message.__dict__)
-            match message.action:
-                case 'fetch_problem': return ProblemController.fetch_problem(problem_path)
-                case 'run': return ProblemController.judge_solution(problem_path, message)
-                case _: return flask.jsonify({ 'error': 'invalid action' })
+            if message.action == 'fetch_problem':
+                return ProblemController.fetch_problem(problem_path)
+            elif message.action == 'run':
+                return ProblemController.judge_solution(problem_path, message)
+            else:
+                return flask.jsonify({ 'error': 'invalid action' })
         except Exception as error:
             return flask.jsonify({ 'error': 'invalid action: ' + str(error) })
 
