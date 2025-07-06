@@ -79,3 +79,7 @@ button:disabled {
 .button_bar {
   margin-bottom: 0;
 }
+
+.radio {
+  list-style: none;
+}

@@ -1,17 +1,48 @@
 {% extends 'base.html' %}
 {%- block main %}
+  {%- if it.user %}
+      <main class="user_preferences">
+        <h2>Preferences for {{ it.user.role }} user {{ it.user.email }}</h2>
+    {%- if it.errorMessage %}
+        <p class="login_message error">{{ it.errorMessage }}</p>
+    {%- endif %}
+        <form class="preferences_form" method="post">
+          {{ it.form.hidden_tag() }}
+          <fieldset class="user_information">
+            <legend>User information</legend>
+            {{ it.form.fullname.label }} {{ it.form.fullname() }}
+            {{ it.form.email.label }} {{ it.form.email() }}
+          </fieldset>
+          <fieldset class="user_password">
+            <legend>Change password</legend>
+            {{ it.form.password.label }} {{ it.form.password() }}
+            {{ it.form.new_password.label }} {{ it.form.new_password() }}
+            {{ it.form.confirm_password.label }} {{ it.form.confirm_password() }}
+          </fieldset>
+          <fieldset class="preferences">
+            {{ it.form.interface_mode.label }} {{ it.form.interface_mode(class="radio") }}
+          </fieldset>
+          <p>
+            {{ it.form.update(class="button confirm") }}
+            {{ it.form.logout(class="button reject") }}
+            {{ it.form.delete_account(class="button danger") }}
+          </p>
+        </form>
+      </main>
+    {%- else %}
       <main class="login">
-        <form class="login_form" action="/user/login" method="post">
+        <form class="login_form" method="post">
+          {{ it.form.hidden_tag() }}
           <fieldset class="login_credentials">
             <legend>User credentials</legend>
-            {{ it.form.hidden_tag() }}
             {{ it.form.email.label }} {{ it.form.email() }}
             {{ it.form.password.label }} {{ it.form.password() }}
           </fieldset>
           <p><small>By pressing the Login button you are accepting the use of cookies in this site to keep your session active.</small></p>
-          {{ it.form.submit() }}
+          {{ it.form.login() }}
         </form>
       </main>
+  {%- endif %}
 {%- endblock %}
 {%- block styles %}
     <link rel="stylesheet" href="/css/user.css"/>

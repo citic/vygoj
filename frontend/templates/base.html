@@ -20,9 +20,9 @@
       <div class="site_header--row">
         <a href="/"><img class="site_logo" src="/img/logo.svg" alt="Site logo" width="64" height="64"/></a>
         <h1 class="site_header__title">Vygotsky Online Judge</h1>
-        <a class="icon_control" href="/user/{{ (it.user and it.user._id) or 'login' }}">
+        <a class="icon_control" href="/user">
           <img class="icon_control__image" src="/icon/user.svg" alt="User control" width="44" height="44"/>
-          <span class="icon_control__caption">{{ (it.user and it.user.name) or 'User' }}</span>
+          <span class="icon_control__caption">{{ (it.user and it.user.email) or 'User' }}</span>
         </a>
       </div>
       <nav class="breadcumbs filled">

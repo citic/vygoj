@@ -1,14 +1,14 @@
 """ Start frontend execution """
-import flask
 import logging
 import os
-import requests
 import time
 from logging.handlers import RotatingFileHandler
+import flask
+import requests
 
 from courses import Course
 from problems import ProblemController
-from users import LoginForm, UserPreferencesForm
+from users import UserForm
 from db import db
 
 # Constants ---------------------------------------------------------------------------------------
@@ -27,7 +27,8 @@ app = flask.Flask(__name__, template_folder=template_path,
         static_url_path='', static_folder=static_path)
 
 # Load configuration from a Python file with constants
-app.config.from_pyfile('config/config.py')
+config_file = os.path.join(app_path, 'config/config.py')
+app.config.from_pyfile(config_file)
 
 # Database ----------------------------------------------------------------------------------------
 
@@ -69,26 +70,17 @@ def post_problem(path):
 
 # Users -------------------------------------------------------------------------------------------
 
-@app.route('/user/login')
-def get_login():
-    """ Get the login dialog """
-    return LoginForm.get_login()
-
-@app.route('/user/login', methods=['POST'])
-def post_login():
-    """ User provided credentials for logging in """
-    return LoginForm.post_login()
-
-@app.route('/user/<user_id>')
-def get_user_preferences():
-    """ User may change preferences, like light/dark mode, and other settings """
-    return UserPreferencesForm.show_form()
+@app.route('/user', methods=['GET', 'POST'])
+def user():
+    """ Get/post the login or preferences dialog """
+    return UserForm.show_form()
 
 # Misc --------------------------------------------------------------------------------------------
 
 @app.route('/status', methods=['GET'])
 def get_status():
     """ Client JS asked for backend status, propagate it """
+    # TODO(jhc): summarize status of all available backends
     return requests.get('http://localhost:9090/status', timeout=1000).json()
 
 
