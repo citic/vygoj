@@ -1,0 +1,33 @@
+{
+  "name": "dish_stack",
+  "title": "Pila de platos",
+  "statement": "<div class=\"paragraph\">\n<p>En un restaurante los platos sucios se acumulan en una pila para ser lavados. Dado que la clientela ha incrementado por la buena calidad del servicio, ninguna de las personas meseras tiene oportunidad de lavarlos. La gerencia está dispuesta a contratar personal lavaplatos a demanda.</p>\n</div>\n<div class=\"paragraph\">\n<p>Una o varias personas lavaplatos siempre toman el plato que está en la parte superior de la pila. Si por alguna razón la pila de platos se vacía, quien lava platos habrá terminado su trabajo e irá a casa.</p>\n</div>\n<div class=\"paragraph\">\n<p>Se simuló la situación anterior en un programa concurrente, pero se ha encontrado que en algunas situaciones el programa se cae, pese a que la pila de platos es <em>thread-safe</em>. Alguien sugirió que puede haber una violación de atomicidad, entre el momento que los hilos lavaplatos revisan si la pila está vacía y tratan de obtener el próximo plato para lavar. Corrija el código para que siempre se laven todos los platos sin que se caiga la simulación.</p>\n</div>",
+  "tests": [
+    {
+      "input": "3\n50000\n",
+      "output": "Unwashed dishes: 0\n",
+      "points": 1
+    },
+    {
+      "input": "2\n99999\n",
+      "output": "Unwashed dishes: 0\n",
+      "points": 1
+    },
+    {
+      "input": "77\n77777\n",
+      "output": "Unwashed dishes: 0\n",
+      "points": 1
+    },
+    {
+      "input": "2\n0\n",
+      "output": "Unwashed dishes: 0\n",
+      "points": 1
+    }
+  ],
+  "languages": [
+    "C++"
+  ],
+  "initialCodeFor": {
+    "C++": "// Copyright 2025 ECCI-UCR CC-BY 4.0\n#include <iostream>\n#include <mutex>\n#include <stack>\n#include <thread>\n#include <vector>\n\n// Thread-safe dish stack\nclass DishStack {\n private:\n  std::stack<int> stack;\n  std::mutex mutex;\n\n public:\n  /// Return true if the stack is empty, false otherwise\n  bool empty() {\n    this->mutex.lock();\n    const bool result = this->stack.empty();\n    this->mutex.unlock();\n    return result;\n  }\n  /// Return the number of dishes in the stack\n  size_t size() {\n    this->mutex.lock();\n    const size_t result = this->stack.size();\n    this->mutex.unlock();\n    return result;\n  }\n  /// Push a value onto the stack, and it becomes the top element\n  void push(const int& value) {\n    this->mutex.lock();\n    this->stack.push(value);\n    this->mutex.unlock();\n  }\n  /// Pop the top element from the stack and return its value\n  /// Precondition: the stack must be not empty\n  int pop() {\n    this->mutex.lock();\n    const int value = stack.top();\n    stack.pop();\n    this->mutex.unlock();\n    return value;\n  }\n};\n\nDishStack dishes;\n\nvoid wash(const int dish) {\n  // No need to do anything in this version\n  (void)dish;\n}\n\nvoid wash_dishes() {\n  while (!dishes.empty()) {\n    // Pop a dish from the stack\n    const int dish = dishes.pop();\n    wash(dish);\n  }\n}\n\nint main() {\n  // Fill the stack with dishes\n  int washer_count = 0, dish_count = 0;\n  std::cin >> washer_count >> dish_count;\n  for (int counter = 0; counter < dish_count; ++counter) {\n    dishes.push(counter);\n  }\n  // Hire dishwashers\n  std::vector<std::thread> dishwashers;\n  for (int counter = 0; counter < washer_count; ++counter) {\n    dishwashers.emplace_back(std::thread(wash_dishes));\n  }\n  // Wait for all dishwashers to finish\n  for (std::thread& dishwasher : dishwashers) {\n    dishwasher.join();\n  }\n  // Be sure all dishes were washed\n  std::cout << \"Unwashed dishes: \" << dishes.size() << std::endl;\n  return 0;\n}\n"
+  }
+}

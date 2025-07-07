@@ -1,0 +1,14 @@
+= Pila de platos
+:experimental:
+:nofooter:
+:source-highlighter: pygments
+:sectnums:
+:stem: latexmath
+:toc:
+:xrefstyle: short
+
+En un restaurante los platos sucios se acumulan en una pila para ser lavados. Dado que la clientela ha incrementado por la buena calidad del servicio, ninguna de las personas meseras tiene oportunidad de lavarlos. La gerencia está dispuesta a contratar personal lavaplatos a demanda.
+
+Una o varias personas lavaplatos siempre toman el plato que está en la parte superior de la pila. Si por alguna razón la pila de platos se vacía, quien lava platos habrá terminado su trabajo e irá a casa.
+
+Se simuló la situación anterior en un programa concurrente, pero se ha encontrado que en algunas situaciones el programa se cae, pese a que la pila de platos es _thread-safe_. Alguien sugirió que puede haber una violación de atomicidad, entre el momento que los hilos lavaplatos revisan si la pila está vacía y tratan de obtener el próximo plato para lavar. Corrija el código para que siempre se laven todos los platos sin que se caiga la simulación.
