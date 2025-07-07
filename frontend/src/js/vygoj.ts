@@ -4,8 +4,7 @@
 // 2. Add the default code in client JS public/problem/problem.ts
 // 3. Add compiler options in server JS controllers/problemController.ts
 export interface InitialCodeInterface {
-  C?: string;
-  'C++'?: string;
+  [key: string]: string;
 }
 
 // A test case

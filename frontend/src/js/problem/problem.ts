@@ -1,4 +1,4 @@
-import { ExecutionResult, ProblemInterface } from '../vygoj.js';
+import { ExecutionResult, InitialCodeInterface, ProblemInterface } from '../vygoj.js';
 // import AceDiff from 'ace-diff';
 
 const AceDiff = window.AceDiff;
@@ -17,7 +17,7 @@ export enum Status {
 
 // Default given code for each supported programming language
 // It may be a Map<string, string>
-const defaultCodeFor = {
+const defaultCodeFor:InitialCodeInterface = {
   C: `#include <stdio.h>
 
 int main(void) {
@@ -251,31 +251,44 @@ class ProblemManager {
     }
   }
 
+  getProblemLanguage(): string {
+    let language = 'C';
+    console.assert(this.problem);
+    if (this.problem) {
+      if (this.problem.languages && this.problem.languages.length > 0) {
+        language = this.problem.languages[0];
+      }
+    }
+    return language;
+  }
+
   loadUserCode() {
     // TODO: add language combo box
-    const language = 'C';
     console.assert(this.problem);
+    if (this.problem) {
+      const language = this.getProblemLanguage();;
 
-    // 1. Local storage
-    let initialCode = loadConfig('code');
+      // 1. Local storage
+      let initialCode = loadConfig('code');
 
-    // 2. Problem's initial code for the proramming language
-    if (initialCode === null && this.problem?.initialCodeFor
-      && this.problem?.initialCodeFor[language]) {
-      initialCode = this.problem?.initialCodeFor[language]!;
-    }
+      // 2. Problem's initial code for the proramming language
+      if (initialCode === null && this.problem.initialCodeFor
+          && this.problem.initialCodeFor[language]) {
+        initialCode = this.problem.initialCodeFor[language]!;
+      }
 
-    // 3. Default code for the programming language
-    if (!initialCode) {
-      initialCode = defaultCodeFor[language];
-    }
+      // 3. Default code for the programming language
+      if (!initialCode) {
+        initialCode = defaultCodeFor[language];
+      }
 
-    // Show the initial code in the editor
-    initialCode = initialCode || '';
-    this.editors[0].setValue(initialCode, -1);
+      // Show the initial code in the editor
+      initialCode = initialCode || '';
+      this.editors[0].setValue(initialCode, -1);
 
-    if (this.runButton) {
-      this.runButton.disabled = initialCode.trim().length === 0;
+      if (this.runButton) {
+        this.runButton.disabled = initialCode.trim().length === 0;
+      }
     }
   }
 
@@ -291,7 +304,7 @@ class ProblemManager {
 
   async runSolution() {
     // TODO: add language combo box
-    const language = 'C';
+    const language = this.getProblemLanguage();
     // Disable the Run button while the backend is running the code
     this.runButton!.disabled = true;
     this.runButton!.textContent = 'Running';

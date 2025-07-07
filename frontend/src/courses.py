@@ -99,12 +99,20 @@ allCourses = {
       'title': 'Actividad extra',
       'type': 'folder',
       'folder': 'problem',
-      'contents': [ {
+      'contents': [
+      {
         'name': 'philosophers',
         'title': 'Convención de filósofos',
         'type': 'problem',
         'folder': 'philosophers',
-      }, ],
+      },
+      {
+        'name': 'dish_stack',
+        'title': 'Pila de platos',
+        'type': 'problem',
+        'folder': 'dish_stack',
+      },
+      ],
     },
     ],
   },
@@ -222,14 +230,15 @@ class Course:
     def fetch_my_courses():
         ''' Return the list of courses where current user is enrolled '''
         # TODO(jhc): this test will be replaced by a database query
-        return [ allCourses['p25e1'], allCourses['stdthr'] ]
+        return [ allCourses['p25e1'] ]
 
     @staticmethod
     def fetch_all_courses():
         ''' Return the list of all available courses to enroll '''
         # TODO(jhc): this test will be replaced by a database query
         #return [Course.findById('c1'), Course.findById('c08')]
-        return allCourses
+        #return allCourses
+        return []
 
     @staticmethod
     def get_index():

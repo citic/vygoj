@@ -44,7 +44,7 @@ class ProblemController:
             'user': {'name': 'You', 'role': 'admin'}, # TODO(I): flask.q.session.user,
             'breadcrumbs': [
                 # TODO(I): course
-                { 'href': '/course/stdthr', 'text': 'CI0117a' },
+                { 'href': f'/course/{path}', 'text': 'CI0117a' },
                 { 'href': f'/problem/{problem.relative_path}', 'text': problem.name },
             ],
             'problem': problem,
