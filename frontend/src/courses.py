@@ -101,6 +101,12 @@ allCourses = {
       'folder': 'problem',
       'contents': [
       {
+        'name': 'build_h2o',
+        'title': 'Formar agua',
+        'type': 'problem',
+        'folder': 'build_h2o',
+      },
+      {
         'name': 'dish_stack',
         'title': 'Pila de platos',
         'type': 'problem',

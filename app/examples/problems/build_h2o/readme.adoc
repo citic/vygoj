@@ -1,0 +1,14 @@
+= Formar agua
+:experimental:
+:nofooter:
+:source-highlighter: pygments
+:sectnums:
+:stem: latexmath
+:toc:
+:xrefstyle: short
+
+Hay dos tipos de hilos: los de hidrógeno y los de oxígeno. Su objetivo es formar agua con ellos. Usted dispone de un dispositivo, que cuando se coloca en él dos átomos de hidrógeno y uno de oxígeno, y se invoca `bond()` en cada uno de ellos, se forma agua. El dispositivo no funciona en cualquier otra combinación de átomos.
+
+El dispositivo sólo puede trabajar en una molécula a la vez. Es decir, usted debe garantizar que los tres átomos de una molécula invoquen `bond()` antes de los hilos de la siguiente molécula. Actualice el código para cada átomo que garantice este comportamiento.
+
+No modifique el procedimiento `bond()` que controla el dispositivo. Indague en la ayuda sobre semáforos contables y barreras de C++20. Note cómo la solución provista usa los hilos de la biblioteca estándar de C+\+11.

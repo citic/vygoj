@@ -1,4 +1,3 @@
-
 == Instrucciones de la actividad
 
 Objetivos: aplicar nociones del curso, aprender nuevos conceptos, y divertirse, además de mejorar su calificación del curso.
@@ -6,9 +5,9 @@ Objetivos: aplicar nociones del curso, aprender nuevos conceptos, y divertirse, 
 . Para cada ejercicio realice el mínimo de modificaciones en el código fuente que resuelve el problema descrito.
 . Aplique siempre buenas prácticas de programación, por ejemplo: su código de compilar sin errores, ni advertencias, hacer buen uso de la memoria y la concurrencia,
 . Asegúrese de que su solución no produce condiciones de carrera, espera activa, bloqueo mutuo, ni violaciones de atomicidad. Pasar los casos de prueba puede no ser suficiente.
-. Resolver con sus conocimientos del curso, no consulte fuentes de internet ni inteligencia artificial.
+. Entregue las soluciones en la mejor calidad posible. Use las herramientas que tenga a mano: el juez en línea, compilador, sanitizers, Valgrind, linter, pruebas de caja negra (`make test`). No es necesario documentar (doxygen).
+. Resuelva con sus conocimientos del curso y la ayuda provista, no consulte fuentes de internet ni de inteligencia artificial.
 . Resuelva los problemas en el orden presentado. En cada cambio de problema registre la hora de inicio y fin.
 . Si no puede resolver un problema, pase al siguiente. Si luego regresa a un problema que ya había iniciado, registre otro par de horas.
 . Inmediatamente después de resolver un problema, exprese su opinión en el cuestionario provisto sobre las herramientas que utilizó.
 . Por cada problema que resuelva, se le eliminará una de las notas más bajas del rubro de ejercicios del curso.
-

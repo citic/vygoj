@@ -30,7 +30,7 @@ languageDefaults = {
     'C': LanguageDefault(50, 'c', 'gcc',
         '-g -Wall -Wextra -std=gnu17 -fsanitize=address -fmessage-length=80 -pthread -lm'),
     'C++': LanguageDefault(54, 'cpp', 'g++',
-        '-g -Wall -Wextra -std=gnu++17 -fsanitize=address -fmessage-length=80 -pthread -lm'),
+        '-g -Wall -Wextra -std=gnu++20 -fsanitize=address -fmessage-length=80 -pthread -lm'),
 }
 
 class FailedSolution(Exception):
