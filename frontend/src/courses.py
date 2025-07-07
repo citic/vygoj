@@ -101,16 +101,22 @@ allCourses = {
       'folder': 'problem',
       'contents': [
       {
-        'name': 'philosophers',
-        'title': 'Convención de filósofos',
-        'type': 'problem',
-        'folder': 'philosophers',
-      },
-      {
         'name': 'dish_stack',
         'title': 'Pila de platos',
         'type': 'problem',
         'folder': 'dish_stack',
+      },
+      {
+        'name': 'prime_counter',
+        'title': 'Contador de primos',
+        'type': 'problem',
+        'folder': 'prime_counter',
+      },
+      {
+        'name': 'philosophers',
+        'title': 'Convención de filósofos',
+        'type': 'problem',
+        'folder': 'philosophers',
       },
       ],
     },
