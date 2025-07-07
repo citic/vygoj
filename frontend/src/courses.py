@@ -3,96 +3,109 @@ import json
 
 # TODO(jhc): Move to database or fetch from filesystem
 allCourses = {
-  'c17': {
-    'id': 'c17',
+  # 'c17': {
+  #   'id': 'c17',
+  #   'code': 'CI0117',
+  #   'title': 'Programación paralela y concurrente',
+  #   'image': '/img/logo2.svg',
+  #   'instructors': [
+  #     {
+  #       'id': 'u13',
+  #       'name': 'Jeisson Hidalgo-Céspedes'
+  #     },
+  #   ],
+  #   'statistics': {
+  #     'students': 21,
+  #     'sections': 356, # lessons?
+  #     'problems': 64,
+  #     'questions': 128,
+  #   },
+  #   'contents': [
+  #   ],
+  # },
+  # 'c1': {
+  #   'id': 'c1',
+  #   'code': 'CI0112',
+  #   'title': 'Programación I en C',
+  #   'image': '/img/logo2.svg',
+  #   'instructors': [
+  #     {
+  #       'id': 'u13',
+  #       'name': 'Jeisson Hidalgo-Céspedes'
+  #     },
+  #   ],
+  #   'statistics': {
+  #     'students': 18,
+  #     'sections': 148, # lessons?
+  #     'problems': 39,
+  #     'questions': 19,
+  #   },
+  #   'repo': 'progra1-21b',
+  #   'contents': [
+  #     {
+  #       'name': 'IO',
+  #       'title': 'Input/output',
+  #       'folder': '1.1_intro_io',
+  #       'contents': [
+  #         {
+  #           'name': 'lost_in_space_ints',
+  #           'title': 'Enteros perdidos en el espacio',
+  #           'folder': 'lost_in_space_ints',
+  #         },
+  #         {
+  #           'name': 'enclosing_lines',
+  #           'title': 'Encerrar las líneas',
+  #           'folder': 'enclosing_lines',
+  #         },
+  #       ],
+  #     },
+  #     {
+  #       'name': 'expr_cond',
+  #       'title': 'Expresiones y condicionales',
+  #       'folder': '1.2_expressions_if',
+  #       'contents': [
+  #         {
+  #           'name': 'line_numbers',
+  #           'title': 'Números de línea',
+  #           'folder': 'line_numbers',
+  #         },
+  #         {
+  #           'name': 'hours_mins_secs',
+  #           'title': 'Normalizar horas, minutos, segundos',
+  #           'folder': 'hours_mins_secs',
+  #         },
+  #       ],
+  #     },
+  #   ],
+  # },
+  'p25e1': {
+    'id': 'p25e1',
     'code': 'CI0117',
-    'title': 'Programación paralela y concurrente',
+    'title': 'Programación Paralela y Concurrente (s1)',
     'image': '/img/logo2.svg',
+    'repo': '',
     'instructors': [
-      {
-        'id': 'u13',
-        'name': 'Jeisson Hidalgo-Céspedes'
-      },
+      { 'id': 'u13', 'name': 'Jeisson Hidalgo-Céspedes' },
     ],
     'statistics': {
-      'students': 21,
-      'sections': 356, # lessons?
-      'problems': 64,
-      'questions': 128,
+      'students': 32,
+      'sections': 1,
+      'problems': 4,
+      'questions': 0,
     },
     'contents': [
-    ],
-  },
-  'c1': {
-    'id': 'c1',
-    'code': 'CI0112',
-    'title': 'Programación I en C',
-    'image': '/img/logo2.svg',
-    'instructors': [
-      {
-        'id': 'u13',
-        'name': 'Jeisson Hidalgo-Céspedes'
-      },
-    ],
-    'statistics': {
-      'students': 18,
-      'sections': 148, # lessons?
-      'problems': 39,
-      'questions': 19,
+    {
+      'name': 'p25e1e',
+      'title': 'Actividad extra',
+      'type': 'folder',
+      'folder': 'problem',
+      'contents': [ {
+        'name': 'philosophers',
+        'title': 'Convención de filósofos',
+        'type': 'problem',
+        'folder': 'philosophers',
+      }, ],
     },
-    'repo': 'progra1-21b',
-    'contents': [
-      {
-        'name': 'IO',
-        'title': 'Input/output',
-        'folder': '1.1_intro_io',
-        'contents': [
-          {
-            'name': 'lost_in_space_ints',
-            'title': 'Enteros perdidos en el espacio',
-            'folder': 'lost_in_space_ints',
-          },
-          {
-            'name': 'enclosing_lines',
-            'title': 'Encerrar las líneas',
-            'folder': 'enclosing_lines',
-          },
-        ],
-      },
-      {
-        'name': 'expr_cond',
-        'title': 'Expresiones y condicionales',
-        'folder': '1.2_expressions_if',
-        'contents': [
-          {
-            'name': 'line_numbers',
-            'title': 'Números de línea',
-            'folder': 'line_numbers',
-          },
-          {
-            'name': 'hours_mins_secs',
-            'title': 'Normalizar horas, minutos, segundos',
-            'folder': 'hours_mins_secs',
-          },
-        ],
-      },
-    ],
-  },
-  'c08': {
-    'id': 'c08',
-    'code': 'CI0113',
-    'title': 'Programación II',
-    'image': '/img/logo2.svg',
-    'instructors': [
-      { 'id': 'u8', 'name': 'Edgar Casasola-Murillo' },
-    ],
-    'statistics': {
-      'students': 23,
-      'sections': 123,
-      'problems': 27,
-      'questions': 94,
-    },
-    'contents': [
     ],
   },
   'stdthr': {
@@ -111,7 +124,7 @@ allCourses = {
       'questions': 0,
     },
     'contents': [
-      {
+    {
       'name': 'cstdthr',
       'title': 'Hilos estándar en C',
       'type': 'folder',
@@ -209,7 +222,7 @@ class Course:
     def fetch_my_courses():
         ''' Return the list of courses where current user is enrolled '''
         # TODO(jhc): this test will be replaced by a database query
-        return [ allCourses['stdthr'] ]
+        return [ allCourses['p25e1'], allCourses['stdthr'] ]
 
     @staticmethod
     def fetch_all_courses():

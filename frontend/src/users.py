@@ -1,11 +1,11 @@
 """ Manages application users, their preferences, and courses' progress """
-from db import db
 import flask
 import flask_wtf
 import wtforms
-import wtforms.validators as validators
+from wtforms import validators
 
-'''
+from db import db
+
 class User(db.Model):
     """ Users are database models with personal data, credentials, and course progress """
     # SQLAlchemy uses the class name for the table, we prefer overriding it to add plural
@@ -32,6 +32,8 @@ class Progress(db.Model):
     """ The progress is the grade user got for each evaluation """
     # SQLAlchemy uses the class name for the table, we override it for lowercase
     __tablename__ = 'progress'
+    # Progress are identified using incremental integer numbers
+    id = db.Column(db.Integer, primary_key=True)
     # The user id number who made a progress (got a grade)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     # The course where user got this grade
@@ -40,7 +42,6 @@ class Progress(db.Model):
     evaluation = db.Column(db.String(64), nullable=False)
     # The grade obtained
     grade = db.Column(db.Float(), nullable=False)
-'''
 
 class UserForm(flask_wtf.FlaskForm):
     """ If no user is logged in, show the login form, otherwise the preferences form """

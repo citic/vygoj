@@ -1,3 +1,4 @@
+""" Database common objects and functions """
 from flask_sqlalchemy import SQLAlchemy
 
 # The database object maps Python objects to DB's tuples (ORM, object-relational mapping)

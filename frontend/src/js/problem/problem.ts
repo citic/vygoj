@@ -161,6 +161,13 @@ class ProblemManager {
     if (this.problem) {
       this.problem!.title = clientDecode(this.problem?.title || '');
       this.problem!.statement = clientDecode(this.problem?.statement || '');
+      // Add index signature to InitialCodeInterface to allow string keys
+      const initial = this.problem!.initialCodeFor as { [key: string]: string } || {};
+      for (const key in initial) {
+        if (Object.prototype.hasOwnProperty.call(initial, key)) {
+          initial[key] = clientDecode(initial[key] || '');
+        }
+      }
       this.problem!.tests.forEach((test) => {
         test.commandLineArguments = clientDecode(test.commandLineArguments || '');
         test.input = clientDecode(test.input || '');
