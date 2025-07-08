@@ -101,6 +101,8 @@ users = {
     's55': {'password': 'AbgK3x'},
 }
 
+logged = set()
+
 class UserForm(flask_wtf.FlaskForm):
     """ If no user is logged in, show the login form, otherwise the preferences form """
     # Email field is is the user identification. The validators list are triggered when user
@@ -161,6 +163,7 @@ class UserForm(flask_wtf.FlaskForm):
                 name = form.email.data
                 if name in users and form.password.data == users[name]['password']:
                     flask.session['user'] = user
+                    logged.add(name)
                     flask.flash('Logged in successfully.', 'success')
                     return flask.redirect(flask.url_for('get_index'))
                 else:

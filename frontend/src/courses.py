@@ -1,5 +1,78 @@
 import json
 import flask
+from users import logged
+
+e1i = {
+  'name': 'build_h2o',
+  'title': 'Formar agua',
+  'type': 'page',
+  'folder': 'build_h2o',
+}
+
+e2i = {
+  'name': 'dish_stack',
+  'title': 'Pila de platos',
+  'type': 'page',
+  'folder': 'dish_stack',
+}
+
+e3i = {
+  'name': 'prime_counter',
+  'title': 'Contador de primos',
+  'type': 'page',
+  'folder': 'prime_counter',
+}
+
+e4i = {
+  'name': 'philosophers',
+  'title': 'Convención de filósofos',
+  'type': 'page',
+  'folder': 'philosophers',
+}
+
+e1j = {
+  'name': 'build_h2o',
+  'title': 'Formar agua',
+  'type': 'problem',
+  'folder': 'build_h2o',
+}
+
+e2j = {
+  'name': 'dish_stack',
+  'title': 'Pila de platos',
+  'type': 'problem',
+  'folder': 'dish_stack',
+}
+
+e3j = {
+  'name': 'prime_counter',
+  'title': 'Contador de primos',
+  'type': 'problem',
+  'folder': 'prime_counter',
+}
+
+e4j = {
+  'name': 'philosophers',
+  'title': 'Convención de filósofos',
+  'type': 'problem',
+  'folder': 'philosophers',
+}
+
+allProblems = [
+    #  I    I    J    J
+    [e1i, e2i, e3j, e4j],
+    #  I    J    I    J
+    [e1i, e2j, e3i, e4j],
+    #  I    J    J    I
+    [e1i, e2j, e3j, e4i],
+    #  J    I    I    J
+    [e1j, e2i, e3i, e4j],
+    #  J    I    J    I
+    [e1j, e2i, e3j, e4i],
+    #  J    J    I    I
+    [e1j, e2j, e3i, e4i],
+]
+
 
 # TODO(jhc): Move to database or fetch from filesystem
 allCourses = {
@@ -88,7 +161,7 @@ allCourses = {
       { 'id': 'u13', 'name': 'Jeisson Hidalgo-Céspedes' },
     ],
     'statistics': {
-      'students': 32,
+      'students': 55,
       'sections': 1,
       'problems': 4,
       'questions': 0,
@@ -99,88 +172,63 @@ allCourses = {
       'title': 'Actividad extra',
       'type': 'folder',
       'folder': 'problem',
-      'contents': [
-      {
-        'name': 'build_h2o',
-        'title': 'Formar agua',
-        'type': 'problem',
-        'folder': 'build_h2o',
-      },
-      {
-        'name': 'dish_stack',
-        'title': 'Pila de platos',
-        'type': 'problem',
-        'folder': 'dish_stack',
-      },
-      {
-        'name': 'prime_counter',
-        'title': 'Contador de primos',
-        'type': 'problem',
-        'folder': 'prime_counter',
-      },
-      {
-        'name': 'philosophers',
-        'title': 'Convención de filósofos',
-        'type': 'problem',
-        'folder': 'philosophers',
-      },
-      ],
+      'contents': [e1j, e2j, e3j, e4j],
     },
     ],
   },
-  'stdthr': {
-    'id': 'stdthr',
-    'code': 'CI0117a',
-    'title': 'Hilos estándar en C/C++',
-    'image': '/img/logo2.svg',
-    'repo': '',
-    'instructors': [
-      { 'id': 'u13', 'name': 'Jeisson Hidalgo-Céspedes' },
-    ],
-    'statistics': {
-      'students': 20,
-      'sections': 2,
-      'problems': 7,
-      'questions': 0,
-    },
-    'contents': [
-    {
-      'name': 'cstdthr',
-      'title': 'Hilos estándar en C',
-      'type': 'folder',
-      'folder': 'problem',
-      'contents': [ {
-        'name': 'intro_vygoj',
-        'title': 'Introducción al juez en línea',
-        'type': 'problem',
-        'folder': 'intro_vygoj',
-      }, {
-        'name': 'c_hello_std',
-        'title': 'Hola mundo estándar en C',
-        'type': 'problem',
-        'folder': 'c_hello_std',
-      }, {
-        'name': 'c_thrd_sleep',
-        'title': 'Hilos durmientes en C',
-        'type': 'problem',
-        'folder': 'c_thrd_sleep',
-      }, {
-        'name': 'c_thrd_mtx',
-        'title': 'Exclusión mutua en C',
-        'type': 'problem',
-        'folder': 'c_thrd_mtx',
+  # 'stdthr': {
+  #   'id': 'stdthr',
+  #   'code': 'CI0117a',
+  #   'title': 'Hilos estándar en C/C++',
+  #   'image': '/img/logo2.svg',
+  #   'repo': '',
+  #   'instructors': [
+  #     { 'id': 'u13', 'name': 'Jeisson Hidalgo-Céspedes' },
+  #   ],
+  #   'statistics': {
+  #     'students': 20,
+  #     'sections': 2,
+  #     'problems': 7,
+  #     'questions': 0,
+  #   },
+  #   'contents': [
+  #   {
+  #     'name': 'cstdthr',
+  #     'title': 'Hilos estándar en C',
+  #     'type': 'folder',
+  #     'folder': 'problem',
+  #     'contents': [ {
+  #       'name': 'intro_vygoj',
+  #       'title': 'Introducción al juez en línea',
+  #       'type': 'problem',
+  #       'folder': 'intro_vygoj',
+  #     }, {
+  #       'name': 'c_hello_std',
+  #       'title': 'Hola mundo estándar en C',
+  #       'type': 'problem',
+  #       'folder': 'c_hello_std',
+  #     }, {
+  #       'name': 'c_thrd_sleep',
+  #       'title': 'Hilos durmientes en C',
+  #       'type': 'problem',
+  #       'folder': 'c_thrd_sleep',
+  #     }, {
+  #       'name': 'c_thrd_mtx',
+  #       'title': 'Exclusión mutua en C',
+  #       'type': 'problem',
+  #       'folder': 'c_thrd_mtx',
       # }, {
       #   'name': 'c_local_storage',
       #   'title': 'Local storage en C',
       #   'type': 'problem',
       #   'folder': 'c_local_storage',
-      }, {
-        'name': 'c_prime_counter',
-        'title': 'Contador de primos en C',
-        'type': 'problem',
-        'folder': 'c_prime_counter',
-      }, ],
-    },
+    #   }, {
+    #     'name': 'c_prime_counter',
+    #     'title': 'Contador de primos en C',
+    #     'type': 'problem',
+    #     'folder': 'c_prime_counter',
+    #   }, ],
+    # },
     # {
     #   'name': 'cppstdthr',
     #   'title': 'Hilos estándar en C++',
@@ -209,8 +257,8 @@ allCourses = {
     #     },
     #   ],
     # },
-    ],
-  },
+    # ],
+  # },
 }
 
 class Course:
@@ -243,8 +291,9 @@ class Course:
         ''' Return the list of courses where current user is enrolled '''
         # TODO(jhc): this test will be replaced by a database query
         result = []
-        if 'user' in flask.session:
-            result = [ allCourses['p25e1'] ]
+        user = flask.session.get('user')
+        if user:
+            result = [ Course.customize_for(user) ]
         return result
 
     @staticmethod
@@ -276,7 +325,11 @@ class Course:
     @staticmethod
     def get_course(course_id):
         ''' User clicked a course '''
-        course = allCourses.get(course_id)
+        if course_id != 'CI0117':
+            # TODO(jhc): this test will be replaced by a database query
+            flask.abort(404)
+        # course = allCourses.get(course_id)
+        course = Course.customize_for(flask.session.get('user'))
         if not course: # TODO(i): and user logged in
             flask.abort(404)
         # TODO(i): progress = user.load_progress()
@@ -290,3 +343,39 @@ class Course:
         }
         # print(json.dumps(it, indent=2))
         return flask.render_template('course.html', it=it)
+
+    @staticmethod
+    def customize_for(user):
+        """ Return a course dictionary according to the type of participant """
+        if not user:
+            return []
+        username = user.get('email')
+        if len(username) != 3 or username[0] != 's':
+            # Not a student, return empty list
+            return []
+        num = int(username[1:]) - 1  # Convert 's01' to 0, 's02' to 1, etc.
+        problems = allProblems[num % 6]
+        return {
+            'id': 'CI0117',
+            'code': 'CI0117',
+            'title': 'Programación Paralela y Concurrente',
+            'image': '/img/logo2.svg',
+            'repo': '',
+            'instructors': [
+                { 'id': 'u13', 'name': 'Jeisson Hidalgo-Céspedes' },
+            ],
+            'statistics': {
+                'students': len(logged),
+                'sections': 1,
+                'problems': 4,
+                'questions': 0,
+            },
+            'contents': [ {
+                    'name': 'p25e1e',
+                    'title': 'Actividad extra',
+                    'type': 'folder',
+                    'folder': 'problem',
+                    'contents': problems,
+                },
+            ],
+        }
