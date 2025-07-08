@@ -23,9 +23,10 @@
             {{ it.form.interface_mode.label }} {{ it.form.interface_mode(class="radio") }}
           </fieldset>
           <p>
-            {{ it.form.update(class="button confirm") }}
-            {{ it.form.logout(class="button reject") }}
-            {{ it.form.delete_account(class="button danger") }}
+            {#{ it.form.update(class="button confirm") }#}
+            {#{ it.form.logout(class="button reject") }#}
+            <a href="/logout" class="button reject" id="reject_button">Logout</a>
+            {#{ it.form.delete_account(class="button danger") }#}
           </p>
         </form>
       </main>

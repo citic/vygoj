@@ -75,6 +75,13 @@ def user():
     """ Get/post the login or preferences dialog """
     return UserForm.show_form()
 
+@app.route('/logout')
+def logout():
+    """ User wants to logout, remove user from session """
+    flask.session.pop('user', None)
+    flask.flash('User logged out', 'warning')
+    return flask.redirect(flask.url_for('get_index'))
+
 # Misc --------------------------------------------------------------------------------------------
 
 @app.route('/status', methods=['GET'])

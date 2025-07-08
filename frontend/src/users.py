@@ -43,6 +43,64 @@ class Progress(db.Model):
     # The grade obtained
     grade = db.Column(db.Float(), nullable=False)
 
+users = {
+    's01': {'password': 'G45dk8'},
+    's02': {'password': 'HHu77a'},
+    's03': {'password': 'nBt00e'},
+    's04': {'password': '8RYfHA'},
+    's05': {'password': '4M6uds'},
+    's06': {'password': '29XxbL'},
+    's07': {'password': 'eeM8Ej'},
+    's08': {'password': 'zDnRw4'},
+    's09': {'password': 'ASzta8'},
+    's10': {'password': 'vA6nfP'},
+    's11': {'password': 'rK2Xhw'},
+    's12': {'password': 'zVY6hc'},
+    's13': {'password': 'T8T62h'},
+    's14': {'password': '3r5xQg'},
+    's15': {'password': 'LJWFe5'},
+    's16': {'password': 'zUA25H'},
+    's17': {'password': 'H3WzHc'},
+    's18': {'password': 'X2YAc2'},
+    's19': {'password': 'jABZq5'},
+    's20': {'password': 'XM6nB2'},
+    's21': {'password': 'a7AA2h'},
+    's22': {'password': 'xNhG5u'},
+    's23': {'password': 'z7y2K5'},
+    's24': {'password': 'f25zQY'},
+    's25': {'password': 'hc9S64'},
+    's26': {'password': 'Tse9Pg'},
+    's27': {'password': 'UavaU9'},
+    's28': {'password': 'FPEbu3'},
+    's29': {'password': 'nwUx6a'},
+    's30': {'password': '6fRDER'},
+    's31': {'password': '6JTFFt'},
+    's32': {'password': 'UnfsF5'},
+    's33': {'password': '2DQPBv'},
+    's34': {'password': '6XxeHQ'},
+    's35': {'password': '2RCWr6'},
+    's36': {'password': '6EC96x'},
+    's37': {'password': '8PP9bk'},
+    's38': {'password': 'u3aJYD'},
+    's39': {'password': 'Nm6j8q'},
+    's40': {'password': 'VjJ3tT'},
+    's41': {'password': 'LB6eeR'},
+    's42': {'password': '6cSrp4'},
+    's43': {'password': '8rHMUg'},
+    's44': {'password': 'KfP6xP'},
+    's45': {'password': 'Cz5PeE'},
+    's46': {'password': 'G2T7q7'},
+    's47': {'password': 'kJ4Yp9'},
+    's48': {'password': '7G5VVv'},
+    's49': {'password': 'Zz24LD'},
+    's50': {'password': '3LS6qm'},
+    's51': {'password': '7ghEgK'},
+    's52': {'password': '2rDbyE'},
+    's53': {'password': 'Afe5de'},
+    's54': {'password': 'h9QKCF'},
+    's55': {'password': 'AbgK3x'},
+}
+
 class UserForm(flask_wtf.FlaskForm):
     """ If no user is logged in, show the login form, otherwise the preferences form """
     # Email field is is the user identification. The validators list are triggered when user
@@ -51,8 +109,8 @@ class UserForm(flask_wtf.FlaskForm):
     # StringField renders <input type=text> element
     # The 'User name' is the field lab
     #username = wtforms.StringField('User name', validators=[validators.DataRequired()])
-    email = wtforms.StringField('Email', validators=[validators.DataRequired(),
-        validators.Length(6, 128)]) # validators.Email(),
+    email = wtforms.StringField('Username/Email', validators=[#validators.DataRequired(),
+        validators.Length(3, 128)]) # validators.Email(),
     # Password is required to login or to change password
     password = wtforms.PasswordField('Password')
     # Used only when user wants to change password
@@ -68,14 +126,13 @@ class UserForm(flask_wtf.FlaskForm):
         ('dark', 'Dark mode'),
     ], default='light')
     # Update button. SubmitField renders <input type=submit> element
-    update = wtforms.SubmitField('Update', id='confirm_button', name='action', default='update')
+    update = wtforms.SubmitField('Update', id='confirm_button', name='action')
     # Login button, enabled when user is not logged in
-    login = wtforms.SubmitField('Login', id='login_button', name='login', default='login')
+    login = wtforms.SubmitField('Login', id='login_button', name='login')
     # Logout button, when user is logged in
-    logout = wtforms.SubmitField('Logout', id='reject_button', name='action', default='logout')
+    logout = wtforms.SubmitField('Logout', id='reject_button', name='action')
     # Delete account button, if it is allowed
-    delete_account = wtforms.SubmitField('Delete account', id='delete_button', name='action',
-        default='delete')
+    delete_account = wtforms.SubmitField('Delete account', id='delete_button', name='action')
 
     @staticmethod
     def show_form():
@@ -84,6 +141,11 @@ class UserForm(flask_wtf.FlaskForm):
         user = flask.session.get('user')
         # If user accepted the dialog
         if form.validate_on_submit():
+            if form.logout.data:
+                # User wants to logout, remove user from session
+                flask.session.pop('user', None)
+                flask.flash('User logged out', 'warning')
+                return flask.redirect(flask.url_for('get_index'))
             # If user was logged in, update preferences
             if user:
                 # TODO(I): Update user preferences in the database
@@ -96,8 +158,15 @@ class UserForm(flask_wtf.FlaskForm):
                     'fullname': form.fullname.data,
                     'interface_mode': form.interface_mode.data,
                 }
-                flask.session['user'] = user
-                flask.flash('Logged in successfully.', 'success')
+                name = form.email.data
+                if name in users and form.password.data == users[name]['password']:
+                    flask.session['user'] = user
+                    flask.flash('Logged in successfully.', 'success')
+                    return flask.redirect(flask.url_for('get_index'))
+                else:
+                    # User is not logged in, show an error message
+                    flask.flash('Invalid user or password', 'error')
+                    return flask.redirect(flask.url_for('user'))
         if user:
             # User is logged in, and wants to change preferences, update some labels
             form.password.label = 'Current password'
