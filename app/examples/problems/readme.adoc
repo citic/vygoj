@@ -1,13 +1,85 @@
-== Instrucciones de la actividad
+[.text-center]
+ECCI-UCR CI-0117 *Actividad extra* 09-Julio-2025 / 9:00am a 12:00md
+
+[cols="10,20,60,10"]
+|===
+a| Grupo: | Carné: | Nombre: | Usuario: +
+s
+|===
+
+
+
+== Instrucciones generales
 
 Objetivos: aplicar nociones del curso, aprender nuevos conceptos, y divertirse, además de mejorar su calificación del curso.
 
 . Para cada ejercicio realice el mínimo de modificaciones en el código fuente que resuelve el problema descrito.
+
 . Aplique siempre buenas prácticas de programación, por ejemplo: su código de compilar sin errores, ni advertencias, hacer buen uso de la memoria y la concurrencia,
+
 . Asegúrese de que su solución no produce condiciones de carrera, espera activa, bloqueo mutuo, ni violaciones de atomicidad. Pasar los casos de prueba puede no ser suficiente.
+
 . Entregue las soluciones en la mejor calidad posible. Use las herramientas que tenga a mano: el juez en línea, compilador, sanitizers, Valgrind, linter, pruebas de caja negra (`make test`). No es necesario documentar (doxygen).
-. Resuelva con sus conocimientos del curso y la ayuda provista, no consulte fuentes de internet ni de inteligencia artificial.
-. Resuelva los problemas en el orden presentado. En cada cambio de problema registre la hora de inicio y fin.
-. Si no puede resolver un problema, pase al siguiente. Si luego regresa a un problema que ya había iniciado, registre otro par de horas.
-. Inmediatamente después de resolver un problema, exprese su opinión en el cuestionario provisto sobre las herramientas que utilizó.
+
+. Resuelva los problemas con sus conocimientos del curso y la ayuda provista (menú Help en el pie de página del sitio web). Puede consultar sus anotaciones del curso y el sitio web del curso. No consulte otras fuentes de internet ni de inteligencia artificial. De lo contrario, no recibirá crédito por la actividad.
+
 . Por cada problema que resuelva, se le eliminará una de las notas más bajas del rubro de ejercicios del curso.
+
+
+== Pasos de la actividad
+
+. Con un navegador web acceda a https://jeisson.ecci.ucr.ac.cr:8080/. Ingrese con las credenciales provistas.
+
+. Seleccione el curso CI0117. Verá cuatro problemas. Resuelva los problemas en el orden presentado.
+
+. Al iniciar un problema registre la hora de inicio en la tabla del dorso. Si pasa a otro problema, registre la hora de fin en la tabla.
+
+. Si no puede resolver un problema, pase al siguiente. Si luego regresa a un problema que ya había iniciado, registre una nueva la hora de inicio y fin, sin modificar las previas.
+
+. Inmediatamente después de resolver un problema, exprese su opinión en el cuestionario provisto en el sitio web sobre las herramientas que utilizó.
+
+Los problemas se resuelven con dos tipos de herramientas: IDE y Juez en línea.
+
+
+=== IDE
+
+Si al hacer click en uno de los problemas el navegador le descarga un archivo comprimido (.7z), resuelva el problema usando las herramientas tradicionales del curso, como un Entorno de Desarrollo Integrado (IDE, por ejemplo, Visual Studio Code), la línea de comandos, Makefile, Git, entre otros, de la misma forma que hizo a lo largo del curso.
+
+Si no tiene un clon de su repositorio personal del curso, haga uno (recuerde configurar su usuario de Git). En él cree una carpeta `extra/` en la raíz del repositorio. Extraiga el contenido del archivo comprimido en esa carpeta, de tal forma que genere una subcarpeta con el nombre del problema. Por ejemplo, si el archivo se llamara `some_problem.7z` usted obtendría una carpeta `extra/some_problem/`. Elimine el archivo comprimido `.7z`. Luego agregue la carpeta a control de cambios y haga un _commit_. No debe agregar el archivo comprimido a control de versiones.
+
+Una vez preparada la carpeta del problema, analice el archivo `readme.adoc` para comprender el problema, y haga las correcciones en el código fuente brindado. Una vez que haya resuelto el problema, haga otro _commit_ con los cambios. Registre la hora de fin en la tabla y continúe con el próximo problema.
+
+
+=== Juez en línea
+
+Si al hacer click en uno de los problemas el navegador lo lleva a una página en lugar de descargar un archivo, significa que debe resolver el problema en esa misma página. Esta página consta de varias partes:
+
+. En la parte superior encontrará la descripción del problema, con la que hará la fase de análisis.
+
+. Es seguida por un área de código fuente para escribir su solución o corregir una existente.
+
+. Debajo del área de código fuente encontrará dos botones. El botón `Run` compilará y ejecutará su solución contra algunos casos de prueba. El resultado de la ejecución se mostrará debajo del botón. Puede ser que el juez tarde varios segundos en responder. Concéntrese en resolver el problema y evite hacer muchos envíos. En caso de que el juez tarde más de 30 segundos en responder, puede recargar la página. El botón de `Finish` le regresará a la página del curso.
+
+. Debajo de los botones, encontrará los casos de prueba enumerados. Al presionar un botón enumerado podrá ver la entrada, la salida esperada del caso de prueba, y la salida de su programa. Si los botones enumerados están en gris, indican que no se han ejecutado aún. Si un botón está en verde, significa que su solución pasó el caso de prueba. Si un botón está en rojo, significa que su solución produjo una salida o comportamiento no esperado y el juez en línea tratará de mostrarle las diferencias o mensajes de error.
+
+. Arriba o debajo de los casos de prueba puede aparecer información adicional. Por ejemplo, errores de compilación, errores de ejecución, o de otra naturaleza.
+
+Una vez resuelto un problema en el juez en línea, presione el botón `Finish` para regresar a la página del curso. Registre la hora de fin en la tabla. Llene el formulario de opinión sobre el juez en línea. Finalmente continúe con el próximo problema. No es necesario almacenar nada en su repositorio de control de versiones.
+
+
+== Entrega
+
+Una vez finalizada la actividad, asegúrese de enviar los _commits_ al repositorio remoto y de entregar esta hoja a la persona docente.
+
+
+== Bitácora de la actividad
+
+[cols="3,^1,^1,^1,^1,^1,^1", options="header"]
+|===
+|Problema  2+| Intento 1 2+| Intento 2 2+| Intento 3
+| | Inicio | Fin | Inicio | Fin | Inicio | Fin
+| 1 Formar agua | | | | | |
+| 2 Pila de platos | | | | | |
+| 3 Contador de primos | | | | | |
+| 4 Convención de filósofos | | | | | |
+|===

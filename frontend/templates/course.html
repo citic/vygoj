@@ -9,6 +9,8 @@
       {{ '  ' * (indent - 1) }}<p class="course__activity">
       {%- if item.type == 'problem' -%}
         [{{ it.progress and it.progress.get(item.name, 0) or 0 }}%] <a href="{{ path }}">{{ item.title }}</a>
+      {%- elif item.type == 'page' -%}
+        <a href="https://jeisson.ecci.ucr.ac.cr/invest/{{ item.folder }}.7z">{{ item.title }}</a>
       {%- else %}
         {{- item.title }}
       {%- endif %}</p>
