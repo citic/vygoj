@@ -1,5 +1,5 @@
-import flask
 import json
+import flask
 
 # TODO(jhc): Move to database or fetch from filesystem
 allCourses = {
@@ -242,7 +242,10 @@ class Course:
     def fetch_my_courses():
         ''' Return the list of courses where current user is enrolled '''
         # TODO(jhc): this test will be replaced by a database query
-        return [ allCourses['p25e1'] ]
+        result = []
+        if 'user' in flask.session:
+            result = [ allCourses['p25e1'] ]
+        return result
 
     @staticmethod
     def fetch_all_courses():

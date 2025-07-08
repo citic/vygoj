@@ -32,6 +32,8 @@
 {%- endfor %}
           </div>
         </article>
+{%- else %}
+        <p>Please login to see your courses.</p>
 {%- endif %}
 {%- if it.available_courses|length > 0 %}
         <article id="available_courses" class="course_section courses--available">
