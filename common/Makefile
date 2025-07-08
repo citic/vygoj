@@ -7,6 +7,7 @@ DEPS=flask# Python dependencies to be installed with pip install
 SHELL:=/bin/bash# Use bash to run complex commands
 HOST=0.0.0.0# 0.0.0.0 allows external connections, localhost does not
 PORT=8080# Port where the web app will listen for connections
+THREADS=4# Number of threads to run the web application/service
 PY=python3# Command to run python
 
 # Phony targets
@@ -25,6 +26,10 @@ release: install
 run: export FLASK_APP=$(MAIN)
 run: install
 	$(ACT) && flask run -h $(HOST) -p $(PORT)
+
+# Run the backend as a web service
+server: install
+	$(ACT) && cd src && gunicorn -w $(THREADS) --bind $(HOST):$(PORT) main:app --daemon &
 
 # Install dependencies
 install: $(VENV)

@@ -10,4 +10,8 @@ dev:
 	npm run dev &
 
 node_modules:
-	npm ci
+	npm i
+
+# Run the frontend as a web service
+server: install
+	$(ACT) && cd src && gunicorn -w $(THREADS) --bind $(HOST):$(PORT) main:app --daemon &

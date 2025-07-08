@@ -1,0 +1,42 @@
+= Vygoj frontend
+:experimental:
+:nofooter:
+:source-highlighter: pygments
+:sectnums:
+:stem: latexmath
+:toc:
+:xrefstyle: short
+
+See link:../app/readme.adoc[old readme] for details.
+
+Python v3.9+ is required. Quick installation on Debian:
+
+[source,console]
+----
+# Install Node.js to convert .ts files to .js
+# See https://github.com/nodesource/distributions
+curl -fsSL https://deb.nodesource.com/setup_23.x -o nodesource_setup.sh
+sudo -E bash nodesource_setup.sh
+sudo apt-get install -y nodejs
+
+# Install dependencies
+cd vygoj/frontend
+npm i
+sudo npm i -g typescript
+
+# Convert .ts files of client JavaScript to .js
+tsc
+
+# Install Python dependencies
+make install
+----
+
+
+[source,console]
+----
+# Run the frontend as a production server
+make server
+
+# Kill the server
+pkill gnunicorn
+----

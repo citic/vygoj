@@ -81,7 +81,8 @@ def user():
 def get_status():
     """ Client JS asked for backend status, propagate it """
     # TODO(jhc): summarize status of all available backends
-    return requests.get('http://localhost:9090/status', timeout=1000).json()
+    uris = app.config.get('BACKENDS', ['http://localhost:9090'])
+    return requests.get(f'{uris[0]}/status', timeout=1000).json()
 
 
 # Errors ------------------------------------------------------------------------------------------
