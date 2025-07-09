@@ -17,6 +17,7 @@ El código fuente provisto trata de simular la situación anterior tantas veces 
 
 ////
 {
-"allowIndeterminism": "lines"
+"allowIndeterminism": "lines",
+"tools": "helgrind"
 }
 ////

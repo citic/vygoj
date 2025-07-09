@@ -1,5 +1,7 @@
 include ../../common/Makefile
 
+XSTD=-std=gnu++20
+
 .PHONY: log
 log: SHELL := /bin/bash
 log: commands.log
