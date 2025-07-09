@@ -15,6 +15,6 @@ Se simuló la situación anterior en un programa concurrente, pero se ha encontr
 
 ////
 {
-"tools": "tsan"
+"tools": "tsan lint"
 }
 ////

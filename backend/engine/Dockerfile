@@ -7,6 +7,7 @@ RUN apt update && \
     build-essential \
     checkstyle \
     clang \
+    cpplint \
     doxygen \
     linux-perf \
     python3 \

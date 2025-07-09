@@ -15,6 +15,6 @@ No modifique el procedimiento `bond()` que controla el dispositivo. Indague en l
 
 ////
 {
-"tools": "tsan"
+"tools": "tsan lint"
 }
 ////

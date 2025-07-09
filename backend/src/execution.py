@@ -15,22 +15,24 @@ docker_client = docker.from_env()
 
 class LanguageDefault:
     """ Default language options """
-    def __init__(self, lang_id, file_extension, compiler, compiler_options):
+    def __init__(self, lang_id, file_extension, compiler, compiler_options, linting_options):
         """ Constructor """
         self.id = lang_id
         self.file_extension = file_extension
         self.compiler = compiler
         self.compiler_options = compiler_options
+        self.linting_options = linting_options
 
-# -fsanitize=thread does not work with standard C11 threads:
-# https://github.com/google/sanitizers/issues/1195
-# TODO: override default compiler options with problem.compilerOptionsFor[lang]
+common_lint='-build/header_guard,-build/include_subdir,-runtime/int'
+# TODO(jhc): override default compiler options with problem.compilerOptionsFor[lang]
 # -fno-diagnostics-color
 languageDefaults = {
     'C': LanguageDefault(50, 'c', 'gcc',
-        '-g -Wall -Wextra -std=gnu17 -pthread -lm'),
+        '-g -Wall -Wextra -std=gnu17 -pthread -lm',
+        f'{common_lint},-readability/casting'),
     'C++': LanguageDefault(54, 'cpp', 'g++',
-        '-g -Wall -Wextra -std=gnu++20 -pthread -lm'),
+        '-g -Wall -Wextra -std=gnu++20 -pthread -lm',
+        f'{common_lint},-build/c++11,-runtime/references'),
 }
 
 class FailedSolution(Exception):
@@ -100,6 +102,8 @@ class Execution:
             for index0, test_case in enumerate(self.problem.tests):
                 # Create an execution object, run it, and wait its execution result
                 self.run_test_case(index0, test_case)
+            # Run after test case proofs, e.g: linting
+            self.after_run_proofs()
             # Execution finished, encode the result to JSON and send it to frontend
             # TODO(jhc): self.build_message() for the entire execution result
             print('-----------------------result----------------\n', vyg.to_json(self.result), '\n------------------------------------------')            
@@ -414,3 +418,17 @@ class Execution:
             # Provide a descriptive message
             self.result.message = vyg.append(self.result.message,
                     f'Invalid amount of secondary threads ({self.result.threadCount})')
+
+    def after_run_proofs(self):
+        """ Run after test case proofs, e.g: linting """
+        if 'lint' in self.problem.tools:
+            flags = languageDefaults[self.solution.language]
+            # Run the linter, e.g: cpplint.py
+            cmd = f'cpplint --filter={flags.linting_options} {self.source_file}'
+            stdout, stderr, exit_code = self.run_in_container(cmd, 2)
+            if exit_code != 0:
+                # Linter found errors, report them
+                self.result.compileOutput += vyg.append(stdout, stderr, '\n')
+                self.result.status = vyg.Status.COMPILER_ERROR
+                self.result.message = vyg.append(self.result.message,
+                        'Linter found errors in the code')

@@ -42,7 +42,7 @@ class ProblemController:
         return flask.render_template('problem.html', it={
             'stylesheet': 'problems',
             'title': problem.title,
-            'user': {'name': 'You', 'role': 'admin'}, # TODO(I): flask.q.session.user,
+            'user': flask.session.get('user', None),
             'breadcrumbs': [
                 # TODO(I): course
                 { 'href': '/course/CI0117', 'text': 'CI0117' },

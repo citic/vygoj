@@ -18,6 +18,6 @@ El código fuente provisto trata de simular la situación anterior tantas veces 
 ////
 {
 "allowIndeterminism": "lines",
-"tools": "helgrind"
+"tools": "helgrind lint"
 }
 ////
