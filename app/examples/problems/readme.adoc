@@ -11,7 +11,7 @@ s
 
 == Instrucciones generales
 
-Objetivos: aplicar nociones del curso, aprender nuevos conceptos, y divertirse, además de mejorar su calificación del curso.
+Objetivo: aplicar nociones del curso, aprender nuevas herramientas, y divertirse, además de mejorar su calificación del curso.
 
 . Para cada ejercicio realice el mínimo de modificaciones en el código fuente que resuelve el problema descrito.
 
@@ -45,9 +45,13 @@ Los problemas se resuelven con dos tipos de herramientas: IDE y Juez en línea.
 
 Si al hacer click en uno de los problemas el navegador le descarga un archivo comprimido (.7z), resuelva el problema usando las herramientas tradicionales del curso, como un Entorno de Desarrollo Integrado (IDE, por ejemplo, Visual Studio Code), la línea de comandos, Makefile, Git, entre otros, de la misma forma que hizo a lo largo del curso.
 
-Si no tiene un clon de su repositorio personal del curso, haga uno (recuerde configurar su usuario de Git). En él cree una carpeta `extra/` en la raíz del repositorio. Extraiga el contenido del archivo comprimido en esa carpeta, de tal forma que genere una subcarpeta con el nombre del problema. Por ejemplo, si el archivo se llamara `some_problem.7z` usted obtendría una carpeta `extra/some_problem/`. Elimine el archivo comprimido `.7z`. Luego agregue la carpeta a control de cambios y haga un _commit_. No debe agregar el archivo comprimido a control de versiones.
+Si no tiene un clon de su repositorio personal del curso, haga uno (recuerde configurar su usuario de Git). En él cree una carpeta `extra/` en la raíz del repositorio. Extraiga el contenido del archivo comprimido en esa carpeta, de tal forma que genere una subcarpeta con el nombre del problema. Por ejemplo, si el archivo se llamara `some_problem.7z` usted obtendría una carpeta `extra/some_problem/`. Elimine el archivo comprimido `.7z`.
 
-Una vez preparada la carpeta del problema, analice el archivo `readme.adoc` para comprender el problema, y haga las correcciones en el código fuente brindado. Una vez que haya resuelto el problema, haga otro _commit_ con los cambios. Registre la hora de fin en la tabla y continúe con el próximo problema.
+Abra una terminal en la carpeta del problema. Si usa el explorador de archivos, posiblemente puede hacerle click derecho y seleccionar "Abrir terminal aquí" o similar. Escriba el comando `make log` y cierre la terminal. Abra otra terminal en la misma carpeta. Luego agregue la carpeta a control de cambios y haga un _commit_. No debe agregar el archivo comprimido a control de versiones. Si aparece un archivo `commands.log`, agréguelo a control de versiones.
+
+Una vez preparada la carpeta del problema, analice el archivo `readme.adoc` para comprender el problema, y haga las correcciones en el código fuente brindado. Si necesita ayuda, recuerde que puede presionar el enlace `Help` en el sitio web.
+
+Una vez que haya resuelto el problema, emita de nuevo el comando `make log`. Haga otro _commit_ con los cambios. Registre la hora de fin en la tabla al dorso y continúe con el próximo problema.
 
 
 === Juez en línea
