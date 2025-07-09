@@ -1,6 +1,6 @@
 import json
 import flask
-from users import logged
+from users import logged_users
 
 e1i = {
   'name': 'build_h2o',
@@ -365,7 +365,7 @@ class Course:
                 { 'id': 'u13', 'name': 'Jeisson Hidalgo-Céspedes' },
             ],
             'statistics': {
-                'students': len(logged),
+                'students': len(logged_users),
                 'sections': 1,
                 'problems': 4,
                 'questions': 0,

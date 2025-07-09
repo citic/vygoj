@@ -5,6 +5,7 @@ import wtforms
 from wtforms import validators
 
 from db import db
+from vyg_log import vyg_log
 
 class User(db.Model):
     """ Users are database models with personal data, credentials, and course progress """
@@ -101,7 +102,7 @@ users = {
     's55': {'password': 'AbgK3x'},
 }
 
-logged = set()
+logged_users = set()
 
 class UserForm(flask_wtf.FlaskForm):
     """ If no user is logged in, show the login form, otherwise the preferences form """
@@ -163,8 +164,9 @@ class UserForm(flask_wtf.FlaskForm):
                 name = form.email.data
                 if name in users and form.password.data == users[name]['password']:
                     flask.session['user'] = user
-                    logged.add(name)
+                    logged_users.add(name)
                     flask.flash('Logged in successfully.', 'success')
+                    vyg_log('login', name)
                     return flask.redirect(flask.url_for('get_index'))
                 else:
                     # User is not logged in, show an error message

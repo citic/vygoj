@@ -6,6 +6,7 @@ import flask
 from flask import current_app as app
 
 import vyg
+from vyg_log import vyg_log
 
 class ProblemController:
     """Controls problems
@@ -70,6 +71,7 @@ class ProblemController:
             if message.action == 'fetch_problem':
                 return ProblemController.fetch_problem(problem_path)
             elif message.action == 'run':
+                vyg_log('run', problem_path)
                 return ProblemController.judge_solution(problem_path, message)
             else:
                 return flask.jsonify({ 'error': 'invalid action' })
@@ -98,12 +100,14 @@ class ProblemController:
     def run_solution(problem: vyg.Problem, solution: vyg.Message):
         """ Compile solution and run it against all test cases. Return an array of verdicts """
         submission = vyg.to_json({ 'problem': problem, 'solution': solution })
-        print('-----------------------submission----------------\n', submission, '\n------------------------------------------')
+        print('-------------------submission----------------\n', submission, '\n-----------------')
+        vyg_log('run_submission', submission)
         # Create an array of results, one for each test case
         # TODO(jhc): get these args from config
         uri = f'{ProblemController.select_random_backend()}/run'
-        plain_result = requests.post(uri, timeout=10000, json=submission)
-        print('-----------------------plain_result----------------\n', plain_result, '\n------------------------------------------')
+        plain_result = requests.post(uri, timeout=30000, json=submission)
+        print('-------------------plain_result---------------\n', plain_result.text, '\n---------------')
+        vyg_log('run_result', plain_result.text)
         # The user program is executed once for each test case
         # TODO(jhc): Run in parallel
         return plain_result.json()

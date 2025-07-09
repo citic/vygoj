@@ -10,6 +10,7 @@ from courses import Course
 from problems import ProblemController
 from users import UserForm
 from db import db
+from vyg_log import vyg_log
 
 # Constants ---------------------------------------------------------------------------------------
 DATA_DIR = './data'
@@ -47,12 +48,14 @@ db.init_app(app)
 def get_index():
     """ Homepage: list of my courses and available courses """
     # The return value of a view function is the response to the client
+    vyg_log('visit', '/')
     return Course.get_index()
 
 @app.route('/course/<course_id>')
 def get_course(course_id):
     """ Homepage: list of my courses and available courses """
     # The return value of a view function is the response to the client
+    vyg_log('visit', f'/course/{course_id}')
     return Course.get_course(course_id)
 
 # Problems ----------------------------------------------------------------------------------------
@@ -60,6 +63,7 @@ def get_course(course_id):
 @app.route('/problem/<path>')
 def get_problem(path):
     """ User asked for the problem page """
+    vyg_log('visit', f'/problem/{path}')
     return ProblemController.get_problem(path)
 
 @app.route('/problem/<path>', methods=['POST'])
@@ -73,11 +77,15 @@ def post_problem(path):
 @app.route('/user', methods=['GET', 'POST'])
 def user():
     """ Get/post the login or preferences dialog """
+    vyg_log('visit', f'/user')
     return UserForm.show_form()
 
 @app.route('/logout')
 def logout():
     """ User wants to logout, remove user from session """
+    user_obj = flask.session.get('user')
+    username = user_obj.get('email', '') if user_obj else ''
+    vyg_log('logout', username)
     flask.session.pop('user', None)
     flask.flash('User logged out', 'warning')
     return flask.redirect(flask.url_for('get_index'))
@@ -94,6 +102,7 @@ def get_status():
 @app.route('/help')
 def get_help():
     """ Used in experiment to provide reference about the concepts to solve the tasks """
+    vyg_log('visit', '/help')
     return flask.render_template('help.html', it={ })
 
 
@@ -114,7 +123,7 @@ if not os.path.exists(DATA_DIR):
 # If log file does not exist, create it and add its header
 if not os.path.exists(LOG_FILENAME):
     with open(LOG_FILENAME, 'a', encoding='utf8') as log_file:
-        log_file.write('date\ttime\tip\tscheme\turl\tstatus_code\tbody\n')
+        log_file.write('date\ttime\tip\tscheme\turl\tstatus_code\tuser\tbody\n')
 # This object manages the log and slices it each 1MB
 log_handler = RotatingFileHandler(LOG_FILENAME, maxBytes=10**6, backupCount=1000)
 # Set the handler as the default
@@ -125,8 +134,10 @@ logger.addHandler(log_handler)
 def log_event(request, response, method):
     '''' Log an entry '''
     timestamp = time.strftime('%y%m%d\t%H%M%S')
-    method('%s\t%s\t%s\t%s\t%s\t%s', timestamp, request.remote_addr, request.method,
-            request.url, response.status, request.get_data()) # TODO(jhc): user
+    user_obj = flask.session.get('user')
+    username = user_obj.get('email', '') if user_obj else ''
+    method('%s\t%s\t%s\t%s\t%s\t%s\t%s', timestamp, request.remote_addr, request.method,
+            request.url, response.status, username, request.get_data())
     return response
 
 @app.after_request
