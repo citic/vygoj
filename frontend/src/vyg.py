@@ -229,6 +229,8 @@ class Problem:
         # Allowed time range in seconds specified by professor for all test cases
         self.minDuration = json_dict.get('minDuration', '')
         self.maxDuration = json_dict.get('maxDuration', '')
+        # Extra tools, one of: asan tsan ubsan memcheck helgrind
+        self.tools = json_dict.get('tools', '')
         # Remove HTML escaping for all languages
         # for lang, code in self.initialCodeFor.items():
         #     code = code.replace('&amp;', '&')

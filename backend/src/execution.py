@@ -28,9 +28,9 @@ class LanguageDefault:
 # -fno-diagnostics-color
 languageDefaults = {
     'C': LanguageDefault(50, 'c', 'gcc',
-        '-g -Wall -Wextra -std=gnu17 -fsanitize=address -fmessage-length=80 -pthread -lm'),
+        '-g -Wall -Wextra -std=gnu17 -pthread -lm'),
     'C++': LanguageDefault(54, 'cpp', 'g++',
-        '-g -Wall -Wextra -std=gnu++20 -fsanitize=address -fmessage-length=80 -pthread -lm'),
+        '-g -Wall -Wextra -std=gnu++20 -pthread -lm'),
 }
 
 class FailedSolution(Exception):
@@ -239,11 +239,12 @@ class Execution:
         # Compile the solution
         if self.solution.language in languageDefaults:
             flags = languageDefaults[self.solution.language]
+            compiler_options = self.build_compiler_options(flags)
             # Target file is the executable
             self.executable = 'solution'
             # Prepare compilation command
             source_path = self.source_file
-            cmd = (f'{flags.compiler} {flags.compiler_options} {source_path}'
+            cmd = (f'{flags.compiler} {compiler_options} {source_path}'
                     f' -o {self.executable}')
             # Run the compilation command, if it fails, report to frontend
             stdout, stderr, exit_code = self.run_in_container(cmd, 2)
@@ -260,6 +261,23 @@ class Execution:
         else:
             raise FailedSolution(self.result, vyg.Status.COMPILER_ERROR,
                     f'Not supported language by backend: {self.solution.language}')
+        
+    def build_compiler_options(self, flags:LanguageDefault):
+        """ Build the compiler options for the language used by student """
+        compiler_options = flags.compiler_options
+        # Get the compiler options from the problem object, if not defined, use the default ones
+        # compiler_options = self.problem.compilerOptionsFor.get(self.solution.language,
+        #         flags.compiler_options)
+        # If professor asked to use some extra tools, add them to the compiler options
+        if self.problem.tools:
+            for tool in self.problem.tools.split():
+                if tool == 'asan':
+                    compiler_options += ' -fsanitize=address -fmessage-length=80'
+                elif tool == 'tsan':
+                    compiler_options += ' -fsanitize=thread -fmessage-length=80'
+                elif tool == 'ubsan':
+                    compiler_options += ' -fsanitize=undefined -fmessage-length=80'
+        return compiler_options
 
     def run_test_case(self, index0:int, test_case:vyg.TestCase):
         """ Runs a test case of the problem given in the constructor """
@@ -275,6 +293,10 @@ class Execution:
         prefix = '/bin/bash -c "/usr/bin/time -v -o vyg_time.txt'
         # Prepare run command: perf stat -o vyg_time.txt timeout 2 ./solution < input.txt
         cmd = f'./{self.executable} {args} < {input_file}"'
+        tool_prefix = self.build_run_prefix()
+        if tool_prefix:
+            # If the problem has tools, prepend the command with the tool prefix
+            cmd = f'{tool_prefix} {cmd}'
         test_result = vyg.TestCaseResult({})
         test_result.stdout, test_result.stderr, test_result.exitCode = (
                 self.run_in_container(cmd, wall_time_limit, prefix))
@@ -284,6 +306,13 @@ class Execution:
         # Compare standard output and error against expected ones in test case
         self.compare_output('stdout', expected_output, test_result)
         self.compare_output('stderr', expected_error, test_result)
+        # If the exit code is not 0, mark the test case as failed
+        if test_result.exitCode != 0 or test_result.stderr:
+            # If the exit code is not 0, mark the test case as failed
+            test_result.status = vyg.Status.RUNTIME_ERROR
+            self.result.status = vyg.Status.RUNTIME_ERROR
+            test_result.message = f'Exit code {test_result.exitCode}'
+            #self.result.message = vyg.append(self.result.message, test_result.message)
         # Check solution is in time range
         self.check_time_range(index0, test_result)
         # If there further proofs, execute them
@@ -299,6 +328,16 @@ class Execution:
             self.result.points += test_case.points
             self.result.totalPoints += test_case.points
         print(f'------{test_result.status}-------\n')
+
+    def build_run_prefix(self):
+        """ Build the prefix to run the solution with extra tools, e.g: memcheck, helgrind """
+        if self.problem.tools:
+            for tool in self.problem.tools.split():
+                if tool == 'memcheck':
+                    return 'valgrind -q -s --sigill-diagnostics=yes --leak-check=full'
+                elif tool == 'helgrind':
+                    return 'valgrind -q -s --sigill-diagnostics=yes --tool=helgrind'
+        return ''
 
     def fetch_stats(self, test_case:vyg.TestCase, test_result:vyg.TestCaseResult):
         """ Fetch /usr/bin/time output, parse it to extract some statistics for the frontend """
