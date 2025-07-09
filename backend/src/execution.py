@@ -1,11 +1,14 @@
 import docker
 import io
 import os
+import re
 import tarfile
 import tempfile
 import vyg
 
 IMAGE='debian-vygoj'
+# Maximum time allowed to a user solution to run in seconds
+MAX_DURATION = 10 # seconds
 
 # Docker is a server, we need a client to use it. from_env() creates a client that connects to the
 # server using the default socket or configuration in your environment variables. from_env() gives
@@ -293,7 +296,7 @@ class Execution:
         expected_output = test_case.output
         expected_error = test_case.stderr
         # TODO(jhc): get wall time limit from min(problem, max_for_language)
-        wall_time_limit = 2 # seconds
+        wall_time_limit = test_case.maxDuration or self.problem.maxDuration or 2 # seconds
         prefix = '/bin/bash -c "/usr/bin/time -v -o vyg_time.txt'
         # Prepare run command: perf stat -o vyg_time.txt timeout 2 ./solution < input.txt
         cmd = f'./{self.executable} {args} < {input_file}"'
@@ -311,14 +314,15 @@ class Execution:
         self.compare_output('stdout', expected_output, test_result)
         self.compare_output('stderr', expected_error, test_result)
         # If the exit code is not 0, mark the test case as failed
-        if test_result.exitCode != 0 or test_result.stderr:
+        if (test_result.exitCode != 0 or test_result.stderr and
+            'ERROR SUMMARY: 0 errors' not in test_result.stderr):
             # If the exit code is not 0, mark the test case as failed
             test_result.status = vyg.Status.RUNTIME_ERROR
             self.result.status = vyg.Status.RUNTIME_ERROR
             test_result.message = f'Exit code {test_result.exitCode}'
             #self.result.message = vyg.append(self.result.message, test_result.message)
         # Check solution is in time range
-        self.check_time_range(index0, test_result)
+        self.check_time_range(test_case, test_result)
         # If there further proofs, execute them
         if self.result.status == vyg.Status.PASSED and self.problem.has_proofs():
             self.run_thread_count_proof(index0, input_file)
@@ -347,8 +351,12 @@ class Execution:
         """ Fetch /usr/bin/time output, parse it to extract some statistics for the frontend """
         # TODO(jhc): Fetch CPU time, used RAM
         time_output, _, _ = self.run_in_container('cat vyg_time.txt', 0)
-        time_output = time_output.splitlines()
-        test_result.wallTime = float()
+        # time_output = time_output.splitlines()
+        match = re.search(r'Elapsed \(wall clock\) time \(h:mm:ss or m:ss\): 0:(\d+\.\d+)', time_output)
+        if match:
+            test_result.wallTime = float(match.group(1))
+        else:
+            test_result.wallTime = 0.0
         # If this test case lasted longer than the longest known, even if it failed
         self.result.maxWallTime = max(self.result.maxWallTime, test_result.wallTime)
 
@@ -371,20 +379,19 @@ class Execution:
         print(f'\n------expect {output_type}-------\n', expected_output)
         print(f'------output {output_type}-------\n', student_output)
 
-    def check_time_range(self, index0:int, test_result:vyg.TestCaseResult):
+    def check_time_range(self, test_case:vyg.TestCase, test_result:vyg.TestCaseResult):
         """ Check if the solution run within the time range allowed by the problem """
-        assert 0 <= index0 < len(self.problem.tests)
         if self.result.status != vyg.Status.PASSED:
             return
         duration = self.result.maxWallTime # or self.result.maxCpuTime
         assert duration >= 0.0
-        test_case = self.problem.tests[index0]
-        min_duration = test_case.minDuration or self.problem.minDuration
-        max_duration = test_case.maxDuration or self.problem.maxDuration
+        min_duration = test_case.minDuration or self.problem.minDuration or 0.0
+        max_duration = test_case.maxDuration or self.problem.maxDuration or MAX_DURATION
         if min_duration and duration < min_duration:
             self.result.status = test_result.status = vyg.Status.TIMEOUT
             test_result.message = vyg.append(test_result.message,
                     'Execution faster than expected')
+        print(f'\n\n------duration: {duration}---max-duration: {max_duration}---\n\n\n')
         if max_duration and duration > max_duration:
             self.result.status = test_result.status = vyg.Status.TIMEOUT
             test_result.message = vyg.append(test_result.message,

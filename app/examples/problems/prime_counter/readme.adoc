@@ -27,7 +27,7 @@ El programa debe indicar en la salida estándar la cantidad de primos encontrada
 
 ////
 {
-"maxWallTime": 1.0,
+"maxDuration": 1.0,
 "tools": "tsan lint"
 }
 ////

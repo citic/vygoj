@@ -6,8 +6,6 @@ import os
 
 # Maximum number of allowed execution threads to be created by a user solution
 MAX_THREADS = 2**15
-# Maximum time allowed to a user solution to run in seconds
-MAX_DURATION = 10 # seconds
 
 class Status(str, enum.Enum):
     """ Status of the execution of a programming solution.
@@ -190,9 +188,9 @@ class TestCase:
         # Maximum number of threads that user solution may create to consider it correct
         self.maxThreads = json_dict.get('maxThreads', MAX_THREADS)
         # Minimum wall time duration that user solution must spent to consider it correct
-        self.minDuration = json_dict.get('minDuration', 0)
+        self.minDuration = json_dict.get('minDuration')
         # Maximum wall time duration that user solution must spent to consider it correct
-        self.maxDuration = json_dict.get('maxDuration', MAX_DURATION)
+        self.maxDuration = json_dict.get('maxDuration')
 
 class Problem:
     """ Represents a programming problem with statement, source code, and test cases """
@@ -228,7 +226,8 @@ class Problem:
         self.mustContain = decode_if(json_dict.get('mustContain', ''), should_decode)
         # Allowed time range in seconds specified by professor for all test cases
         self.minDuration = json_dict.get('minDuration', '')
-        self.maxDuration = json_dict.get('maxDuration', '')
+        # Maximum wall time duration that user solution must spent to consider it correct
+        self.maxDuration = json_dict.get('maxDuration')
         # Extra tools, one of: asan tsan ubsan memcheck helgrind
         self.tools = json_dict.get('tools', '')
         # Remove HTML escaping for all languages
