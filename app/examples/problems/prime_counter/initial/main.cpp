@@ -21,9 +21,9 @@ int main() {
   for (size_t index = 0; index < number_count; ++index) {
     std::cin >> numbers[index];
   }
-  // TODO: Create secondary threads. Use emplace_back() instead of push_back()
+  // TODO(you): Create secondary threads. Use emplace_back()
   find_primes();
-  // TODO: Wait for all threads to finish. Call thread.join()
+  // TODO(you): Wait for all threads to finish. Call thread.join()
   // Print report
   std::cout << prime_count << " primes:" << std::endl;
   for (size_t index = 0; index < number_count; ++index) {
@@ -36,7 +36,7 @@ int main() {
 
 void find_primes() {
   // While there is pending work
-  // TODO: Parallelize this loop using dynamic mapping
+  // TODO(you): Parallelize this loop using dynamic mapping
   for (size_t index = 0; index < number_count; ++index) {
     // I got a pending number, check if it is prime
     if (is_prime(numbers[index])) {

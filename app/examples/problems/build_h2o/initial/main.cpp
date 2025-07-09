@@ -1,9 +1,9 @@
 // Copyright 2025 ECCI-UCR CC-BY 4.0
+#include <semaphore>
 #include <barrier>
 #include <cassert>
 #include <iostream>
 #include <mutex>
-#include <semaphore>
 #include <thread>
 #include <vector>
 

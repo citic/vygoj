@@ -9,9 +9,7 @@
 size_t thread_count = 0;
 size_t number_count = 0;
 std::vector<size_t> numbers;
-//size_t next_number = 0;
 std::atomic<size_t> next_number = 0;
-//size_t prime_count = 0;
 std::atomic<size_t> prime_count = 0;
 
 void find_primes();

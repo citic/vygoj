@@ -83,7 +83,7 @@ void think(const size_t id) {
 
 void eat(const size_t id) {
   if (food == 0) {
-    // TODO: Ask for more food
+    // TODO(you): Ask for more food
   }
   --food;  // Consume one serving of food
   printf("Philosopher %zu is eating...\n", id);
