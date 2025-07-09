@@ -38,7 +38,7 @@ Objetivo: aplicar nociones del curso, aprender nuevas herramientas, y divertirse
 
 . Si no puede resolver un problema, registre la hora de fin y pase al siguiente. Si luego regresa a un problema que ya había iniciado, registre una nueva la hora de inicio y fin, sin modificar las previas (intentos).
 
-. Inmediatamente después de resolver un problema, exprese su opinión en el cuestionario impreso provisto sobre las herramientas que utilizó.
+. Inmediatamente después de resolver un problema, exprese su opinión en el cuestionario provisto sobre las herramientas que utilizó.
 
 Los problemas se resuelven con dos tipos de herramientas: IDE y Juez en línea.
 
@@ -70,7 +70,7 @@ Si al hacer click en uno de los problemas el navegador lo lleva a una página en
 
 . Arriba o debajo de los casos de prueba puede aparecer información adicional. Por ejemplo, errores de compilación, errores de ejecución, o de otra naturaleza.
 
-Una vez resuelto un problema en el juez en línea, presione el botón `Finish` para regresar a la página del curso. Registre la hora de fin en la tabla. Llene el formulario de opinión sobre el juez en línea. Finalmente continúe con el próximo problema. No es necesario almacenar nada en su repositorio de control de versiones.
+Una vez resuelto un problema en el juez en línea, presione el botón `Finish` para regresar a la página del curso. Registre la hora de fin en la tabla. Llene el cuestionario de opinión sobre el juez en línea. Finalmente continúe con el próximo problema. No es necesario almacenar nada en su repositorio de control de versiones.
 
 
 == Entrega

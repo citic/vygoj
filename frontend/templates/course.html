@@ -8,9 +8,9 @@
       {%- set path = repo + '/' + item.folder %}
       {{ '  ' * (indent - 1) }}<p class="course__activity">
       {%- if item.type == 'problem' -%}
-        [{{ it.progress and it.progress.get(item.name, 0) or 0 }}%] <a href="{{ path }}">{{ item.title }}</a>
+        [{{ it.progress and it.progress.get(item.name, 0) or 0 }}%] <a href="{{ path }}">{{ item.title }} <a href="https://jeisson.ecci.ucr.ac.cr/invest/eval_taller/" target="_blank">(Opinión)</a>
       {%- elif item.type == 'page' -%}
-        <a href="https://jeisson.ecci.ucr.ac.cr/invest/{{ item.folder }}.7z">{{ item.title }}</a>
+        <a href="https://jeisson.ecci.ucr.ac.cr/invest/{{ item.folder }}.7z">{{ item.title }} <a href="https://jeisson.ecci.ucr.ac.cr/invest/eval_taller/" target="_blank">(Opinión)</a>
       {%- else %}
         {{- item.title }}
       {%- endif %}</p>
