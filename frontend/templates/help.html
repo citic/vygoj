@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{%- block styles %}
+  {{ super() }}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css">
+{%- endblock %}
+{%- block main %}
+      <main>
+        <p>Índice</p>
+        <ol>
+          <li><a href="#cpp_thread">Hilos en C++</a></li>
+          <li><a href="#cpp_mutex">Exclusión mutua en C++</a></li>
+          <li><a href="#cpp_semaphore">Semáforos en C++</a></li>
+          <li><a href="#cpp_barrier">Barreras en C++</a></li>
+          <li><a href="#atomicity_violations">Violaciones de atomicidad</a></li>
+          <li><a href="#cpp_atomic_instructions">Instrucciones atómicas en C++</a></li>
+          <li><a href="#c_atomic_instructions">Instrucciones atómicas en C</a></li>
+        </ol>
+
+        <h2 id="cpp_thread">Hilos en C++</h2>
+        <p>En C++ se puede crear un hilo secundario al instanciar un objeto de la clase <code>std::thread(routine)</code>. El constructor del objeto recibe la rutina que se ejecutará en la pila del nuevo hilo de ejecución. Si la rutina recibe parámetros, los argumentos se pueden proveer en el constructor. El hilo principal puede esperar al hilo secundario invocando su método <code>join()</code>.</p>
+        <pre><code class="language-cpp">#include &lt;thread&gt;
+
+void routine(char ch) { ... }  // secondary thread routine
+
+int main() {  // main thread
+  std::thread secondary(routine, 'a');
+  ...
+  secondary.join();
+}</code></pre>
+        <p>Si se quiere crear un equipo de hilos y almacenar los objetos en una colección, no se puede usar el método <code>push_back()</code>, dado que los hilos no se pueden copiar. En su lugar se puede usar el método <code>emplace_back()</code> de la colección, el cual crea directamente al objeto dentro del contenedor sin hacer copias. Por ejemplo:</p>
+        <pre><code class="language-cpp">void routine(size_t thread_number) { ... }
+
+int main() {
+  std::vector&lt;std::thread&gt; threads;
+  for (size_t i = 0; i &lt; 10; ++i) {
+    threads.emplace_back(routine, i);
+  }
+  ...
+  for (std::thread& secondary : threads) {  
+    secondary.join();
+  }
+}</code></pre>
+
+
+        <h2 id="cpp_mutex">Exclusión mutua en C++</h2>
+        <p>C++ ofrece la clase <code>std::mutex</code> con los métodos <code>lock()</code> y <code>unlock()</code> para encerrar regiones críticas de código. Por ejemplo:</p>
+        <pre><code class="language-cpp">#include &lt;mutex&gt;
+std::mutex can_access_it;
+
+void routine() {
+  can_access_it.lock();  // lock the mutex
+  // critical section
+  can_access_it.unlock();  // unlock the mutex
+}</code></pre>
+
+
+        <h2 id="cpp_semaphore">Semáforos en C++</h2>
+        <p>C++20 ofrece dos clases para semáforos: <code>std::counting_semaphore</code> y <code>std::binary_semaphore</code>. El primero es un semáforo regular, que puede adquirir cualquier valor no negativo. El <code>std::binary_semaphore</code> ofrece la misma funcionalidad que un <code>std::mutex</code> con la diferencia de que un <code>std::mutex</code> tiene dueño, mientras que un <code>std::binary_semaphore</code> no.</p>
+        
+        <p>Para decrementar o esperar (<i>wait</i>) en un semáforo de C++ se usa el método <code>acquire()</code> y para incrementar (<i>signal</i>) un semáforo se usa el método <code>release()</code>. Por ejemplo:</p>
+        <pre><code class="language-cpp">#include &lt;semaphore&gt;
+std::counting_semaphore can_do_task(0);
+
+void routine() {
+  can_do_task.acquire();  // wait/decrement the semaphore
+  task()
+  can_do_task.release();  // signal/increment/post the semaphore
+}</code></pre>
+
+
+        <h2 id="cpp_barrier">Barreras en C++</h2>
+        <p>C++20 ofrece barreras con el objeto <code>std::barrier</code>, cuyo constructor recibe la cantidad de hilos que deben llegar a la barrera para que esta se levante. Cuando un hilo llega a la barrera puede invocar el método <code>arrive_and_wait()</code>. Por ejemplo:</p>
+        <pre><code class="language-cpp">#include &lt;barrier&gt;
+std::barrier start_race(3);
+
+void routine() {
+  start_race.arrive_and_wait();  // wait at the barrier
+  run();
+}</code></pre>
+
+        <h2 id="atomicity_violations">Violaciones de atomicidad</h2>
+        <p>Una violación de atomicidad ocurre cuando instrucciones que se deben ejecutar juntas como una unidad, son separadas, violando su ejecución como una transacción o "unidad atómica". Esta separación permite que se traslapen con la ejecución de otras instrucciones por parte de otros hilos de ejecución.</p>
+        <p>Por ejemplo, el siguiente código tiene una violación de atomicidad porque el hilo obtiene el <i>mutex</i>, copia la cantidad de elementos del vector y libera el <i>mutex</i>. En el entretanto escoge un índice al azar. Cuando vuelve a obtener el <i>mutex</i> supone que el estado del vector es el mismo que la primera vez que obtuvo el <i>mutex</i>. Sin embargo, en el entretanto otro hilo pudo modificar el vector, y el índice escogido al azar podría referirse a otro elemento o salirse de rango.</p>
+        <pre><code class="language-cpp">std::vector&lt;double&gt; values;
+std::mutex can_access_values;
+
+void routine() {
+  can_access_values.lock();
+    const size_t size = values.size();
+  can_access_values.unlock();
+
+  const size_t index = rand() % size;
+
+  can_access_values.lock();
+    const double& my_value = values[index];
+  can_access_values.unlock();
+
+  std::cout &lt;&lt; my_value &lt;&lt; std::endl;
+}</code></pre>
+        <p>Para evitar la violación de atomicidad, se debe extender la región crítica. Es decir, obtener el <i>mutex</i>, escoger un índice al azar, acceder al vector para obtener el elemento al azar, el cual se puede copiar a una variable, y finalmente liberar el mutex. De esta forma, el estado del vector no cambia mientras ocurren estas operaciones, como si fueran una unidad o transacción:</p>
+        <pre><code class="language-cpp">void routine() {
+  can_access_values.lock();
+    const size_t size = values.size();
+    const size_t index = rand() % size;
+    const double my_value = values[index];
+  can_access_values.unlock();
+
+  std::cout &lt;&lt; my_value &lt;&lt; std::endl;
+}</code></pre>
+        
+
+        <h2 id="cpp_atomic_instructions">Instrucciones atómicas en C++</h2>
+        <p>No siempre es necesario crear un <i>mutex</i> para proteger una única variable. Los procesadores multi-núcleo proveen instrucciones atómicas, las cuales garantizan que sólo un núcleo o CPU la puede estar ejecutando a la vez. Eso evita condiciones de carrera de una forma muy eficiente.</p>
+        <p> Si en una variable se quieren usar instrucciones atómicas, en C++ se declara esa variable con la plantilla <code>std::atomic&lt;Type&gt; var;</code>. La plantilla construye un "objeto" que tiene algunos operadores sobrecargados, como asignación (<code>=</code>), incremento (<code>++</code>), operadores combinados (como <code>-=</code>), entre otros. La implementación de esos operadores usan instrucciones atómicas del procesador multinúcleo.</p>
+        <p>Por ejemplo, el siguiente código crea dos contadores. El primero es un contador normal que sufrirá condiciones de carrera. El segundo es un contador protegido por instrucciones atómicas. Es decir, sólo un hilo lo puede incrementar a la vez. Si un hilo trata de incrementarlo y otro lo está haciendo, su núcleo de CPU esperará unos pocos ciclos de reloj a que el otro hilo termine la operación atómica. Si se hubiera usado un <i>mutex</i>, el hilo que trata de bloquear el <i>mutex</i> y no lo consigue, es retirado de la CPU y enviado a una cola de espera. Pasarán miles de ciclos de reloj hasta que el hilo recupere una CPU y continúe su incremento.</p>
+        <pre><code class="language-cpp">#include &lt;atomic&gt;
+
+long normal_counter = 0;
+std::atomic&lt;long&gt; atomic_counter(0);
+
+void routine() {
+  for (size_t i = 0; i &lt; 10000; ++i) {
+    ++normal_counter;  // increment normal counter
+    ++atomic_counter;  // increment atomic counter
+  }
+}
+
+int main() {
+  std::thread thr1(routine), thr2(routine);
+  thr1.join();
+  thr2.join();
+  std::cout &lt;&lt; normal_counter &lt;&lt; ' ' &lt;&lt; atomic_counter;
+  // Possible output: 19701 20000
+}</code></pre>
+
+        <h2 id="c_atomic_instructions">Instrucciones atómicas en C</h2>
+        <p>Hay varias formas de trabajar con instrucciones atómicas en C. La palabra reservada <code>_Atomic</code> de C11 es muy similar a las variables atómicas de C++. La instrucción <code>_Atomic(Type) var;</code> indica al compilador que los operadores que se usen con la variable, deben traducirse en el código objeto a operaciones atómicas del procesador multinúcleo. El siguiente código replica el ejemplo de los contadores en C:</p>
+        <pre><code class="language-cpp">#include &lt;pthread.h&gt;
+
+long normal_counter = 0;
+_Atomic(long) atomic_counter = 0;
+
+void* routine(void* arg) {
+  for (size_t i = 0; i &lt; 10000; ++i) {
+    ++normal_counter;  // increment normal counter
+    ++atomic_counter;  // increment atomic counter
+  }
+}
+
+int main() {
+  pthread_t thr1, thr2;
+  pthread_create(&amp;thr1, NULL, routine, NULL);
+  pthread_create(&amp;thr2, NULL, routine, NULL);
+  pthread_join(thr1, NULL);
+  pthread_join(thr2, NULL);
+  printf("%ld %ld\n", normal_counter, atomic_counter);
+  // Possible output: 18954 20000
+}</code></pre>
+
+
+      </main>
+{%- endblock %}
+{%- block scripts %}
+  {{ super() }}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+{%- endblock %}

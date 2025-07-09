@@ -91,6 +91,11 @@ def get_status():
     uris = app.config.get('BACKENDS', ['http://localhost:9090'])
     return requests.get(f'{uris[0]}/status', timeout=1000).json()
 
+@app.route('/help')
+def get_help():
+    """ Used in experiment to provide reference about the concepts to solve the tasks """
+    return flask.render_template('help.html', it={ })
+
 
 # Errors ------------------------------------------------------------------------------------------
 

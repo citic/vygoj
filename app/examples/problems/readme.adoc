@@ -15,13 +15,15 @@ Objetivo: aplicar nociones del curso, aprender nuevas herramientas, y divertirse
 
 . Para cada ejercicio realice el mínimo de modificaciones en el código fuente que resuelve el problema descrito.
 
+. Los códigos provistos tienen variables globales para mantener su tamaño pequeño. Aunque es una mala práctica de programación, no la corrija.
+
 . Aplique siempre buenas prácticas de programación, por ejemplo: su código de compilar sin errores, ni advertencias, hacer buen uso de la memoria y la concurrencia,
 
 . Asegúrese de que su solución no produce condiciones de carrera, espera activa, bloqueo mutuo, ni violaciones de atomicidad. Pasar los casos de prueba puede no ser suficiente.
 
 . Entregue las soluciones en la mejor calidad posible. Use las herramientas que tenga a mano: el juez en línea, compilador, sanitizers, Valgrind, linter, pruebas de caja negra (`make test`). No es necesario documentar (doxygen).
 
-. Resuelva los problemas con sus conocimientos del curso y la ayuda provista (menú Help en el pie de página del sitio web). Puede consultar sus anotaciones del curso y el sitio web del curso. No consulte otras fuentes de internet ni de inteligencia artificial. De lo contrario, no recibirá crédito por la actividad.
+. Resuelva los problemas con sus conocimientos del curso y la ayuda provista (menú Help en el pie de página del sitio web). Puede consultar sus anotaciones del curso y el sitio web del curso. No consulte otras fuentes de internet ni de inteligencia artificial. De lo contrario, podría no recibir crédito por la actividad.
 
 . Por cada problema que resuelva, se le eliminará una de las notas más bajas del rubro de ejercicios del curso.
 
@@ -34,9 +36,9 @@ Objetivo: aplicar nociones del curso, aprender nuevas herramientas, y divertirse
 
 . Al iniciar un problema registre la hora de inicio en la tabla del dorso. Si pasa a otro problema, registre la hora de fin en la tabla.
 
-. Si no puede resolver un problema, pase al siguiente. Si luego regresa a un problema que ya había iniciado, registre una nueva la hora de inicio y fin, sin modificar las previas.
+. Si no puede resolver un problema, registre la hora de fin y pase al siguiente. Si luego regresa a un problema que ya había iniciado, registre una nueva la hora de inicio y fin, sin modificar las previas (intentos).
 
-. Inmediatamente después de resolver un problema, exprese su opinión en el cuestionario provisto en el sitio web sobre las herramientas que utilizó.
+. Inmediatamente después de resolver un problema, exprese su opinión en el cuestionario impreso provisto sobre las herramientas que utilizó.
 
 Los problemas se resuelven con dos tipos de herramientas: IDE y Juez en línea.
 
@@ -51,7 +53,7 @@ Abra una terminal en la carpeta del problema. Si usa el explorador de archivos, 
 
 Una vez preparada la carpeta del problema, analice el archivo `readme.adoc` para comprender el problema, y haga las correcciones en el código fuente brindado. Si necesita ayuda, recuerde que puede presionar el enlace `Help` en el sitio web.
 
-Una vez que haya resuelto el problema, emita de nuevo el comando `make log`. Haga otro _commit_ con los cambios. Registre la hora de fin en la tabla al dorso y continúe con el próximo problema.
+Una vez que haya resuelto el problema, emita de nuevo el comando `make log`. Haga otro _commit_ con los cambios. Registre la hora de fin en la tabla al dorso, llene su opinión en el cuestionario, y continúe con el próximo problema.
 
 
 === Juez en línea
@@ -73,7 +75,7 @@ Una vez resuelto un problema en el juez en línea, presione el botón `Finish` p
 
 == Entrega
 
-Una vez finalizada la actividad, asegúrese de enviar los _commits_ al repositorio remoto y de entregar esta hoja a la persona docente.
+Una vez finalizada la actividad, asegúrese de enviar los _commits_ al repositorio remoto y de entregar esta hoja a la persona docente, junto con los cuestionarios de opinión.
 
 
 == Bitácora de la actividad
