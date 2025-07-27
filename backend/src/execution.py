@@ -1,9 +1,10 @@
-import docker
 import io
 import os
 import re
 import tarfile
 import tempfile
+import threading
+import docker
 import vyg
 
 IMAGE='debian-vygoj'
@@ -123,8 +124,9 @@ class Execution:
             #return vyg.to_json(self.result)
             raise error
         finally:
-            # Stop and remove Docker container if it was created
-            self.remove_container()
+            # Stop and remove Docker container in a secondary thread to avoid long delay
+            threading.Thread(target=self.remove_container, daemon=True).start()
+            #self.remove_container()
 
     def check_static_analysis(self):
         """ If professor asked to do static analysis, eg: check some words are in code"""
@@ -159,6 +161,7 @@ class Execution:
             image='debian-dev:latest',
             # Do not wait until the command finishes, just return the reference to the container
             detach=True,
+            #auto_remove=True,
             # A dummy command to start the container
             command='sleep infinity',
             # TODO(jhc): Limit memory from the Problem configuration
