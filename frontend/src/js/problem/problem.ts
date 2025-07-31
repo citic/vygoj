@@ -493,14 +493,13 @@ class ProblemManager {
     // Compiler output should be identical for each test case, we take the first one
     if (this.result && index < this.result!.results.length) {
       const test = this.result.results[index];
+      // console.dir(test);
       verdict = `Test case ${index + 1} verdict: ${test.status}`;
       if (test.message) {
         verdict += `: ${test.message}`;
       }
       const time = test.wallTime || test.cpuTime || '';
-      if (time.length > 0) {
         verdict += `. It took ${time}s`;
-      }
       if (test.memory) {
         verdict += `, ${test.memory}B`;
       }
