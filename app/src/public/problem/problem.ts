@@ -266,7 +266,7 @@ class ProblemManager {
     // TODO: add language combo box
     console.assert(this.problem);
     if (this.problem) {
-      const language = this.getProblemLanguage();;
+      const language = this.getProblemLanguage();
 
       // 1. Local storage
       let initialCode = loadConfig('code');

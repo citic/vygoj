@@ -31,8 +31,8 @@ function saveConfig(key, value) {
 }
 
 function clientEncode(text) {
-  // text: 'int main(int argc, char* argv[]) {\n  return atoi(argv[--argc]);\n}\n'
-  // btoa: 'aW50IG1haW4oaW50IGFyZ2MsIGNoYXIqIGFyZ3ZbXSkgewogIHJldHVybiBhdG9pKGFyZ3ZbLS1hcmdjXSk7Cn0K'
+  // text 'int main(int argc, char* argv[]) {\n  return atoi(argv[--argc]);\n}\n'
+  // btoa 'aW50IG1haW4oaW50IGFyZ2MsIGNoYXIqIGFyZ3ZbXSkgewogIHJldHVybiBhdG9pKGFyZ3ZbLS1hcmdjXSk7Cn0K'
   return window.btoa(text);
 }
 
@@ -55,25 +55,22 @@ function showElement(id) {
 class ProblemManager {
   // Singleton instance
   static instance = new ProblemManager();
-  // References to all editors used in the problem page
-  editors;
-  // Theme style in all editors
-  theme;
-  // The problem model fetched from server
-  problem;
-  // Index of the current shown test case
-  activeTestCaseIndex = 0;
-  // The Run button element
-  runButton = null;
-  // The result after running the user code
-  result = null;
-  // Shows the diff between expected output and user standard output
-  differ = null;
   constructor() {
-    this.editors = [];
+    // References to all editors used in the problem page
+    this.editors = []; // AceAjax.Editor
+    // Theme style in all editors
     // Default theme: https://github.com/ajaxorg/ace/tree/master/lib/ace/theme
     this.theme = 'ace/theme/xcode'; // monokai
-    this.problem = null;
+    // The problem model fetched from server
+    this.problem = null; // class Problem instance
+    // Index of the current shown test case
+    this.activeTestCaseIndex = 0;
+    // The Run button element
+    this.runButton = null; // HTMLButtonElement
+    // The result after running the user code
+    this.result = null; // class ExecutionResult instance
+    // Shows the diff between expected output and user standard output
+    this.differ = null; // class AceDiff instance
   }
   static main() {
     ProblemManager.instance.setup();
@@ -89,8 +86,7 @@ class ProblemManager {
       this.loadUserCode();
       this.loadTestCases();
       this.setupRunEnvironment();
-    }
-    catch (error) {
+    } catch (error) {
       console.error(error);
       const message = error instanceof Error ? error.message : String(error);
       this.updateCompileOutput(message);
@@ -131,7 +127,8 @@ class ProblemManager {
   }
 
   setupTestCaseEditor(id) {
-    const editor = ace.edit(id);
+    console.assert(window.ace);
+    const editor = window.ace.edit(id);
     editor.setTheme(this.theme);
     editor.setOption('readOnly', true);
     editor.setOption('showInvisibles', true);
@@ -180,20 +177,25 @@ class ProblemManager {
     };
   }
 
+  /// Return the name of the problem from the loaded web page in browser
   static getName() {
+    // Find DOM object <main id="problem" data-name="problem_name">
     const mainElement = document.getElementById('problem');
+    // Return the value of data-name attribute
     return mainElement?.dataset.name;
   }
 
   loadTestCases() {
     console.assert(this.problem);
     const buttons = document.getElementsByClassName('test_button');
-    console.assert(buttons.length === this.problem?.tests.length);
-    for (let index = 0; index < buttons.length; index += 1) {
+    console.assert(buttons.length === this.problem.tests.length);
+    // Make each test case button clickable
+    for (let index = 0; index < buttons.length; ++index) {
       buttons[index].addEventListener('click', () => {
         this.showTestCase(index);
       });
     }
+    // Make the last selected test case (in local storage) as the active one
     if (buttons.length > 0) {
       this.activeTestCaseIndex = parseInt(loadConfig('test') || '0', 10);
       this.showTestCase(this.activeTestCaseIndex);
@@ -204,16 +206,16 @@ class ProblemManager {
     console.assert(this.problem);
     console.assert(this.editors.length === 4);
     // Show input, expected output, and user output for this test case
-    this.editors[1].setValue(this.problem?.tests[index].input || '', -1);
-    this.editors[2].setValue(this.problem?.tests[index].output || '', -1);
+    this.editors[1].setValue(this.problem.tests[index].input || '', -1);
+    this.editors[2].setValue(this.problem.tests[index].output || '', -1);
     this.showTestOutput(index);
     // Deselect previous test case number
     const buttons = document.getElementsByClassName('test_button');
     console.assert(this.activeTestCaseIndex < buttons.length);
     buttons[this.activeTestCaseIndex].classList.remove('selected');
     // Mark this test case as the active in the interface
-    this.activeTestCaseIndex = index;
     console.assert(index < buttons.length);
+    this.activeTestCaseIndex = index;
     buttons[index].classList.add('selected');
     saveConfig('test', `${index}`);
   }
@@ -237,10 +239,8 @@ class ProblemManager {
   getProblemLanguage() {
     let language = 'C';
     console.assert(this.problem);
-    if (this.problem) {
-      if (this.problem.languages && this.problem.languages.length > 0) {
-        language = this.problem.languages[0];
-      }
+    if (this.problem.languages && this.problem.languages.length > 0) {
+      language = this.problem.languages[0];
     }
     return language;
   }
@@ -248,26 +248,27 @@ class ProblemManager {
   loadUserCode() {
     // TODO: add language combo box
     console.assert(this.problem);
-    if (this.problem) {
-      const language = this.getProblemLanguage();
-      ;
-      // 1. Local storage
-      let initialCode = loadConfig('code');
-      // 2. Problem's initial code for the proramming language
-      if (initialCode === null && this.problem.initialCodeFor
+    const language = this.getProblemLanguage();
+
+    // 1. Local storage
+    let initialCode = loadConfig('code');
+
+    // 2. Problem's initial code for the programming language
+    if (initialCode === null && this.problem.initialCodeFor
         && this.problem.initialCodeFor[language]) {
-        initialCode = this.problem.initialCodeFor[language];
-      }
-      // 3. Default code for the programming language
-      if (!initialCode) {
-        initialCode = defaultCodeFor[language];
-      }
-      // Show the initial code in the editor
-      initialCode = initialCode || '';
-      this.editors[0].setValue(initialCode, -1);
-      if (this.runButton) {
-        this.runButton.disabled = initialCode.trim().length === 0;
-      }
+      initialCode = this.problem.initialCodeFor[language];
+    }
+
+    // 3. Default code for the programming language
+    if (!initialCode) {
+      initialCode = defaultCodeFor[language];
+    }
+
+    // Show the initial code in the editor
+    initialCode = initialCode || '';
+    this.editors[0].setValue(initialCode, -1);
+    if (this.runButton) {
+      this.runButton.disabled = initialCode.trim().length === 0;
     }
   }
 
@@ -324,23 +325,21 @@ class ProblemManager {
     this.updateVerdict(this.activeTestCaseIndex);
   }
 
-  // Updates the count of passed test cases and points after a run
+  // Updates the count of passed test cases and count of points after a run
   updateStatistics() {
+    console.assert(this.result);
+
     const passedTestElement = document.getElementById('passed_test_count');
     console.assert(passedTestElement);
-    if (passedTestElement) {
-      passedTestElement.textContent = String(this.result?.passedTestCount);
-    }
+    passedTestElement.textContent = String(this.result.passedTestCount);
+
     const totalTestCount = document.getElementById('total_test_count');
     console.assert(totalTestCount);
-    if (totalTestCount) {
-      totalTestCount.textContent = String(this.result?.results.length);
-    }
+    totalTestCount.textContent = String(this.result.results.length);
+
     const totalPointsElement = document.getElementById('user_points');
     console.assert(totalPointsElement);
-    if (totalPointsElement) {
-      totalPointsElement.textContent = String(this.result?.points);
-    }
+    totalPointsElement.textContent = String(this.result.points);
   }
 
   // Shows the compiler diagnostics (warnings or errors), if any
@@ -358,8 +357,7 @@ class ProblemManager {
     if (compileOutput && compileOutput.length > 0) {
       diagnosticsElement.textContent = compileOutput;
       showElement('diagnostics_wrapper');
-    }
-    else {
+    } else {
       hideElement('diagnostics_wrapper');
     }
   }
@@ -375,6 +373,7 @@ class ProblemManager {
     // If the test case result exists, get its message, otherwise (compilation error?) clear field
     if (index < this.result.results.length) {
       // Compiler output should be identical for each test case, we take the first one
+      // TODO(jhc): Compile output is in the problem result instead of test result
       if (this.result && index < this.result.results.length) {
         stderrOutput = this.result.results[index].stderr;
       }
@@ -383,8 +382,7 @@ class ProblemManager {
     if (stderrOutput && stderrOutput.length > 0) {
       stderrElement.textContent = stderrOutput;
       showElement('stderr_wrapper');
-    }
-    else {
+    } else {
       hideElement('stderr_wrapper');
     }
   }
@@ -424,12 +422,12 @@ class ProblemManager {
           content: userOutput,
         },
       });
-    }
-    else {
+    } else {
       // Show expected output and user output and hide diff element
       hideElement('output_diff_wrapper');
       showElement('active_test_expected_output_wrapper');
       showElement('active_test_user_output_wrapper');
+
       if (this.differ) {
         // this.differ.destroy();
         this.differ = null;
@@ -448,12 +446,10 @@ class ProblemManager {
       button.classList.remove('failed');
       button.classList.remove('passed');
       if (test === null) {
-        // Do not add any class to the button, possible compilaition error, no test case were run
-      }
-      else if (test.status === Status.PASSED) {
+        // Do not add any class to the button, possible compilation error, no test case were run
+      } else if (test.status === Status.PASSED) {
         button.classList.add('passed');
-      }
-      else {
+      } else {
         button.classList.add('failed');
       }
       // Updates the standard output/error of the selected test case
@@ -472,7 +468,7 @@ class ProblemManager {
     // Compiler output should be identical for each test case, we take the first one
     if (this.result && index < this.result.results.length) {
       const test = this.result.results[index];
-      console.dir(test);
+      // console.dir(test);
       verdict = `Test case ${index + 1} verdict: ${test.status}`;
       if (test.message) {
         verdict += `: ${test.message}`;
@@ -492,8 +488,7 @@ class ProblemManager {
     // If there is output text, show it
     if (verdict && verdict.length > 0) {
       verdictElement.textContent = verdict;
-    }
-    else {
+    } else {
       verdictElement.textContent = '';
     }
   }
