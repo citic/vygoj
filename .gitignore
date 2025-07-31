@@ -14,4 +14,3 @@ config.json
 .venv/
 .vscode/
 __pycache__
-frontend/static/js/
