@@ -1,13 +1,14 @@
-"use strict";
 class Preferences {
   static main() {
     const preferences = new Preferences();
     preferences.setup();
   }
+
   setup() {
     const deleteButton = document.getElementById('delete_button');
     deleteButton.addEventListener('click', (event) => { this.deleteUser(event); });
   }
+
   // eslint-disable-next-line class-methods-use-this
   deleteUser(event) {
     // TODO: Use real email in a hidden field. User may easily change this
@@ -20,4 +21,5 @@ class Preferences {
     }
   }
 }
+
 window.addEventListener('load', Preferences.main);

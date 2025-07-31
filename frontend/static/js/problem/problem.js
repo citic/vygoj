@@ -1,18 +1,8 @@
+import { Status } from '../vygoj.js';
 // import AceDiff from 'ace-diff';
+
 const AceDiff = window.AceDiff;
-// Execution status enumeration
-// TODO: this enumeration is duplicated from common/vygoj.ts
-export var Status;
-(function (Status) {
-  Status["pending"] = "pending";
-  Status["passed"] = "passed";
-  Status["wrong"] = "wrong";
-  Status["timeout"] = "timeout";
-  Status["compilerError"] = "compilerError";
-  Status["runtimeError"] = "runtimeError";
-  Status["internalError"] = "internalError";
-})(Status || (Status = {}));
-;
+
 // Default given code for each supported programming language
 // It may be a Map<string, string>
 const defaultCodeFor = {
@@ -31,30 +21,37 @@ int main() {
 }
 `,
 };
+
 function loadConfig(key) {
   return window.localStorage.getItem(`${key}:${window.location.pathname}`);
 }
+
 function saveConfig(key, value) {
   window.localStorage.setItem(`${key}:${window.location.pathname}`, value);
 }
+
 function clientEncode(text) {
   // text: 'int main(int argc, char* argv[]) {\n  return atoi(argv[--argc]);\n}\n'
   // btoa: 'aW50IG1haW4oaW50IGFyZ2MsIGNoYXIqIGFyZ3ZbXSkgewogIHJldHVybiBhdG9pKGFyZ3ZbLS1hcmdjXSk7Cn0K'
   return window.btoa(text);
 }
+
 function clientDecode(data) {
   return window.atob(data);
 }
+
 function hideElement(id) {
   const element = document.getElementById(id);
   console.assert(element);
   element.classList.add('hidden');
 }
+
 function showElement(id) {
   const element = document.getElementById(id);
   console.assert(element);
   element.classList.remove('hidden');
 }
+
 class ProblemManager {
   // Singleton instance
   static instance = new ProblemManager();
@@ -99,6 +96,7 @@ class ProblemManager {
       this.updateCompileOutput(message);
     }
   }
+
   setupReferences() {
     if (!window.ace) {
       throw new Error('Ace Code Editor library not found');
@@ -108,6 +106,7 @@ class ProblemManager {
       throw Error('could not find run_button element');
     }
   }
+
   setupCodeEditor() {
     const editor = window.ace.edit('code_editor');
     editor.setTheme(this.theme);
@@ -124,11 +123,13 @@ class ProblemManager {
       }
     });
   }
+
   setupTestCaseEditors() {
     this.setupTestCaseEditor('active_test_input');
     this.setupTestCaseEditor('active_test_expected_output');
     this.setupTestCaseEditor('active_test_user_output');
   }
+
   setupTestCaseEditor(id) {
     const editor = ace.edit(id);
     editor.setTheme(this.theme);
@@ -138,6 +139,7 @@ class ProblemManager {
     editor.resize();
     this.editors.push(editor);
   }
+
   async fetchProblem() {
     console.assert(this.problem === null);
     this.problem = await ProblemManager.sendJson({ action: 'fetch_problem' });
@@ -162,12 +164,14 @@ class ProblemManager {
       // this.problem!.mustContain = clientDecode(this.problem?.mustContain || '');
     }
   }
+
   static async sendJson(object, uri = '') {
     const params = ProblemManager.createMessage(object);
     const response = await fetch(uri || window.location.href, params);
     const json = await response.json();
     return json;
   }
+
   static createMessage(object, method = 'POST') {
     return {
       method,
@@ -175,10 +179,12 @@ class ProblemManager {
       body: JSON.stringify(object),
     };
   }
+
   static getName() {
     const mainElement = document.getElementById('problem');
     return mainElement?.dataset.name;
   }
+
   loadTestCases() {
     console.assert(this.problem);
     const buttons = document.getElementsByClassName('test_button');
@@ -193,6 +199,7 @@ class ProblemManager {
       this.showTestCase(this.activeTestCaseIndex);
     }
   }
+
   showTestCase(index) {
     console.assert(this.problem);
     console.assert(this.editors.length === 4);
@@ -210,6 +217,7 @@ class ProblemManager {
     buttons[index].classList.add('selected');
     saveConfig('test', `${index}`);
   }
+
   // Shows the standard output and error of the given test case after a run
   showTestOutput(index) {
     if (this.result) {
@@ -225,6 +233,7 @@ class ProblemManager {
       this.updateVerdict(index);
     }
   }
+
   getProblemLanguage() {
     let language = 'C';
     console.assert(this.problem);
@@ -235,6 +244,7 @@ class ProblemManager {
     }
     return language;
   }
+
   loadUserCode() {
     // TODO: add language combo box
     console.assert(this.problem);
@@ -260,6 +270,7 @@ class ProblemManager {
       }
     }
   }
+
   setupRunEnvironment() {
     console.assert(this.runButton);
     console.assert(this.editors.length > 0);
@@ -268,6 +279,7 @@ class ProblemManager {
       await this.runSolution();
     });
   }
+
   async runSolution() {
     // TODO: add language combo box
     const language = this.getProblemLanguage();
@@ -287,6 +299,7 @@ class ProblemManager {
     this.runButton.textContent = 'Run';
     this.runButton.disabled = false;
   }
+
   decodeResult() {
     console.assert(this.result);
     this.result.message = clientDecode(this.result.message || '');
@@ -300,6 +313,7 @@ class ProblemManager {
       test.stdout = clientDecode(test.stdout || '');
     }
   }
+
   updateResult() {
     console.assert(this.result);
     console.dir(this.result);
@@ -309,6 +323,7 @@ class ProblemManager {
     this.updateErrorOutput(this.activeTestCaseIndex);
     this.updateVerdict(this.activeTestCaseIndex);
   }
+
   // Updates the count of passed test cases and points after a run
   updateStatistics() {
     const passedTestElement = document.getElementById('passed_test_count');
@@ -327,6 +342,7 @@ class ProblemManager {
       totalPointsElement.textContent = String(this.result?.points);
     }
   }
+
   // Shows the compiler diagnostics (warnings or errors), if any
   updateCompileOutput(message = null) {
     // The DOM element where the output will be shown
@@ -347,6 +363,7 @@ class ProblemManager {
       hideElement('diagnostics_wrapper');
     }
   }
+
   // Shows standard error output for the selected test case
   updateErrorOutput(index) {
     // The DOM element where the output will be shown
@@ -371,6 +388,7 @@ class ProblemManager {
       hideElement('stderr_wrapper');
     }
   }
+
   // Shows a diff output instead of standard output
   showOutputDiff(index) {
     // Expected output
@@ -385,7 +403,7 @@ class ProblemManager {
       userOutput = this.result.results[index].stdout;
     }
     // TODO: Use AceDiff always and decrease gutter width
-    if (userOutput && this.result.results[index].status == Status.wrong) {
+    if (userOutput && this.result.results[index].status === Status.WRONG) {
       // Hide expected output and user output and show diff element
       hideElement('active_test_expected_output_wrapper');
       hideElement('active_test_user_output_wrapper');
@@ -418,6 +436,7 @@ class ProblemManager {
       }
     }
   }
+
   // Updates the test cases buttons after a run
   updateTestCases() {
     // Update the test case handlers (buttons) to show if passed or failed
@@ -431,7 +450,7 @@ class ProblemManager {
       if (test === null) {
         // Do not add any class to the button, possible compilaition error, no test case were run
       }
-      else if (test.status === Status.passed) {
+      else if (test.status === Status.PASSED) {
         button.classList.add('passed');
       }
       else {
@@ -441,6 +460,7 @@ class ProblemManager {
       this.showTestOutput(this.activeTestCaseIndex);
     }
   }
+
   // Shows or updates the verdict message
   updateVerdict(index) {
     // The DOM element where the verdict will be shown
@@ -478,4 +498,5 @@ class ProblemManager {
     }
   }
 }
+
 window.addEventListener('load', ProblemManager.main);

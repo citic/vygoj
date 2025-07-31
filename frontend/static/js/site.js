@@ -1,5 +1,3 @@
-"use strict";
-// TODO: Remove redundancy with backend.ts, a backend.d.ts file?
 // interface Queue {
 //   queue: string;
 //   size: number;
@@ -9,27 +7,41 @@
 //   paused: number;
 //   failed: number;
 // }
+
+class BackendStatus {
+  constructor() {
+    // The status of the backend: 'online', 'offline', 'maintenance'
+    this.status = 'offline';
+    // The version of the backend software, e.g: '1.0.7'
+    this.version = '0.0.0';
+    // The number of submissions running in the backend in the last update
+    this.jobs = 0;
+    // workers?: Queue[];
+  }
+}
+
 /** Common behavior for all site pages */
 class Site {
-  // The SVG shown when the backend is offline or user disconnected
-  backendOfflineElement;
-  // The SVG shown when the backend is online and user connected
-  backendOnlineElement;
-  // True if show backend state instead of app version
-  wantsBackendDetails = true;
-  // A copy of the last status received
-  status = { status: 'offline' };
   constructor() {
+    // The SVG shown when the backend is offline or user disconnected
     this.backendOfflineElement = document.getElementById('backend_offline');
+    // The SVG shown when the backend is online and user connected
     this.backendOnlineElement = document.getElementById('backend_online');
+    // True if show backend state instead of app version
+    this.wantsBackendDetails = true;
+    // A copy of the last status received
+    this.backendStatus = new BackendStatus();
+    // Error checking
     if (!this.backendOfflineElement || !this.backendOnlineElement) {
       throw new Error('Could not find backend status elements');
     }
   }
+
   static main() {
     const site = new Site();
     site.setup();
   }
+
   setup() {
     // Update the backend status indicator each minute
     this.checkBackendStatus();
@@ -39,6 +51,7 @@ class Site {
     // Register event handlers for flash messages' close buttons
     this.setupFlashMessages();
   }
+
   // Called at some intervals to pull the backend status
   checkBackendStatus() {
     // TODO: Replace by a WebSocket. Instead of pulling, server pushes changes
@@ -47,37 +60,42 @@ class Site {
       .then((json) => this.updateBackendStatus(json))
       .catch((error) => this.showBackendOffline(error.message, true));
   }
+
   // Called when the backend status arrived to update the UI
   updateBackendStatus(json) {
-    this.status = json;
+    this.backendStatus = json;
     if (this.wantsBackendDetails) {
       this.showBackendDetails();
     }
     if (json.status === 'online') {
       this.showBackendOnline('Connected');
-    }
-    else {
+    } else {
       this.showBackendOffline('Disconnected', false);
     }
   }
+
   showBackendDetails() {
     const element = document.getElementById('software_version');
     element.innerText = this.buildBackendDetails();
   }
+
   buildBackendDetails() {
     let message = 'VygOJ';
-    message += this.status.version ? (' v' + this.status.version) : '';
-    message += this.status.jobs ? (' J=' + this.status.jobs) : '';
+    message += this.backendStatus.version ? (' v' + this.backendStatus.version) : '';
+    message += this.backendStatus.jobs ? (' J=' + this.backendStatus.jobs) : '';
     return message;
   }
+
   showBackendOffline(message, log) {
     Site.setStatusImage(this.backendOfflineElement, 'visible_inline', message, log);
     Site.setStatusImage(this.backendOnlineElement, 'hidden', message, log);
   }
+
   showBackendOnline(message) {
     Site.setStatusImage(this.backendOfflineElement, 'hidden', message, false);
     Site.setStatusImage(this.backendOnlineElement, 'visible_inline', message, false);
   }
+
   static setStatusImage(element, status, message, log) {
     if (log) {
       console.error(message);
@@ -85,6 +103,7 @@ class Site {
     element.className = status;
     element.title = message;
   }
+
   setupFlashMessages() {
     // Find all close buttons
     const closeButtons = document.querySelectorAll('.flash_message__close');
@@ -104,4 +123,5 @@ class Site {
     });
   }
 }
+
 window.addEventListener('load', Site.main);
