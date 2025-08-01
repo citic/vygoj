@@ -1,7 +1,7 @@
-import { encode, ExecutionResult, Problem, Status } from '../vygoj.js';
+import {
+  encode, ExecutionResult, Problem, Status,
+} from '../vygoj.js';
 // import AceDiff from 'ace-diff';
-
-const AceDiff = window.AceDiff;
 
 // Default given code for each supported programming language
 // It may be a Map<string, string>
@@ -45,7 +45,6 @@ function showElement(id) {
 
 class ProblemManager {
   // Singleton instance
-  static instance = new ProblemManager();
   constructor() {
     // References to all editors used in the problem page
     this.editors = []; // AceAjax.Editor
@@ -65,7 +64,8 @@ class ProblemManager {
   }
 
   static main() {
-    ProblemManager.instance.setup();
+    const instance = new ProblemManager();
+    instance.setup();
   }
 
   // TODO: Problem statement may have source code snippets, highlight them using a client library
@@ -165,7 +165,7 @@ class ProblemManager {
     const buttons = document.getElementsByClassName('test_button');
     console.assert(buttons.length === this.problem.tests.length);
     // Make each test case button clickable
-    for (let index = 0; index < buttons.length; ++index) {
+    for (let index = 0; index < buttons.length; index += 1) {
       buttons[index].addEventListener('click', () => {
         this.showTestCase(index);
       });
@@ -212,12 +212,11 @@ class ProblemManager {
   }
 
   getProblemLanguage() {
-    let language = 'C';
     console.assert(this.problem);
     if (this.problem.languages && this.problem.languages.length > 0) {
-      language = this.problem.languages[0];
+      return this.problem.languages[0];
     }
-    return language;
+    return 'C';
   }
 
   loadUserCode() {
@@ -367,7 +366,7 @@ class ProblemManager {
       hideElement('active_test_user_output_wrapper');
       showElement('output_diff_wrapper');
       // Create a Ace Diff in output_diff element
-      this.differ = new AceDiff({
+      this.differ = new window.AceDiff({
         // ace: window.ace,
         element: '#output_diff',
         diffGranularity: 'specific',
@@ -400,7 +399,7 @@ class ProblemManager {
     // Update the test case handlers (buttons) to show if passed or failed
     const buttons = document.querySelectorAll('#test_cases button');
     console.assert(this.result);
-    for (let index = 0; index < buttons.length; ++index) {
+    for (let index = 0; index < buttons.length; index += 1) {
       const test = index < this.result.results.length ? this.result.results[index] : null;
       const button = buttons[index];
       button.classList.remove('failed');

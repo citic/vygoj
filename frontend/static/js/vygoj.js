@@ -20,7 +20,7 @@ class Enum {
       ...fields,
 
       // Serialize this enum value to a JSON object
-      toJSON: function() {
+      toJSON() {
         return Object.keys(this).reduce((jsonObject, key) => {
           // Only copy string properties to the JSON object, skip methods
           if (typeof this[key] === 'string') {
@@ -31,15 +31,17 @@ class Enum {
       }, // toJSON
 
       // Load this enum value from a JSON object
-      parse: function(jsonObject) {
+      parse(jsonObject) {
         if (Object.values(this).includes(jsonObject)) {
           return jsonObject;
         }
         throw new Error(`Invalid enum value: ${jsonObject}`);
-      }
+      },
     };
 
-    // Make properties of enum object inmutable
+    // Make properties of enum object inmutable. The new object is returned replacing the instance
+    // create by the new operator (referenced by this)
+    // eslint-disable-next-line no-constructor-return
     return Object.freeze(instance);
   }
 }
@@ -68,7 +70,36 @@ export const Status = new Enum({
   INTERNAL_ERROR: 'internalError',
 });
 
-const MAX_THREADS = 2**15;
+const MAX_THREADS = 2 ** 15;
+
+/// A test case inside a problem
+export class TestCase {
+  constructor(json) {
+    console.assert(json);
+    // Command line arguments to send to the user solution when running this test case
+    this.commandLineArguments = decode(json?.args || '');
+    // Text to send to user solution through stdin
+    this.input = decode(json?.input || '');
+    // Expected output
+    this.output = decode(json?.output || '');
+    // Expected error
+    // TODO(jhc): If missing (None), allow using stderr for debug, because '' must match
+    this.stderr = decode(json?.stderr || '');
+    // Points that user earns if its solution matches the expected output
+    this.points = json?.points || 0;
+    // If true, the test case is hidden for users, so they cannot see what is in it
+    this.hidden = json?.hidden || false;
+    // Minimum number of threads that user solution must create in order to consider it right
+    this.minThreads = json?.minThreads || 1;
+    // Maximum number of threads that user solution may create to consider it correct
+    this.maxThreads = json?.maxThreads || MAX_THREADS;
+    // Minimum wall time duration that user solution must spent to consider it correct
+    this.minDuration = json?.minDuration || 0.0;
+    // Maximum wall time duration that user solution must spent to consider it correct
+    // Undefined means no limit
+    this.maxDuration = json?.maxDuration;
+  }
+}
 
 export class Problem {
   // TODO(jhc): Some properties are not needed in the web client, remove them from JS
@@ -107,71 +138,9 @@ export class Problem {
     // this.tools = json?.tools || '';
 
     // Decode the initial code for each language
-    for (const key in this.initialCodeFor) {
-      if (Object.prototype.hasOwnProperty.call(this.initialCodeFor, key)) {
-        this.initialCodeFor[key] = decode(this.initialCodeFor[key] || '');
-      }
-    }
-  }
-}
-
-/// A test case inside a problem
-export class TestCase {
-  constructor(json) {
-    console.assert(json);
-    // Command line arguments to send to the user solution when running this test case
-    this.commandLineArguments = decode(json?.args || '');
-    // Text to send to user solution through stdin
-    this.input = decode(json?.input || '');
-    // Expected output
-    this.output = decode(json?.output || '');
-    // Expected error
-    // TODO(jhc): If missing (None), allow using stderr for debug, because '' must match
-    this.stderr = decode(json?.stderr || '');
-    // Points that user earns if its solution matches the expected output
-    this.points = json?.points || 0;
-    // If true, the test case is hidden for users, so they cannot see what is in it
-    this.hidden = json?.hidden || false;
-    // Minimum number of threads that user solution must create in order to consider it right
-    this.minThreads = json?.minThreads || 1;
-    // Maximum number of threads that user solution may create to consider it correct
-    this.maxThreads = json?.maxThreads || MAX_THREADS;
-    // Minimum wall time duration that user solution must spent to consider it correct
-    this.minDuration = json?.minDuration || 0.0;
-    // Maximum wall time duration that user solution must spent to consider it correct
-    // Undefined means no limit
-    this.maxDuration = json?.maxDuration;
-  }
-}
-
-/// Result of running a user solution against all test cases
-export class ExecutionResult {
-  /// This object is created by the backend after running a user solution for a problem.
-  /// The json object is created by the backend and always must be provided.
-  constructor(json) {
-    // An enumeration value code of the global verdict. For example if all test cases pass
-    // except one, the status will be 'wrong'.
-    this.status = Status.parse(json?.status) || Status.PENDING;
-    // A human-readable verdict emitted by the judge
-    this.message = decode(json?.message || ''); // text
-    // Compiler output or null if no output was generated
-    this.compileOutput = decode(json?.compileOutput || ''); // text
-    // Count of passed test cases
-    this.passedTestCount = json?.passedTestCount || 0; // int
-    // Points gained by this solution
-    // TODO(jhc): Used?
-    this.points = json?.points || 0; // int
-    // Total points (sum of all test cases)
-    this.totalPoints = json?.totalPoints || 0; // int
-    // Wall time of the largest test case
-    this.maxWallTime = json?.maxWallTime || -1.0; // elapsed seconds
-    // Load the result of each test case
-    this.results = (json?.results || []).map((result) => {
-      return new TestCaseResult(result);
+    Object.keys(this.initialCodeFor).forEach((key) => {
+      this.initialCodeFor[key] = decode(this.initialCodeFor[key] || '');
     });
-
-    // TODO: Change LC_ALL=en_US in compiler environment to avoid Unicode quotes
-    this.compileOutput = this.compileOutput.replace(/â/g, '‘');
   }
 }
 
@@ -200,5 +169,34 @@ export class TestCaseResult {
     // Wall time in seconds
     this.wallTime = json?.wallTime || 0.0; // elapsed seconds
     // number_of_runs?
+  }
+}
+
+/// Result of running a user solution against all test cases
+export class ExecutionResult {
+  /// This object is created by the backend after running a user solution for a problem.
+  /// The json object is created by the backend and always must be provided.
+  constructor(json) {
+    // An enumeration value code of the global verdict. For example if all test cases pass
+    // except one, the status will be 'wrong'.
+    this.status = Status.parse(json?.status) || Status.PENDING;
+    // A human-readable verdict emitted by the judge
+    this.message = decode(json?.message || ''); // text
+    // Compiler output or null if no output was generated
+    this.compileOutput = decode(json?.compileOutput || ''); // text
+    // Count of passed test cases
+    this.passedTestCount = json?.passedTestCount || 0; // int
+    // Points gained by this solution
+    // TODO(jhc): Used?
+    this.points = json?.points || 0; // int
+    // Total points (sum of all test cases)
+    this.totalPoints = json?.totalPoints || 0; // int
+    // Wall time of the largest test case
+    this.maxWallTime = json?.maxWallTime || -1.0; // elapsed seconds
+    // Load the result of each test case
+    this.results = (json?.results || []).map((result) => new TestCaseResult(result));
+
+    // TODO: Change LC_ALL=en_US in compiler environment to avoid Unicode quotes
+    this.compileOutput = this.compileOutput.replace(/â/g, '‘');
   }
 }

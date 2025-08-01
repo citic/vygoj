@@ -81,8 +81,8 @@ class Site {
 
   buildBackendDetails() {
     let message = 'VygOJ';
-    message += this.backendStatus.version ? (' v' + this.backendStatus.version) : '';
-    message += this.backendStatus.jobs ? (' J=' + this.backendStatus.jobs) : '';
+    message += this.backendStatus.version ? (` v${this.backendStatus.version}`) : '';
+    message += this.backendStatus.jobs ? (` J=${this.backendStatus.jobs}`) : '';
     return message;
   }
 
@@ -104,12 +104,13 @@ class Site {
     element.title = message;
   }
 
+  // eslint-disable-next-line class-methods-use-this
   setupFlashMessages() {
     // Find all close buttons
     const closeButtons = document.querySelectorAll('.flash_message__close');
     // Add click event to each button
-    closeButtons.forEach(button => {
-      button.addEventListener('click', function (element) {
+    closeButtons.forEach((button) => {
+      button.addEventListener('click', (/* element */) => {
         const flashMessage = button.closest('.flash_message');
         if (flashMessage) {
           flashMessage.remove();
