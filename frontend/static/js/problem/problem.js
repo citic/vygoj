@@ -1,6 +1,6 @@
 import {
   encode, ExecutionResult, Problem, Status,
-} from '../vygoj.js';
+} from '../vyg.js';
 // import AceDiff from 'ace-diff';
 
 // Default given code for each supported programming language
