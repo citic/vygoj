@@ -120,12 +120,11 @@ class TestCaseResult:
         # A human-readable verdict emitted by the judge
         self.message = decode(json_dict.get('message', ''))
         # CPU time, i.e all threads added up
-        self.cpuTime = json_dict.get('cpuTime', '')
+        self.cpuTime = json_dict.get('cpuTime', 0.0)
         # Exit code reported by the program to the operating system after running this test case
         self.exitCode = json_dict.get('exitCode', 0)
         # Memory used by the process (bytes)
         self.memory = json_dict.get('memory', 0)
-        # TODO(jhc): number_of_runs?
         # Text produced by the user solution in the standard error
         self.stderr = decode(json_dict.get('stderr', ''))
         # Text produced by the user solution in the standard output
@@ -133,7 +132,8 @@ class TestCaseResult:
         # Number of threads created by solution for this test case
         self.threadCount = json_dict.get('threadCount', 0)
         # Elapsed wall time running this test case in seconds
-        self.wallTime = json_dict.get('wallTime', '')
+        self.wallTime = json_dict.get('wallTime', 0.0)
+        # TODO(jhc): number_of_runs?
 
 class ExecutionResult:
     """ Result of running student solution against all test cases """
@@ -170,16 +170,16 @@ class TestCase:
 
     def __init__(self, json_dict:dict, should_decode=True):
         """ Construct this object getting values from the given dictionary """
-        # Command line arguments
+        # Command line arguments to send to the user solution when running this test case
         self.commandLineArguments = decode_if(json_dict.get('args', ''), should_decode)
         # Text to send to user solution through stdin
         self.input = decode_if(json_dict.get('input', ''), should_decode)
         # Expected output
         self.output = decode_if(json_dict.get('output', ''), should_decode)
         # Expected error
-        # TODO(jhc): If missing (None), allow using stderr for debug, '' must match
+        # TODO(jhc): If missing (None), allow using stderr for debug, because '' must match
         self.stderr = decode_if(json_dict.get('error', ''), should_decode)
-        # Points that user earn if its solution matches the expected output
+        # Points that user earns if its solution matches the expected output
         self.points = json_dict.get('points', 0)
         # If true, the test case is hidden for users, so they cannot see what is in it
         self.hidden = json_dict.get('hidden', False)

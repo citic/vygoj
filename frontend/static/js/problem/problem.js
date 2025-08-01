@@ -1,10 +1,11 @@
-import { Status } from '../vygoj.js';
+import { encode, ExecutionResult, Problem, Status } from '../vygoj.js';
 // import AceDiff from 'ace-diff';
 
 const AceDiff = window.AceDiff;
 
 // Default given code for each supported programming language
 // It may be a Map<string, string>
+// TODO(jhc): Remove, it must come from frontend
 const defaultCodeFor = {
   C: `#include <stdio.h>
 
@@ -28,16 +29,6 @@ function loadConfig(key) {
 
 function saveConfig(key, value) {
   window.localStorage.setItem(`${key}:${window.location.pathname}`, value);
-}
-
-function clientEncode(text) {
-  // text 'int main(int argc, char* argv[]) {\n  return atoi(argv[--argc]);\n}\n'
-  // btoa 'aW50IG1haW4oaW50IGFyZ2MsIGNoYXIqIGFyZ3ZbXSkgewogIHJldHVybiBhdG9pKGFyZ3ZbLS1hcmdjXSk7Cn0K'
-  return window.btoa(text);
-}
-
-function clientDecode(data) {
-  return window.atob(data);
 }
 
 function hideElement(id) {
@@ -72,9 +63,11 @@ class ProblemManager {
     // Shows the diff between expected output and user standard output
     this.differ = null; // class AceDiff instance
   }
+
   static main() {
     ProblemManager.instance.setup();
   }
+
   // TODO: Problem statement may have source code snippets, highlight them using a client library
   // such as highlight.js or prismjs
   async setup() {
@@ -139,27 +132,8 @@ class ProblemManager {
 
   async fetchProblem() {
     console.assert(this.problem === null);
-    this.problem = await ProblemManager.sendJson({ action: 'fetch_problem' });
-    // Decode problem fields
-    if (this.problem) {
-      this.problem.title = clientDecode(this.problem?.title || '');
-      this.problem.statement = clientDecode(this.problem?.statement || '');
-      // Add index signature to InitialCodeInterface to allow string keys
-      const initial = this.problem.initialCodeFor || {};
-      for (const key in initial) {
-        if (Object.prototype.hasOwnProperty.call(initial, key)) {
-          initial[key] = clientDecode(initial[key] || '');
-        }
-      }
-      this.problem.tests.forEach((test) => {
-        test.commandLineArguments = clientDecode(test.commandLineArguments || '');
-        test.input = clientDecode(test.input || '');
-        test.output = clientDecode(test.output || '');
-        test.stderr = clientDecode(test.stderr || '');
-      });
-      // this.problem!.initialCodeFor = clientDecode(this.problem?.initialCodeFor || '');
-      // this.problem!.mustContain = clientDecode(this.problem?.mustContain || '');
-    }
+    const message = { action: 'fetch_problem' }; // Message object
+    this.problem = new Problem(await ProblemManager.sendJson(message));
   }
 
   static async sendJson(object, uri = '') {
@@ -169,6 +143,7 @@ class ProblemManager {
     return json;
   }
 
+  // TODO(jhc): Uniform with Message() object
   static createMessage(object, method = 'POST') {
     return {
       method,
@@ -288,31 +263,16 @@ class ProblemManager {
     this.runButton.disabled = true;
     this.runButton.textContent = 'Running';
     // Send the code to the backend and wait the result
-    this.result = await ProblemManager.sendJson({
+    this.result = new ExecutionResult(await ProblemManager.sendJson({
       action: 'run',
       language,
-      code: clientEncode(this.editors[0].getValue()),
-    });
+      code: encode(this.editors[0].getValue()),
+    }));
     // The result has been received, decode it and update the test cases
-    this.decodeResult();
     this.updateResult();
     // Enable the Run button again
     this.runButton.textContent = 'Run';
     this.runButton.disabled = false;
-  }
-
-  decodeResult() {
-    console.assert(this.result);
-    this.result.message = clientDecode(this.result.message || '');
-    this.result.compileOutput = clientDecode(this.result.compileOutput || '');
-    // TODO: Change LC_ALL=en_US in compiler environment to avoid Unicode quotes
-    this.result.compileOutput = this.result.compileOutput.replace(/â/g, '‘');
-    for (let index = 0; index < this.result.results.length; ++index) {
-      const test = this.result.results[index];
-      test.message = clientDecode(test.message || '');
-      test.stderr = clientDecode(test.stderr || '');
-      test.stdout = clientDecode(test.stdout || '');
-    }
   }
 
   updateResult() {
