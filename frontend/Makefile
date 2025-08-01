@@ -3,11 +3,7 @@ install: node_modules
 
 include ../common/Makefile
 
-DEPS+=flask-sqlalchemy flask-wtf requests
-
-.PHONY: dev
-dev:
-	npm run dev &
+DEPS+=flask-squeeze flask-sqlalchemy flask-wtf requests
 
 node_modules:
 	npm i

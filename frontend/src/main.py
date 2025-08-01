@@ -5,6 +5,7 @@ import time
 from logging.handlers import RotatingFileHandler
 import flask
 import requests
+from flask_squeeze import Squeeze
 
 from courses import Course
 from problems import ProblemController
@@ -26,6 +27,9 @@ static_path = os.path.join(app_path, 'static/')
 # Flask web application instance requires the name of the application (this filename)
 app = flask.Flask(__name__, template_folder=template_path,
         static_url_path='', static_folder=static_path)
+
+# Compress responses (bzip) and minify static files
+squeeze = Squeeze(app)
 
 # Load configuration from a Python file with constants
 config_file = os.path.join(app_path, 'config/config.py')
