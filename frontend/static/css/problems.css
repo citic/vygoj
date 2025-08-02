@@ -1,6 +1,5 @@
 @import url('site.css');
 @import url('form.css');
-@import url('https://cdn.jsdelivr.net/npm/ace-diff@3.0.3/dist/ace-diff.min.css');
 
 .problem_section__header {
   display: flex;
@@ -86,4 +85,10 @@
   content: '';
   top: 100%;
   left: 50%;
+}
+
+label {
+  font-weight: 600;
+  font-style: italic;
+  color: var(--bg-color);
 }

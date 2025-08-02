@@ -1,17 +1,19 @@
 {% extends 'base.html' %}
 {%- block styles %}
     <link rel="stylesheet" href="/css/problems.css">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/ace-diff@3.0.3/dist/ace-diff.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ace-diff@3.0.3/dist/ace-diff.min.css"></noscript>
 {%- endblock %}
 {%- block main %}
       <main id="problem" class="problem" data-name="{{ it.problem.name }}">
         <article class="problem__description">
-          <h3 class="problem__title">{{ it.problem.title }}</h3>
+          <h2 class="problem__title">{{ it.problem.title }}</h2>
           <div class="problem__statement">{{ it.problem.statement|safe }}</div>
         </article>
-        <section class="problem__solution">
-          <h4>Your solution</h4>
+        <div class="problem__solution">
+          <label for ="code_editor_area">Your solution</label>
           <div id="code_editor" class="editor"></div>
-        </section>
+        </div>
         <div class="solution__evaluation">
           <div class="row">
             <p>
@@ -34,19 +36,19 @@
           </div>
           <div id="active_test" class="row top">
             <div id="active_test_input_wrapper" class="editor_wrapper">
-              <em id="active_test_input_label">Input</em>
+              <label for="active_test_input_area" id="active_test_input_label">Input</label>
               <div id="active_test_input" class="editor"></div>
             </div>
             <div id="active_test_expected_output_wrapper" class="editor_wrapper">
-              <em id="active_test_expected_output_label">Expected output</em>
+              <label for="active_test_expected_output_area" id="active_test_expected_output_label">Expected output</label>
               <div id="active_test_expected_output" class="editor"></div>
             </div>
             <div id="active_test_user_output_wrapper" class="editor_wrapper">
-              <em id="active_test_user_output_label">Your output</em>
+              <label for="active_test_user_output_area" id="active_test_user_output_label">Your output</label>
               <div id="active_test_user_output" class="editor"></div>
             </div>
             <div id="output_diff_wrapper" class="editor_wrapper hidden">
-              <div class="row"><em>Expected output</em><em>Your output</em></div>
+              <div class="row"><label for="output_diff_area">Expected output</label><label for="output_diff_area">Your output</label></div>
               <div id="output_diff" class="editor"></div>
             </div>
           </div>

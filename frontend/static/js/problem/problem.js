@@ -98,6 +98,7 @@ class ProblemManager {
 
   setupCodeEditor() {
     const editor = window.ace.edit('code_editor');
+    editor.container.firstChild.id = 'code_editor_area'; // For <label for>
     editor.setTheme(this.theme);
     editor.session.setMode('ace/mode/c_cpp');
     // Automatically adjust height to the number of lines typed by user
@@ -122,6 +123,7 @@ class ProblemManager {
   setupTestCaseEditor(id) {
     console.assert(window.ace);
     const editor = window.ace.edit(id);
+    editor.container.firstChild.id = `${id}_area`; // For <label for>
     editor.setTheme(this.theme);
     editor.setOption('readOnly', true);
     editor.setOption('showInvisibles', true);
