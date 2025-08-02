@@ -1,4 +1,4 @@
-all: dev debug
+all: debug
 install: node_modules
 
 include ../common/Makefile

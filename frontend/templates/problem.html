@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {%- block styles %}
-    <link rel="stylesheet" href="/css/problems.css"/>
+    <link rel="stylesheet" href="/css/problems.css">
 {%- endblock %}
 {%- block main %}
       <main id="problem" class="problem" data-name="{{ it.problem.name }}">
@@ -12,11 +12,11 @@
           <h4>Your solution</h4>
           <div id="code_editor" class="editor"></div>
         </section>
-        <section class="solution__evaluation">
+        <div class="solution__evaluation">
           <div class="row">
             <p>
               <button id="run_button" class="button action" disabled="disabled" title="Run my solution against the test cases">Run</button>
-              <a href="/course/CI0117" id="finish_button" class="button confirm" name="finish" value="finish" title="Return to the course">Finish</a>
+              <a href="/course/CI0117" id="finish_button" class="button confirm" title="Return to the course">Finish</a>
             </p>
             <p id="score">
               <span id="passed_test_count">0</span>/<span id="total_test_count">{{ it.problem.tests.length }}</span>
@@ -55,6 +55,6 @@
             <pre id="stderr" class="output"></pre>
           </div>
           <div id="test_verdict"></div>
-        </section>
+        </div>
       </main>
 {%- endblock %}
