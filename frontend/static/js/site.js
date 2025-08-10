@@ -75,13 +75,13 @@ class Site {
   }
 
   showBackendDetails() {
-    const element = document.getElementById('software_version');
+    const element = document.getElementById('backend_version');
     element.innerText = this.buildBackendDetails();
   }
 
   buildBackendDetails() {
-    let message = 'VygOJ';
-    message += this.backendStatus.version ? (` v${this.backendStatus.version}`) : '';
+    let message = '';
+    message += this.backendStatus.version ? (` b${this.backendStatus.version}`) : '';
     message += this.backendStatus.jobs ? (` J=${this.backendStatus.jobs}`) : '';
     return message;
   }
