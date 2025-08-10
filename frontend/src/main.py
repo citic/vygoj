@@ -7,7 +7,7 @@ import flask
 import requests
 from flask_squeeze import Squeeze
 
-from courses import Course
+from courses import CourseController
 from problems import ProblemController
 from users import UserForm
 from db import db
@@ -53,14 +53,14 @@ def get_index():
     """ Homepage: list of my courses and available courses """
     # The return value of a view function is the response to the client
     vyg_log('visit', '/')
-    return Course.get_index()
+    return CourseController.get_index()
 
-@app.route('/course/<course_id>')
-def get_course(course_id):
-    """ Homepage: list of my courses and available courses """
+@app.route('/course/<name>')
+def get_course(name):
+    """ Get the contents of the course identified by name """
     # The return value of a view function is the response to the client
-    vyg_log('visit', f'/course/{course_id}')
-    return Course.get_course(course_id)
+    vyg_log('visit', f'/course/{name}')
+    return CourseController.get_course(name)
 
 # Problems ----------------------------------------------------------------------------------------
 
@@ -81,7 +81,7 @@ def post_problem(path):
 @app.route('/user', methods=['GET', 'POST'])
 def user():
     """ Get/post the login or preferences dialog """
-    vyg_log('visit', f'/user')
+    vyg_log('visit', '/user')
     return UserForm.show_form()
 
 @app.route('/logout')

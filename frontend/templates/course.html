@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 
-{%- macro course_content(content, indent, repo) %}
+{%- macro course_content(content, indent, folder) %}
   {%- if content %}
     {{ '  ' * (indent - 2) }}<ol class="course__sections">
     {%- for item in content %}
       {{ '  ' * (indent - 2) }}<li class="course__section">
-      {%- set path = repo + '/' + item.folder %}
+      {%- set path = folder + '/' + item.folder %}
       {{ '  ' * (indent - 1) }}<p class="course__activity">
       {%- if item.type == 'problem' -%}
         [{{ it.progress and it.progress.get(item.name, 0) or 0 }}%] <a href="{{ path }}">{{ item.title }}</a> (<a href="https://jeisson.ecci.ucr.ac.cr/invest/eval_taller/" target="_blank">Opinión</a>)
@@ -25,15 +25,15 @@
       <main class="course">
         <article class="course__description">
           <h3 class="course__title">{{ it.course.title }}</h3>
-          <p class="course__code line">Code: {{ it.course.code }}</p>
+          <p class="course__code line">Code: {{ it.course.name }}</p>
           <p class="course__instructors">Instructors:
-{%- for instructor in it.course.instructors %}
-            <a class="course__instructor" href="/prof/{{ instructor.id }}">{{ instructor.name }}</a>
+{%- for instructor in it.course.authors %}
+            <a class="course__instructor" href="/prof/{{ instructor }}">{{ instructor }}</a>
 {%- endfor %}
           </p>
           <section class="course__contents">
             <h4 class="course__contents--title">Course contents</h4>
-{{- course_content(it.course.contents, 6, it.course.repo) }}
+{{- course_content(it.course.contents, 6, it.course.folder) }}
           </section>
         </article>
       </main>
