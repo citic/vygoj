@@ -1,3 +1,5 @@
+# Data folder to store course repos, student code submissions
+DATA_FOLDER = "/home/user/vygdata"
 # Database URI
 DATABASE = "mongodb://user:pass@host/db?params"
 # Frontend network port to listen on

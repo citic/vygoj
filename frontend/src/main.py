@@ -13,10 +13,6 @@ from users import UserForm
 from db import db
 from vyg_log import vyg_log
 
-# Constants ---------------------------------------------------------------------------------------
-DATA_DIR = './data'
-LOG_FILENAME = DATA_DIR + '/vygoj.tsv'
-
 # Web application ---------------------------------------------------------------------------------
 
 # Directories for templates, static files, are relative to parent folder instead of src/
@@ -122,14 +118,16 @@ def get_not_found(_): # error
 # Adapted from https://gist.github.com/alexaleluia12/e40f1dfa4ce598c2e958611f67d28966
 
 # If data/ dir does not exist, create it
-if not os.path.exists(DATA_DIR):
-    os.mkdir(DATA_DIR)
+data_dir = app.config.get('DATA_FOLDER', './data')
+if not os.path.exists(data_dir):
+    os.mkdir(data_dir)
 # If log file does not exist, create it and add its header
-if not os.path.exists(LOG_FILENAME):
-    with open(LOG_FILENAME, 'a', encoding='utf8') as log_file:
+log_filename = os.path.join(data_dir, 'vygoj.tsv')
+if not os.path.exists(log_filename):
+    with open(log_filename, 'a', encoding='utf8') as log_file:
         log_file.write('date\ttime\tip\tscheme\turl\tstatus_code\tuser\tbody\n')
 # This object manages the log and slices it each 1MB
-log_handler = RotatingFileHandler(LOG_FILENAME, maxBytes=10**6, backupCount=1000)
+log_handler = RotatingFileHandler(log_filename, maxBytes=10**6, backupCount=1000)
 # Set the handler as the default
 logger = logging.getLogger('vygoj')
 logger.setLevel(logging.INFO)

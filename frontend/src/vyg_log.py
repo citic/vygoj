@@ -2,8 +2,7 @@ import time
 import flask
 import os
 import vyg
-
-LOG_FILE = os.path.join(vyg.get_app_path(), 'data', 'vyg.tsv')
+from flask import current_app as app
 
 def log_event2(fields):
     '''' Log an entry '''
@@ -12,6 +11,7 @@ def log_event2(fields):
     username = user_obj.get('email', '') if user_obj else ''
     request = flask.request
     # date time ip scheme url status_code user body fields
+    LOG_FILE = os.path.join(app.config.get('DATA_FOLDER'), 'vyg.tsv')
     with open(LOG_FILE, 'a', encoding='utf8') as log_file:
         log_file.write(f'{timestamp}\t{request.remote_addr}\t{request.method}\t'
             f'{request.url}\t{username}\t{fields}\n')

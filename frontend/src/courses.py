@@ -2,6 +2,7 @@
 import json
 import os
 import flask
+from flask import current_app as app
 #from users import logged_users
 import vyg
 
@@ -17,7 +18,8 @@ class CourseController:
         result = []
         user = flask.session.get('user')
         if user:
-            result = CourseController.load_courses(vyg.get_path('data/u13/pexercises/vygoj.json'))
+            repo = os.path.join(app.config.get('DATA_FOLDER'), 'u13/pexercises/vygoj.json')
+            result = CourseController.load_courses(repo)
             # Store each course in the cache as a pair {course.name: course}
             for course in result:
                 CourseController.all_courses[course.name] = course
