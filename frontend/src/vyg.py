@@ -1,9 +1,12 @@
 """ Common classes for VygOJ backend and frontend server """
 import base64
 import enum
+import glob
 import json
 import os
+import subprocess
 from abc import ABC as abstract
+import markdown
 
 # Maximum number of allowed execution threads to be created by a user solution
 MAX_THREADS = 2**15
@@ -90,6 +93,15 @@ def to_json(data_object):
     """ Convert the given Python object to JSON string """
     # See https://docs.python.org/3/library/json.html#json.dump
     return json.dumps(data_object, default=to_dict, indent=2)
+
+def run_cmd(cmd):
+    ''' Run cmd as a separate process and waits for its completion. cmd is a list of parameters '''
+    with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True) as process:
+        # Wait until the sub-process finishes, capture stdin and stdout
+        stdout, stderr = process.communicate()
+        return_code = process.returncode
+        return stdout, stderr, return_code
 
 
 class Message:
@@ -365,8 +377,15 @@ class Problem(Activity):
 
     def load_folder(self):
         """ Load problem data from the folder where it is stored """
-        path = os.path.join(self.get_path(), 'vygoj.json')
-        print(f'_____ {path} _____')
+        path = self.get_path()
+        self.load_json(path)
+        self.load_problem_statement(path)
+        # self.load_initial_code(path)
+        # self.load_test_cases(path)
+
+    def load_json(self, path):
+        """ Load the JSON file, if any, with configuration for this problem """
+        path = os.path.join(path, 'vygoj.json')
         if os.path.isfile(path):
             with open(path, encoding='utf8') as file:
                 json_dict = json.load(file)
@@ -374,9 +393,24 @@ class Problem(Activity):
                 problem = Problem(json_dict, self._parent, False)
                 # Copy the fields from the loaded problem to this problem
                 self.__dict__.update(problem.__dict__)
-        print(f'++++ {to_json(self)} ++++')
-        # TODO(jhc): load problem statement, initial code, and test cases from files
 
+    def load_problem_statement(self, path):
+        """ Load the problem statement from Asciidoc, Markdown, or HTML file """
+        if not self.statement:
+            extensions = ['html', 'adoc', 'md']
+            for extension in extensions:
+                files = glob.glob(os.path.join(path, f'*.{extension}'))
+                for filename in files:
+                    if extension == 'html':
+                        with open(filename, encoding='utf8') as file:
+                            self.statement += file.read()
+                    elif extension == 'adoc':
+                        # Convert Asciidoc file to HTML
+                        stdout, _, _ = run_cmd(['asciidoctor', filename, '-e', '-o', '-'])
+                        self.statement += stdout
+                    elif extension == 'md':
+                        with open(filename, encoding='utf8') as file:
+                            self.statement += markdown.markdown(file.read())
 
 class TestCase:
     """ A test case for black-box testing provides the input data to run a user solution code,
