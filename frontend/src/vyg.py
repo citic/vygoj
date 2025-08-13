@@ -71,7 +71,8 @@ def to_dict(data_object):
     # Because it may be modified, we make a copy to preserve the original object intact
     result = data_object.__dict__.copy()
     # Do not export to JSON private non-serializable attributes (starts with _) or are empty
-    for field in result:
+    # Traverse original dictionary because copy will be modified
+    for field in data_object.__dict__:
         if field.startswith('_') or not result[field]:
             del result[field]
     # If class has a static attribute encoded_fields as a list of strings (attribute names)
@@ -153,6 +154,8 @@ class Material(abstract):
         # 'disabled' means it is shown but read-only,
         # 'half' means students can solve the material but get half of the points
         self.overdue_policy = json_dict.get('overdue_policy', 'disabled')
+        # Add this material to the course's symbols table, so it can be found by name
+        self.get_course().add_symbol(self)
         # Materials can be nested, so a material can have a list of contents. Load them
         self.contents = []
         # Notice parent is not used for child materials, because self is the parent for them
@@ -188,6 +191,13 @@ class Material(abstract):
         data/u13/pexercises/1.1_io/hello/ """
         # My path is the concatenation of all parent materials and my folder
         return os.path.join(self._parent.get_path(), self.folder) if self._parent else self.folder
+
+    def build_url(self) -> str:
+        """ Returns the URL to access this material in the web application """
+        # The URL is the concatenation of the course name and my folder
+        course_name = f'{self.get_course().name}/' if self._parent else ''
+        return f'/{self.type}/{course_name}{self.name}'
+
 
 
 class Resource(Material):
@@ -231,6 +241,8 @@ class Course(Resource):
     """
     def __init__(self, json_dict: dict, should_decode: bool, folder: str):
         """ Construct this object getting values from the given dictionary """
+        # A table of symbols that maps the material names to their objects
+        self._symbols = {}
         super().__init__(json_dict, None, should_decode)
         # Override the folder with the repository folder where courses are stored, e.g:
         # data/u13/pexercises
@@ -243,6 +255,16 @@ class Course(Resource):
         # TODO(jhc): is status needed? snapshots make editing unnecessary, available is the default
         # self.status = json_dict.get('status', '')
 
+    def add_symbol(self, material: 'Material'):
+        """ Add this material to the course's symbols table, so it can be found by name """
+        if material.name:
+            if material.name in self._symbols:
+                raise ValueError(f'Material {material.name} duplicated in course {self.name}')
+            self._symbols[material.name] = material
+
+    def find_symbol(self, name: str) -> 'Material':
+        """ Find a material by its name """
+        return self._symbols.get(name)
 
 class Section(Resource):
     """ A section is a group of materials that are thematically related. They can be nested to
@@ -266,6 +288,7 @@ class Activity(Material):
         # Activities can have different weight over the final course grade
         self.weight = json_dict.get('weight', 1.0)
 
+
 class Question(Activity):
     """ A question is a request for information from students. If student matches the right answer,
     s/he gains points. Questions have variables. Each variable has its own type, text, and answer.
@@ -278,6 +301,7 @@ class Question(Activity):
         super().__init__(json_dict, parent, should_decode)
         # Sections may include a short description. For large text nest a Page object
         self.text = decode_if(json_dict.get('text', ''), should_decode)
+
 
 class Problem(Activity):
     """ Represents a programming problem with statement, source code, and test cases """
@@ -338,6 +362,21 @@ class Problem(Activity):
     def has_proofs(self):
         """ Returns true if this problem requires the solution to pass extra proofs """
         return self.minThreads >= 1
+
+    def load_folder(self):
+        """ Load problem data from the folder where it is stored """
+        path = os.path.join(self.get_path(), 'vygoj.json')
+        print(f'_____ {path} _____')
+        if os.path.isfile(path):
+            with open(path, encoding='utf8') as file:
+                json_dict = json.load(file)
+                # Load the fields of this object from JSON dictionary to a new object
+                problem = Problem(json_dict, self._parent, False)
+                # Copy the fields from the loaded problem to this problem
+                self.__dict__.update(problem.__dict__)
+        print(f'++++ {to_json(self)} ++++')
+        # TODO(jhc): load problem statement, initial code, and test cases from files
+
 
 class TestCase:
     """ A test case for black-box testing provides the input data to run a user solution code,

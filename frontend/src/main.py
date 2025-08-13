@@ -60,11 +60,11 @@ def get_course(name):
 
 # Problems ----------------------------------------------------------------------------------------
 
-@app.route('/problem/<path>')
-def get_problem(path):
+@app.route('/problem/<course>/<problem>')
+def get_problem(course, problem):
     """ User asked for the problem page """
-    vyg_log('visit', f'/problem/{path}')
-    return ProblemController.get_problem(path)
+    vyg_log('visit', f'/problem/{course}/{problem}')
+    return ProblemController.get_problem(course, problem)
 
 @app.route('/problem/<path>', methods=['POST'])
 def post_problem(path):

@@ -18,7 +18,7 @@
           <div class="row">
             <p>
               <button id="run_button" class="button action" disabled="disabled" title="Run my solution against the test cases">Run</button>
-              <a href="/course/CI0117" id="finish_button" class="button confirm" title="Return to the course">Finish</a>
+              <a href="{{ it.problem.get_course().build_url() }}" id="finish_button" class="button confirm" title="Return to the course">Finish</a>
             </p>
             <p id="score">
               <span id="passed_test_count">0</span>/<span id="total_test_count">{{ it.problem.tests.length }}</span>

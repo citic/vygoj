@@ -1,20 +1,19 @@
 {% extends 'base.html' %}
 
-{%- macro course_content(content, indent, folder) %}
+{%- macro course_content(content, indent) %}
   {%- if content %}
     {{ '  ' * (indent - 2) }}<ol class="course__sections">
     {%- for item in content %}
       {{ '  ' * (indent - 2) }}<li class="course__section">
-      {%- set path = folder + '/' + item.folder %}
       {{ '  ' * (indent - 1) }}<p class="course__activity">
       {%- if item.type == 'problem' -%}
-        [{{ it.progress and it.progress.get(item.name, 0) or 0 }}%] <a href="{{ path }}">{{ item.title }}</a> (<a href="https://jeisson.ecci.ucr.ac.cr/invest/eval_taller/" target="_blank">Opinión</a>)
+        [{{ it.progress and it.progress.get(item.name, 0) or 0 }}%] <a href="{{ item.build_url() }}">{{ item.title }}</a> (<a href="https://jeisson.ecci.ucr.ac.cr/invest/eval_taller/" target="_blank">Opinión</a>)
       {%- elif item.type == 'page' -%}
-        <a href="https://jeisson.ecci.ucr.ac.cr/invest/{{ item.folder }}.7z">{{ item.title }}</a> (<a href="https://jeisson.ecci.ucr.ac.cr/invest/eval_taller/" target="_blank">Opinión</a>)
+        <a href="https://jeisson.ecci.ucr.ac.cr/invest/{{ item.name }}.7z">{{ item.title }}</a> (<a href="https://jeisson.ecci.ucr.ac.cr/invest/eval_taller/" target="_blank">Opinión</a>)
       {%- else %}
         {{- item.title }}
       {%- endif %}</p>
-      {{- course_content(item.contents, indent + 2, path) }}
+      {{- course_content(item.contents, indent + 2) }}
       {{ '  ' * (indent - 2) }}</li>
     {%- endfor %}
     {{ '  ' * (indent - 2) }}</ol>
@@ -33,7 +32,7 @@
           </p>
           <section class="course__contents">
             <h4 class="course__contents--title">Course contents</h4>
-{{- course_content(it.course.contents, 6, it.course.folder) }}
+{{- course_content(it.course.contents, 6) }}
           </section>
         </article>
       </main>

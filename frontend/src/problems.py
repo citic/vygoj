@@ -7,6 +7,7 @@ from flask import current_app as app
 
 import vyg
 from vyg_log import vyg_log
+from courses import CourseController
 
 class ProblemController:
     """Controls problems
@@ -34,9 +35,15 @@ class ProblemController:
         pass
 
     @staticmethod
-    def get_problem(path):
+    def get_problem(course_name, problem_name):
         """Get the contents page for a course"""
-        problem = vyg.Problem.load(path)
+        if not course_name in CourseController.all_courses:
+            flask.abort(404)
+        course = CourseController.all_courses[course_name]
+        problem = course.find_symbol(problem_name)
+        if not problem or not isinstance(problem, vyg.Problem):
+            flask.abort(404)
+        problem.load_folder()
         if not problem:
             flask.abort(404)
         return flask.render_template('problem.html', it={
@@ -45,8 +52,8 @@ class ProblemController:
             'user': flask.session.get('user', None),
             'breadcrumbs': [
                 # TODO(I): course
-                { 'href': '/course/CI0117', 'text': 'CI0117' },
-                { 'href': f'/problem/{problem.relative_path}', 'text': problem.name },
+                { 'href': problem.get_course().build_url(), 'text': course_name },
+                { 'href': problem.build_url(), 'text': problem.name },
             ],
             'problem': problem,
             'scripts': [

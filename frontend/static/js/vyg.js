@@ -105,8 +105,6 @@ export class Problem {
   // TODO(jhc): Some properties are not needed in the web client, remove them from JS
   constructor(json) {
     console.assert(json);
-    // Relative path identifies the problem, used only by the frontend, not the web client.
-    // this.relative_path = json?.relative_path || '';
     // An identifier name for the problem, eg "uint64_adder"
     this.name = json?.name || '';
     // Title describing the problem, eg "Unsigned 64-bits adder"
