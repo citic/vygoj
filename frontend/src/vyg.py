@@ -22,6 +22,17 @@ class Status(str, enum.Enum):
     RUNTIME_ERROR = 'runtimeError'
     INTERNAL_ERROR = 'internalError'
 
+# Map file extensions to supported programming languages
+LANGUAGE_EXTENSIONS = {
+    'ale': 'Alecci',
+    'c': 'C',
+    'cpp': 'C++',
+    'java': 'Java',
+    'js': 'JavaScript',
+    'kt': 'Kotlin',
+    'py': 'Python',
+}
+
 def get_app_path():
     """ Return the path where the docker app is located """
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -80,12 +91,17 @@ def to_dict(data_object):
             del result[field]
     # If class has a static attribute encoded_fields as a list of strings (attribute names)
     if hasattr(data_object.__class__, 'encoded_fields'):
-        # For each filed to be encoded
+        # For each field to be encoded
         for field in data_object.__class__.encoded_fields:
             # If the object has a value for the attribute
             if field in result:
                 # Encode the value of the attribute to the temporary dictionary
-                result[field] = encode(result[field])
+                if isinstance(result[field], dict):
+                    # The field contains a dictionary, but only its values must be encoded
+                    for key in result[field].keys():
+                        result[field][key] = encode(result[field][key])
+                else:
+                    result[field] = encode(result[field])
     # Return the dictionary that will be converted to JSON
     return result
 
@@ -380,7 +396,7 @@ class Problem(Activity):
         path = self.get_path()
         self.load_json(path)
         self.load_problem_statement(path)
-        # self.load_initial_code(path)
+        self.load_initial_code(path)
         # self.load_test_cases(path)
 
     def load_json(self, path):
@@ -411,6 +427,25 @@ class Problem(Activity):
                     elif extension == 'md':
                         with open(filename, encoding='utf8') as file:
                             self.statement += markdown.markdown(file.read())
+
+    def load_initial_code(self, path):
+        """ Load the initial code from a file """
+        if len(self.initialCodeFor) == 0:
+            files = (glob.glob(os.path.join(path, 'initial/*')) +
+                    glob.glob(os.path.join(path, 'given/*')))
+            for filename in files:
+                with open(filename, encoding='utf8') as file:
+                    # Extract file extension without dot
+                    ext = os.path.splitext(filename)[1][1:]
+                    # If extension is recognized as a programming language
+                    if ext in LANGUAGE_EXTENSIONS:
+                        language = LANGUAGE_EXTENSIONS.get(ext)
+                        initial_code = file.read()
+                        # TODO(jhc): support multi-file initial codes
+                        if language in self.initialCodeFor:
+                            self.initialCodeFor[language] += '\n' + initial_code
+                        else:
+                            self.initialCodeFor[language] = initial_code
 
 class TestCase:
     """ A test case for black-box testing provides the input data to run a user solution code,

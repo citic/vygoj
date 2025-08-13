@@ -34,18 +34,11 @@ class ProblemController:
     def __init__(self):
         pass
 
+    # TODO(jhc): Merge get_problem and post_problem
     @staticmethod
     def get_problem(course_name, problem_name):
         """Get the contents page for a course"""
-        if not course_name in CourseController.all_courses:
-            flask.abort(404)
-        course = CourseController.all_courses[course_name]
-        problem = course.find_symbol(problem_name)
-        if not problem or not isinstance(problem, vyg.Problem):
-            flask.abort(404)
-        problem.load_folder()
-        if not problem:
-            flask.abort(404)
+        problem = ProblemController.fetch_problem(course_name, problem_name)
         return flask.render_template('problem.html', it={
             'stylesheet': 'problems',
             'title': problem.title,
@@ -68,33 +61,38 @@ class ProblemController:
         })
 
     @staticmethod
-    def post_problem(problem_path):
-        """Client JavaScript asked for an action: fetch a problem, run user solution,
-        save user code, ... All communication is made with JSON objects
-        """
+    def post_problem(course_name: str, problem_name: str):
+        """ Client JavaScript asked for an action: fetch a problem, run user solution,
+        save user code, ... All communication is made with JSON objects """
         try:
             message = vyg.Message(json.loads(flask.request.get_data()))
-            print(problem_path, ' --> ', message.__dict__)
+            print(f'POST {course_name}/{problem_name} BODY: {message.__dict__}')
             if message.action == 'fetch_problem':
-                return ProblemController.fetch_problem(problem_path)
+                return vyg.to_json(ProblemController.fetch_problem(course_name, problem_name))
             elif message.action == 'run':
-                vyg_log('run', problem_path)
-                return ProblemController.judge_solution(problem_path, message)
+                vyg_log('run', f'{course_name}/{problem_name}')
+                problem = ProblemController.fetch_problem(course_name, problem_name)
+                return ProblemController.judge_solution(problem, message)
             else:
                 return flask.jsonify({ 'error': 'invalid action' })
         except Exception as error:
             return flask.jsonify({ 'error': 'invalid action: ' + str(error) })
 
     @staticmethod
-    def fetch_problem(problem_path: str):
+    def fetch_problem(course_name: str, problem_name: str):
         """ Return a JSON version of the problem """
-        return vyg.to_json(vyg.Problem.load(problem_path))
+        if not course_name in CourseController.all_courses:
+            flask.abort(404)
+        course = CourseController.all_courses[course_name]
+        problem = course.find_symbol(problem_name)
+        if not problem or not isinstance(problem, vyg.Problem):
+            flask.abort(404)
+        problem.load_folder()
+        return problem
 
     @staticmethod
-    def judge_solution(problem_path: str, message: vyg.Message):
+    def judge_solution(problem: vyg.Problem, message: vyg.Message):
         """ Called when user input a source code solution and press Run button """
-        # Load the problem
-        problem = vyg.Problem.load(problem_path)
         # Run the test cases and wait for the array of results
         result = ProblemController.run_solution(problem, message)
         # Store progress

@@ -66,10 +66,10 @@ def get_problem(course, problem):
     vyg_log('visit', f'/problem/{course}/{problem}')
     return ProblemController.get_problem(course, problem)
 
-@app.route('/problem/<path>', methods=['POST'])
-def post_problem(path):
+@app.route('/problem/<course_name>/<problem_name>', methods=['POST'])
+def post_problem(course_name, problem_name):
     """ Client JavaScript asked for an action: fetch problem, run code, save code... """
-    return ProblemController.post_problem(path)
+    return ProblemController.post_problem(course_name, problem_name)
 
 
 # Users -------------------------------------------------------------------------------------------
