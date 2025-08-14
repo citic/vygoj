@@ -4,8 +4,10 @@ import enum
 import glob
 import json
 import os
+import re
 import subprocess
 from abc import ABC as abstract
+# TODO(jhc): markdown is only required by frontend, not backend
 import markdown
 
 # Maximum number of allowed execution threads to be created by a user solution
@@ -397,7 +399,7 @@ class Problem(Activity):
         self.load_json(path)
         self.load_problem_statement(path)
         self.load_initial_code(path)
-        # self.load_test_cases(path)
+        self.load_test_cases(path)
 
     def load_json(self, path):
         """ Load the JSON file, if any, with configuration for this problem """
@@ -446,6 +448,47 @@ class Problem(Activity):
                             self.initialCodeFor[language] += '\n' + initial_code
                         else:
                             self.initialCodeFor[language] = initial_code
+
+    def load_test_cases(self, path):
+        """ Load the test cases from the problem folder """
+        # TODO(jhc): implement test case generators
+        # For each file tests/input<number>.txt read its entire contents to a variable input,
+        # read the content of its correspondent tests/output<number>txt file to a variable
+        # output, create a dictionary {'input': input, 'output': output} and append it to the
+        # test_cases list
+        input_files = sorted(glob.glob(os.path.join(path, 'tests/input*.txt')))
+        for input_file in input_files:
+            match = re.search(r'input(\d+)\.txt$', input_file)
+            if not match:
+                continue
+            num = match.group(1)
+            output_file = os.path.join(path, f'tests/output{num}.txt')
+            if not os.path.exists(output_file):
+                raise ValueError(f'Output file {output_file} not found for input {input_file}')
+            with open(input_file, 'r', encoding='utf8') as file:
+                input_content = file.read()
+            with open(output_file, 'r', encoding='utf8') as file:
+                output_content = file.read()
+            # TODO(jhc): reuse code for files
+            args_content = Problem.load_test(os.path.join(path, f'tests/args{num}.txt'))
+            error_content = Problem.load_test(os.path.join(path, f'tests/error{num}.txt'))
+            # TODO(jhc): if vygoj.json does not contain input/output, fetch from file
+            json_dict = {
+                'args': args_content,
+                'input': input_content,
+                'output': output_content,
+                'error': error_content,
+                'points': 1
+            }
+            self.tests.append(TestCase(json_dict, False))
+
+    @staticmethod
+    def load_test(file_path):
+        """ Load the contents of a file, or return an empty string if the file does not exist """
+        if os.path.isfile(file_path):
+            with open(file_path, 'r', encoding='utf8') as file:
+                return file.read()
+        return ''
 
 class TestCase:
     """ A test case for black-box testing provides the input data to run a user solution code,
