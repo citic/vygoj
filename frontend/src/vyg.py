@@ -185,7 +185,8 @@ class Material(abstract):
         # 'half' means students can solve the material but get half of the points
         self.overdue_policy = json_dict.get('overdue_policy', 'disabled')
         # Add this material to the course's symbols table, so it can be found by name
-        self.get_course().add_symbol(self)
+        if parent and parent.get_course():
+            parent.get_course().add_symbol(self)
         # Materials can be nested, so a material can have a list of contents. Load them
         self.contents = []
         # Notice parent is not used for child materials, because self is the parent for them
@@ -214,7 +215,9 @@ class Material(abstract):
     def get_course(self) -> 'Course':
         """ Returns the course that contains this material """
         # The course has no parent (root material), otherwise, search the parent material
-        return self if self._parent is None else self._parent.get_course()
+        if self._parent is None:
+            return self if isinstance(self, Course) else None
+        return self._parent.get_course()
 
     def get_path(self) -> str:
         """ Returns the path where this material is stored, e.g:
@@ -432,6 +435,7 @@ class Problem(Activity):
 
     def load_initial_code(self, path):
         """ Load the initial code from a file """
+        enable_language = len(self.languages) == 0
         if len(self.initialCodeFor) == 0:
             files = (glob.glob(os.path.join(path, 'initial/*')) +
                     glob.glob(os.path.join(path, 'given/*')))
@@ -448,9 +452,16 @@ class Problem(Activity):
                             self.initialCodeFor[language] += '\n' + initial_code
                         else:
                             self.initialCodeFor[language] = initial_code
+                        if enable_language and language not in self.languages:
+                            self.languages.append(language)
+            # If initial code remains empty, enable at least one language
+            if enable_language and len(self.languages) == 0:
+                self.languages.append('C')
 
     def load_test_cases(self, path):
         """ Load the test cases from the problem folder """
+        if len(self.tests) > 0:
+            return  # Test cases are already loaded
         # TODO(jhc): implement test case generators
         # For each file tests/input<number>.txt read its entire contents to a variable input,
         # read the content of its correspondent tests/output<number>txt file to a variable

@@ -71,7 +71,7 @@ class Execution:
     def __init__(self, problem_json, solution_json):
         """ Constructor """
         # The problem to be solved, sent by VygOJ frontend
-        self.problem = vyg.Problem('', problem_json)
+        self.problem = vyg.Problem(problem_json, None, True)
         # The solution submitted by user, sent by VygOJ frontend as a message
         self.solution = vyg.Message(solution_json)
         # The programming language used by user to write the code solution
