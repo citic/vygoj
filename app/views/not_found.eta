@@ -1,3 +1,0 @@
-<% layout('./layout') %>
-<h2 class="not_found__title error">Not found</h2>
-<p>The requested resource was not found in this site.</p>
