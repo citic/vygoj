@@ -1,5 +1,5 @@
 all: debug
-install: node_modules
+dev: node_modules
 
 include ../common/Makefile
 

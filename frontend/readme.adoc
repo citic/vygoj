@@ -1,4 +1,4 @@
-= Vygoj frontend
+= VygOJ frontend
 :experimental:
 :nofooter:
 :source-highlighter: pygments
@@ -7,36 +7,10 @@
 :toc:
 :xrefstyle: short
 
-See link:../app/readme.adoc[old readme] for details.
+The web application component allows professors to create courses and students to attend them. It is compound of two parts:
 
-Python v3.9+ is required. Quick installation on Debian:
+. The app's frontend is an XHTML/CSS/JS application for running on web browsers.
+. The app's backend is a Python application using Flask framework.
 
-[source,console]
-----
-# Install Node.js to convert .ts files to .js
-# See https://github.com/nodesource/distributions
-curl -fsSL https://deb.nodesource.com/setup_23.x -o nodesource_setup.sh
-sudo -E bash nodesource_setup.sh
-sudo apt-get install -y nodejs
+You need command-line access to the machine where the app will be installed. The following instructions assume a Unix-like environment.
 
-# Install dependencies
-cd vygoj/frontend
-npm i
-sudo npm i -g typescript
-
-# Convert .ts files of client JavaScript to .js
-tsc
-
-# Install Python dependencies
-make install
-----
-
-
-[source,console]
-----
-# Run the frontend as a production server
-make server
-
-# Kill the server
-pkill gnunicorn
-----
