@@ -55,7 +55,7 @@ class Site {
   // Called at some intervals to pull the backend status
   checkBackendStatus() {
     // TODO: Replace by a WebSocket. Instead of pulling, server pushes changes
-    fetch(`http://${window.location.host}/status`)
+    fetch(`${window.location.protocol}://${window.location.host}/status`)
       .then((httpResponse) => httpResponse.json())
       .then((json) => this.updateBackendStatus(json))
       .catch((error) => this.showBackendOffline(error.message, true));
