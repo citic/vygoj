@@ -95,9 +95,12 @@ def logout():
 @app.route('/status', methods=['GET'])
 def get_status():
     """ Client JS asked for backend status, propagate it """
-    # TODO(jhc): summarize status of all available backends
-    uris = app.config.get('BACKENDS', ['http://localhost:9090'])
-    return requests.get(f'{uris[0]}/status', timeout=1000).json()
+    try:
+        # TODO(jhc): summarize status of all available backends
+        uris = app.config.get('BACKENDS', ['http://localhost:9090'])
+        return requests.get(f'{uris[0]}/status', timeout=1000).json()
+    except requests.exceptions.RequestException as error:
+        return flask.jsonify({ 'status': 'offline', 'error': str(error) }), 504
 
 @app.route('/help')
 def get_help():
