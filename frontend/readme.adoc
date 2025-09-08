@@ -14,3 +14,73 @@ The web application component allows professors to create courses and students t
 
 You need command-line access to the machine where the app will be installed. The following instructions assume a Unix-like environment.
 
+
+[[reverse_proxy]]
+== Reverse proxy configuration
+
+You may want to run the VygOJ frontend on port 80 (HTTP) and 443 (HTTPS). However, for security reasons, the Flask server should run on a port greater than 1024. A reverse proxy using Apache or Nginx helps to reach this goal. The following instructions are for Apache2.
+
+Run the frontend in a non-privileged port, for example, 8080. Use a process manager such as Gunicorn, that keeps the frontend running even if it crashes. For example:
+
+[source,sh]
+----
+gunicorn --bind 127.0.0.1:8080 main:app
+----
+
+// TODO(jhc): find real command
+// gunicorn -w 4 --bind 0.0.0.0:8080 main:app --daemon
+
+Install Apache and Let's Encrypt. Enable the Apache proxy modules using root privileges:
+
+[source,sh]
+----
+sudo a2enmod proxy
+sudo a2enmod proxy_http
+sudo a2enmod headers
+sudo a2enmod ssl
+----
+
+Create a new Apache configuration file, for example, `/etc/apache2/sites-available/vygoj.conf`, and add the following content. Change `vygoj.citic.ucr.ac.cr` to your domain name, and the paths to your SSL certificate files.
+
+
+[source,config]
+----
+<VirtualHost *:80>
+    ServerName vygoj.citic.ucr.ac.cr
+    ServerAlias www.vygoj.citic.ucr.ac.cr
+
+    # Redirect all HTTP traffic to HTTPS
+    Redirect permanent / https://vygoj.citic.ucr.ac.cr/
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName vygoj.citic.ucr.ac.cr
+    ServerAlias www.vygoj.citic.ucr.ac.cr
+
+    ProxyPreserveHost On
+    ProxyPass / http://127.0.0.1:8080/
+    ProxyPassReverse / http://127.0.0.1:8080/
+
+    # Recommended headers for proxying
+    RequestHeader set X-Forwarded-Proto "https"
+    RequestHeader set X-Forwarded-Port "443"
+
+    # SSL configuration for your domain
+    SSLEngine On
+    SSLCertificateFile /etc/letsencrypt/live/vygoj.citic.ucr.ac.cr/cert.pem
+    SSLCertificateKeyFile /etc/letsencrypt/live/vygoj.citic.ucr.ac.cr/privkey.pem
+
+    # Error and Access logging
+    ErrorLog ${APACHE_LOG_DIR}/vygoj-error.log
+    CustomLog ${APACHE_LOG_DIR}/vygoj-access.log combined
+</VirtualHost>
+----
+
+Enable the new configuration, test it, and restart Apache:
+
+[source,sh]
+----
+sudo a2ensite vygoj
+sudo apachectl configtest
+sudo systemctl restart apache2
+----
