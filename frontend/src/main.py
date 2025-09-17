@@ -6,7 +6,7 @@ from logging.handlers import RotatingFileHandler
 import flask
 import requests
 from flask_squeeze import Squeeze
-from talisman import Talisman
+from talisman import Talisman, GOOGLE_CSP_POLICY
 
 from courses import CourseController
 from problems import ProblemController
@@ -29,7 +29,7 @@ app = flask.Flask(__name__, template_folder=template_path,
 squeeze = Squeeze(app)
 
 # Provide security headers to mitigate attacks
-Talisman(app)
+Talisman(app, content_security_policy=GOOGLE_CSP_POLICY)
 
 # Load configuration from a Python file with constants
 config_file = os.path.join(app_path, 'config/config.py')
