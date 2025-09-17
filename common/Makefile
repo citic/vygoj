@@ -11,7 +11,7 @@ THREADS=4# Number of threads to run the web application/service
 PY=python3# Command to run python
 
 # Phony targets
-.PHONY: clean debug install release
+.PHONY: clean debug deps install release
 default: all
 
 debug: export FLASK_DEBUG=1
@@ -37,6 +37,9 @@ install: $(VENV)
 # A Python virtual environment is required with Flask installed
 $(VENV):
 	$(PY) -m venv $(VENV)
+	$(MAKE) deps
+
+deps: $(VENV)
 	$(ACT) && pip install $(DEPS)
 
 # Remove installation

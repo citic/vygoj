@@ -6,6 +6,7 @@ from logging.handlers import RotatingFileHandler
 import flask
 import requests
 from flask_squeeze import Squeeze
+from talisman import Talisman
 
 from courses import CourseController
 from problems import ProblemController
@@ -26,6 +27,9 @@ app = flask.Flask(__name__, template_folder=template_path,
 
 # Compress responses (bzip) and minify static files
 squeeze = Squeeze(app)
+
+# Provide security headers to mitigate attacks
+Talisman(app)
 
 # Load configuration from a Python file with constants
 config_file = os.path.join(app_path, 'config/config.py')
