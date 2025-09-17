@@ -153,3 +153,9 @@ def log_event(request, response, method):
 def log_request(response):
     ''' Log all http requests '''
     return log_event(flask.request, response, logger.info)
+
+# Set the referrer security policy header
+@app.after_request
+def set_headers(response):
+    response.headers['Referrer-Policy'] = 'no-referrer'
+    return response
