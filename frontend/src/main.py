@@ -43,6 +43,10 @@ db_pathname = os.path.join(app_path, 'data/frontend.sqlite')
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_pathname}'
 # Disable watching object changes to reduce resource consumption
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Only send session cookies over HTTPS connections
+app.config['SESSION_COOKIE_SECURE'] = True
+# Do not allow JavaScript to access the session cookie
+app.config['SESSION_COOKIE_HTTPONLY'] = True
 # The database object maps Python objects to DB's tuples (ORM, object-relational mapping)
 db.init_app(app)
 
