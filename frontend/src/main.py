@@ -158,8 +158,11 @@ def log_request(response):
     ''' Log all http requests '''
     return log_event(flask.request, response, logger.info)
 
-# Set the referrer security policy header
 @app.after_request
 def set_headers(response):
+    """ Set other security policy headers that Talisman does not set """
+    # Do not serve information about who linked to this page
     response.headers['Referrer-Policy'] = 'no-referrer'
+    # Disable browser features that we do not use
+    response.headers['Permissions-Policy'] = 'geolocation=(), camera=(), microphone=()'
     return response
