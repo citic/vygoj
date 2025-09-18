@@ -176,9 +176,13 @@ def log_request(response):
 def set_headers(response):
     """ Set other security policy headers that Talisman does not set """
     # Do not serve information about who linked to this page
-    response.headers['Referrer-Policy'] = 'no-referrer'
+    response.headers['Referrer-Policy'] = 'strict-origin'
     # Disable browser features that we do not use
     response.headers['Permissions-Policy'] = 'geolocation=(), camera=(), microphone=()'
     # Avoid other websites to embed our resources
     response.headers['Cross-Origin-Resource-Policy'] = 'same-site'
+    # Allow only embeds resources that explicitly grant permission to be loaded
+    response.headers['Cross-Origin-Embedder-Policy'] = 'require-corp'
+    # Avoid an attacker open our site in a new window
+    response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
     return response
