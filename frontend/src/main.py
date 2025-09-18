@@ -29,7 +29,21 @@ app = flask.Flask(__name__, template_folder=template_path,
 squeeze = Squeeze(app)
 
 # Provide security headers to mitigate attacks
-Talisman(app, content_security_policy=GOOGLE_CSP_POLICY)
+cdn = {
+    'default-src': ("'self' 'unsafe-inline'"
+                    ' *.google-analytics.com'
+                    ' *.googleanalytics.com'
+                    ' *.gstatic.com'
+                    ' ajax.googleapis.com'
+                    ' cdn.jsdelivr.net'
+                    ' fonts.googleapis.com'
+                    ' themes.googleusercontent.com'
+                    ' www.google.com'
+                    ' www.youtube.com'),
+    'img-src': "'self' data:",
+}
+# GOOGLE_CSP_POLICY['default-src'] += f" {CDN_URL}"
+Talisman(app, content_security_policy=cdn)
 
 # Load configuration from a Python file with constants
 config_file = os.path.join(app_path, 'config/config.py')
@@ -165,4 +179,6 @@ def set_headers(response):
     response.headers['Referrer-Policy'] = 'no-referrer'
     # Disable browser features that we do not use
     response.headers['Permissions-Policy'] = 'geolocation=(), camera=(), microphone=()'
+    # Avoid other websites to embed our resources
+    response.headers['Cross-Origin-Resource-Policy'] = 'same-site'
     return response
