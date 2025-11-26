@@ -228,12 +228,13 @@ class ProblemManager {
 
     // 1. Local storage
     let initialCode = loadConfig('code');
+    let problemCode = null;
 
     // 2. Problem's initial code for the programming language
-    if (initialCode === null && this.problem.initialCodeFor
-        && this.problem.initialCodeFor[language]) {
-      initialCode = this.problem.initialCodeFor[language];
+    if (this.problem.initialCodeFor && this.problem.initialCodeFor[language]) {
+      problemCode = this.problem.initialCodeFor[language];
     }
+    initialCode = initialCode || problemCode;
 
     // 3. Default code for the programming language
     if (!initialCode) {
@@ -245,6 +246,20 @@ class ProblemManager {
     this.editors[0].setValue(initialCode, -1);
     if (this.runButton) {
       this.runButton.disabled = initialCode.trim().length === 0;
+    }
+
+    const revertButton = document.getElementById('revert_button');
+    if (revertButton) {
+      revertButton.addEventListener('click', (event) => {
+        event.preventDefault(); // Do not follow the link
+        if (window.confirm('Do you want to revert to the initial code?')) {
+          this.editors[0].setValue(problemCode, -1);
+          saveConfig('code', problemCode);
+          if (this.runButton) {
+            this.runButton.disabled = problemCode.trim().length === 0;
+          }
+        }
+      });
     }
   }
 

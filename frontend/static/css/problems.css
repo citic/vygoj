@@ -87,6 +87,11 @@
   left: 50%;
 }
 
+.problem__solution_toolbar {
+  display: flex;
+  justify-content: space-between;
+}
+
 label {
   font-weight: 600;
   font-style: italic;
