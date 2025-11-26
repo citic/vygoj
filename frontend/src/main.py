@@ -36,6 +36,7 @@ cdn = {
                     ' *.gstatic.com'
                     ' ajax.googleapis.com'
                     ' cdn.jsdelivr.net'
+                    ' cdnjs.cloudflare.com'
                     ' fonts.googleapis.com'
                     ' themes.googleusercontent.com'
                     ' www.google.com'
