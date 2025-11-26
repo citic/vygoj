@@ -139,7 +139,6 @@ export class Problem {
     const initials = json?.initialCodeFor || {};
     Object.keys(initials).forEach((key) => {
       this.initialCodeFor[key] = decode(initials[key] || '');
-      console.log(key, this.initialCodeFor[key]);
     });
   }
 }

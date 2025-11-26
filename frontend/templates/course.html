@@ -7,9 +7,9 @@
       {{ '  ' * (indent - 2) }}<li class="course__section">
       {{ '  ' * (indent - 1) }}<p class="course__activity">
       {%- if item.type == 'problem' -%}
-        [{{ it.progress and it.progress.get(item.name, 0) or 0 }}%] <a href="{{ item.build_url() }}">{{ item.title }}</a> (<a href="https://jeisson.ecci.ucr.ac.cr/invest/eval_taller/" target="_blank">Opinión</a>)
+        [{{ it.progress and it.progress.get(item.name, 0) or 0 }}%] <a href="{{ item.build_url() }}">{{ item.title }}</a> (<a href="https://jeisson.ecci.ucr.ac.cr/invest/eval_taller/?id={{ it.user['email'] }}&t={{ loop.index }}&h=juez" target="_blank">Opinión</a>)
       {%- elif item.type == 'page' -%}
-        <a href="https://jeisson.ecci.ucr.ac.cr/invest/{{ item.name }}.7z">{{ item.title }}</a> (<a href="https://jeisson.ecci.ucr.ac.cr/invest/eval_taller/" target="_blank">Opinión</a>)
+        <a href="https://jeisson.ecci.ucr.ac.cr/invest/{{ item.name }}.7z">{{ item.title }}</a> (<a href="https://jeisson.ecci.ucr.ac.cr/invest/eval_taller/?id={{ it.user['email'] }}&t={{ loop.index }}&h=ide" target="_blank">Opinión</a>)
       {%- else %}
         {{- item.title }}
       {%- endif %}</p>
