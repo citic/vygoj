@@ -312,6 +312,11 @@ class ProblemManager {
     const totalTestCount = document.getElementById('total_test_count');
     console.assert(totalTestCount);
     totalTestCount.textContent = String(this.result.results.length);
+    const score = this.result.results.length > 0 ? Math.round((
+      100.0 * parseFloat(this.result.passedTestCount)) / this.result.results.length) : 0;
+    window.localStorage.setItem(this.problem.name, `${score}`);
+    console.log(`${this.problem.name} := ${score}`);
+    console.dir(this.problem);
 
     const totalPointsElement = document.getElementById('user_points');
     console.assert(totalPointsElement);

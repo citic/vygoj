@@ -75,6 +75,7 @@ class CourseController:
                 { 'href': f"/course/{course.name}", 'text': course.name },
             ],
             'course': course,
+            'scripts': [ '<script src="/js/course/course.js" type="module" async="async"></script>' ],
             # TODO(i): 'progress': progress,
         }
         # print(json.dumps(it, indent=2))

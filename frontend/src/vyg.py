@@ -416,8 +416,14 @@ class Problem(Activity):
                 json_dict = json.load(file)
                 # Load the fields of this object from JSON dictionary to a new object
                 problem = Problem(json_dict, self._parent, False)
-                # Copy the fields from the loaded problem to this problem
-                self.__dict__.update(problem.__dict__)
+                # Copy the fields from the loaded problem to this problem. Dictionary update does
+                # not work because some fields in problem are empty and would erase existing data
+                #self.__dict__.update(problem.__dict__)
+                # Merge non empty properties of problem into self. An object replacement
+                # is problematic because self is already referenced by parent material
+                for key, value in problem.__dict__.items():
+                    if key[0] != '_' and value:
+                        setattr(self, key, value)
 
     def load_problem_statement(self, path):
         """ Load the problem statement from Asciidoc, Markdown, or HTML file """
