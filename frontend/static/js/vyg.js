@@ -117,7 +117,7 @@ export class Problem {
     // Allowed programming languages for this problem
     this.languages = json?.languages || [];
     // Map<string, string> but not supported by JSON. A simple object used instead
-    this.initialCodeFor = json?.initialCodeFor || {};
+    this.initialCodeFor = {}; // json?.initialCodeFor || {};
     // Minimum number of secondary threads to solve the problem. If this number
     // is one or more, additional runs will be conducted for each test case
     this.minThreads = json?.minThreads || 1;
@@ -136,8 +136,10 @@ export class Problem {
     // this.tools = json?.tools || '';
 
     // Decode the initial code for each language
-    Object.keys(this.initialCodeFor).forEach((key) => {
-      this.initialCodeFor[key] = decode(this.initialCodeFor[key] || '');
+    const initials = json?.initialCodeFor || {};
+    Object.keys(initials).forEach((key) => {
+      this.initialCodeFor[key] = decode(initials[key] || '');
+      console.log(key, this.initialCodeFor[key]);
     });
   }
 }

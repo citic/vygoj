@@ -1,5 +1,6 @@
 """ Common classes for VygOJ backend and frontend server """
 import base64
+import copy
 import enum
 import glob
 import json
@@ -85,7 +86,7 @@ def to_dict(data_object):
     base64 strings. The data_object is not modified. """
     # By the default, return the direct dictionary representation of the object
     # Because it may be modified, we make a copy to preserve the original object intact
-    result = data_object.__dict__.copy()
+    result = copy.deepcopy(data_object.__dict__)
     # Do not export to JSON private non-serializable attributes (starts with _) or are empty
     # Traverse original dictionary because copy will be modified
     for field in data_object.__dict__:
@@ -375,6 +376,7 @@ class Problem(Activity):
         #     code = code.replace('&lt;', '<')
         #     code = code.replace('&gt;', '>')
         #     self.initialCodeFor[lang] = code
+        self.folder_loaded = False
 
     @staticmethod
     def load_tests(json_tests, should_decode=True):
@@ -398,11 +400,13 @@ class Problem(Activity):
 
     def load_folder(self):
         """ Load problem data from the folder where it is stored """
-        path = self.get_path()
-        self.load_json(path)
-        self.load_problem_statement(path)
-        self.load_initial_code(path)
-        self.load_test_cases(path)
+        if self.folder_loaded is False:
+            path = self.get_path()
+            self.load_json(path)
+            self.load_problem_statement(path)
+            self.folder_loaded = True
+            self.load_initial_code(path)
+            self.load_test_cases(path)
 
     def load_json(self, path):
         """ Load the JSON file, if any, with configuration for this problem """
