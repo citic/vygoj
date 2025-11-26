@@ -6,6 +6,16 @@ from flask import current_app as app
 #from users import logged_users
 import vyg
 
+# Random combinations for experiments of 4-problem courses
+EXP_RAND_TYPE = [
+    ['page',    'page',    'problem', 'problem'],
+    ['page',    'problem', 'page',    'problem'],
+    ['page',    'problem', 'problem', 'page'],
+    ['problem', 'page',    'page',    'problem'],
+    ['problem', 'page',    'problem', 'page'],
+    ['problem', 'problem', 'page',    'page'],
+]
+
 class CourseController:
     """ Manages courses created by instructors and enrolled by students """
     # Cache of all loaded courses. It is dictionary of {id: Course} pairs
@@ -54,6 +64,8 @@ class CourseController:
     def get_course(course_id):
         ''' User clicked a course '''
         course = CourseController.all_courses.get(course_id)
+        # TODO(jhc): Disable after experiments
+        course = CourseController.customize_for(course, flask.session.get('user'))
         if not course: # TODO(i): and user logged in
             flask.abort(404)
         # TODO(i): progress = user.load_progress()
@@ -84,3 +96,20 @@ class CourseController:
                 courses.append(vyg.Course(contents, False, folder))
             return courses
         raise RuntimeError(f'could not find course {path}')
+
+    @staticmethod
+    def customize_for(course, user):
+        """ Return a course dictionary according to the type of participant """
+        if not user or not course:
+            return course
+        username = user.get('email')
+        if len(username) != 3 or username[0] != 'e':  # If not a student, return empty list
+            return course
+        num = int(username[1:]) - 1  # Convert 'e01' to 0, 'e02' to 1, etc.
+        permutation = EXP_RAND_TYPE[num % 6]
+        problems = course.contents[0].contents
+        if len(problems) != 4:
+            return course
+        for index in range(4):
+            problems[index].type = permutation[index]
+        return course
