@@ -36,6 +36,9 @@ LANGUAGE_EXTENSIONS = {
     'py': 'Python',
 }
 
+# Create the inverse dictionary mapping languages to their extensions
+EXTENSION_LANGUAGES = {value: key for key, value in LANGUAGE_EXTENSIONS.items()}
+
 def get_app_path():
     """ Return the path where the docker app is located """
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
