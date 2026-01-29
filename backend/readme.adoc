@@ -7,7 +7,7 @@ The Vygoj Backend is a Code Execution Service because provides a web service to 
 # Install Docker and create a Debian image
 $ cd engine
 $ sudo make install  # If Docker is not already installed
-$ make build
+$ make image
 $ cd ..
 
 # Install dependencies and run the backend. Requires Python 3
@@ -34,6 +34,13 @@ In production server, you can run the backend with no debug reporting:
 [source,bash]
 ----
 $ make release
+----
+
+For keeping the backend server running in background even after logging out from the terminal, you can use `gunicorn`:
+
+[source,bash]
+----
+$ make server
 ----
 
 You can remove the virtual environment when it is no longer needed:

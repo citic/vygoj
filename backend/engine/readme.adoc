@@ -13,18 +13,18 @@ The Vygoj Code Execution Engine is developed in Python and requires Docker. A `M
 sudo make install
 ----
 
-Alternatively you may install the latest Docker version from Docker's official repositories using:
+For macOS `make install` (without sudo) installs the official Docker Desktop and client. It assumes you have Homebrew installed. Run Docker manually after installing to accept the license and configure the service. Alternatively, for Debian you may install the latest Docker version from Docker's official repositories using:
 
 [source,sh]
 ----
 sudo make official-install
 ----
 
-VygOJ Code Execution Engine requires a Debian-based Docker's image called `debian-vygoj`. This image has common tools for development in the supported programming languages by VygOJ. The recipes to create this image are in the link:Dockerfile[Dockerfile]. To build the image run:
+VygOJ Code Execution Engine requires a Debian-based Docker's image called `debian-vygoj`. This image has common tools for development in the programming languages supported by VygOJ. The recipe to create this image are in the link:Dockerfile[Dockerfile]. To build the image run:
 
 [source,sh]
 ----
-make build
+make image
 ----
 
 

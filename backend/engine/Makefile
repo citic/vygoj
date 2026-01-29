@@ -1,22 +1,26 @@
 IMAGE=debian-dev
 CONTAINER=$(IMAGE)-interactive
 
-.PHONY: build clean install official-install run stop remove-containers remove-image uninstall
+.PHONY: image clean install official-install run stop remove-containers remove-image uninstall
 
 # Run the Docker image
 run:
 	docker run -it --name $(CONTAINER) $(IMAGE):latest
 
 # Create a Docker image from the Dockerfile
-build:
-	docker build -t $(IMAGE):latest .
+image:
+	docker buildx build -t $(IMAGE):latest .
 
 # Install Docker client and server using standard Debian packages
 install:
+ifeq (0, $(shell which brew > /dev/null 2>&1; echo $$?)) # macOS with Homebrew
+	brew install docker-desktop
+else
 	sudo apt install docker.io
 	sudo groupadd docker || true
 	sudo usermod -aG docker $(USER) || true
 	newgrp docker || true
+endif
 
 # TODO(jhc): remove Docker group
 uninstall: clean
