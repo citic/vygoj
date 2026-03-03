@@ -15,10 +15,25 @@ The web application component allows professors to create courses and students t
 You need command-line access to the machine where the app will be installed. The following instructions assume a Unix-like environment.
 
 
+
+[[setup]]
+== Setup
+
+Run `make install` to create the Python virtual environment and install the required dependencies. You can run a local instance of the frontend for development (`make`), local production (`make run`), or production server (`make server`):
+
+[source,sh]
+----
+make install
+make server
+----
+
+Now you can access the frontend at http://localhost:8080 or any other port you configured. The backend should be running and accessible from the frontend in order to run code. Read the user manual in `docs/` folder for creating users, courses, and assignments.
+
+
 [[reverse_proxy]]
 == Reverse proxy configuration
 
-You may want to run the VygOJ frontend on port 80 (HTTP) and 443 (HTTPS). However, for security reasons, the Flask server should run on a port greater than 1024. A reverse proxy using Apache or Nginx helps to reach this goal. The following instructions are for Apache2.
+You may want to run the VygOJ frontend on port 80 (HTTP) and 443 (HTTPS). However, for security reasons, the Flask server should run on a port greater than 1024. A reverse proxy using Apache or Nginx helps to reach both goals. The following instructions are for Apache2.
 
 Run the frontend in a non-privileged port, for example, 8080. Use a process manager such as Gunicorn, that keeps the frontend running even if it crashes. For example:
 
