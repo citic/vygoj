@@ -206,6 +206,10 @@ class Material(abstract):
     def create(json_dict: dict, parent: 'Material', should_decode: bool):
         """ Create a Material object from a JSON dictionary entry. """
         material_type = json_dict.get('type', '')
+        # If material starts with underscore, it is disabled
+        # TODO(jhc): do not load the disabled materials at all
+        if material_type.startswith('_'):
+            material_type = material_type[1:]
         if material_type == 'section':
             return Section(json_dict, parent, should_decode)
         if material_type == 'page':
