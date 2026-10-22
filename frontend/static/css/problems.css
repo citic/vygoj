@@ -64,6 +64,18 @@
 
 #output_diff {
   position: relative;
+  height: 100px; /* Monaco diff editor needs a fixed height, min-height is not enough */
+}
+
+/* Monaco diff editor uses class "editor" internally: do not apply our .editor rules to it */
+#output_diff .editor {
+  border: none;
+  min-height: 0;
+}
+
+/* form.css adds margin-top to every label except the first one: keep both diff labels aligned */
+#output_diff_wrapper label {
+  margin-top: 0;
 }
 
 .test_button:hover:not(.disabled):not(.selected) {

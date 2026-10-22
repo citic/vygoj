@@ -52,11 +52,8 @@ class ProblemController:
             ],
             'problem': problem,
             'scripts': [
-                ('<script src="https://cdn.jsdelivr.net/npm/ace-builds@1.4.13/src-min/ace.js"'
-                    ' crossorigin="anonymous" async="async"'
-                    ' integrity="sha256-bS3VAQePcKYmsvI+8BdG2QJAVb9FbiZLgM5vK2/+TcM="></script>'),
-                ('<script src="https://cdn.jsdelivr.net/npm/ace-diff@3.0.3/dist/ace-diff.min.js"'
-                    ' async="async"></script>'),
+                # Monaco Editor AMD loader, problem.js loads the editor with it. Keep version in sync
+                '<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>',
                 '<script src="/js/problem/problem.js" type="module" async="async"></script>',
                 '<script src="/js/site.js" type="module" async="async"></script>',
             ],

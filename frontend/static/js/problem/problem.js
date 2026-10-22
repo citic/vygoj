@@ -1,7 +1,6 @@
 import {
   encode, ExecutionResult, Problem, Status,
 } from '../vyg.js';
-// import AceDiff from 'ace-diff';
 
 // Default given code for each supported programming language
 // It may be a Map<string, string>
@@ -47,10 +46,9 @@ class ProblemManager {
   // Singleton instance
   constructor() {
     // References to all editors used in the problem page
-    this.editors = []; // AceAjax.Editor
+    this.editors = []; // monaco.editor.IStandaloneCodeEditor
     // Theme style in all editors
-    // Default theme: https://github.com/ajaxorg/ace/tree/master/lib/ace/theme
-    this.theme = 'ace/theme/xcode'; // monokai
+    this.theme = 'vs'; // Monaco themes: vs, vs-dark, hc-black, hc-light
     // The problem model fetched from server
     this.problem = null; // class Problem instance
     // Index of the current shown test case
@@ -60,7 +58,7 @@ class ProblemManager {
     // The result after running the user code
     this.result = null; // class ExecutionResult instance
     // Shows the diff between expected output and user standard output
-    this.differ = null; // class AceDiff instance
+    this.differ = null; // monaco.editor.IStandaloneDiffEditor
   }
 
   static main() {
@@ -72,7 +70,7 @@ class ProblemManager {
   // such as highlight.js or prismjs
   async setup() {
     try {
-      this.setupReferences();
+      await this.setupReferences(); // Editors cannot be created until Monaco is loaded
       this.setupCodeEditor();
       this.setupTestCaseEditors();
       await this.fetchProblem();
@@ -86,10 +84,15 @@ class ProblemManager {
     }
   }
 
-  setupReferences() {
-    if (!window.ace) {
-      throw new Error('Ace Code Editor library not found');
+  async setupReferences() {
+    // Monaco AMD loader (loader.js) is included by the server in problems.py
+    if (!window.require) {
+      throw new Error('Monaco Editor loader not found');
     }
+    // Version must match the loader.js URL in problems.py
+    window.require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' } });
+    // Load Monaco and wait until window.monaco is available
+    await new Promise((resolve, reject) => window.require(['vs/editor/editor.main'], resolve, reject));
     this.runButton = document.getElementById('run_button');
     if (!this.runButton) {
       throw Error('could not find run_button element');
@@ -97,15 +100,25 @@ class ProblemManager {
   }
 
   setupCodeEditor() {
-    const editor = window.ace.edit('code_editor');
-    editor.container.firstChild.id = 'code_editor_area'; // For <label for>
-    editor.setTheme(this.theme);
-    editor.session.setMode('ace/mode/c_cpp');
+    const container = document.getElementById('code_editor');
+    const editor = window.monaco.editor.create(container, {
+      language: 'cpp',
+      theme: this.theme,
+      tabSize: 2, // Google code style
+      minimap: { enabled: false },
+      scrollBeyondLastLine: false,
+      automaticLayout: true,
+    });
+    container.querySelector('textarea').id = 'code_editor_area'; // For <label for>
     // Automatically adjust height to the number of lines typed by user
-    editor.setOption('maxLines', 50); // Infinity
-    editor.setOption('tabSize', 2); // Google code style
+    const maxHeight = 50 * editor.getOption(window.monaco.editor.EditorOption.lineHeight);
+    const adjustHeight = () => {
+      container.style.height = `${Math.min(editor.getContentHeight(), maxHeight)}px`;
+    };
+    editor.onDidContentSizeChange(adjustHeight);
+    adjustHeight();
     this.editors.push(editor);
-    editor.on('change', () => {
+    editor.onDidChangeModelContent(() => {
       const code = editor.getValue();
       saveConfig('code', code);
       if (this.runButton) {
@@ -121,14 +134,17 @@ class ProblemManager {
   }
 
   setupTestCaseEditor(id) {
-    console.assert(window.ace);
-    const editor = window.ace.edit(id);
-    editor.container.firstChild.id = `${id}_area`; // For <label for>
-    editor.setTheme(this.theme);
-    editor.setOption('readOnly', true);
-    editor.setOption('showInvisibles', true);
-    // editor.setOption('maxLines', 15);
-    editor.resize();
+    console.assert(window.monaco);
+    const container = document.getElementById(id);
+    const editor = window.monaco.editor.create(container, {
+      theme: this.theme,
+      readOnly: true,
+      renderWhitespace: 'all', // Show spaces and tabs
+      minimap: { enabled: false },
+      scrollBeyondLastLine: false,
+      automaticLayout: true,
+    });
+    container.querySelector('textarea').id = `${id}_area`; // For <label for>
     this.editors.push(editor);
   }
 
@@ -381,38 +397,36 @@ class ProblemManager {
     if (index < this.result.results.length) {
       userOutput = this.result.results[index].stdout;
     }
-    // TODO: Use AceDiff always and decrease gutter width
     if (userOutput && this.result.results[index].status === Status.WRONG) {
       // Hide expected output and user output and show diff element
       hideElement('active_test_expected_output_wrapper');
       hideElement('active_test_user_output_wrapper');
       showElement('output_diff_wrapper');
-      // Create a Ace Diff in output_diff element
-      this.differ = new window.AceDiff({
-        // ace: window.ace,
-        element: '#output_diff',
-        diffGranularity: 'specific',
-        left: {
-          editable: false,
-          // copyLinkEnabled: false,
-          content: expectedOutput,
-        },
-        right: {
-          editable: false,
-          // copyLinkEnabled: false,
-          content: userOutput,
-        },
-      });
+      // Create a Monaco diff editor in output_diff element only the first time, then reuse it
+      if (!this.differ) {
+        this.differ = window.monaco.editor.createDiffEditor(document.getElementById('output_diff'), {
+          theme: this.theme,
+          readOnly: true,
+          renderWhitespace: 'all', // Show spaces and tabs
+          useInlineViewWhenSpaceIsLimited: false, // Side by side: expected | user output
+          renderOverviewRuler: false, // Hide the change map on the right, the box is too small for it
+          minimap: { enabled: false },
+          scrollBeyondLastLine: false,
+          automaticLayout: true,
+        });
+        this.differ.setModel({
+          original: window.monaco.editor.createModel(''),
+          modified: window.monaco.editor.createModel(''),
+        });
+      }
+      // Left: expected output, right: user output
+      this.differ.getOriginalEditor().setValue(expectedOutput || '');
+      this.differ.getModifiedEditor().setValue(userOutput);
     } else {
       // Show expected output and user output and hide diff element
       hideElement('output_diff_wrapper');
       showElement('active_test_expected_output_wrapper');
       showElement('active_test_user_output_wrapper');
-
-      if (this.differ) {
-        // this.differ.destroy();
-        this.differ = null;
-      }
     }
   }
 

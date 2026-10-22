@@ -1,8 +1,6 @@
 {% extends 'base.html' %}
 {%- block styles %}
     <link rel="stylesheet" href="/css/problems.css">
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/ace-diff@3.0.3/dist/ace-diff.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ace-diff@3.0.3/dist/ace-diff.min.css"></noscript>
 {%- endblock %}
 {%- block main %}
       <main id="problem" class="problem" data-name="{{ it.problem.name }}">
