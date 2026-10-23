@@ -99,9 +99,17 @@
   left: 50%;
 }
 
-.problem__solution_toolbar {
+/* Fullscreen button of the toolbar: the toolbar on top, the editor fills the rest */
+.problem__solution:fullscreen {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  background: white;
+}
+
+.problem__solution:fullscreen .editor {
+  flex: 1;
+  min-height: 0; /* Lets long code shrink to the screen instead of overflowing it */
+  height: auto !important; /* Overrides the height set by adjustHeight() */
 }
 
 label {

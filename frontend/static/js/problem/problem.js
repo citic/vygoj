@@ -1,6 +1,7 @@
 import {
   encode, ExecutionResult, Problem, Status,
 } from '../vyg.js';
+import '../components/barra-herramientas.js';
 
 // Default given code for each supported programming language
 // It may be a Map<string, string>
@@ -108,8 +109,8 @@ class ProblemManager {
       minimap: { enabled: false },
       scrollBeyondLastLine: false,
       automaticLayout: true,
+      ariaLabel: 'Your solution', // The toolbar replaced the <label for>
     });
-    container.querySelector('textarea').id = 'code_editor_area'; // For <label for>
     // Automatically adjust height to the number of lines typed by user
     const maxHeight = 50 * editor.getOption(window.monaco.editor.EditorOption.lineHeight);
     const adjustHeight = () => {
@@ -118,6 +119,7 @@ class ProblemManager {
     editor.onDidContentSizeChange(adjustHeight);
     adjustHeight();
     this.editors.push(editor);
+    document.querySelector('barra-herramientas').editor = editor;
     editor.onDidChangeModelContent(() => {
       const code = editor.getValue();
       saveConfig('code', code);
@@ -238,8 +240,8 @@ class ProblemManager {
   }
 
   loadUserCode() {
-    // TODO: add language combo box
     console.assert(this.problem);
+    document.querySelector('barra-herramientas').languages = this.problem.languages || ['C'];
     const language = this.getProblemLanguage();
 
     // 1. Local storage
@@ -264,19 +266,7 @@ class ProblemManager {
       this.runButton.disabled = initialCode.trim().length === 0;
     }
 
-    const revertButton = document.getElementById('revert_button');
-    if (revertButton) {
-      revertButton.addEventListener('click', (event) => {
-        event.preventDefault(); // Do not follow the link
-        if (window.confirm('Do you want to revert to the initial code?')) {
-          this.editors[0].setValue(problemCode, -1);
-          saveConfig('code', problemCode);
-          if (this.runButton) {
-            this.runButton.disabled = problemCode.trim().length === 0;
-          }
-        }
-      });
-    }
+    document.querySelector('barra-herramientas').initialCode = problemCode || defaultCodeFor[language] || '';
   }
 
   setupRunEnvironment() {
@@ -289,8 +279,7 @@ class ProblemManager {
   }
 
   async runSolution() {
-    // TODO: add language combo box
-    const language = this.getProblemLanguage();
+    const { language } = document.querySelector('barra-herramientas');
     // Disable the Run button while the backend is running the code
     this.runButton.disabled = true;
     this.runButton.textContent = 'Running';

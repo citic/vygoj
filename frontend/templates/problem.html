@@ -9,10 +9,7 @@
           <div class="problem__statement">{{ it.problem.statement|safe }}</div>
         </article>
         <div class="problem__solution">
-          <div class="problem__solution_toolbar">
-            <label for ="code_editor_area">Your solution</label>
-            <a href="" id="revert_button" title="Restores initial code">Revert</a>
-          </div>
+          <barra-herramientas></barra-herramientas>
           <div id="code_editor" class="editor"></div>
         </div>
         <div class="solution__evaluation">
