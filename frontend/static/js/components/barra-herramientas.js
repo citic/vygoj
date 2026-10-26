@@ -30,14 +30,26 @@ class Toolbar extends HTMLElement {
           padding: 4px 8px;
           background: #f8fafc;
           border: 1px solid #e2e6ee;
+          /* Its height changes a little with the corner handle; the icons and title follow it */
+          container-type: size;
+          /* Icon size: the toolbar height minus the padding, but small enough to fit in one row */
+          --icon: clamp(12px, min(100cqh - 12px, (100cqw - 230px) / 16), 60px);
+          box-sizing: border-box;
+          height: 42px;
+          min-height: 34px;
+          max-height: 50px;
+          resize: vertical;
+          overflow: auto;
         }
-        strong { margin-right: 12px; font-style: italic; color: var(--bg-color); }
+        strong { margin-right: 12px; font-size: max(12px, var(--icon) * 0.8); font-style: italic; color: var(--bg-color); }
+        /* A narrow toolbar leaves the room of the title to the buttons */
+        @container (width < 450px) { strong { display: none; } }
         button {
           padding: 6px;
           border: 0;
           border-radius: 6px;
           background: none;
-          font: 20px/1 Icons;
+          font: var(--icon)/1 Icons;
           color: #64748b;
           cursor: pointer;
         }
@@ -51,6 +63,27 @@ class Toolbar extends HTMLElement {
         /* Layout menu, the beforetoggle listener places it under its button */
         [popover] { inset: auto; margin: 0; padding: 4px; border: 1px solid #e2e6ee; border-radius: 6px; }
         [popover] button { display: block; width: 100%; font: inherit; text-align: left; }
+        /* Hidden toolbar: only the toggle button stays, as a tab on top of the editor */
+        :host(:state(hidden)) {
+          justify-content: center;
+          container-type: normal;
+          height: auto !important; /* Ignores the height of the handle */
+          min-height: 0;
+          padding: 0;
+          border: 0;
+          background: none;
+          resize: none;
+          overflow: visible;
+        }
+        :host(:state(hidden)) > :not(.toggle) { display: none; }
+        :host(:state(hidden)) .toggle {
+          padding: 0 16px;
+          font-size: 20px;
+          border: 1px solid #e2e6ee;
+          border-bottom: 0;
+          border-radius: 6px 6px 0 0;
+          background: #f8fafc;
+        }
       </style>
       <strong>Your solution</strong>
       ${buttons.map(([action, title, icon]) => `<button type="button" data-action="${action}" title="${title}" aria-label="${title}">${icon}</button>`).join('')}
@@ -60,7 +93,8 @@ class Toolbar extends HTMLElement {
         <button type="button" data-layout="left">Statement on the left</button>
         <button type="button" data-layout="right">Statement on the right</button>
       </div>
-      <select aria-label="Programming language"></select>`;
+      <select aria-label="Programming language"></select>
+      <button type="button" class="toggle"></button>`;
     const internals = this.attachInternals();
     internals.role = 'toolbar';
     internals.ariaLabel = 'Editor';
@@ -81,6 +115,17 @@ class Toolbar extends HTMLElement {
       menu.hidePopover();
     });
     document.documentElement.dataset.layout = window.localStorage.getItem('layout') || 'top';
+    // The last button hides the toolbar, leaving a tab to show it again; the choice is remembered
+    const toggle = this.shadowRoot.querySelector('.toggle');
+    const show = (shown) => {
+      internals.states[shown ? 'delete' : 'add']('hidden');
+      toggle.textContent = shown ? 'expand_less' : 'expand_more';
+      toggle.title = shown ? 'Hide the toolbar' : 'Show the toolbar';
+      toggle.ariaExpanded = shown;
+      window.localStorage.setItem('toolbarShown', shown);
+    };
+    toggle.addEventListener('click', () => show(internals.states.has('hidden')));
+    show(window.localStorage.getItem('toolbarShown') !== 'false');
   }
 
   // The language chosen by the student
