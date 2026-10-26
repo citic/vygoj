@@ -2,6 +2,7 @@ import {
   encode, ExecutionResult, Problem, Status,
 } from '../vyg.js';
 import '../components/barra-herramientas.js';
+import '../components/editor-codigo.js';
 
 // Default given code for each supported programming language
 // It may be a Map<string, string>
@@ -93,7 +94,9 @@ class ProblemManager {
     // Version must match the loader.js URL in problems.py
     window.require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' } });
     // Load Monaco and wait until window.monaco is available
-    await new Promise((resolve, reject) => window.require(['vs/editor/editor.main'], resolve, reject));
+    await new Promise((resolve, reject) => {
+      window.require(['vs/editor/editor.main'], resolve, reject);
+    });
     this.runButton = document.getElementById('run_button');
     if (!this.runButton) {
       throw Error('could not find run_button element');
@@ -101,8 +104,8 @@ class ProblemManager {
   }
 
   setupCodeEditor() {
-    const container = document.getElementById('code_editor');
-    const editor = window.monaco.editor.create(container, {
+    const container = document.querySelector('editor-codigo editor-monaco');
+    const editor = document.querySelector('editor-codigo').create({
       language: 'cpp',
       theme: this.theme,
       tabSize: 2, // Google code style
@@ -119,7 +122,6 @@ class ProblemManager {
     editor.onDidContentSizeChange(adjustHeight);
     adjustHeight();
     this.editors.push(editor);
-    document.querySelector('barra-herramientas').editor = editor;
     editor.onDidChangeModelContent(() => {
       const code = editor.getValue();
       saveConfig('code', code);
@@ -138,9 +140,8 @@ class ProblemManager {
   setupTestCaseEditor(id) {
     console.assert(window.monaco);
     const container = document.getElementById(id);
-    const editor = window.monaco.editor.create(container, {
+    const editor = container.create({
       theme: this.theme,
-      readOnly: true,
       renderWhitespace: 'all', // Show spaces and tabs
       minimap: { enabled: false },
       scrollBeyondLastLine: false,
@@ -398,7 +399,7 @@ class ProblemManager {
           readOnly: true,
           renderWhitespace: 'all', // Show spaces and tabs
           useInlineViewWhenSpaceIsLimited: false, // Side by side: expected | user output
-          renderOverviewRuler: false, // Hide the change map on the right, the box is too small for it
+          renderOverviewRuler: false, // Hide the change map on the right, the box is too small
           minimap: { enabled: false },
           scrollBeyondLastLine: false,
           automaticLayout: true,

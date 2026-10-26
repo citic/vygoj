@@ -34,10 +34,6 @@
   font-size: smaller;
 }
 
-#editor {
-  min-height: 90px;
-}
-
 .editor_wrapper {
   width: 100%;
   margin-right: 1px;
@@ -116,4 +112,32 @@ label {
   font-weight: 600;
   font-style: italic;
   color: var(--bg-color);
+}
+
+/* Custom elements are inline by default: they need a block to have a size */
+editor-codigo, editor-monaco {
+  display: block;
+  position: relative; /* The copy button is placed relative to the editor */
+}
+
+/* Copy button of the read-only editors, in the top right corner over the text */
+editor-monaco .copy {
+  position: absolute;
+  top: 2px;
+  right: 16px; /* Leaves room for the vertical scrollbar */
+  z-index: 10; /* Over the Monaco text */
+  min-width: 0;
+  padding: 4px;
+  border-radius: 6px;
+  box-shadow: none;
+  background: #f8fafc;
+  font: 16px/1 Icons;
+  color: #64748b;
+  cursor: pointer;
+}
+
+editor-monaco .copy:hover {
+  font-weight: normal;
+  filter: none;
+  background: #e2e6ee;
 }

@@ -9,8 +9,6 @@ import vyg
 from vyg_log import vyg_log
 from courses import CourseController
 
-# TODO(jhc): Replace Ace by Monaco Editor https://microsoft.github.io/monaco-editor/docs.html
-
 class ProblemController:
     """Controls problems
 

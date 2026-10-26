@@ -8,10 +8,7 @@
           <h2 class="problem__title">{{ it.problem.title }}</h2>
           <div class="problem__statement">{{ it.problem.statement|safe }}</div>
         </article>
-        <div class="problem__solution">
-          <barra-herramientas></barra-herramientas>
-          <div id="code_editor" class="editor"></div>
-        </div>
+        <editor-codigo class="problem__solution"></editor-codigo>
         <div class="solution__evaluation">
           <div class="row">
             <p>
@@ -35,15 +32,15 @@
           <div id="active_test" class="row top">
             <div id="active_test_input_wrapper" class="editor_wrapper">
               <label for="active_test_input_area" id="active_test_input_label">Input</label>
-              <div id="active_test_input" class="editor"></div>
+              <editor-monaco id="active_test_input" class="editor" readonly></editor-monaco>
             </div>
             <div id="active_test_expected_output_wrapper" class="editor_wrapper">
               <label for="active_test_expected_output_area" id="active_test_expected_output_label">Expected output</label>
-              <div id="active_test_expected_output" class="editor"></div>
+              <editor-monaco id="active_test_expected_output" class="editor" readonly></editor-monaco>
             </div>
             <div id="active_test_user_output_wrapper" class="editor_wrapper">
               <label for="active_test_user_output_area" id="active_test_user_output_label">Your output</label>
-              <div id="active_test_user_output" class="editor"></div>
+              <editor-monaco id="active_test_user_output" class="editor" readonly></editor-monaco>
             </div>
             <div id="output_diff_wrapper" class="editor_wrapper hidden">
               <div class="row"><label for="output_diff_area">Expected output</label><label for="output_diff_area">Your output</label></div>
