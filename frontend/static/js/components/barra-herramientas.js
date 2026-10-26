@@ -48,15 +48,39 @@ class Toolbar extends HTMLElement {
           box-shadow: -6px 0 0 -5px #e2e6ee;
         }
         select { margin-left: auto; font: inherit; }
+        /* Layout menu, the beforetoggle listener places it under its button */
+        [popover] { inset: auto; margin: 0; padding: 4px; border: 1px solid #e2e6ee; border-radius: 6px; }
+        [popover] button { display: block; width: 100%; font: inherit; text-align: left; }
       </style>
       <strong>Your solution</strong>
       ${buttons.map(([action, title, icon]) => `<button type="button" data-action="${action}" title="${title}" aria-label="${title}">${icon}</button>`).join('')}
+      <button type="button" popovertarget="layouts" title="Layout" aria-label="Layout">vertical_split</button>
+      <div id="layouts" popover>
+        <button type="button" data-layout="top">Statement on top</button>
+        <button type="button" data-layout="left">Statement on the left</button>
+        <button type="button" data-layout="right">Statement on the right</button>
+      </div>
       <select aria-label="Programming language"></select>`;
     const internals = this.attachInternals();
     internals.role = 'toolbar';
     internals.ariaLabel = 'Editor';
     this.shadowRoot.addEventListener('click', (event) => this.run(event.target.dataset.action));
     document.addEventListener('fullscreenchange', () => this.updateFullscreenButton());
+    const menu = this.shadowRoot.querySelector('[popover]');
+    menu.addEventListener('beforetoggle', () => {
+      const { bottom, right } = menu.previousElementSibling.getBoundingClientRect();
+      menu.style.top = `${bottom}px`;
+      menu.style.right = `${document.documentElement.clientWidth - right}px`;
+    });
+    // The page CSS uses <html data-layout> to place the statement; the choice is remembered
+    menu.addEventListener('click', (event) => {
+      const { layout } = event.target.dataset;
+      if (!layout) return;
+      document.documentElement.dataset.layout = layout;
+      window.localStorage.setItem('layout', layout);
+      menu.hidePopover();
+    });
+    document.documentElement.dataset.layout = window.localStorage.getItem('layout') || 'top';
   }
 
   // The language chosen by the student

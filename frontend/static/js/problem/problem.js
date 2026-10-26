@@ -479,4 +479,18 @@ class ProblemManager {
   }
 }
 
+// Remembers the size given to the statement with its corner handle, for each layout (top, left,
+// right). CSS resize writes that size in the style attribute
+const statement = document.querySelector('.problem__description');
+const sizeKey = () => `size:${document.documentElement.dataset.layout}`;
+const restoreSize = () => {
+  statement.style.cssText = window.localStorage.getItem(sizeKey()) || '';
+};
+// The layout menu of the toolbar changes <html data-layout>
+new MutationObserver(restoreSize).observe(document.documentElement, { attributeFilter: ['data-layout'] });
+restoreSize();
+new ResizeObserver(() => {
+  window.localStorage.setItem(sizeKey(), statement.style.cssText);
+}).observe(statement);
+
 window.addEventListener('load', ProblemManager.main);

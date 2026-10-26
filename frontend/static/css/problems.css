@@ -36,6 +36,7 @@
 
 .editor_wrapper {
   width: 100%;
+  min-width: 0; /* Lets the Monaco boxes shrink when the page gets narrower, e.g. with zoom */
   margin-right: 1px;
 }
 
@@ -140,4 +141,51 @@ editor-monaco .copy:hover {
   font-weight: normal;
   filter: none;
   background: #e2e6ee;
+}
+
+/* The statement can be made shorter with its corner handle; problem.js remembers the size */
+[data-layout="top"] .problem__description {
+  resize: vertical;
+  overflow: auto;
+}
+
+/* Statement and editor side by side, chosen in the toolbar layout menu; test cases stay below */
+@media (min-width: 641px) {
+  [data-layout="left"] .problem,
+  [data-layout="right"] .problem {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  /* The statement is resized with its corner handle, the editor takes the rest */
+  [data-layout="left"] .problem__description,
+  [data-layout="right"] .problem__description {
+    width: calc(50% - 0.5rem);
+    min-width: 20%;
+    max-width: 80%;
+    resize: horizontal;
+    overflow: auto;
+  }
+
+  [data-layout] editor-codigo {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Right to left moves the corner handle to the bottom left, next to the editor */
+  [data-layout="right"] .problem__description {
+    order: 1;
+    direction: rtl;
+  }
+
+  [data-layout="right"] .problem__description > * {
+    direction: ltr;
+  }
+
+  [data-layout] .solution__evaluation {
+    flex-basis: 100%;
+    order: 2;
+  }
 }
