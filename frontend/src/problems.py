@@ -52,8 +52,6 @@ class ProblemController:
             ],
             'problem': problem,
             'scripts': [
-                # Monaco Editor AMD loader, problem.js loads the editor with it. Keep version in sync
-                '<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>',
                 '<script src="/js/problem/problem.js" type="module" async="async"></script>',
                 '<script src="/js/site.js" type="module" async="async"></script>',
             ],

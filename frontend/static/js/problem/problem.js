@@ -1,6 +1,7 @@
 import {
   encode, ExecutionResult, Problem, Status,
 } from '../vyg.js';
+import * as monaco from '../../dist/monaco.js';
 
 // Default given code for each supported programming language
 // It may be a Map<string, string>
@@ -70,7 +71,7 @@ class ProblemManager {
   // such as highlight.js or prismjs
   async setup() {
     try {
-      await this.setupReferences(); // Editors cannot be created until Monaco is loaded
+      this.setupReferences();
       this.setupCodeEditor();
       this.setupTestCaseEditors();
       await this.fetchProblem();
@@ -84,15 +85,7 @@ class ProblemManager {
     }
   }
 
-  async setupReferences() {
-    // Monaco AMD loader (loader.js) is included by the server in problems.py
-    if (!window.require) {
-      throw new Error('Monaco Editor loader not found');
-    }
-    // Version must match the loader.js URL in problems.py
-    window.require.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' } });
-    // Load Monaco and wait until window.monaco is available
-    await new Promise((resolve, reject) => window.require(['vs/editor/editor.main'], resolve, reject));
+  setupReferences() {
     this.runButton = document.getElementById('run_button');
     if (!this.runButton) {
       throw Error('could not find run_button element');
@@ -101,7 +94,7 @@ class ProblemManager {
 
   setupCodeEditor() {
     const container = document.getElementById('code_editor');
-    const editor = window.monaco.editor.create(container, {
+    const editor = monaco.editor.create(container, {
       language: 'cpp',
       theme: this.theme,
       tabSize: 2, // Google code style
@@ -111,7 +104,7 @@ class ProblemManager {
     });
     container.querySelector('textarea').id = 'code_editor_area'; // For <label for>
     // Automatically adjust height to the number of lines typed by user
-    const maxHeight = 50 * editor.getOption(window.monaco.editor.EditorOption.lineHeight);
+    const maxHeight = 50 * editor.getOption(monaco.editor.EditorOption.lineHeight);
     const adjustHeight = () => {
       container.style.height = `${Math.min(editor.getContentHeight(), maxHeight)}px`;
     };
@@ -134,9 +127,8 @@ class ProblemManager {
   }
 
   setupTestCaseEditor(id) {
-    console.assert(window.monaco);
     const container = document.getElementById(id);
-    const editor = window.monaco.editor.create(container, {
+    const editor = monaco.editor.create(container, {
       theme: this.theme,
       readOnly: true,
       renderWhitespace: 'all', // Show spaces and tabs
@@ -404,7 +396,7 @@ class ProblemManager {
       showElement('output_diff_wrapper');
       // Create a Monaco diff editor in output_diff element only the first time, then reuse it
       if (!this.differ) {
-        this.differ = window.monaco.editor.createDiffEditor(document.getElementById('output_diff'), {
+        this.differ = monaco.editor.createDiffEditor(document.getElementById('output_diff'), {
           theme: this.theme,
           readOnly: true,
           renderWhitespace: 'all', // Show spaces and tabs
@@ -415,8 +407,8 @@ class ProblemManager {
           automaticLayout: true,
         });
         this.differ.setModel({
-          original: window.monaco.editor.createModel(''),
-          modified: window.monaco.editor.createModel(''),
+          original: monaco.editor.createModel(''),
+          modified: monaco.editor.createModel(''),
         });
       }
       // Left: expected output, right: user output
