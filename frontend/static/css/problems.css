@@ -34,17 +34,22 @@
   font-size: smaller;
 }
 
-#editor {
-  min-height: 90px;
+monaco-editor {
+  display: block;
+}
+
+.problem__solution monaco-editor {
+  height: 60vh;
 }
 
 .editor_wrapper {
   width: 100%;
+  min-width: 0; /* Lets the editors shrink when the page gets narrower, e.g. with zoom */
   margin-right: 1px;
 }
 
-#active_test .editor {
-  min-height: 100px;
+.editor_wrapper monaco-editor {
+  height: 6.25rem;
 }
 
 .passed {
@@ -60,10 +65,6 @@
   max-height: 200px;
   overflow: auto;
   background-color: rgb(228, 227, 227);
-}
-
-#output_diff {
-  position: relative;
 }
 
 .test_button:hover:not(.disabled):not(.selected) {

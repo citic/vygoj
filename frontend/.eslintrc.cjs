@@ -9,7 +9,7 @@ module.exports = {
     'airbnb',
   ],
   parserOptions: {
-    ecmaVersion: 12,
+    ecmaVersion: 2022,
     sourceType: 'module',
   },
   rules: {
@@ -19,6 +19,8 @@ module.exports = {
     'no-console': "off",
     // Allow .js extension in modules
     "import/extensions": ["error", "ignorePackages"],
+    // Allow modules imported from a CDN URL
+    "import/no-unresolved": ["error", { "ignore": ["^https://"] }],
     // Allow _id MongoDB identifier starting with underscore
     "no-underscore-dangle": ["error", { "allow": ["_id"] }],
     // Allow many small clases in the same file

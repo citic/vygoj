@@ -1,7 +1,7 @@
 import {
   encode, ExecutionResult, Problem, Status,
 } from '../vyg.js';
-// import AceDiff from 'ace-diff';
+import '../components/monaco-editor.js';
 
 // Default given code for each supported programming language
 // It may be a Map<string, string>
@@ -47,10 +47,7 @@ class ProblemManager {
   // Singleton instance
   constructor() {
     // References to all editors used in the problem page
-    this.editors = []; // AceAjax.Editor
-    // Theme style in all editors
-    // Default theme: https://github.com/ajaxorg/ace/tree/master/lib/ace/theme
-    this.theme = 'ace/theme/xcode'; // monokai
+    this.editors = []; // monaco.editor.IStandaloneCodeEditor
     // The problem model fetched from server
     this.problem = null; // class Problem instance
     // Index of the current shown test case
@@ -59,8 +56,6 @@ class ProblemManager {
     this.runButton = null; // HTMLButtonElement
     // The result after running the user code
     this.result = null; // class ExecutionResult instance
-    // Shows the diff between expected output and user standard output
-    this.differ = null; // class AceDiff instance
   }
 
   static main() {
@@ -87,9 +82,6 @@ class ProblemManager {
   }
 
   setupReferences() {
-    if (!window.ace) {
-      throw new Error('Ace Code Editor library not found');
-    }
     this.runButton = document.getElementById('run_button');
     if (!this.runButton) {
       throw Error('could not find run_button element');
@@ -97,15 +89,10 @@ class ProblemManager {
   }
 
   setupCodeEditor() {
-    const editor = window.ace.edit('code_editor');
-    editor.container.firstChild.id = 'code_editor_area'; // For <label for>
-    editor.setTheme(this.theme);
-    editor.session.setMode('ace/mode/c_cpp');
-    // Automatically adjust height to the number of lines typed by user
-    editor.setOption('maxLines', 50); // Infinity
-    editor.setOption('tabSize', 2); // Google code style
+    const { editor } = document.getElementById('code_editor');
+    editor.getModel().updateOptions({ tabSize: 2 }); // Google code style
     this.editors.push(editor);
-    editor.on('change', () => {
+    editor.onDidChangeModelContent(() => {
       const code = editor.getValue();
       saveConfig('code', code);
       if (this.runButton) {
@@ -121,14 +108,8 @@ class ProblemManager {
   }
 
   setupTestCaseEditor(id) {
-    console.assert(window.ace);
-    const editor = window.ace.edit(id);
-    editor.container.firstChild.id = `${id}_area`; // For <label for>
-    editor.setTheme(this.theme);
-    editor.setOption('readOnly', true);
-    editor.setOption('showInvisibles', true);
-    // editor.setOption('maxLines', 15);
-    editor.resize();
+    const { editor } = document.getElementById(id);
+    editor.updateOptions({ renderWhitespace: 'all' });
     this.editors.push(editor);
   }
 
@@ -183,8 +164,8 @@ class ProblemManager {
     console.assert(this.problem);
     console.assert(this.editors.length === 4);
     // Show input, expected output, and user output for this test case
-    this.editors[1].setValue(this.problem.tests[index].input || '', -1);
-    this.editors[2].setValue(this.problem.tests[index].output || '', -1);
+    this.editors[1].setValue(this.problem.tests[index].input || '');
+    this.editors[2].setValue(this.problem.tests[index].output || '');
     this.showTestOutput(index);
     // Deselect previous test case number
     const buttons = document.getElementsByClassName('test_button');
@@ -203,7 +184,7 @@ class ProblemManager {
       // Show standard output
       const test = index < this.result.results.length ? this.result.results[index] : null;
       const output = test?.stdout || '';
-      this.editors[3].setValue(output, -1);
+      this.editors[3].setValue(output);
       // But if test case was failed, show diff instead
       this.showOutputDiff(index);
       // Show standard error
@@ -243,7 +224,7 @@ class ProblemManager {
 
     // Show the initial code in the editor
     initialCode = initialCode || '';
-    this.editors[0].setValue(initialCode, -1);
+    this.editors[0].setValue(initialCode);
     if (this.runButton) {
       this.runButton.disabled = initialCode.trim().length === 0;
     }
@@ -253,7 +234,7 @@ class ProblemManager {
       revertButton.addEventListener('click', (event) => {
         event.preventDefault(); // Do not follow the link
         if (window.confirm('Do you want to revert to the initial code?')) {
-          this.editors[0].setValue(problemCode, -1);
+          this.editors[0].setValue(problemCode);
           saveConfig('code', problemCode);
           if (this.runButton) {
             this.runButton.disabled = problemCode.trim().length === 0;
@@ -381,38 +362,20 @@ class ProblemManager {
     if (index < this.result.results.length) {
       userOutput = this.result.results[index].stdout;
     }
-    // TODO: Use AceDiff always and decrease gutter width
     if (userOutput && this.result.results[index].status === Status.WRONG) {
       // Hide expected output and user output and show diff element
       hideElement('active_test_expected_output_wrapper');
       hideElement('active_test_user_output_wrapper');
       showElement('output_diff_wrapper');
-      // Create a Ace Diff in output_diff element
-      this.differ = new window.AceDiff({
-        // ace: window.ace,
-        element: '#output_diff',
-        diffGranularity: 'specific',
-        left: {
-          editable: false,
-          // copyLinkEnabled: false,
-          content: expectedOutput,
-        },
-        right: {
-          editable: false,
-          // copyLinkEnabled: false,
-          content: userOutput,
-        },
-      });
+      // Expected output on the left, user output on the right
+      const { editor } = document.getElementById('output_diff');
+      editor.getOriginalEditor().setValue(expectedOutput);
+      editor.getModifiedEditor().setValue(userOutput);
     } else {
       // Show expected output and user output and hide diff element
       hideElement('output_diff_wrapper');
       showElement('active_test_expected_output_wrapper');
       showElement('active_test_user_output_wrapper');
-
-      if (this.differ) {
-        // this.differ.destroy();
-        this.differ = null;
-      }
     }
   }
 

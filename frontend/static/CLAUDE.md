@@ -11,7 +11,8 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
 - `js/<page>/<page>.js`: one module per page (`problem/`, `course/`, `user/`).
 - `css/site.css`: global layout and variables; `css/<page>.css` for page-specific styles.
 - `img/`, `icon/`: images and SVG icons. `json/`: static data.
-- The code editor and diff view use Monaco, loaded from the jsDelivr CDN in `src/problems.py`.
+- The code editor and diff view use Monaco through the `<monaco-editor>` element in
+  `js/components/monaco-editor.js`, which imports Monaco from the esm.sh CDN.
 
 ## Commands
 

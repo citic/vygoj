@@ -164,7 +164,7 @@ pre, code {
   align-items: flex-start;
 }
 
-pre, .editor {
+pre, monaco-editor {
   border: 1px solid black;
 }
 

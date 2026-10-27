@@ -1,8 +1,7 @@
 {% extends 'base.html' %}
 {%- block styles %}
     <link rel="stylesheet" href="/css/problems.css">
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/ace-diff@3.0.3/dist/ace-diff.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ace-diff@3.0.3/dist/ace-diff.min.css"></noscript>
+    <link rel="stylesheet" href="https://esm.sh/monaco-editor/min/vs/editor/editor.main.css" crossorigin>
 {%- endblock %}
 {%- block main %}
       <main id="problem" class="problem" data-name="{{ it.problem.name }}">
@@ -12,10 +11,10 @@
         </article>
         <div class="problem__solution">
           <div class="problem__solution_toolbar">
-            <label for ="code_editor_area">Your solution</label>
+            <label for="code_editor">Your solution</label>
             <a href="" id="revert_button" title="Restores initial code">Revert</a>
           </div>
-          <div id="code_editor" class="editor"></div>
+          <monaco-editor id="code_editor" language="cpp"></monaco-editor>
         </div>
         <div class="solution__evaluation">
           <div class="row">
@@ -39,20 +38,20 @@
           </div>
           <div id="active_test" class="row top">
             <div id="active_test_input_wrapper" class="editor_wrapper">
-              <label for="active_test_input_area" id="active_test_input_label">Input</label>
-              <div id="active_test_input" class="editor"></div>
+              <label for="active_test_input">Input</label>
+              <monaco-editor id="active_test_input"  readonly></monaco-editor>
             </div>
             <div id="active_test_expected_output_wrapper" class="editor_wrapper">
-              <label for="active_test_expected_output_area" id="active_test_expected_output_label">Expected output</label>
-              <div id="active_test_expected_output" class="editor"></div>
+              <label for="active_test_expected_output">Expected output</label>
+              <monaco-editor id="active_test_expected_output"  readonly></monaco-editor>
             </div>
             <div id="active_test_user_output_wrapper" class="editor_wrapper">
-              <label for="active_test_user_output_area" id="active_test_user_output_label">Your output</label>
-              <div id="active_test_user_output" class="editor"></div>
+              <label for="active_test_user_output">Your output</label>
+              <monaco-editor id="active_test_user_output"  readonly></monaco-editor>
             </div>
             <div id="output_diff_wrapper" class="editor_wrapper hidden">
-              <div class="row"><label for="output_diff_area">Expected output</label><label for="output_diff_area">Your output</label></div>
-              <div id="output_diff" class="editor"></div>
+              <div class="row"><label for="output_diff">Expected output</label><label for="output_diff">Your output</label></div>
+              <monaco-editor id="output_diff" " readonly diff></monaco-editor>
             </div>
           </div>
           <div id="stderr_wrapper" class="hidden">

@@ -37,11 +37,14 @@ cdn = {
                     ' ajax.googleapis.com'
                     ' cdn.jsdelivr.net'
                     ' cdnjs.cloudflare.com'
+                    ' esm.sh'
                     ' fonts.googleapis.com'
                     ' themes.googleusercontent.com'
                     ' www.google.com'
                     ' www.youtube.com'),
     'img-src': "'self' data:",
+    'font-src': "'self' data: *.gstatic.com",
+    'worker-src': 'blob: esm.sh',
 }
 # GOOGLE_CSP_POLICY['default-src'] += f" {CDN_URL}"
 Talisman(app, content_security_policy=cdn)
