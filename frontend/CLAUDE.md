@@ -12,11 +12,14 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
 - `src/courses.py`, `src/problems.py`, `src/users.py`: controllers for each area.
 - `src/vyg.py`: model shared with the backend (see "Shared model" in the root `CLAUDE.md`).
 - `src/vyg_log.py`: activity log (`vyg_log(action, ...)`) written as TSV.
-- `src/db.py`: SQLAlchemy instance (SQLite at `data/frontend.sqlite`).
+- `src/db.py`: SQLAlchemy instance (PostgreSQL, URI in `SQLALCHEMY_DATABASE_URI` of
+  `config/config.py`).
+- `src/migrate_users.py`: loads the new users into the database from a git-ignored TSV file with
+  plain passwords. `make` runs it with `vygoj/users-passwords.tsv`, if that file exists.
 - `templates/`: Jinja2 templates. `base.html` is the layout; pages extend it and fill blocks.
   Views pass data to templates in a single `it` object.
 - `config/config.py`: local, git-ignored settings (copy from `config/config-example.py`).
-- `vygdata/`, `data/`: runtime data (course repos, logs, database). Git-ignored.
+- `vygdata/`, `data/`: runtime data (course repos, logs). Git-ignored.
 
 ## Commands
 
