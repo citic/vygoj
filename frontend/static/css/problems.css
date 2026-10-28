@@ -32,6 +32,8 @@
   border-radius: 5px;
   padding: 0.5em 1rem;
   font-size: smaller;
+  white-space: pre-wrap; /* enable word-wrap */
+  overflow-wrap: break-word; /* break long words such as URIs */
 }
 
 monaco-editor {
