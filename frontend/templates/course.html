@@ -4,17 +4,19 @@
   {%- if content %}
     {{ '  ' * (indent - 2) }}<ol class="course__sections">
     {%- for item in content %}
-      {{ '  ' * (indent - 2) }}<li class="course__section">
-      {{ '  ' * (indent - 1) }}<p class="course__activity">
-      {%- if item.type == 'problem' -%}
-        [<span class="progress" id="{{ item.name }}">{{ it.progress and it.progress.get(item.name, 0) or 0 }}</span>%] <a href="{{ item.build_url() }}">{{ item.title }}</a> (<a href="https://jeisson.ecci.ucr.ac.cr/invest/eval_taller/?id={{ it.user['email'] }}&t={{ loop.index }}&h=juez" target="_blank">Opinión</a>)
-      {%- elif item.type == 'page' -%}
-        <a href="https://jeisson.ecci.ucr.ac.cr/invest/{{ item.name }}.7z">{{ item.title }}</a> (<a href="https://jeisson.ecci.ucr.ac.cr/invest/eval_taller/?id={{ it.user['email'] }}&t={{ loop.index }}&h=ide" target="_blank">Opinión</a>)
-      {%- else %}
-        {{- item.title }}
-      {%- endif %}</p>
-      {{- course_content(item.contents, indent + 2) }}
-      {{ '  ' * (indent - 2) }}</li>
+      {%- if not item.type.startswith('_') %}
+        {{ '  ' * (indent - 2) }}<li class="course__section">
+        {{ '  ' * (indent - 1) }}<p class="course__activity">
+        {%- if item.type == 'problem' -%}
+          [<span class="progress" id="{{ item.name }}">{{ it.progress and it.progress.get(item.name, 0) or 0 }}</span>%] <a href="{{ item.build_url() }}">{{ item.title or item.folder }}</a>
+        {%- elif item.type == 'page' -%}
+          {{ item.title or item.folder }}
+        {%- else %}
+          {{- item.title or item.folder }}
+        {%- endif %}</p>
+        {{- course_content(item.contents, indent + 2) }}
+        {{ '  ' * (indent - 2) }}</li>
+      {%- endif %}
     {%- endfor %}
     {{ '  ' * (indent - 2) }}</ol>
   {%- endif %}
