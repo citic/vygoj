@@ -51,7 +51,7 @@ class ProblemController:
             'problem': problem,
             'scripts': [
                 '<script src="/js/problem/mathjax-config.js" defer="defer"></script>',
-                '<script src="https://cdn.jsdelivr.net/npm/mathjax@4.1.3/tex-chtml.js"'
+                '<script src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js"'
                     ' defer="defer"></script>',
                 '<script src="/js/problem/problem.js" type="module" async="async"></script>',
                 '<script src="/js/site.js" type="module" async="async"></script>',

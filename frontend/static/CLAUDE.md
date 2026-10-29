@@ -57,7 +57,8 @@ cache disabled; check the browser console for errors and the layout at phone and
 - Handle failed or slow `fetch` calls (network errors, non-2xx status, malformed JSON) and keep the
   UI usable; re-enable buttons that were disabled while waiting.
 - External scripts and styles may only come from hosts allowed by the CSP in
-  `frontend/src/main.py`; pin exact library versions.
+  `frontend/src/main.py`; pin the major version (e.g. `mathjax@4`), so compatible updates
+  arrive automatically and breaking ones do not.
 
 ### HTML
 
