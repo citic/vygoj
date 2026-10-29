@@ -2,6 +2,7 @@ import {
   encode, ExecutionResult, Problem, Status,
 } from '../vyg.js';
 import '../components/monaco-editor.js';
+import '../components/editor-toolbar.js';
 
 // Default given code for each supported programming language
 // It may be a Map<string, string>
@@ -68,6 +69,7 @@ class ProblemManager {
   async setup() {
     try {
       this.setupReferences();
+      ProblemManager.setupLayoutMenu();
       this.setupCodeEditor();
       this.setupTestCaseEditors();
       await this.fetchProblem();
@@ -88,10 +90,36 @@ class ProblemManager {
     }
   }
 
+  // The layout chosen in the toolbar menu and the size given to the statement with its corner
+  // handle are remembered for each problem. Each layout has its own statement size
+  static setupLayoutMenu() {
+    const menu = document.getElementById('layouts');
+    const statement = document.querySelector('.problem__description');
+    const sizeKey = () => `size:${menu.elements.layout.value}`;
+    // CSS resize writes the size in the style attribute. Only the width and height are kept, and
+    // the browser ignores them if localStorage has invalid values
+    const restoreSize = () => {
+      const [width = '', height = ''] = (loadConfig(sizeKey()) || '').split(';');
+      Object.assign(statement.style, { width, height });
+    };
+    menu.elements.layout.value = loadConfig('layout') || 'top';
+    restoreSize();
+    menu.addEventListener('change', () => {
+      saveConfig('layout', menu.elements.layout.value);
+      restoreSize();
+    });
+    new ResizeObserver(() => saveConfig(sizeKey(), `${statement.style.width};${statement.style.height}`))
+      .observe(statement);
+  }
+
   setupCodeEditor() {
     const { editor } = document.getElementById('code_editor');
     editor.getModel().updateOptions({ tabSize: 2 }); // Google code style
     this.editors.push(editor);
+    // The editor is as tall as its code, between the min-height and max-height of the CSS
+    editor.onDidContentSizeChange(() => {
+      editor.getContainerDomNode().style.height = `${editor.getContentHeight()}px`;
+    });
     editor.onDidChangeModelContent(() => {
       const code = editor.getValue();
       saveConfig('code', code);
@@ -194,18 +222,10 @@ class ProblemManager {
     }
   }
 
-  getProblemLanguage() {
-    console.assert(this.problem);
-    if (this.problem.languages && this.problem.languages.length > 0) {
-      return this.problem.languages[0];
-    }
-    return 'C';
-  }
-
   loadUserCode() {
-    // TODO: add language combo box
     console.assert(this.problem);
-    const language = this.getProblemLanguage();
+    // The language chosen in the list of the toolbar
+    const language = document.getElementById('language').value;
 
     // 1. Local storage
     let initialCode = loadConfig('code');
@@ -229,19 +249,16 @@ class ProblemManager {
       this.runButton.disabled = initialCode.trim().length === 0;
     }
 
-    const revertButton = document.getElementById('revert_button');
-    if (revertButton) {
-      revertButton.addEventListener('click', (event) => {
-        event.preventDefault(); // Do not follow the link
-        if (window.confirm('Do you want to revert to the initial code?')) {
-          this.editors[0].setValue(problemCode);
-          saveConfig('code', problemCode);
-          if (this.runButton) {
-            this.runButton.disabled = problemCode.trim().length === 0;
-          }
-        }
-      });
-    }
+    document.getElementById('revert_button').addEventListener('click', () => {
+      if (window.confirm('Do you want to revert to the initial code?')) {
+        // An edit instead of setValue(), so Undo can bring back the code that was replaced
+        const editor = this.editors[0];
+        const text = problemCode || defaultCodeFor[language] || '';
+        editor.pushUndoStop();
+        editor.executeEdits('revert', [{ range: editor.getModel().getFullModelRange(), text }]);
+        editor.pushUndoStop();
+      }
+    });
   }
 
   setupRunEnvironment() {
@@ -254,8 +271,8 @@ class ProblemManager {
   }
 
   async runSolution() {
-    // TODO: add language combo box
-    const language = this.getProblemLanguage();
+    // The language chosen in the list of the toolbar
+    const language = document.getElementById('language').value;
     // Disable the Run button while the backend is running the code
     this.runButton.disabled = true;
     this.runButton.textContent = 'Running';

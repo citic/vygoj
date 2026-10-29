@@ -11,10 +11,12 @@ class MonacoEditor extends HTMLElement {
 
   connectedCallback() {
     const options = {
-      ariaLabel: document.querySelector(`label[for="${this.id}"]`)?.textContent,
+      // Accessible name: its aria-label attribute or the text of its <label for>
+      ariaLabel: this.getAttribute('aria-label') || document.querySelector(`label[for="${this.id}"]`)?.textContent,
       language: this.getAttribute('language') || 'plaintext',
       readOnly: this.hasAttribute('readonly'),
-      minimap: { enabled: !this.hasAttribute('readonly') }, // Read-only boxes are small
+      minimap: { enabled: false },
+      scrollBeyondLastLine: false,
       automaticLayout: true,
     };
     if (this.hasAttribute('diff')) {

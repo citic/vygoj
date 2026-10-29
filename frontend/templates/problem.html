@@ -2,6 +2,7 @@
 {%- block styles %}
     <link rel="stylesheet" href="/css/problems.css">
     <link rel="stylesheet" href="https://esm.sh/monaco-editor/min/vs/editor/editor.main.css" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&amp;icon_names=backspace,content_copy,content_cut,content_paste,fullscreen,fullscreen_exit,redo,restart_alt,space_dashboard,splitscreen_left,splitscreen_right,splitscreen_top,undo">
 {%- endblock %}
 {%- block main %}
       <main id="problem" class="problem" data-name="{{ it.problem.name }}">
@@ -9,13 +10,27 @@
           <h2 class="problem__title">{{ it.problem.title }}</h2>
           <div class="problem__statement">{{ it.problem.statement|safe }}</div>
         </article>
-        <div class="problem__solution">
-          <div class="problem__solution_toolbar">
-            <label for="code_editor">Your solution</label>
-            <a href="" id="revert_button" title="Restores initial code">Revert</a>
+        <details class="problem__solution" open>
+          <summary>Your solution</summary>
+          <div>
+            <editor-toolbar for="code_editor">
+              <div class="layout_menu">
+                <button type="button" class="material-symbols-outlined" title="Layout" aria-label="Layout">space_dashboard</button>
+                <form id="layouts" class="layout_menu__options">
+                  <label><input type="radio" name="layout" value="top" checked><span class="material-symbols-outlined" aria-hidden="true">splitscreen_top</span> Statement on top</label>
+                  <label><input type="radio" name="layout" value="left"><span class="material-symbols-outlined" aria-hidden="true">splitscreen_left</span> Statement on the left</label>
+                  <label><input type="radio" name="layout" value="right"><span class="material-symbols-outlined" aria-hidden="true">splitscreen_right</span> Statement on the right</label>
+                </form>
+              </div>
+              <select id="language" aria-label="Programming language">
+{%- for language in it.problem.languages %}
+                <option>{{ language }}</option>
+{%- endfor %}
+              </select>
+            </editor-toolbar>
+            <monaco-editor id="code_editor" language="cpp" aria-label="Your solution"></monaco-editor>
           </div>
-          <monaco-editor id="code_editor" language="cpp"></monaco-editor>
-        </div>
+        </details>
         <div class="solution__evaluation">
           <div class="row">
             <p>
@@ -39,19 +54,19 @@
           <div id="active_test" class="row top">
             <div id="active_test_input_wrapper" class="editor_wrapper">
               <label for="active_test_input">Input</label>
-              <monaco-editor id="active_test_input"  readonly></monaco-editor>
+              <monaco-editor id="active_test_input" readonly></monaco-editor>
             </div>
             <div id="active_test_expected_output_wrapper" class="editor_wrapper">
               <label for="active_test_expected_output">Expected output</label>
-              <monaco-editor id="active_test_expected_output"  readonly></monaco-editor>
+              <monaco-editor id="active_test_expected_output" readonly></monaco-editor>
             </div>
             <div id="active_test_user_output_wrapper" class="editor_wrapper">
               <label for="active_test_user_output">Your output</label>
-              <monaco-editor id="active_test_user_output"  readonly></monaco-editor>
+              <monaco-editor id="active_test_user_output" readonly></monaco-editor>
             </div>
             <div id="output_diff_wrapper" class="editor_wrapper hidden">
               <div class="row"><label for="output_diff">Expected output</label><label for="output_diff">Your output</label></div>
-              <monaco-editor id="output_diff" " readonly diff></monaco-editor>
+              <monaco-editor id="output_diff" readonly diff></monaco-editor>
             </div>
           </div>
           <div id="stderr_wrapper" class="hidden">

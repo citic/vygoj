@@ -15,6 +15,9 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
   `js/components/monaco-editor.js`, which imports Monaco from the esm.sh CDN.
 - Formulas in problem statements (Asciidoctor `stem`) are typeset by MathJax from the jsDelivr
   CDN, configured in `js/problem/mathjax-config.js`.
+- The `<editor-toolbar for="code_editor">` element in `js/components/editor-toolbar.js` adds the
+  editor buttons (cut, copy, paste, undo, redo, clear, revert, fullscreen). `problem.html` places
+  the layout menu and the language list inside it. Icons come from the Material Symbols font.
 
 ## Commands
 
