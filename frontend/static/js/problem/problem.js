@@ -43,6 +43,13 @@ function showElement(id) {
   element.classList.remove('hidden');
 }
 
+// Open the statement links in a new tab, so students do not leave their solution.
+// Links to sections of the statement itself (#id) stay in this tab
+function openStatementLinksInNewTab() {
+  const links = document.querySelectorAll('.problem__statement a[href]:not([href^="#"])');
+  links.forEach((link) => link.setAttribute('target', '_blank'));
+}
+
 class ProblemManager {
   // Singleton instance
   constructor() {
@@ -68,6 +75,7 @@ class ProblemManager {
   async setup() {
     try {
       this.setupReferences();
+      openStatementLinksInNewTab();
       this.setupCodeEditor();
       this.setupTestCaseEditors();
       await this.fetchProblem();
