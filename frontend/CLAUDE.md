@@ -15,7 +15,7 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
 - `src/db.py`: SQLAlchemy instance (PostgreSQL, URI in `SQLALCHEMY_DATABASE_URI` of
   `config/config.py`).
 - `src/migrate_users.py`: loads the new users into the database from a git-ignored TSV file with
-  plain passwords. `make` runs it with `vygoj/users-passwords.tsv`, if that file exists.
+  plain passwords. `make` runs it with `data/users-passwords.tsv`, if that file exists.
 - `templates/`: Jinja2 templates. `base.html` is the layout; pages extend it and fill blocks.
   Views pass data to templates in a single `it` object.
 - `config/config.py`: local, git-ignored settings (copy from `config/config-example.py`).

@@ -10,7 +10,7 @@ run: users
 
 .PHONY: users
 users: install
-	if [ -f ../users-passwords.tsv ]; then $(ACT) && cd $(SRC) && python migrate_users.py ../../users-passwords.tsv; fi
+	if [ -f data/users-passwords.tsv ]; then $(ACT) && cd $(SRC) && python migrate_users.py ../data/users-passwords.tsv; fi
 
 node_modules:
 	npm i

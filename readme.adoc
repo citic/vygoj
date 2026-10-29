@@ -120,7 +120,7 @@ cd vygoj/frontend/src
 ../.venv/bin/python migrate_users.py /path/to/users.tsv
 ----
 
-If the file is saved as `vygoj/users-passwords.tsv`, `make` and `make users` load its new users automatically.
+If the file is saved as `vygoj/frontend/data/users-passwords.tsv`, `make` and `make users` load its new users automatically.
 
 Fourth, run the frontend as a production server:
 
