@@ -13,6 +13,8 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
 - `img/`, `icon/`: images and SVG icons. `json/`: static data.
 - The code editor and diff view use Monaco through the `<monaco-editor>` element in
   `js/components/monaco-editor.js`, which imports Monaco from the esm.sh CDN.
+- Formulas in problem statements (Asciidoctor `stem`) are typeset by MathJax from the jsDelivr
+  CDN, configured in `js/problem/mathjax-config.js`.
 
 ## Commands
 
