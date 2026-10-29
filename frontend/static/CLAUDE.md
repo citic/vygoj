@@ -13,6 +13,9 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
 - `img/`, `icon/`: images and SVG icons. `json/`: static data.
 - The code editor and diff view use Monaco through the `<monaco-editor>` element in
   `js/components/monaco-editor.js`, which imports Monaco from the esm.sh CDN.
+- The `<editor-toolbar for="code_editor">` element in `js/components/editor-toolbar.js` adds the
+  editor buttons (cut, copy, paste, undo, redo, clear, revert, fullscreen). `problem.html` places
+  the layout menu and the language list inside it. Icons come from the Material Symbols font.
 
 ## Commands
 
