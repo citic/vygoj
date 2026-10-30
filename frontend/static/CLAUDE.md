@@ -13,6 +13,8 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
 - `img/`, `icon/`: images and SVG icons. `json/`: static data.
 - The code editor and diff view use Monaco through the `<monaco-editor>` element in
   `js/components/monaco-editor.js`, which imports Monaco from the esm.sh CDN.
+- Formulas in problem statements (Asciidoctor `stem`) are typeset by MathJax from the jsDelivr
+  CDN, configured in `js/problem/mathjax-config.js`.
 - The `<editor-toolbar for="code_editor">` element in `js/components/editor-toolbar.js` adds the
   editor buttons (cut, copy, paste, undo, redo, clear, revert, fullscreen). `problem.html` places
   the layout menu and the language list inside it. Icons come from the Material Symbols font.
@@ -58,7 +60,8 @@ cache disabled; check the browser console for errors and the layout at phone and
 - Handle failed or slow `fetch` calls (network errors, non-2xx status, malformed JSON) and keep the
   UI usable; re-enable buttons that were disabled while waiting.
 - External scripts and styles may only come from hosts allowed by the CSP in
-  `frontend/src/main.py`; pin exact library versions.
+  `frontend/src/main.py`; pin the major version (e.g. `mathjax@4`), so compatible updates
+  arrive automatically and breaking ones do not.
 
 ### HTML
 
