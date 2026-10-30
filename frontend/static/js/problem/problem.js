@@ -69,6 +69,7 @@ class ProblemManager {
   async setup() {
     try {
       this.setupReferences();
+      this.openStatementLinksInNewTab();
       ProblemManager.setupLayoutMenu();
       this.setupCodeEditor();
       this.setupTestCaseEditors();
@@ -88,6 +89,14 @@ class ProblemManager {
     if (!this.runButton) {
       throw Error('could not find run_button element');
     }
+  }
+
+  // Open the statement links in a new tab, so students do not leave their solution.
+  // Links to sections of the statement itself (#id) stay in this tab
+  // eslint-disable-next-line class-methods-use-this
+  openStatementLinksInNewTab() {
+    const links = document.querySelectorAll('.problem__statement a[href]:not([href^="#"])');
+    links.forEach((link) => link.setAttribute('target', '_blank'));
   }
 
   // The layout chosen in the toolbar menu and the size given to the statement with its corner
