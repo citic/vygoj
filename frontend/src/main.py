@@ -43,7 +43,7 @@ cdn = {
                     ' www.google.com'
                     ' www.youtube.com'),
     'img-src': "'self' data:",
-    'font-src': "'self' data: *.gstatic.com",
+    'font-src': "'self' data: *.gstatic.com cdn.jsdelivr.net",
     'worker-src': 'blob: esm.sh',
 }
 # GOOGLE_CSP_POLICY['default-src'] += f" {CDN_URL}"

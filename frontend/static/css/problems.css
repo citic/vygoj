@@ -41,7 +41,8 @@ monaco-editor {
 }
 
 .problem__solution monaco-editor {
-  height: 60vh;
+  min-height: 5rem;
+  max-height: 60vh;
 }
 
 .editor_wrapper {
@@ -90,13 +91,198 @@ monaco-editor {
   left: 50%;
 }
 
-.problem__solution_toolbar {
+/* Toolbar of the code editor: a row of small icon buttons */
+editor-toolbar {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--toolbar-border);
+  background: var(--toolbar-bg);
 }
 
-label {
+editor-toolbar button.material-symbols-outlined {
+  min-width: 0;
+  padding: 4px;
+  font-size: 18px;
+  box-shadow: none;
+  background: none;
+  color: var(--toolbar-icon);
+}
+
+/* Replaces the bold and shadow that form.css gives to buttons on hover */
+editor-toolbar button:hover:not([disabled]) {
+  filter: none;
+  background: var(--toolbar-border);
+}
+
+/* The language list goes at the right end of the toolbar */
+editor-toolbar select {
+  margin-left: auto;
+}
+
+/* Layout menu: its options show while the mouse is over it or it has the focus (keyboard, touch) */
+.layout_menu {
+  display: flex; /* Its button is a flex item like the other buttons, so it is not lifted by the line height */
+  position: relative;
+}
+
+/* Its icon is drawn smaller than the others: a bigger font with less padding keeps the button size */
+.layout_menu button.material-symbols-outlined {
+  padding: 3.5px;
+  font-size: 19px;
+}
+
+.layout_menu__options {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 10; /* Over the Monaco editor */
+  padding: 4px;
+  border: 1px solid var(--toolbar-border);
+  border-radius: 6px;
+  background: var(--toolbar-bg);
+  white-space: nowrap;
+}
+
+.layout_menu:hover .layout_menu__options,
+.layout_menu:focus-within .layout_menu__options {
+  display: block;
+}
+
+/* Each option: its icon next to its text, without the margin and bold of the other labels */
+.layout_menu__options label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-weight: normal;
+  font-style: normal;
+  cursor: pointer;
+}
+
+/* The radio is hidden but still works with the keyboard; the chosen option is highlighted */
+.layout_menu__options input {
+  position: absolute;
+  opacity: 0;
+}
+
+.layout_menu__options label:hover,
+.layout_menu__options label:has(:checked) {
+  background: var(--toolbar-border);
+}
+
+.layout_menu__options label:has(:focus-visible) {
+  outline: 2px solid var(--toolbar-icon);
+}
+
+/* Same size and color as the toolbar icons */
+.layout_menu__options .material-symbols-outlined {
+  font-size: 18px;
+  color: var(--toolbar-icon);
+}
+
+/* Fullscreen button of the toolbar: the editor fills the screen below the toolbar */
+:fullscreen {
+  display: flex;
+  flex-direction: column;
+  background: white;
+}
+
+:fullscreen monaco-editor {
+  flex: 1;
+  max-height: none;
+}
+
+label,
+summary {
   font-weight: 600;
   font-style: italic;
   color: var(--bg-color);
+}
+
+/* Clicking anywhere on the title shows or hides the editor */
+summary {
+  margin-bottom: 0.25rem;
+  cursor: pointer;
+}
+
+/* The statement can be made shorter with its corner handle; problem.js remembers its size */
+.problem__description {
+  max-width: 100%;
+  overflow: auto;
+  resize: vertical;
+  container-type: inline-size; /* For the cqw unit of its text */
+}
+
+/* The narrower the statement, the bigger its letters: 1rem when wide, up to 1.25rem when narrow */
+.problem__statement {
+  font-size: clamp(1rem, 1.5rem - 1.2cqw, 1.25rem);
+}
+
+/* A narrow evaluation puts its parts one below the other, as site.css does on small screens */
+.solution__evaluation {
+  container-type: inline-size;
+}
+
+@container (width < 30rem) {
+  .solution__evaluation > .row,
+  .solution__evaluation .row.top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* Statement and evaluation on one side and the editor on the other, chosen in the layout menu.
+   Narrow screens keep the statement on top */
+@media (min-width: 641px) {
+  .problem {
+    column-gap: 1rem;
+    align-items: start;
+  }
+
+  .problem:has([value="left"]:checked) {
+    display: grid;
+    grid-template: "description solution" auto "evaluation solution" 1fr / auto minmax(0, 1fr);
+  }
+
+  .problem:has([value="right"]:checked) {
+    display: grid;
+    grid-template: "solution description" auto "solution evaluation" 1fr / minmax(0, 1fr) auto;
+  }
+
+  /* Side by side, the corner handle changes the width of the statement and the editor takes the rest */
+  .problem:has([value="left"]:checked, [value="right"]:checked) .problem__description {
+    width: 45vw;
+    min-width: 20vw;
+    max-width: 70vw;
+    resize: horizontal;
+  }
+
+  /* Right to left moves the corner handle to the bottom left, next to the editor */
+  .problem:has([value="right"]:checked) .problem__description {
+    direction: rtl;
+  }
+
+  .problem:has([value="right"]:checked) .problem__description > * {
+    direction: ltr;
+  }
+
+  .problem__description {
+    grid-area: description;
+  }
+
+  .problem__solution {
+    grid-area: solution;
+  }
+
+  /* As wide as the statement: width 0 keeps its content from widening the column */
+  .solution__evaluation {
+    grid-area: evaluation;
+    width: 0;
+    min-width: 100%;
+  }
 }

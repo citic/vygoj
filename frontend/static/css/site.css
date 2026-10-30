@@ -15,6 +15,9 @@ Monospace:
   --error: #F44336;
   --warning: #FF9800;
   --info: #2196F3;
+  --toolbar-bg: #f8fafc;
+  --toolbar-border: #e2e6ee;
+  --toolbar-icon: #64748b;
 }
 
 html {
