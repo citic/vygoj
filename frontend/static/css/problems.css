@@ -55,6 +55,37 @@ monaco-editor {
   height: 6.25rem;
 }
 
+/* The second label of the diff must not get the top margin that form.css gives to form labels */
+.editor_wrapper label {
+  margin-top: 0;
+}
+
+/* Each label of the diff is as wide as its side, so they stay where the output labels were */
+.editor_wrapper .row label {
+  flex: 1;
+}
+
+/* The diff replaces the expected and user outputs, so it shrinks half as much to take their
+   two thirds and the input keeps its width */
+.editor_wrapper:has([diff]) {
+  flex-shrink: 0.5;
+}
+
+/* The diff is one box, so a double line in its middle draws the borders of the two output boxes
+   that it replaces */
+monaco-editor[diff] {
+  position: relative;
+}
+
+monaco-editor[diff]::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 calc(50% - 1px);
+  z-index: 1;
+  width: 1px;
+  border-inline: 1px solid black;
+}
+
 .passed {
   background: #40963581;
 }
@@ -254,11 +285,13 @@ summary {
     grid-template: "solution description" auto "solution evaluation" 1fr / minmax(0, 1fr) auto;
   }
 
-  /* Side by side, the corner handle changes the width of the statement and the editor takes the rest */
+  /* Side by side, the corner handle changes the width of the statement and the editor takes the rest.
+     The statement scrolls inside a box shorter than the screen, so its corner handle is in sight */
   .problem:has([value="left"]:checked, [value="right"]:checked) .problem__description {
     width: 45vw;
     min-width: 20vw;
     max-width: 70vw;
+    max-height: 80vh;
     resize: horizontal;
   }
 
@@ -284,5 +317,17 @@ summary {
     grid-area: evaluation;
     width: 0;
     min-width: 100%;
+  }
+
+  /* With the editor hidden, everything goes one below the other, as in the top layout.
+     min-width wins over the width given by the corner handle, which is kept for later */
+  .problem:has(.problem__solution:not([open])) {
+    display: block;
+  }
+
+  .problem:has(.problem__solution:not([open])) .problem__description {
+    min-width: 100%;
+    max-height: none;
+    resize: vertical;
   }
 }
