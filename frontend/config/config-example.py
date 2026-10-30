@@ -1,7 +1,7 @@
 # Data folder to store course repos, student code submissions
 DATA_FOLDER = "/home/user/vygdata"
-# Database URI
-DATABASE = "mongodb://user:pass@host/db?params"
+# Database URI for SQLAlchemy. Without user and password, PostgreSQL uses the system user
+SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg:///vygoj'
 # Frontend network port to listen on
 PORT = 8080
 # Backend server URIs. A random one will be selected for each code run request
