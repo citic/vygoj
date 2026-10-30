@@ -164,6 +164,16 @@ class ProblemManager {
         this.runButton.disabled = code.trim().length === 0;
       }
     });
+    // Another tab of this problem saved its code for the chosen language: show it here too.
+    // An edit instead of setValue() keeps the Undo history of this tab, as its own step
+    window.addEventListener('storage', (event) => {
+      if (event.key === `code:${languageList.value}:${window.location.pathname}`
+        && event.newValue !== editor.getValue()) {
+        editor.pushUndoStop();
+        editor.executeEdits('storage', [{ range: editor.getModel().getFullModelRange(), text: event.newValue }]);
+        editor.pushUndoStop();
+      }
+    });
   }
 
   setupTestCaseEditors() {
