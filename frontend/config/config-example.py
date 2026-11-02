@@ -1,5 +1,7 @@
 # Data folder to store course repos, student code submissions
 DATA_FOLDER = "/home/user/vygdata"
+# TSV file in DATA_FOLDER with the users to add to the database (username and password columns)
+USERS_FILE = "users-passwords.tsv"
 # Database URI for SQLAlchemy. Without user and password, PostgreSQL uses the system user
 SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg:///vygoj'
 # Frontend network port to listen on

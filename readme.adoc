@@ -109,7 +109,7 @@ cp -n config-example.py config.py
 nano config.py
 ----
 
-Third, create the PostgreSQL database and fill it with the users. The frontend connects to the database set in `SQLALCHEMY_DATABASE_URI` in `config.py`. The users come from a TSV file with a `username` and a `password` column. Keep that file out of the repository because it has plain passwords:
+Third, create the PostgreSQL database and fill it with the users. The frontend connects to the database set in `SQLALCHEMY_DATABASE_URI` in `config.py`. The users come from a TSV file with a `username` and a `password` column, named `USERS_FILE` in `config.py` and saved in `DATA_FOLDER`. Keep that file out of the repository because it has plain passwords:
 
 [source,console]
 ----
@@ -117,10 +117,10 @@ sudo apt install postgresql
 sudo -u postgres createuser $USER
 sudo -u postgres createdb -O $USER vygoj
 cd vygoj/frontend/src
-../.venv/bin/python migrate_users.py /path/to/users.tsv
+../.venv/bin/python migrate_users.py
 ----
 
-If the file is saved as `vygoj/frontend/data/users-passwords.tsv`, `make` and `make users` load its new users automatically.
+The script only adds users that are not in the database yet. `make` and `make users` run it automatically. An optional argument loads a different file: `migrate_users.py /path/to/users.tsv`.
 
 Fourth, run the frontend as a production server:
 
