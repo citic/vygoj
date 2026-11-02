@@ -1,0 +1,182 @@
+{
+  "printf": {
+    "signature": "int printf(const char *format, ...)",
+    "documentation": "Writes the values formatted as format says to the standard output. Returns the number of characters written, or a negative value on error."
+  },
+  "scanf": {
+    "signature": "int scanf(const char *format, ...)",
+    "documentation": "Reads values from the standard input as format says and stores them where the pointers point. Returns the number of values read, or EOF at end of input."
+  },
+  "fprintf": {
+    "signature": "int fprintf(FILE *stream, const char *format, ...)",
+    "documentation": "Like printf, but writes to stream."
+  },
+  "fscanf": {
+    "signature": "int fscanf(FILE *stream, const char *format, ...)",
+    "documentation": "Like scanf, but reads from stream."
+  },
+  "sprintf": {
+    "signature": "int sprintf(char *str, const char *format, ...)",
+    "documentation": "Like printf, but writes to the string str, which must be big enough."
+  },
+  "snprintf": {
+    "signature": "int snprintf(char *str, size_t size, const char *format, ...)",
+    "documentation": "Like sprintf, but writes at most size characters, including the final '\\0'."
+  },
+  "sscanf": {
+    "signature": "int sscanf(const char *str, const char *format, ...)",
+    "documentation": "Like scanf, but reads from the string str."
+  },
+  "fgets": {
+    "signature": "char *fgets(char *str, int num, FILE *stream)",
+    "documentation": "Reads at most num - 1 characters from stream into str, stopping after a newline, and adds '\\0'. Returns str, or NULL at end of file or on error."
+  },
+  "fputs": {
+    "signature": "int fputs(const char *str, FILE *stream)",
+    "documentation": "Writes the string str to stream, without adding a newline."
+  },
+  "puts": {
+    "signature": "int puts(const char *str)",
+    "documentation": "Writes the string str and a newline to the standard output."
+  },
+  "getchar": {
+    "signature": "int getchar(void)",
+    "documentation": "Reads the next character from the standard input. Returns it as an int, or EOF at end of input."
+  },
+  "putchar": {
+    "signature": "int putchar(int character)",
+    "documentation": "Writes character to the standard output."
+  },
+  "fopen": {
+    "signature": "FILE *fopen(const char *filename, const char *mode)",
+    "documentation": "Opens the file with the mode \"r\" (read), \"w\" (write) or \"a\" (append). Returns NULL on error."
+  },
+  "fclose": {
+    "signature": "int fclose(FILE *stream)",
+    "documentation": "Closes stream. Returns 0 on success, or EOF on error."
+  },
+  "malloc": {
+    "signature": "void *malloc(size_t size)",
+    "documentation": "Reserves size bytes of uninitialized memory. Returns a pointer to them, or NULL on error. Release them with free."
+  },
+  "calloc": {
+    "signature": "void *calloc(size_t count, size_t size)",
+    "documentation": "Reserves memory for count elements of size bytes, all set to zero. Returns NULL on error."
+  },
+  "realloc": {
+    "signature": "void *realloc(void *pointer, size_t size)",
+    "documentation": "Changes the size of the memory at pointer to size bytes, moving it if needed. Returns the new pointer, or NULL on error (the old memory stays valid)."
+  },
+  "free": {
+    "signature": "void free(void *pointer)",
+    "documentation": "Releases the memory reserved by malloc, calloc or realloc."
+  },
+  "atoi": {
+    "signature": "int atoi(const char *str)",
+    "documentation": "Converts the string str to an int. Returns 0 if it is not a number."
+  },
+  "strtol": {
+    "signature": "long strtol(const char *str, char **end, int base)",
+    "documentation": "Converts the string str to a long in the given base. Stores in *end where the number ended."
+  },
+  "strtod": {
+    "signature": "double strtod(const char *str, char **end)",
+    "documentation": "Converts the string str to a double. Stores in *end where the number ended."
+  },
+  "abs": {
+    "signature": "int abs(int number)",
+    "documentation": "Returns the absolute value of number."
+  },
+  "rand": {
+    "signature": "int rand(void)",
+    "documentation": "Returns a pseudo-random number between 0 and RAND_MAX."
+  },
+  "srand": {
+    "signature": "void srand(unsigned int seed)",
+    "documentation": "Sets the seed for rand, for example srand(time(NULL))."
+  },
+  "exit": {
+    "signature": "void exit(int status)",
+    "documentation": "Ends the program with status, EXIT_SUCCESS (0) or EXIT_FAILURE."
+  },
+  "strlen": {
+    "signature": "size_t strlen(const char *str)",
+    "documentation": "Returns the number of characters in str before the final '\\0'."
+  },
+  "strcpy": {
+    "signature": "char *strcpy(char *destination, const char *source)",
+    "documentation": "Copies source, including the final '\\0', to destination, which must be big enough. Returns destination."
+  },
+  "strncpy": {
+    "signature": "char *strncpy(char *destination, const char *source, size_t num)",
+    "documentation": "Copies at most num characters of source to destination. It does not add '\\0' if source has num characters or more."
+  },
+  "strcat": {
+    "signature": "char *strcat(char *destination, const char *source)",
+    "documentation": "Appends source at the end of destination, which must be big enough. Returns destination."
+  },
+  "strcmp": {
+    "signature": "int strcmp(const char *str1, const char *str2)",
+    "documentation": "Compares the strings. Returns a negative number, 0 or a positive number if str1 goes before, is equal to or goes after str2."
+  },
+  "strncmp": {
+    "signature": "int strncmp(const char *str1, const char *str2, size_t num)",
+    "documentation": "Like strcmp, but compares at most num characters."
+  },
+  "strchr": {
+    "signature": "char *strchr(const char *str, int character)",
+    "documentation": "Returns a pointer to the first character in str, or NULL if it is not there."
+  },
+  "strstr": {
+    "signature": "char *strstr(const char *str, const char *substring)",
+    "documentation": "Returns a pointer to the first substring in str, or NULL if it is not there."
+  },
+  "memcpy": {
+    "signature": "void *memcpy(void *destination, const void *source, size_t num)",
+    "documentation": "Copies num bytes from source to destination. They must not overlap. Returns destination."
+  },
+  "memset": {
+    "signature": "void *memset(void *pointer, int value, size_t num)",
+    "documentation": "Sets num bytes at pointer to value. Returns pointer."
+  },
+  "sqrt": {
+    "signature": "double sqrt(double number)",
+    "documentation": "Returns the square root of number. Link with -lm."
+  },
+  "pow": {
+    "signature": "double pow(double base, double exponent)",
+    "documentation": "Returns base raised to exponent. Link with -lm."
+  },
+  "fabs": {
+    "signature": "double fabs(double number)",
+    "documentation": "Returns the absolute value of number. Link with -lm."
+  },
+  "floor": {
+    "signature": "double floor(double number)",
+    "documentation": "Returns the biggest integer value not greater than number. Link with -lm."
+  },
+  "ceil": {
+    "signature": "double ceil(double number)",
+    "documentation": "Returns the smallest integer value not less than number. Link with -lm."
+  },
+  "isdigit": {
+    "signature": "int isdigit(int character)",
+    "documentation": "Returns non-zero if character is a decimal digit (0-9)."
+  },
+  "isalpha": {
+    "signature": "int isalpha(int character)",
+    "documentation": "Returns non-zero if character is a letter."
+  },
+  "isspace": {
+    "signature": "int isspace(int character)",
+    "documentation": "Returns non-zero if character is white space (space, tab, newline...)."
+  },
+  "toupper": {
+    "signature": "int toupper(int character)",
+    "documentation": "Returns character in uppercase, if it is a lowercase letter."
+  },
+  "tolower": {
+    "signature": "int tolower(int character)",
+    "documentation": "Returns character in lowercase, if it is an uppercase letter."
+  }
+}
