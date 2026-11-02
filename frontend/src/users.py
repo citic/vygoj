@@ -3,6 +3,7 @@ import flask
 import flask_wtf
 import wtforms
 from wtforms import validators
+from werkzeug.security import check_password_hash
 
 from db import db
 from vyg_log import vyg_log
@@ -15,8 +16,8 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     # Username must be unique
     username = db.Column(db.String(64), unique=True, nullable=False)
-    # Password as first authentication method
-    password = db.Column(db.String(64), nullable=False)
+    # Password hash as first authentication method, never the plain password
+    password = db.Column(db.String(256), nullable=False)
     # Email must be valid, and a number sent to it is second authentication method
     email = db.Column(db.String(128), unique=True)
     # Full name including last name(s)
@@ -43,84 +44,6 @@ class Progress(db.Model):
     evaluation = db.Column(db.String(64), nullable=False)
     # The grade obtained
     grade = db.Column(db.Float(), nullable=False)
-
-users = {
-    'e01': {'password': '4G5k8d'},
-    'e02': {'password': 'HHu7a7'},
-    'e03': {'password': 'Bnt0e0'},
-    'e04': {'password': 'R8YHAf'},
-    'e05': {'password': 'M46dsu'},
-    'e06': {'password': '92XbLx'},
-    'e07': {'password': 'eeMEj8'},
-    'e08': {'password': 'Dznw4R'},
-    'e09': {'password': 'SAza8t'},
-    'e10': {'password': 'Av6fPn'},
-    'e11': {'password': 'Kr2hwX'},
-    'e12': {'password': 'VzYhc6'},
-    'e13': {'password': '8TT2h6'},
-    'e14': {'password': 'r35Qgx'},
-    'e15': {'password': 'JLWe5F'},
-    'e16': {'password': 'UzA5H2'},
-    'e17': {'password': '3HWHcz'},
-    'e18': {'password': '2XYc2A'},
-    'e19': {'password': 'AjBq5Z'},
-    'e20': {'password': 'MX6B2n'},
-    'e21': {'password': '7aA2hA'},
-    'e22': {'password': 'Nxh5uG'},
-    'e23': {'password': '7zyK52'},
-    'e24': {'password': '2f5QYz'},
-    'e25': {'password': 'ch964S'},
-    'e26': {'password': 'sTePg9'},
-    'e27': {'password': 'aUvU9a'},
-    'e28': {'password': 'PFEu3b'},
-    'e29': {'password': 'wnU6ax'},
-    'e30': {'password': 'f6RERD'},
-    'e31': {'password': 'J6TFtF'},
-    'e32': {'password': 'nUfF5s'},
-    'e33': {'password': 'D2QBvP'},
-    'e34': {'password': 'X6xHQe'},
-    'e35': {'password': 'R2Cr6W'},
-    'e36': {'password': 'E6C6x9'},
-    'e37': {'password': 'P8Pbk9'},
-    'e38': {'password': '3uaYDJ'},
-    'e39': {'password': 'mN68qj'},
-    'e40': {'password': 'jVJtT3'},
-    'e41': {'password': 'BL6eRe'},
-    'e42': {'password': 'c6Sp4r'},
-    'e43': {'password': 'r8HUgM'},
-    'e44': {'password': 'fKPxP6'},
-    'e45': {'password': 'zC5eEP'},
-    'e46': {'password': '2GTq77'},
-    'e47': {'password': 'Jk4p9Y'},
-    'e48': {'password': 'G75VvV'},
-    'e49': {'password': 'zZ2LD4'},
-    'e50': {'password': 'L3Sqm6'},
-    'e51': {'password': 'g7hgKE'},
-    'e52': {'password': 'r2DyEb'},
-    'e53': {'password': 'fAede5'},
-    'e54': {'password': '9hQCFK'},
-    'e55': {'password': 'v7Yp3X'},
-    'e56': {'password': 'K11rzZ'},
-    'e57': {'password': 'fF77t2'},
-    'e58': {'password': 'b4X3Wq'},
-    'e59': {'password': 'q8D3n4'},
-    'e60': {'password': 'pP22Qq'},
-    'e61': {'password': 'k3JH9x'},
-    'e62': {'password': '9Z6W2H'},
-    'e63': {'password': 'D4mH3y'},
-    'e64': {'password': 's8tV4L'},
-    'e65': {'password': 'bY8h3J'},
-    'e66': {'password': 'u7X9Z4'},
-    'e67': {'password': 'U2d3W5'},
-    'e68': {'password': 'Y6R5pX'},
-    'e69': {'password': 'Lx8K3v'},
-    'e70': {'password': 'H3mN9q'},
-    # Test users
-    'e96': {'password': 'Zz96zZ'},
-    'e97': {'password': 'Zz97zZ'},
-    'e98': {'password': 'Zz98zZ'},
-    'e99': {'password': 'Zz99zZ'},
-}
 
 logged_users = set()
 
@@ -175,14 +98,15 @@ class UserForm(flask_wtf.FlaskForm):
                 flask.flash('Preferences updated successfully.', 'success')
             else:
                 # User is not logged in, try to login
-                # TODO(I): Check credentials in the database
                 user = {
                     'email': form.email.data,
                     'fullname': form.fullname.data,
                     'interface_mode': form.interface_mode.data,
                 }
                 name = form.email.data
-                if name in users and form.password.data == users[name]['password']:
+                # Find the user in the database and compare the typed password with its hash
+                db_user = db.session.scalar(db.select(User).filter_by(username=name))
+                if db_user and check_password_hash(db_user.password, form.password.data):
                     flask.session['user'] = user
                     logged_users.add(name)
                     flask.flash('Logged in successfully.', 'success')

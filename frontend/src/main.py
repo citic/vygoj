@@ -10,7 +10,7 @@ from talisman import Talisman, GOOGLE_CSP_POLICY
 
 from courses import CourseController
 from problems import ProblemController
-from users import UserForm
+from users import User, UserForm
 from db import db
 from vyg_log import vyg_log
 
@@ -55,10 +55,6 @@ app.config.from_pyfile(config_file)
 
 # Database ----------------------------------------------------------------------------------------
 
-# Database is stored in vygoj/frontend/data/frontend.sqlite
-db_pathname = os.path.join(app_path, 'data/frontend.sqlite')
-# SQLAlchemy looks for the database URI in configuration variable
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_pathname}'
 # Disable watching object changes to reduce resource consumption
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Only send session cookies over HTTPS connections
@@ -67,6 +63,9 @@ app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 # The database object maps Python objects to DB's tuples (ORM, object-relational mapping)
 db.init_app(app)
+# Create only the users table, if it does not exist yet
+with app.app_context():
+    User.__table__.create(db.engine, checkfirst=True)
 
 # Courses -----------------------------------------------------------------------------------------
 
