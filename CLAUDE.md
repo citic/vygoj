@@ -14,7 +14,7 @@ with its specific layout, commands, and rules; this file holds what is common to
 Flow: the browser talks to the frontend; the frontend sends a problem and a solution to a backend
 (`BACKENDS` in `frontend/config/config.py`, port 9090 by default); the backend runs the solution
 inside a disposable engine container and returns an `ExecutionResult`. Other folders: `common/`
-(shared `Makefile`), `docs/` (analysis and design, in Spanish), `cli/` (legacy Node.js tool).
+(shared `Makefile` and `vyg` Python package), `docs/` (analysis and design, in Spanish), `cli/` (legacy Node.js tool).
 
 ## Language
 
@@ -25,9 +25,11 @@ inside a disposable engine container and returns an `ExecutionResult`. Other fol
 
 ## Shared model
 
-- `frontend/src/vyg.py` holds the data model shared by frontend and backend (`Problem`,
-  `TestCase`, `Status`, `ExecutionResult`...). `backend/src/vyg.py` is a symlink to it, so a change
-  affects both layers. Keep it free of Flask-specific code.
+- The `vyg` package in `common/vyg/` holds the data model shared by frontend and backend
+  (`Problem`, `TestCase`, `Status`, `ExecutionResult`...). `make deps` installs it in editable mode
+  (`pip install -e ../common`) into the `.venv` of each layer, so a change affects both layers
+  without reinstalling. Keep it free of Flask-specific code, and declare its own dependencies in
+  `common/pyproject.toml`.
 - `frontend/static/js/vyg.js` mirrors that model on the client. Keep the three in sync, and keep
   `Status` values and `ExecutionResult` fields stable since they cross the HTTP boundary.
 

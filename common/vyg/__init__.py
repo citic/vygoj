@@ -1,4 +1,4 @@
-""" Common classes for VygOJ backend and frontend server """
+""" Data model shared by the VygOJ backend and frontend servers """
 import base64
 import copy
 import enum
@@ -38,14 +38,6 @@ LANGUAGE_EXTENSIONS = {
 
 # Create the inverse dictionary mapping languages to their extensions
 EXTENSION_LANGUAGES = {value: key for key, value in LANGUAGE_EXTENSIONS.items()}
-
-def get_app_path():
-    """ Return the path where the docker app is located """
-    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-def get_path(subfolder:str):
-    """ Return subfolder where programming problems are stored """
-    return os.path.join(get_app_path(), subfolder)
 
 def encode(value): # :str|dict
     """ Codifies the given text to base64 in order to transport it as a JSON value """

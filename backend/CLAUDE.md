@@ -13,7 +13,6 @@ JSON. It must assume that every submitted program is malicious.
   creation, file copy, compilation, test case runs, extra proofs (thread count, sanitizers,
   linting), and container removal. `languageDefaults` holds compiler and lint flags per language.
   `FailedSolution` stops the run as soon as a verdict is known.
-- `src/vyg.py`: symlink to the shared model (see "Shared model" in the root `CLAUDE.md`).
 - `tests/`: manual scripts. `tests001.sh` targets an old Judge0 API (port 2358) and is stale.
 
 ## Commands

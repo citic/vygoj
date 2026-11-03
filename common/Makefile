@@ -1,9 +1,10 @@
-# Flask Makefile v1.1.0
+# Flask Makefile v1.2.0
 VENV=.venv# Folder where the virtual environment is installed
 ACT=. $(VENV)/bin/activate# Python command to activate the virtual environment
 SRC=src#Folder where web application source code is
 MAIN=$(SRC)/main.py# Start point of the backend source code
-DEPS=flask gunicorn markdown# Python dependencies to be installed with pip install
+DEPS=flask gunicorn# Python dependencies to be installed with pip install
+SHARED=../common# Folder of the vyg package shared by the layers, installed in editable mode
 SHELL:=/bin/bash# Use bash to run complex commands
 HOST=0.0.0.0# 0.0.0.0 allows external connections, localhost does not
 PORT=8080# Port where the web app will listen for connections
@@ -51,8 +52,9 @@ $(VENV):
 	$(PY) -m venv $(VENV)
 	$(MAKE) deps
 
+# The shared package is installed in editable mode, so changes to it apply without reinstalling
 deps: $(VENV)
-	$(ACT) && pip install $(DEPS)
+	$(ACT) && pip install $(DEPS) && pip install -e $(SHARED)
 
 # Remove installation
 clean:

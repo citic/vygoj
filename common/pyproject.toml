@@ -1,0 +1,14 @@
+# Shared VygOJ Python package, installed in editable mode into the .venv of each layer
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vyg"
+version = "0.1.0"
+description = "Data model shared by the VygOJ backend and frontend"
+requires-python = ">=3.9"
+dependencies = ["markdown"]
+
+[tool.setuptools]
+packages = ["vyg"]

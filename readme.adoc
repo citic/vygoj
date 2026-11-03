@@ -73,6 +73,8 @@ Clone this repository in the machine where a module will run:
 git clone https://git.ucr.ac.cr/ecci/vygoj.git
 ----
 
+The backend and the frontend share the `vyg` Python package located in the `common/` folder of the repository, so keep the whole repository in each machine. `make install` installs it in the virtual environment of each module. If you update an existing installation, run `make deps` once in each module to install the package.
+
 
 
 [[backend_install]]

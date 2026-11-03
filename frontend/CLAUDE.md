@@ -10,7 +10,6 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
 
 - `src/main.py`: Flask app, security headers (Talisman CSP), config, database setup, routes.
 - `src/courses.py`, `src/problems.py`, `src/users.py`: controllers for each area.
-- `src/vyg.py`: model shared with the backend (see "Shared model" in the root `CLAUDE.md`).
 - `src/vyg_log.py`: activity log (`vyg_log(action, ...)`) written as TSV.
 - `src/db.py`: SQLAlchemy instance (PostgreSQL, URI in `SQLALCHEMY_DATABASE_URI` of
   `config/config.py`).
