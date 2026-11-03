@@ -19,8 +19,8 @@ JSON. It must assume that every submitted program is malicious.
 ## Commands
 
 The common `make` rules (root `CLAUDE.md`) serve the backend on `0.0.0.0:9090`. This `Makefile`
-adds `docker` to `DEPS` and overrides `make server` (gunicorn daemon on port 9090, logs to
-`backend.txt` and `error.log`).
+adds `docker` to `DEPS`, uses 8 workers, and appends `--capture-output` to `GUNICORN_FLAGS` so
+`print` output goes to `data/error.log`.
 
 The engine image must exist and Docker must be running before `/run` works
 (`cd engine && make image`). Quick check:

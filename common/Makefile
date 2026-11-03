@@ -1,4 +1,4 @@
-# Flask Makefile v1.0.1
+# Flask Makefile v1.1.0
 VENV=.venv# Folder where the virtual environment is installed
 ACT=. $(VENV)/bin/activate# Python command to activate the virtual environment
 SRC=src#Folder where web application source code is
@@ -9,9 +9,12 @@ HOST=0.0.0.0# 0.0.0.0 allows external connections, localhost does not
 PORT=8080# Port where the web app will listen for connections
 THREADS=4# Number of threads to run the web application/service
 PY=python3# Command to run python
+LOGDIR=data# Folder for logs and runtime files of the server, ignored by git
+PIDFILE=$(LOGDIR)/gunicorn.pid# Process id of the gunicorn master, used by stop
+GUNICORN_FLAGS=# Extra gunicorn options, layers may append to it with +=
 
 # Phony targets
-.PHONY: clean debug deps install release
+.PHONY: clean debug deps install release server stop
 default: all
 
 debug: export FLASK_DEBUG=1
@@ -27,9 +30,18 @@ run: export FLASK_APP=$(MAIN)
 run: install
 	$(ACT) && flask run -h $(HOST) -p $(PORT)
 
-# Run the backend as a web service
-server: install
-	$(ACT) && cd src && gunicorn -w $(THREADS) --bind $(HOST):$(PORT) main:app --daemon &
+# Run the web app as a gunicorn daemon. Paths are relative to $(SRC) because gunicorn runs there
+server: install | $(LOGDIR)
+	$(ACT) && cd $(SRC) && gunicorn -w $(THREADS) --bind $(HOST):$(PORT) --daemon \
+		--pid ../$(PIDFILE) --access-logfile ../$(LOGDIR)/access.log \
+		--error-logfile ../$(LOGDIR)/error.log $(GUNICORN_FLAGS) main:app
+
+# Stop the gunicorn daemon started by server, without affecting other gunicorn processes
+stop:
+	kill $$(cat $(PIDFILE))
+
+$(LOGDIR):
+	mkdir -p $(LOGDIR)
 
 # Install dependencies
 install: $(VENV)

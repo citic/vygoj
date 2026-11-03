@@ -130,7 +130,7 @@ cd vygoj/frontend
 make server
 ----
 
-If you need to stop the server, call `pkill gnunicorn`.
+If you need to stop the server, call `make stop`. Logs are written to `frontend/data/` and `backend/data/`.
 
 
 

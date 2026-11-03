@@ -40,7 +40,8 @@ The Python layers include `common/Makefile`, so these rules work in `frontend/` 
 make install   # create .venv and pip install the dependencies listed in DEPS
 make           # debug server (FLASK_DEBUG=1 flask run)
 make release   # run src/main.py without debug
-make server    # gunicorn daemon (production)
+make server    # gunicorn daemon (production), logs and pid file in data/
+make stop      # stop the gunicorn daemon started by make server
 make deps      # reinstall Python dependencies into .venv
 make clean     # remove .venv
 ```

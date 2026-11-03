@@ -43,6 +43,8 @@ For keeping the backend server running in background even after logging out from
 $ make server
 ----
 
+The server writes its logs (`access.log`, `error.log`) and its process id (`gunicorn.pid`) in the `data/` folder, which is ignored by Git. Stop the server with `make stop`.
+
 You can remove the virtual environment when it is no longer needed:
 
 [source,bash]
