@@ -8,7 +8,7 @@ input,
 textarea,
 fieldset {
   border: 1px solid #c2c2c2;
-  box-shadow: 1px 1px 4px #ebebeb;
+  box-shadow: 1px 1px 4px var(--form-shadow);
   border-radius: 3px;
   padding: 7px;
   font: inherit;
@@ -19,7 +19,7 @@ fieldset {
   margin: 1rem 0;
   display: flex;
   flex-direction: column;
-  background-color: #f3f3f3;
+  background-color: var(--form-bg);
 }
 
 button,
@@ -28,7 +28,7 @@ input[type=button],
 a.button {
   border: none;
   padding: 8px 15px 8px 15px;
-  box-shadow: 1px 1px 4px #dadada;
+  box-shadow: 1px 1px 4px var(--button-shadow);
   border-radius: 3px;
   font: inherit;
   min-width: 5rem;

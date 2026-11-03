@@ -5,6 +5,15 @@ import EditorWorker from 'https://esm.sh/monaco-editor/editor/editor.worker?work
 // Monaco computes some things, like diffs, in a worker
 window.MonacoEnvironment = { getWorker: () => new EditorWorker() };
 
+// Monaco has one theme for all editors: dark when the page is dark, by user choice or by the OS
+const prefersDark = matchMedia('(prefers-color-scheme: dark)');
+const setTheme = () => {
+  const scheme = document.documentElement.dataset.colorScheme || (prefersDark.matches ? 'dark' : 'light');
+  monaco.editor.setTheme(scheme === 'dark' ? 'vs-dark' : 'vs');
+};
+prefersDark.addEventListener('change', setTheme);
+setTheme();
+
 class MonacoEditor extends HTMLElement {
   // Lets <label for> point to this element
   static formAssociated = true;

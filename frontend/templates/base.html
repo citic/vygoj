@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en"{% if it.user.interface_mode in ['light', 'dark'] %} data-color-scheme="{{ it.user.interface_mode }}"{% endif %}>
   <head>
     <meta charset="utf-8">
     <title>{%block title %}{{ it.get('title', 'Vygotsky Online Judge') }}{% endblock %} - VygOJ</title>
