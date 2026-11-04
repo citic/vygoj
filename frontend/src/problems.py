@@ -8,6 +8,7 @@ from flask import current_app as app
 import vyg
 from vyg_log import vyg_log
 from courses import CourseController
+from problem_loader import ProblemLoader
 
 class ProblemController:
     """Controls problems
@@ -85,7 +86,7 @@ class ProblemController:
         problem = course.find_symbol(problem_name)
         if not problem or not isinstance(problem, vyg.Problem):
             flask.abort(404)
-        problem.load_folder()
+        ProblemLoader.load_folder(problem)
         return problem
 
     @staticmethod

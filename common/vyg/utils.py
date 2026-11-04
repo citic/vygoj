@@ -1,8 +1,7 @@
-""" Helper functions for encoding, serialization, and process execution """
+""" Helper functions for encoding and serialization """
 import base64
 import copy
 import json
-import subprocess
 
 
 def encode(value): # :str|dict
@@ -73,12 +72,3 @@ def to_json(data_object):
     """ Convert the given Python object to JSON string """
     # See https://docs.python.org/3/library/json.html#json.dump
     return json.dumps(data_object, default=to_dict, indent=2)
-
-def run_cmd(cmd):
-    ''' Run cmd as a separate process and waits for its completion. cmd is a list of parameters '''
-    with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            universal_newlines=True) as process:
-        # Wait until the sub-process finishes, capture stdin and stdout
-        stdout, stderr = process.communicate()
-        return_code = process.returncode
-        return stdout, stderr, return_code

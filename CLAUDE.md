@@ -28,8 +28,9 @@ inside a disposable engine container and returns an `ExecutionResult`. Other fol
 - The `vyg` package in `common/vyg/` holds the data model shared by frontend and backend
   (`Problem`, `TestCase`, `Status`, `ExecutionResult`...). `make deps` installs it in editable mode
   (`pip install -e ../common`) into the `.venv` of each layer, so a change affects both layers
-  without reinstalling. Keep it free of Flask-specific code, and declare its own dependencies in
-  `common/pyproject.toml`.
+  without reinstalling. Keep it free of Flask-specific code, file loading, and rendering (the
+  frontend loads problems from disk in `frontend/src/problem_loader.py`), and declare its own
+  dependencies in `common/pyproject.toml`.
 - Each class lives in its own module named in `snake_case` (`execution_result.py` holds
   `ExecutionResult`). Test cases are the exception: `testcase.py` and `testcase_result.py` avoid
   the `test_*.py` pattern of pytest, and their classes set `__test__ = False`. Constants and
