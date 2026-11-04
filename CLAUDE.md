@@ -14,7 +14,8 @@ with its specific layout, commands, and rules; this file holds what is common to
 Flow: the browser talks to the frontend; the frontend sends a problem and a solution to a backend
 (`BACKENDS` in `frontend/config/config.py`, port 9090 by default); the backend runs the solution
 inside a disposable engine container and returns an `ExecutionResult`. Other folders: `common/`
-(shared `Makefile` and `vyg` Python package), `docs/` (analysis and design, in Spanish), `cli/` (legacy Node.js tool).
+(shared `Makefile` and `vyg` Python package), `docs/` (analysis and design, in Spanish), `cli/`
+(legacy Node.js tool).
 
 ## Language
 
