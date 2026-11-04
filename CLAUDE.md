@@ -30,6 +30,12 @@ inside a disposable engine container and returns an `ExecutionResult`. Other fol
   (`pip install -e ../common`) into the `.venv` of each layer, so a change affects both layers
   without reinstalling. Keep it free of Flask-specific code, and declare its own dependencies in
   `common/pyproject.toml`.
+- Each class lives in its own module named in `snake_case` (`execution_result.py` holds
+  `ExecutionResult`). Test cases are the exception: `testcase.py` and `testcase_result.py` avoid
+  the `test_*.py` pattern of pytest, and their classes set `__test__ = False`. Constants and
+  enumerations (`Status`) are in `constants.py` and helper functions in `utils.py`.
+  `vyg/__init__.py` re-exports the public names, so layers write `vyg.Problem`. Add new public
+  names there and to `__all__`.
 - `frontend/static/js/vyg.js` mirrors that model on the client. Keep the three in sync, and keep
   `Status` values and `ExecutionResult` fields stable since they cross the HTTP boundary.
 
