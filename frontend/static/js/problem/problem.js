@@ -24,6 +24,20 @@ int main() {
 `,
 };
 
+// Monaco name of each programming language of VygOJ. vygoj.json may write a language by its
+// name or by its extension (LANGUAGE_EXTENSIONS in vyg.py), so keys are in lowercase.
+// TODO: Java and Kotlin are missing because esm.sh fails to serve their highlighting (error 520)
+
+const monacoLanguageFor = {
+  c: 'c',
+  'c++': 'cpp',
+  cpp: 'cpp',
+  javascript: 'javascript',
+  js: 'javascript',
+  python: 'python',
+  py: 'python',
+};
+
 function loadConfig(key) {
   return window.localStorage.getItem(`${key}:${window.location.pathname}`);
 }
@@ -122,7 +136,21 @@ class ProblemManager {
   }
 
   setupCodeEditor() {
-    const { editor } = document.getElementById('code_editor');
+    const codeEditor = document.getElementById('code_editor');
+    const { editor } = codeEditor;
+    // The language chosen in the list of the toolbar is remembered for each problem, and the
+    // highlighting follows it. An invalid language in localStorage selects the first one
+    const languageList = document.getElementById('language');
+    languageList.value = loadConfig('language');
+    if (languageList.selectedIndex < 0) {
+      languageList.selectedIndex = 0;
+    }
+    const setLanguage = () => {
+      saveConfig('language', languageList.value);
+      codeEditor.setAttribute('language', monacoLanguageFor[languageList.value.toLowerCase()] || 'plaintext');
+    };
+    setLanguage();
+    languageList.addEventListener('change', setLanguage);
     editor.getModel().updateOptions({ tabSize: 2 }); // Google code style
     this.editors.push(editor);
     // The editor is as tall as its code, between the min-height and max-height of the CSS
@@ -131,9 +159,19 @@ class ProblemManager {
     });
     editor.onDidChangeModelContent(() => {
       const code = editor.getValue();
-      saveConfig('code', code);
+      saveConfig(`code:${languageList.value}`, code);
       if (this.runButton) {
         this.runButton.disabled = code.trim().length === 0;
+      }
+    });
+    // Another tab of this problem saved its code for the chosen language: show it here too.
+    // An edit instead of setValue() keeps the Undo history of this tab, as its own step
+    window.addEventListener('storage', (event) => {
+      if (event.key === `code:${languageList.value}:${window.location.pathname}`
+        && event.newValue !== editor.getValue()) {
+        editor.pushUndoStop();
+        editor.executeEdits('storage', [{ range: editor.getModel().getFullModelRange(), text: event.newValue }]);
+        editor.pushUndoStop();
       }
     });
   }
@@ -231,38 +269,40 @@ class ProblemManager {
     }
   }
 
+  // The problem's initial code for the language, or else the default code of the language
+  initialCodeFor(language) {
+    return this.problem.initialCodeFor?.[language] || defaultCodeFor[language] || '';
+  }
+
   loadUserCode() {
     console.assert(this.problem);
-    // The language chosen in the list of the toolbar
-    const language = document.getElementById('language').value;
+    // Each language keeps its own code. Show the code saved for the chosen language, or else
+    // its initial code. Its copy from before the last Clear or Revert goes first, as an older step
+    // in the history, so Undo brings it back after reloading. Editing also updates the Run button
+    const languageList = document.getElementById('language');
+    const showCode = () => {
+      const editor = this.editors[0];
+      const language = languageList.value;
+      const code = loadConfig(`code:${language}`) || this.initialCodeFor(language);
+      editor.setValue(loadConfig(`backup:${language}`) || code);
+      editor.executeEdits('load', [{ range: editor.getModel().getFullModelRange(), text: code }]);
+      editor.pushUndoStop();
+    };
+    showCode();
+    languageList.addEventListener('change', showCode);
 
-    // 1. Local storage
-    let initialCode = loadConfig('code');
-    let problemCode = null;
-
-    // 2. Problem's initial code for the programming language
-    if (this.problem.initialCodeFor && this.problem.initialCodeFor[language]) {
-      problemCode = this.problem.initialCodeFor[language];
-    }
-    initialCode = initialCode || problemCode;
-
-    // 3. Default code for the programming language
-    if (!initialCode) {
-      initialCode = defaultCodeFor[language];
-    }
-
-    // Show the initial code in the editor
-    initialCode = initialCode || '';
-    this.editors[0].setValue(initialCode);
-    if (this.runButton) {
-      this.runButton.disabled = initialCode.trim().length === 0;
-    }
+    // Before Clear or Revert, keep a copy of the code, so Undo can bring it back after reloading
+    ['clear_button', 'revert_button'].forEach((id) => {
+      document.getElementById(id).addEventListener('click', () => {
+        saveConfig(`backup:${languageList.value}`, this.editors[0].getValue());
+      });
+    });
 
     document.getElementById('revert_button').addEventListener('click', () => {
       if (window.confirm('Do you want to revert to the initial code?')) {
         // An edit instead of setValue(), so Undo can bring back the code that was replaced
         const editor = this.editors[0];
-        const text = problemCode || defaultCodeFor[language] || '';
+        const text = this.initialCodeFor(languageList.value);
         editor.pushUndoStop();
         editor.executeEdits('revert', [{ range: editor.getModel().getFullModelRange(), text }]);
         editor.pushUndoStop();
