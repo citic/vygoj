@@ -29,3 +29,8 @@ LANGUAGE_EXTENSIONS = {
 
 # Create the inverse dictionary mapping languages to their extensions
 EXTENSION_LANGUAGES = {value: key for key, value in LANGUAGE_EXTENSIONS.items()}
+
+# Map the extension or the lowercase name of each language to its name, e.g. 'cpp' and 'c++' to
+# 'C++', because vygoj.json files are written by hand
+LANGUAGE_NAMES = {key: name for extension, name in LANGUAGE_EXTENSIONS.items()
+    for key in (extension, name.lower())}

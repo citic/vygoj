@@ -21,8 +21,6 @@ class Problem(Activity):
         self.statement = decode_if(json_dict.get('statement', ''), should_decode)
         # An array of test cases
         self.tests = Problem.load_tests(json_dict.get('tests', []), should_decode)
-        # Allowed programming languages for this problem
-        self.languages = json_dict.get('languages', [])
         # The given initial source code for the problem and programming language
         self.initialCodeFor = decode_if(json_dict.get('initialCodeFor', { }), should_decode)
         # Minimum number of secondary threads to solve the problem. If this number
