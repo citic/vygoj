@@ -56,9 +56,11 @@ class ProblemLoader:
     @staticmethod
     def convert_asciidoc(filename: str) -> str:
         """ Convert the given Asciidoc file to embeddable HTML """
-        # A timeout prevents a malformed statement from blocking the request forever
-        process = subprocess.run(['asciidoctor', filename, '-e', '-o', '-'], capture_output=True,
-            text=True, timeout=ASCIIDOCTOR_TIMEOUT, check=False)
+        # Course repos are untrusted, so the safe mode restricts include:: to the folder of the
+        # statement, otherwise a statement could include any readable file of the server. A
+        # timeout prevents a malformed statement from blocking the request forever
+        process = subprocess.run(['asciidoctor', '-S', 'safe', filename, '-e', '-o', '-'],
+            capture_output=True, text=True, timeout=ASCIIDOCTOR_TIMEOUT, check=False)
         return process.stdout
 
     @staticmethod
