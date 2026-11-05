@@ -41,11 +41,8 @@
   margin: 0;
 }
 
-/* Course page: centered, never wider than a comfortable reading width */
+/* The system font reads better than Anaheim in long tables and titles */
 .course {
-  width: min(100%, 75rem);
-  margin-inline: auto;
-  /* The system font reads better than Anaheim in long tables and titles */
   font-family: system-ui, sans-serif;
 }
 
