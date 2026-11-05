@@ -1,41 +1,62 @@
 {% extends 'base.html' %}
+{%- block styles %}
+    <link rel="stylesheet" href="/css/courses.css">
+{%- endblock %}
 
-{%- macro course_content(content, indent) %}
-  {%- if content %}
-    {{ '  ' * (indent - 2) }}<ol class="course__sections">
-    {%- for item in content %}
-      {%- if not item.type.startswith('_') %}
-        {{ '  ' * (indent - 2) }}<li class="course__section">
-        {{ '  ' * (indent - 1) }}<p class="course__activity">
-        {%- if item.type == 'problem' -%}
-          [<span class="progress" id="{{ item.name }}">{{ it.progress and it.progress.get(item.name, 0) or 0 }}</span>%] <a href="{{ item.build_url() }}">{{ item.title or item.folder }}</a>
-        {%- elif item.type == 'page' -%}
-          {{ item.title or item.folder }}
-        {%- else %}
-          {{- item.title or item.folder }}
-        {%- endif %}</p>
-        {{- course_content(item.contents, indent + 2) }}
-        {{ '  ' * (indent - 2) }}</li>
-      {%- endif %}
-    {%- endfor %}
-    {{ '  ' * (indent - 2) }}</ol>
-  {%- endif %}
+{#- One table row per section, problem, or page; data-level indents it #}
+{%- macro course_rows(contents, level, prefix='') %}
+  {%- for item in contents if not item.type.startswith('_') %}
+    {%- set number = prefix ~ loop.index %}
+    {%- set label = number ~ ('.' if level == 2 else '') ~ ' ' ~ (item.title or item.folder) %}
+            <tr class="course__{{ item.type }}" data-level="{{ level }}">
+    {%- if item.type == 'section' %}
+              <th scope="row"><h{{ [level, 6]|min }}><button type="button" aria-expanded="true">{{ label }}</button></h{{ [level, 6]|min }}></th>
+              <td class="course__deadline"></td>
+              <td class="course__progress"></td>
+            </tr>
+{{- course_rows(item.contents, level + 1, number ~ '.') }}
+    {%- else %}
+              <td>
+      {%- if item.type == 'problem' -%}
+                <a href="{{ item.build_url() }}">{{ label }}</a>
+      {%- else -%}
+                {{ label }}
+      {%- endif -%}
+              </td>
+              <td class="course__deadline"></td>
+              <td class="course__progress"{% if item.type == 'problem' %} data-problem="{{ item.name }}"{% endif %}></td>
+            </tr>
+    {%- endif %}
+  {%- endfor %}
 {%- endmacro %}
 
 {%- block main %}
       <main class="course">
         <article class="course__description">
-          <h3 class="course__title">{{ it.course.title }}</h3>
-          <p class="course__code line">Code: {{ it.course.name }}</p>
-          <p class="course__instructors">Instructors:
+          <header class="course__summary">
+            <div>
+              <h3 class="course__title">{{ it.course.title }}</h3>
+              <p class="course__code line">Code: {{ it.course.name }}</p>
+              <p class="course__instructors">Instructors:
 {%- for instructor in it.course.authors %}
-            <a class="course__instructor" href="/prof/{{ instructor }}">{{ instructor }}</a>
+                <a class="course__instructor" href="/prof/{{ instructor }}">{{ instructor }}</a>
 {%- endfor %}
-          </p>
-          <section class="course__contents">
-            <h4 class="course__contents--title">Course contents</h4>
-{{- course_content(it.course.contents, 6) }}
-          </section>
+              </p>
+            </div>
+            <p class="course__total">Progress <strong id="course_progress"></strong></p>
+          </header>
+          <table class="course__contents">
+            <thead>
+              <tr>
+                <th scope="col">Contents</th>
+                <th scope="col">Deadline</th>
+                <th scope="col">Progress</th>
+              </tr>
+            </thead>
+            <tbody>
+{{- course_rows(it.course.contents, 2) }}
+            </tbody>
+          </table>
         </article>
       </main>
 {%- endblock %}
