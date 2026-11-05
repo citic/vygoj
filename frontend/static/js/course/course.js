@@ -9,7 +9,7 @@ class CourseManager {
     const progressElements = document.querySelectorAll('.progress');
     progressElements.forEach((element) => {
       const value = window.localStorage.getItem(element.id);
-      if (value) {
+      if (value && element.textContent === '0') {
         element.textContent = value;
       }
     });

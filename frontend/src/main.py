@@ -10,7 +10,7 @@ from talisman import Talisman, GOOGLE_CSP_POLICY
 
 from courses import CourseController
 from problems import ProblemController
-from users import User, UserForm
+from users import UserForm
 from db import db
 from vyg_log import vyg_log
 
@@ -63,9 +63,9 @@ app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 # The database object maps Python objects to DB's tuples (ORM, object-relational mapping)
 db.init_app(app)
-# Create only the users table, if it does not exist yet
+# Create the users and progress tables, if they do not exist yet
 with app.app_context():
-    User.__table__.create(db.engine, checkfirst=True)
+    db.create_all()
 
 # Courses -----------------------------------------------------------------------------------------
 
