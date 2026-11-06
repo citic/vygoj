@@ -24,7 +24,8 @@
       {%- endif -%}
               </td>
               <td class="course__deadline"></td>
-              <td class="course__progress"{% if item.type == 'problem' %} data-problem="{{ item.name }}"{% endif %}></td>
+              <td class="course__progress"{% if item.type == 'problem' %} data-problem="{{ item.name }}"
+                {%- if item.name in it.progress %} data-grade="{{ it.progress[item.name] }}"{% endif %}{% endif %}></td>
             </tr>
     {%- endif %}
   {%- endfor %}

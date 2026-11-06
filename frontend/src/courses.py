@@ -4,6 +4,7 @@ import os
 import flask
 from flask import current_app as app
 #from users import logged_users
+from users import Progress
 import vyg
 
 # Random combinations for experiments of 4-problem courses
@@ -68,7 +69,6 @@ class CourseController:
         course = CourseController.customize_for(course, flask.session.get('user'))
         if not course: # TODO(i): and user logged in
             flask.abort(404)
-        # TODO(i): progress = user.load_progress()
         it = {
             'user': flask.session.get('user'),
             'breadcrumbs': [
@@ -76,7 +76,7 @@ class CourseController:
             ],
             'course': course,
             'scripts': [ '<script src="/js/course/course.js" type="module" async="async"></script>' ],
-            # TODO(i): 'progress': progress,
+            'progress': Progress.load(course.name),
         }
         # print(json.dumps(it, indent=2))
         return flask.render_template('course.html', it=it)

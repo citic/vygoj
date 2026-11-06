@@ -9,6 +9,7 @@ import vyg
 from vyg_log import vyg_log
 from courses import CourseController
 from problem_loader import ProblemLoader
+from users import Progress
 
 # Timeouts in seconds for requests to backends, so a hung backend cannot block a worker forever.
 # A run compiles and executes every test case sequentially, each one limited by maxDuration
@@ -101,10 +102,11 @@ class ProblemController:
         """ Called when user input a source code solution and press Run button """
         # Run the test cases and wait for the array of results
         result = ProblemController.run_solution(problem, message)
-        # Store progress
-        # TODO(I): assert req.session.user
-        #progress = 100.0 * result.points / result.totalPoints
-        # TODO(I): req.session.user?.storeProgress(problem.name, progress);
+        # Store the same score problem.js saves in localStorage: percentage of passed test cases,
+        # adding 0.5 rounds halves up as JavaScript Math.round does (Python round() goes to even)
+        results = result.get('results') or []
+        grade = int(100 * result.get('passedTestCount', 0) / len(results) + 0.5) if results else 0
+        Progress.store(problem.get_course().name, problem.name, grade)
         return vyg.to_json(result)
 
     @staticmethod

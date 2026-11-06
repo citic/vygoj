@@ -1,4 +1,5 @@
-// Shows the progress that each problem page saved in localStorage, as a percentage and a bar.
+// Shows the progress of each problem as a percentage and a bar. The grade stored in the database
+// for the logged user wins; otherwise the one that the problem page saved in localStorage is used.
 // Sections and the whole course show the average of the problems they contain
 class CourseManager {
   static main() {
@@ -19,8 +20,10 @@ class CourseManager {
         groups.push(section);
         open.push(section);
       } else if (element.dataset.problem) {
+        // Anonymous users have no grade in the database, so they keep their local progress.
         // localStorage can be edited by anyone, so accept only integers from 0 to 100
-        const saved = Math.round(Number(window.localStorage.getItem(element.dataset.problem)));
+        const stored = element.dataset.grade ?? window.localStorage.getItem(element.dataset.problem);
+        const saved = Math.round(Number(stored));
         const score = Math.min(Math.max(saved || 0, 0), 100);
         open.forEach((group) => group.scores.push(score));
         CourseManager.show(element, score);

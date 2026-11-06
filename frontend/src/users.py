@@ -42,12 +42,38 @@ class Progress(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     # The user id number who made a progress (got a grade)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    # The course where user got this grade
-    course_id = db.Column(db.Integer, db.ForeignKey('courses.id'))
+    # Name of the course where user got this grade, as in vygoj.json, e.g. 'CI0112'
+    course = db.Column(db.String(64), nullable=False)
     # The name of the evaluation solved
     evaluation = db.Column(db.String(64), nullable=False)
     # The grade obtained
     grade = db.Column(db.Float(), nullable=False)
+
+    @staticmethod
+    def store(course: str, evaluation: str, grade: float):
+        """ Save the last grade the logged user got in an evaluation, replacing the previous one """
+        user = flask.session.get('user')
+        user_id = user and db.session.scalar(
+            db.select(User.id).filter_by(username=user['email']))
+        if not user_id:
+            return
+        progress = db.session.scalar(db.select(Progress).filter_by(
+            user_id=user_id, course=course, evaluation=evaluation))
+        if not progress:
+            progress = Progress(user_id=user_id, course=course, evaluation=evaluation)
+            db.session.add(progress)
+        progress.grade = grade
+        db.session.commit()
+
+    @staticmethod
+    def load(course: str) -> dict:
+        """ Return the grades of the logged user in the given course as {evaluation: grade} """
+        user = flask.session.get('user')
+        if not user:
+            return {}
+        rows = db.session.execute(db.select(Progress.evaluation, Progress.grade).join(User)
+            .filter(User.username == user['email'], Progress.course == course))
+        return {evaluation: round(grade) for evaluation, grade in rows}
 
 logged_users = set()
 
