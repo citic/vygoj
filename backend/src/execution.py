@@ -19,12 +19,15 @@ docker_client = docker.from_env()
 
 class LanguageDefault:
     """ Default language options """
-    def __init__(self, lang_id, file_extension, compiler, compiler_options, linting_options):
+    def __init__(self, lang_id, file_extension, compiler, compiler_options, libraries,
+            linting_options):
         """ Constructor """
         self.id = lang_id
         self.file_extension = file_extension
         self.compiler = compiler
         self.compiler_options = compiler_options
+        # The linker resolves symbols in order, so libraries must follow the source files
+        self.libraries = libraries
         self.linting_options = linting_options
 
 common_lint='-build/header_guard,-build/include_subdir,-runtime/int'
@@ -32,10 +35,10 @@ common_lint='-build/header_guard,-build/include_subdir,-runtime/int'
 # -fno-diagnostics-color
 languageDefaults = {
     'C': LanguageDefault(50, 'c', 'gcc',
-        '-g -Wall -Wextra -std=gnu17 -pthread -lm',
+        '-g -Wall -Wextra -std=gnu17 -pthread', '-lm',
         f'{common_lint},-readability/casting'),
     'C++': LanguageDefault(54, 'cpp', 'g++',
-        '-g -Wall -Wextra -std=gnu++20 -pthread -lm',
+        '-g -Wall -Wextra -std=gnu++20 -pthread', '-lm',
         f'{common_lint},-build/c++11,-runtime/references'),
 }
 
@@ -255,7 +258,7 @@ class Execution:
             # Prepare compilation command
             source_path = self.source_file
             cmd = (f'{flags.compiler} {compiler_options} {source_path}'
-                    f' -o {self.executable}')
+                    f' -o {self.executable} {flags.libraries}')
             # Run the compilation command, if it fails, report to frontend
             stdout, stderr, exit_code = self.run_in_container(cmd, 2)
             self.result.compileOutput = stdout + stderr
