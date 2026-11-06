@@ -1,20 +1,36 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Inkscape (http://www.inkscape.org/) -->
-<svg width="64" height="42" version="1.1" viewBox="0 0 16.933 11.113" xmlns="http://www.w3.org/2000/svg">
- <g>
-  <g transform="matrix(1.4573 .0024466 -.0024466 1.4573 -7.7558 -4.6631)">
-   <circle cx="12.058" cy="7.6906" r=".36033"/>
-   <g fill="#e3dbdb" stroke="#000" stroke-linecap="round" stroke-linejoin="bevel" stroke-width=".26458">
-    <rect x="6.994" y="6.2934" width="2.9453" height="2.7691" rx=".2"/>
-    <rect x="6.415" y="4.6571" width="4.1033" height="1.6363" rx=".2"/>
-    <rect x="6.415" y="9.0625" width="4.1033" height="1.6363" rx=".2"/>
-    <rect x="9.9514" y="7.3111" width="6.8617" height=".85329" rx=".2"/>
-   </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <style>
+    .head, .ring, .wood, .cap, .block, .block-top { stroke: #1f403e; stroke-width: 2; stroke-linejoin: round; }
+    .head { fill: #cfe3e0; }
+    .ring { fill: #8fbab4; }
+    .wood, .block { fill: #e2c3a4; }
+    .block-top { fill: #f0dcc6; }
+    .cap { fill: #356864; }
+    .tassel { stroke: #4caf50; }
+    .tassel-end { fill: #4caf50; }
+    @media (prefers-color-scheme: dark) {
+      .head, .ring, .wood, .cap, .block, .block-top { stroke: #e8f5f3; }
+      .head { fill: #2b4a48; }
+      .ring { fill: #3d7f78; }
+      .wood, .block { fill: #7a573c; }
+      .block-top { fill: #8f6a4b; }
+      .cap { fill: #5aa39b; }
+      .tassel { stroke: #7ee0a1; }
+      .tassel-end { fill: #7ee0a1; }
+    }
+  </style>
+  <!-- Sound block -->
+  <rect class="block" x="4" y="48.5" width="36" height="7" rx="2.5"/>
+  <rect class="block-top" x="6.5" y="45" width="31" height="4.5" rx="2"/>
+  <!-- Gavel wearing a mortarboard, hitting the sound block -->
+  <g transform="translate(22 31.5) scale(.9)">
+    <rect class="head" x="-8" y="-8" width="16" height="16" rx="2"/>
+    <rect class="ring" x="-11.5" y="-15" width="23" height="7.5" rx="2.6"/>
+    <rect class="ring" x="-11.5" y="7.5" width="23" height="7.5" rx="2.6"/>
+    <rect class="wood" x="8" y="-2.2" width="30" height="4.4" rx="2.2"/>
+    <circle class="ring" cx="38.5" r="2.8"/>
+    <path class="cap" d="M-16-18.5 0-24.5 16-18.5 0-12.5z"/>
+    <path class="tassel" d="M0-18.5 13.5-15.5v7" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle class="tassel-end" cx="13.5" cy="-7.2" r="1.8"/>
   </g>
-  <g transform="rotate(-42.281 5.7423 11.196)" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width=".38558px">
-   <path d="m8.0421 0.44079 2.1284 4.1453 4.8752 1.9304-2.6911-4.175z" fill="#d7eef4"/>
-   <path d="m11.403 3.3809 3.6391 3.1668-1.2518 1.3981" fill="none"/>
-  </g>
-  <ellipse cx="9.4966" cy="3.336" rx=".48701" ry=".5073"/>
- </g>
 </svg>

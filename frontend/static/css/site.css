@@ -61,10 +61,12 @@ a:hover {
   text-decoration: underline;
 }
 
+/* Logo on the left and user on the right, closer to the edges than to the title on wide screens */
 .site_header--row {
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
   align-items: center;
+  padding-inline: clamp(1rem, 6vw, 8rem);
 }
 
 .site_header__title {
