@@ -2,6 +2,7 @@
 import os
 from abc import ABC as abstract
 
+from vyg.constants import LANGUAGE_NAMES
 from vyg.utils import decode_if
 
 
@@ -47,6 +48,12 @@ class Material(abstract):
         # 'disabled' means it is shown but read-only,
         # 'half' means students can solve the material but get half of the points
         self.overdue_policy = json_dict.get('overdue_policy', 'disabled')
+        # Allowed programming languages, e.g. ['C', 'C++']. vygoj.json may write them by their
+        # extension or name in any case ('cpp', 'python'). Materials without languages inherit a
+        # copy of the parent's ones
+        self.languages = ([LANGUAGE_NAMES.get(language.lower(), language)
+            for language in json_dict.get('languages', [])]
+            or list(parent.languages if parent else []))
         # Add this material to the course's symbols table, so it can be found by name
         if parent and parent.get_course():
             parent.get_course().add_symbol(self)
