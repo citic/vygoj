@@ -41,12 +41,160 @@
   margin: 0;
 }
 
-.course__contents ol {
-  padding-left: 1rem;
+/* The system font reads better than Anaheim in long tables and titles */
+.course {
+  font-family: system-ui, sans-serif;
 }
 
-.course__section p {
+/* Course details as a banner: data at the left, total progress at the right */
+.course__summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem 2rem;
+  margin-top: 1.5rem;
+  padding: 1.5rem 2rem;
+  border-radius: 0.5rem;
+  background-color: rgb(128 128 128 / 8%);
+}
+
+.course__summary :is(h3, p) {
+  margin: 0 0 0.25rem;
+  overflow-wrap: anywhere;
+}
+
+.course__summary h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.course__total {
+  text-align: center;
+  color: var(--bg-color);
+}
+
+.course__total strong {
+  display: block;
+  font-size: clamp(1.75rem, 1.25rem + 1.5vw, 2.5rem);
+}
+
+.course__contents {
+  --indent: 1.25rem;
+  width: 100%;
+  font-size: 0.95rem;
+  margin-top: 1.5rem;
+  border-collapse: collapse;
+}
+
+.course__contents :is(th, td) {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid rgb(128 128 128 / 25%);
+  text-align: start;
+  /* Long problem names like scient_notation_hw wrap on small screens */
+  overflow-wrap: anywhere;
+}
+
+.course__contents thead th {
+  border-bottom: 2px solid var(--bg-color);
+  color: var(--bg-color);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Section titles as big as the table text; only the top level is a little bigger */
+.course__contents :is(h2, h3, h4, h5, h6) {
   margin: 0;
+  font-size: 1em;
+  font-weight: 600;
+}
+
+.course__contents h2 {
+  font-size: 1.05em;
+}
+
+.course__contents tbody a {
+  color: var(--bg-color);
+}
+
+.course__contents tbody a:hover {
+  text-decoration: underline;
+}
+
+.course__section {
+  background-color: rgb(128 128 128 / 8%);
+}
+
+/* Section titles are buttons that fold their rows; the arrow shows the state */
+.course__section button,
+.course__section button:hover {
+  all: unset;
+  cursor: pointer;
+}
+
+.course__section button:focus-visible {
+  outline: 2px solid var(--bg-color);
+}
+
+.course__section button::before {
+  content: '▾ ';
+  color: gray;
+  font-size: 0.8em;
+}
+
+.course__section button[aria-expanded="false"]::before {
+  content: '▸ ';
+}
+
+/* Deadline and progress columns take only the width of their contents */
+.course__contents :is(th, td):not(:first-child) {
+  width: 1%;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Progress bar before the percentage; course.js sets --progress */
+.course__progress:not(:empty)::before {
+  content: '';
+  display: inline-block;
+  width: clamp(4rem, 12vw, 14rem);
+  height: 0.5rem;
+  margin-inline-end: 0.75rem;
+  border-radius: 1rem;
+  vertical-align: middle;
+  background: linear-gradient(to right, var(--success) var(--progress), rgb(128 128 128 / 20%) 0);
+}
+
+/* Indent the first cell of each row by its depth in the course; course.js sets --depth */
+.course__contents tbody > tr > :first-child {
+  padding-inline-start: calc(0.75rem + var(--depth, 0) * var(--indent));
+}
+
+/* Small screens: thinner cells and no bars leave room for the contents column */
+@media (max-width: 640px) {
+  .course__summary {
+    padding: 1rem;
+  }
+
+  .course__contents {
+    --indent: 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .course__contents :is(th, td) {
+    padding-inline: 0.25rem;
+  }
+
+  .course__progress:not(:empty)::before {
+    display: none;
+  }
+
+  /* The deadline column is still empty, so it gives its room to the contents */
+  .course__deadline,
+  .course__contents thead th:nth-child(2) {
+    display: none;
+  }
 }
 
 .line {
