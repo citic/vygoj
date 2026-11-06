@@ -1,5 +1,6 @@
 """ Classes for courses, sections, pages, questions, and problems """
 import json
+import math
 import os
 import threading
 import flask
@@ -81,11 +82,39 @@ class CourseController:
             ],
             # The list of user's courses
             'my_courses': courses,
+            # The total progress of the user in each of those courses, as {name: percentage}
+            'progress': {course.name: CourseController.total_progress(course)
+                for course in courses},
             # The list of available courses for this user
             'available_courses': CourseController.fetch_all_courses(),
         }
         # print(json.dumps(it, indent=2))
         return flask.render_template('courses.html', it=it)
+
+    @staticmethod
+    def total_progress(course) -> int:
+        ''' Return the average grade of the logged user in the problems of the course, the same
+        total that the course page shows '''
+        course = CourseController.customize_for(course, flask.session.get('user'))
+        grades = Progress.load(course.name)
+        problems = CourseController.list_problems(course.contents)
+        if not problems:
+            return 0
+        # Problems without a grade count as 0. Rounded half up, as Math.round() in course.js
+        average = sum(grades.get(problem, 0) for problem in problems) / len(problems)
+        return math.floor(average + 0.5)
+
+    @staticmethod
+    def list_problems(contents) -> list:
+        ''' Return the names of the problems in the contents, without the disabled ones (their
+        type starts with '_'), which the course page does not list '''
+        names = []
+        for item in contents:
+            if item.type == 'problem':
+                names.append(item.name)
+            elif item.type == 'section':
+                names += CourseController.list_problems(item.contents)
+        return names
 
     @staticmethod
     def get_course(course_id):
