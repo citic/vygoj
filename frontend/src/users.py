@@ -25,7 +25,7 @@ class User(db.Model):
     # Role: 'admin', 'professor', 'assistant' or 'student'
     role = db.Column(db.String(16), nullable=False, default='student')
     # Color scheme: 'default' follows the operating system, 'light' or 'dark' force one
-    interface_mode = db.Column(db.String(8), nullable=False, default='default')
+    color_scheme = db.Column(db.String(8), nullable=False, default='default')
     # Access all grades this user got in evaluations
     # backref adds a reference to this user in the Progress model
     progress = db.relationship('Progress', backref='role')
@@ -70,8 +70,8 @@ class UserForm(flask_wtf.FlaskForm):
         validators=[validators.EqualTo('new_password', message='Passwords must match')])
     # Full name of the user, needed to professors know their students and vice versa
     fullname = wtforms.StringField('Full name')
-    # Interface mode preference: default follows the operating system, light or dark force one
-    interface_mode = wtforms.RadioField('Interface mode', choices=[
+    # Color scheme preference: default follows the operating system, light or dark force one
+    color_scheme = wtforms.RadioField('Color scheme', choices=[
         ('default', 'Default'),
         ('light', 'Light mode'),
         ('dark', 'Dark mode'),
@@ -106,11 +106,11 @@ class UserForm(flask_wtf.FlaskForm):
             # If user was logged in, update preferences
             if user:
                 # Save the chosen color scheme in the database and in the session
-                interface_mode = form.interface_mode.data
+                color_scheme = form.color_scheme.data
                 db.session.execute(db.update(User).filter_by(username=user['email'])
-                    .values(interface_mode=interface_mode))
+                    .values(color_scheme=color_scheme))
                 db.session.commit()
-                user['interface_mode'] = interface_mode
+                user['color_scheme'] = color_scheme
                 flask.session['user'] = user
                 # TODO(I): Update the other user preferences in the database
                 flask.flash('Preferences updated successfully.', 'success')
@@ -131,7 +131,7 @@ class UserForm(flask_wtf.FlaskForm):
                         'email': name,
                         'fullname': db_user.fullname,
                         'role': db_user.role,
-                        'interface_mode': db_user.interface_mode,
+                        'color_scheme': db_user.color_scheme,
                     }
                     flask.session['user'] = user
                     logged_users.add(name)

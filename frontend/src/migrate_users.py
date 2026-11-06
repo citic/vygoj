@@ -34,9 +34,14 @@ def migrate_users(users_file):
 def add_new_columns():
     """ Add the columns that older users tables lack, existing rows get their default value """
     with app.app_context():
+        columns = {column['name'] for column in db.inspect(db.engine).get_columns('users')}
+        # The color scheme column was first named interface_mode, rename it to keep its values
+        if 'interface_mode' in columns and 'color_scheme' not in columns:
+            db.session.execute(db.text(
+                "ALTER TABLE users RENAME COLUMN interface_mode TO color_scheme"))
         db.session.execute(db.text("ALTER TABLE users"
             " ADD COLUMN IF NOT EXISTS role VARCHAR(16) NOT NULL DEFAULT 'student',"
-            " ADD COLUMN IF NOT EXISTS interface_mode VARCHAR(8) NOT NULL DEFAULT 'default'"))
+            " ADD COLUMN IF NOT EXISTS color_scheme VARCHAR(8) NOT NULL DEFAULT 'default'"))
         db.session.commit()
 
 def main():
