@@ -1,6 +1,7 @@
 """ Classes for courses, sections, pages, questions, and problems """
 import json
 import os
+import threading
 import flask
 from flask import current_app as app
 #from users import logged_users
@@ -17,24 +18,49 @@ EXP_RAND_TYPE = [
     ['problem', 'problem', 'page',    'page'],
 ]
 
+# Course repository, relative to DATA_FOLDER, that lists the courses
+# TODO(jhc): this path will be replaced by a database query
+COURSES_REPO = 'u13/pexercises/vygoj.json'
+
+# The threads of a gunicorn worker share the cache of courses. The lock prevents two threads from
+# loading the course repository at once
+_cache_lock = threading.Lock()
+
 class CourseController:
     """ Manages courses created by instructors and enrolled by students """
-    # Cache of all loaded courses. It is dictionary of {id: Course} pairs
+    # Cache of all loaded courses. It is dictionary of {id: Course} pairs. Each gunicorn worker is
+    # a separate process with its own cache, so do not read it directly, use find_course()
     all_courses = {}
 
     @staticmethod
     def fetch_my_courses():
         ''' Return the list of courses where current user is enrolled '''
         # TODO(jhc): this test will be replaced by a database query
-        result = []
-        user = flask.session.get('user')
-        if user:
-            repo = os.path.join(app.config.get('DATA_FOLDER'), 'u13/pexercises/vygoj.json')
-            result = CourseController.load_courses(repo)
+        if not flask.session.get('user'):
+            return []
+        return CourseController.cache_courses()
+
+    @staticmethod
+    def cache_courses():
+        ''' Load the courses from the repository and store them in the cache of this process '''
+        repo = os.path.join(app.config.get('DATA_FOLDER'), COURSES_REPO)
+        courses = CourseController.load_courses(repo)
+        with _cache_lock:
             # Store each course in the cache as a pair {course.name: course}
-            for course in result:
+            for course in courses:
                 CourseController.all_courses[course.name] = course
-        return result
+        return courses
+
+    @staticmethod
+    def find_course(name):
+        ''' Return the course with the given name, or None if it does not exist. The worker that
+        serves a request may not be the one that loaded the courses, so a missing course in the
+        cache of this process loads the repository before giving up '''
+        course = CourseController.all_courses.get(name)
+        if course is None:
+            CourseController.cache_courses()
+            course = CourseController.all_courses.get(name)
+        return course
 
     @staticmethod
     def fetch_all_courses():
@@ -64,7 +90,7 @@ class CourseController:
     @staticmethod
     def get_course(course_id):
         ''' User clicked a course '''
-        course = CourseController.all_courses.get(course_id)
+        course = CourseController.find_course(course_id)
         # TODO(jhc): Disable after experiments
         course = CourseController.customize_for(course, flask.session.get('user'))
         if not course: # TODO(i): and user logged in

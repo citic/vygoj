@@ -191,7 +191,12 @@ class ProblemManager {
   async fetchProblem() {
     console.assert(this.problem === null);
     const message = { action: 'fetch_problem' }; // Message object
-    this.problem = new Problem(await ProblemManager.sendJson(message));
+    const json = await ProblemManager.sendJson(message);
+    // The server answers errors with a JSON object such as {error: '...'}, without the problem
+    if (json?.error) {
+      throw Error(`could not load the problem: ${json.error}`);
+    }
+    this.problem = new Problem(json);
   }
 
   static async sendJson(object, uri = '') {

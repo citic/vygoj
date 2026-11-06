@@ -88,9 +88,9 @@ class ProblemController:
     @staticmethod
     def fetch_problem(course_name: str, problem_name: str):
         """ Return a JSON version of the problem """
-        if not course_name in CourseController.all_courses:
+        course = CourseController.find_course(course_name)
+        if not course:
             flask.abort(404)
-        course = CourseController.all_courses[course_name]
         problem = course.find_symbol(problem_name)
         if not problem or not isinstance(problem, vyg.Problem):
             flask.abort(404)
