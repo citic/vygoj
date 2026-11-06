@@ -3,7 +3,7 @@ import flask
 import flask_wtf
 import wtforms
 from wtforms import validators
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from db import db
 from vyg_log import vyg_log
@@ -22,6 +22,10 @@ class User(db.Model):
     email = db.Column(db.String(128), unique=True)
     # Full name including last name(s)
     fullname = db.Column(db.String(128), nullable=False)
+    # Role: 'admin', 'professor', 'assistant' or 'student'
+    role = db.Column(db.String(16), nullable=False, default='student')
+    # Color scheme: 'default' follows the operating system, 'light' or 'dark' force one
+    color_scheme = db.Column(db.String(8), nullable=False, default='default')
     # Access all grades this user got in evaluations
     # backref adds a reference to this user in the Progress model
     progress = db.relationship('Progress', backref='role')
@@ -66,13 +70,14 @@ class UserForm(flask_wtf.FlaskForm):
         validators=[validators.EqualTo('new_password', message='Passwords must match')])
     # Full name of the user, needed to professors know their students and vice versa
     fullname = wtforms.StringField('Full name')
-    # Interface mode preference: light or dark
-    interface_mode = wtforms.RadioField('Interface mode', choices=[
+    # Color scheme preference: default follows the operating system, light or dark force one
+    color_scheme = wtforms.RadioField('Color scheme', choices=[
+        ('default', 'Default'),
         ('light', 'Light mode'),
         ('dark', 'Dark mode'),
-    ], default='light')
-    # Update button. SubmitField renders <input type=submit> element
-    update = wtforms.SubmitField('Update', id='confirm_button', name='action')
+    ], default='default')
+    # Save button. SubmitField renders <input type=submit> element
+    update = wtforms.SubmitField('Save', id='confirm_button')
     # Login button, enabled when user is not logged in
     login = wtforms.SubmitField('Login', id='login_button', name='login')
     # Logout button, when user is logged in
@@ -83,8 +88,14 @@ class UserForm(flask_wtf.FlaskForm):
     @staticmethod
     def show_form():
         """ Show the login or preferences form to the user """
-        form = UserForm()
         user = flask.session.get('user')
+        # Fill the form with the data of the logged in user, if any
+        form = UserForm(data=user)
+        # While there are no users, the first one registers as the administrator
+        first_user = not user and not db.session.scalar(db.select(User).limit(1))
+        if first_user:
+            form.fullname.validators += (validators.DataRequired(), )
+            form.new_password.validators += (validators.DataRequired(), )
         # If user accepted the dialog
         if form.validate_on_submit():
             if form.logout.data:
@@ -94,19 +105,34 @@ class UserForm(flask_wtf.FlaskForm):
                 return flask.redirect(flask.url_for('get_index'))
             # If user was logged in, update preferences
             if user:
-                # TODO(I): Update user preferences in the database
+                # Save the chosen color scheme in the database and in the session
+                color_scheme = form.color_scheme.data
+                db.session.execute(db.update(User).filter_by(username=user['email'])
+                    .values(color_scheme=color_scheme))
+                db.session.commit()
+                user['color_scheme'] = color_scheme
+                flask.session['user'] = user
+                # TODO(I): Update the other user preferences in the database
                 flask.flash('Preferences updated successfully.', 'success')
+                return flask.redirect(flask.url_for('user'))
             else:
                 # User is not logged in, try to login
-                user = {
-                    'email': form.email.data,
-                    'fullname': form.fullname.data,
-                    'interface_mode': form.interface_mode.data,
-                }
                 name = form.email.data
+                if first_user:
+                    # Save the first user as the administrator, and log them in below
+                    db.session.add(User(username=name, fullname=form.fullname.data, role='admin',
+                        password=generate_password_hash(form.new_password.data)))
+                    db.session.commit()
                 # Find the user in the database and compare the typed password with its hash
                 db_user = db.session.scalar(db.select(User).filter_by(username=name))
-                if db_user and check_password_hash(db_user.password, form.password.data):
+                if db_user and (first_user or check_password_hash(db_user.password,
+                        form.password.data)):
+                    user = {
+                        'email': name,
+                        'fullname': db_user.fullname,
+                        'role': db_user.role,
+                        'color_scheme': db_user.color_scheme,
+                    }
                     flask.session['user'] = user
                     logged_users.add(name)
                     flask.flash('Logged in successfully.', 'success')
@@ -126,5 +152,6 @@ class UserForm(flask_wtf.FlaskForm):
         return flask.render_template('user.html', it={
             'title': f'User {"preferences" if user else "login"}',
             'form': form,
-            'user': user
+            'user': user,
+            'first_user': first_user,
         })

@@ -9,15 +9,33 @@ Monospace:
 */
 
 :root {
+  color-scheme: light dark;
   --bg-color: rgb(53, 104, 100);
   --head-foot-border: 1px solid gray;
   --success: #4CAF50;
   --error: #F44336;
   --warning: #FF9800;
   --info: #2196F3;
-  --toolbar-bg: #f8fafc;
-  --toolbar-border: #e2e6ee;
-  --toolbar-icon: #64748b;
+  /* Colors as light-dark(light, dark), chosen by the color-scheme above */
+  --surface: light-dark(rgb(248, 248, 248), rgb(38, 38, 38));
+  --surface-alt: light-dark(rgb(228, 227, 227), rgb(58, 58, 58));
+  --form-bg: light-dark(#f3f3f3, rgb(30, 30, 30));
+  --form-shadow: light-dark(#ebebeb, transparent);
+  --button-shadow: light-dark(#dadada, black);
+  --border: light-dark(black, gray);
+  --label-color: light-dark(var(--bg-color), rgb(120, 190, 182));
+  --toolbar-bg: light-dark(#f8fafc, #1e293b);
+  --toolbar-border: light-dark(#e2e6ee, #334155);
+  --toolbar-icon: light-dark(#64748b, #94a3b8);
+}
+
+/* Color scheme chosen by the user in the preferences, instead of the one of the OS */
+:root[data-color-scheme="light"] {
+  color-scheme: light;
+}
+
+:root[data-color-scheme="dark"] {
+  color-scheme: dark;
 }
 
 html {
@@ -168,7 +186,7 @@ pre, code {
 }
 
 pre, monaco-editor {
-  border: 1px solid black;
+  border: 1px solid var(--border);
 }
 
 pre {
