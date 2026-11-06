@@ -38,6 +38,8 @@
 
 monaco-editor {
   display: block;
+  overflow: auto;
+  resize: vertical;
 }
 
 .problem__solution monaco-editor {
