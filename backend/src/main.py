@@ -1,8 +1,12 @@
 """ Start backend execution """
-import flask
 import json
+import logging
+import flask
 
 import execution
+
+# Maximum size of a /run request body. Larger requests are rejected with 413
+MAX_REQUEST_BYTES = 16 * 1024 * 1024
 
 class Backend:
     """ Backend general controller object """
@@ -23,9 +27,9 @@ class Backend:
 
 # Flask web application instance requires the name of the application (this filename)
 app = flask.Flask(__name__)
-
-# with app.app_context():
-#     flask.g.token = '200d1e038'
+# Flask rejects larger request bodies before reading them
+app.config['MAX_CONTENT_LENGTH'] = MAX_REQUEST_BYTES
+logging.basicConfig(level=logging.INFO)
 
 # @app.route decorator calls the view function index() each time we receive an http request asking
 # for path "/". It is converted to app.add_url_rule('/', 'index', index)
@@ -43,17 +47,37 @@ def status():
 
 @app.post('/run')
 def run_solution():
-    """ Create a new submission to evaluate a problem solution. A submission token (id) is returned
-    that is used to check the submission status later. """
-    if flask.request.headers.get('Content-Type').lower() != 'application/json':
+    """ Compile and run a solution against the test cases of a problem. Return the
+    ExecutionResult as JSON """
+    if flask.request.mimetype != 'application/json':
         flask.abort(415, 'Error: content-type must be application/json\n')
-    submission = json.loads(flask.request.get_json())
-    print('-----------------------submission----------------\n', submission, '\n------------------------------------------')
-    problem_json = submission.get('problem')
-    solution_json = submission.get('solution')
-    if problem_json and solution_json:
-        Backend.job_count += 1
-        result = execution.Execution(problem_json, solution_json).execute()
+    submission = parse_submission(flask.request.get_data(cache=False))
+    if not submission:
+        flask.abort(400, 'Error: expected a JSON object with problem and solution objects\n')
+    try:
+        job = execution.Execution(submission['problem'], submission['solution'])
+    except execution.InvalidSubmission as error:
+        # The message of InvalidSubmission is written by the backend and does not reveal details
+        flask.abort(400, f'Error: {error}\n')
+    Backend.job_count += 1
+    try:
+        result = job.execute()
+    finally:
         Backend.job_count -= 1
-        return result
-    flask.abort(403, '')
+    return flask.Response(result, mimetype='application/json')
+
+def parse_submission(body:bytes):
+    """ Return the submission dictionary with problem and solution dictionaries, or None if body
+        is malformed """
+    try:
+        submission = json.loads(body)
+        # The frontend encodes the submission as a JSON string, and then sends it encoded as JSON
+        if isinstance(submission, str):
+            submission = json.loads(submission)
+    except (ValueError, RecursionError):
+        # Invalid JSON or UTF-8, or nesting too deep
+        return None
+    if (isinstance(submission, dict) and isinstance(submission.get('problem'), dict)
+            and isinstance(submission.get('solution'), dict)):
+        return submission
+    return None

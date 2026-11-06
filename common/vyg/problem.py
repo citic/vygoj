@@ -66,7 +66,10 @@ class Problem(Activity):
 
     def has_proofs(self):
         """ Returns true if this problem requires the solution to pass extra proofs """
-        return self.minThreads >= 1
+        # minThreads may be 'stdin' or come from untrusted JSON with any type
+        if self.minThreads == 'stdin':
+            return True
+        return isinstance(self.minThreads, (int, float)) and self.minThreads >= 1
 
     def merge(self, json_dict: dict, should_decode: bool):
         """ Copy to this problem the non-empty fields of the given JSON dictionary """

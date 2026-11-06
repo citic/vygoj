@@ -44,10 +44,11 @@ improve isolation, and must never let a submission crash or exhaust the backend 
 - Container limits: keep `network_disabled=True` and `mem_limit`; prefer adding (not removing)
   limits such as `pids_limit`, `nano_cpus`, `ulimits`, `cap_drop=['ALL']`,
   `security_opt=['no-new-privileges']`, and read-only file systems with a small writable tmpfs.
-  Known gap: `create_container()` currently passes `privileged=True`, which contradicts its own
-  comment; do not rely on it and prefer removing it.
-- Every command run in the container goes through `run_in_container(cmd, timeout)` with a
-  timeout, and its output size must be capped before decoding or returning it.
+  Never pass `privileged=True`. `put_archive` cannot write into a tmpfs, so `/home/student` stays
+  on the container's writable layer (bounded by the `fsize` ulimit).
+- Every command run in the container goes through `run_in_container(argv, timeout)`: `argv` is a
+  list (never a shell string), it always gets a timeout, and its output is capped at
+  `MAX_OUTPUT_BYTES` before decoding.
 - Never interpolate student-controlled data (code, test input, file names, language names) into
   shell commands. Write data to files copied with `put_archive`, use fixed file names, and accept
   only whitelisted values (e.g. languages in `languageDefaults`, tools `asan`/`tsan`/`ubsan`).
