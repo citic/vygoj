@@ -10,6 +10,13 @@ from vyg_log import vyg_log
 from courses import CourseController
 from problem_loader import ProblemLoader
 
+# Timeouts in seconds for requests to backends, so a hung backend cannot block a worker forever.
+# A run compiles and executes every test case sequentially, each one limited by maxDuration
+BACKEND_CONNECT_TIMEOUT = 5
+BACKEND_RUN_TIMEOUT = 120
+# The status is a light health check shown to clients, so it must answer quickly
+BACKEND_STATUS_TIMEOUT = 5
+
 class ProblemController:
     """Controls problems
 
@@ -109,7 +116,8 @@ class ProblemController:
         # Create an array of results, one for each test case
         # TODO(jhc): get these args from config
         uri = f'{ProblemController.select_random_backend()}/run'
-        plain_result = requests.post(uri, timeout=30000, json=submission)
+        plain_result = requests.post(uri, json=submission,
+            timeout=(BACKEND_CONNECT_TIMEOUT, BACKEND_RUN_TIMEOUT))
         print('-------------------plain_result---------------\n', plain_result.text, '\n---------------')
         vyg_log('run_result', plain_result.text)
         # The user program is executed once for each test case

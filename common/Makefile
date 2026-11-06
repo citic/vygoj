@@ -8,7 +8,8 @@ SHARED=../common# Folder of the vyg package shared by the layers, installed in e
 SHELL:=/bin/bash# Use bash to run complex commands
 HOST=0.0.0.0# 0.0.0.0 allows external connections, localhost does not
 PORT=8080# Port where the web app will listen for connections
-THREADS=4# Number of threads to run the web application/service
+WORKERS=4# Number of gunicorn worker processes
+THREADS=1# Number of threads per worker, more than 1 lets a worker serve requests while others wait
 PY=python3# Command to run python
 LOGDIR=data# Folder for logs and runtime files of the server, ignored by git
 PIDFILE=$(LOGDIR)/gunicorn.pid# Process id of the gunicorn master, used by stop
@@ -31,9 +32,11 @@ run: export FLASK_APP=$(MAIN)
 run: install
 	$(ACT) && flask run -h $(HOST) -p $(PORT)
 
-# Run the web app as a gunicorn daemon. Paths are relative to $(SRC) because gunicorn runs there
+# Run the web app as a gunicorn daemon. Paths are relative to $(SRC) because gunicorn runs there.
+# Threaded workers (gthread) serve WORKERS*THREADS requests at the same time
 server: install | $(LOGDIR)
-	$(ACT) && cd $(SRC) && gunicorn -w $(THREADS) --bind $(HOST):$(PORT) --daemon \
+	$(ACT) && cd $(SRC) && gunicorn -w $(WORKERS) \
+		--worker-class gthread --threads $(THREADS) --bind $(HOST):$(PORT) --daemon \
 		--pid ../$(PIDFILE) --access-logfile ../$(LOGDIR)/access.log \
 		--error-logfile ../$(LOGDIR)/error.log $(GUNICORN_FLAGS) main:app
 

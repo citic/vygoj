@@ -9,7 +9,7 @@ from flask_squeeze import Squeeze
 from talisman import Talisman, GOOGLE_CSP_POLICY
 
 from courses import CourseController
-from problems import ProblemController
+from problems import BACKEND_CONNECT_TIMEOUT, BACKEND_STATUS_TIMEOUT, ProblemController
 from users import User, UserForm
 from db import db
 from vyg_log import vyg_log
@@ -123,7 +123,8 @@ def get_status():
     try:
         # TODO(jhc): summarize status of all available backends
         uris = app.config.get('BACKENDS', ['http://localhost:9090'])
-        return requests.get(f'{uris[0]}/status', timeout=1000).json()
+        return requests.get(f'{uris[0]}/status',
+            timeout=(BACKEND_CONNECT_TIMEOUT, BACKEND_STATUS_TIMEOUT)).json()
     except requests.exceptions.RequestException as error:
         return flask.jsonify({ 'status': 'offline', 'error': str(error) }), 504
 

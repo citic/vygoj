@@ -4,6 +4,7 @@ import json
 import os
 import re
 import subprocess
+import threading
 
 import markdown
 
@@ -11,6 +12,11 @@ import vyg
 
 # Maximum seconds that asciidoctor may spend converting a problem statement to HTML
 ASCIIDOCTOR_TIMEOUT = 30
+
+# Problems are shared by the threads of a gunicorn worker. The lock prevents two threads from
+# loading the same problem at once, duplicating its statement or exposing it half loaded. A single
+# lock is enough because each problem is loaded only once per worker process
+_load_lock = threading.Lock()
 
 class ProblemLoader:
     """ Fills a vyg.Problem with the files stored in its folder: the vygoj.json configuration,
@@ -20,12 +26,16 @@ class ProblemLoader:
     def load_folder(problem: vyg.Problem):
         """ Load problem data from the folder where it is stored """
         if problem.folder_loaded is False:
-            path = problem.get_path()
-            ProblemLoader.load_json(problem, path)
-            ProblemLoader.load_problem_statement(problem, path)
-            problem.folder_loaded = True
-            ProblemLoader.load_initial_code(problem, path)
-            ProblemLoader.load_test_cases(problem, path)
+            with _load_lock:
+                # Another thread may have loaded the problem while this one waited for the lock
+                if problem.folder_loaded is False:
+                    path = problem.get_path()
+                    ProblemLoader.load_json(problem, path)
+                    ProblemLoader.load_problem_statement(problem, path)
+                    ProblemLoader.load_initial_code(problem, path)
+                    ProblemLoader.load_test_cases(problem, path)
+                    # Mark it loaded at the end, so other threads never use a partial problem
+                    problem.folder_loaded = True
 
     @staticmethod
     def load_json(problem: vyg.Problem, path: str):
