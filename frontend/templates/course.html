@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {%- block styles %}
     <link rel="stylesheet" href="/css/courses.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&amp;icon_names=unfold_less,unfold_more&amp;display=block">
 {%- endblock %}
 
 {#- One table row per section, problem, or page; data-level indents it #}
@@ -46,10 +47,10 @@
             </div>
             <p class="course__total">Progress <strong id="course_progress"></strong></p>
           </header>
-          <table class="course__contents">
+          <table class="course__contents" data-course="{{ it.course.name }}">
             <thead>
               <tr>
-                <th scope="col">Contents</th>
+                <th scope="col">Contents <button type="button" id="toggle_all"><span class="material-symbols-outlined" aria-hidden="true">unfold_less</span> <span>Collapse all</span></button></th>
                 <th scope="col">Deadline</th>
                 <th scope="col">Progress</th>
               </tr>

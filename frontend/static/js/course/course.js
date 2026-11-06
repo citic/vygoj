@@ -33,16 +33,29 @@ class CourseManager {
       const sum = scores.reduce((total, score) => total + score, 0);
       CourseManager.show(element, scores.length ? Math.round(sum / scores.length) : 0);
     }
+    CourseManager.restore();
     document.querySelector('.course__contents').addEventListener('click', CourseManager.toggle);
+    document.getElementById('toggle_all').addEventListener('click', CourseManager.toggleAll);
   }
 
   // Clicking a section title hides or shows every row inside that section
   static toggle({ target }) {
     const button = target.closest('.course__section button');
-    if (!button) {
-      return;
+    if (button) {
+      CourseManager.expand(button, button.getAttribute('aria-expanded') === 'false');
+      CourseManager.save();
     }
-    const expanded = button.getAttribute('aria-expanded') === 'false';
+  }
+
+  // Collapses every section when one at least is expanded, otherwise expands them all
+  static toggleAll() {
+    const buttons = document.querySelectorAll('.course__section[data-level="2"] button');
+    const expanded = ![...buttons].some((button) => button.getAttribute('aria-expanded') === 'true');
+    buttons.forEach((button) => CourseManager.expand(button, expanded));
+    CourseManager.save();
+  }
+
+  static expand(button, expanded) {
     let row = button.closest('tr');
     const level = Number(row.dataset.level);
     button.setAttribute('aria-expanded', expanded);
@@ -50,6 +63,29 @@ class CourseManager {
       row.hidden = !expanded;
       row.querySelector('button')?.setAttribute('aria-expanded', expanded);
     }
+  }
+
+  // The titles of the collapsed sections are kept in localStorage, one per line, by course
+  static save() {
+    const collapsed = document.querySelectorAll('.course__section [aria-expanded="false"]');
+    const titles = [...collapsed].map((button) => button.textContent);
+    window.localStorage.setItem(CourseManager.key(), titles.join('\n'));
+    const expanded = document.querySelector('.course__section [aria-expanded="true"]');
+    const [icon, label] = document.getElementById('toggle_all').children;
+    icon.textContent = expanded ? 'unfold_less' : 'unfold_more';
+    label.textContent = expanded ? 'Collapse all' : 'Expand all';
+  }
+
+  static restore() {
+    const titles = (window.localStorage.getItem(CourseManager.key()) ?? '').split('\n');
+    const buttons = [...document.querySelectorAll('.course__section button')];
+    buttons.filter((button) => titles.includes(button.textContent))
+      .forEach((button) => CourseManager.expand(button, false));
+    CourseManager.save();
+  }
+
+  static key() {
+    return `${document.querySelector('.course__contents').dataset.course}/collapsed`;
   }
 
   static show(element, score) {

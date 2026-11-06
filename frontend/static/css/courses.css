@@ -137,14 +137,53 @@
   outline: 2px solid var(--bg-color);
 }
 
+/* Bigger arrow, in a box of fixed width so the title does not move when it changes */
 .course__section button::before {
-  content: '▾ ';
+  content: '▾';
+  display: inline-block;
+  width: 1em;
   color: gray;
-  font-size: 0.8em;
+  font-size: 1.4em;
+  line-height: 1;
+  vertical-align: -0.1em;
 }
 
 .course__section button[aria-expanded="false"]::before {
-  content: '▸ ';
+  content: '▸';
+}
+
+/* Collapse all / Expand all: a button in the color of the site header, with its icon */
+.course__contents thead button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+  margin-inline-start: 1rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 0.35rem;
+  box-shadow: 0 2px 4px rgb(0 0 0 / 25%);
+  background-color: var(--bg-color);
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+  vertical-align: middle;
+}
+
+/* A little darker on hover, instead of the bold of the other buttons, so its width does not change */
+.course__contents thead button:hover {
+  font-weight: 600;
+  filter: brightness(0.85);
+}
+
+.course__contents thead button:focus-visible {
+  outline: 2px solid var(--bg-color);
+  outline-offset: 2px;
+}
+
+.course__contents thead .material-symbols-outlined {
+  font-size: 1.25rem;
 }
 
 /* Deadline and progress columns take only the width of their contents */
@@ -188,6 +227,11 @@
 
   .course__progress:not(:empty)::before {
     display: none;
+  }
+
+  /* The button goes below the column title, so it needs no space before it */
+  .course__contents thead button {
+    margin-inline-start: 0;
   }
 
   /* The deadline column is still empty, so it gives its room to the contents */
