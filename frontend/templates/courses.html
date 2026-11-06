@@ -27,6 +27,7 @@
 {%- endif %}
           </header>
           <div class="course_list">
+            <p class="course_list__head" aria-hidden="true"><span></span><span>Course</span><span>Description</span><span>Author</span></p>
 {%- for course in it.my_courses %}
 {{-   macros.course_entry(course) }}
 {%- endfor %}

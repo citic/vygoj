@@ -1,20 +1,14 @@
 {%- macro course_entry(course) %}
             <section class="course_item">
-              <img class="course__image" src="{{ course.image }}" alt="{{ course.title }}" width="64" height="60">
-              <div class="course__details">
-                <h4 class="course__header">
-                  <a href="/course/{{ course.name }}">
-                    <span class="course__code">{{ course.name }}</span>
-                    <span class="course__title">{{ course.title }}</span>
-                  </a>
-                </h4>
-                <p class="course__instructors">
+              <img src="{{ course.image }}" alt="" width="48" height="48">
+              <h4><span class="course_item__code">{{ course.name }}</span>{{ course.title }}</h4>
+              <p class="course_item__description">{{ course.description }}</p>
+              <p class="course_item__authors">
 {%- for instructor in course.authors %}
-                  <a href="/prof/{{ instructor.id }}">{{ instructor }}</a>
+                <a href="/prof/{{ instructor }}">{{ instructor }}</a>
 {%- endfor %}
-                </p>
-                <p class="course_statistics">{{ course.description }}</p>
-                {# <p class="course_statistics">{{ course.statistics.students }} students, {{ course.statistics.sections }} sections, {{ course.statistics.problems }} problems, {{ course.statistics.questions }} questions.</p> #}
-              </div>
+              </p>
+              <a class="course_item__enter" href="/course/{{ course.name }}">Enter ›</a>
+              {# <p class="course_statistics">{{ course.statistics.students }} students, {{ course.statistics.sections }} sections, {{ course.statistics.problems }} problems, {{ course.statistics.questions }} questions.</p> #}
             </section>
 {%- endmacro %}
