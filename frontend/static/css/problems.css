@@ -36,9 +36,11 @@
   overflow-wrap: break-word; /* break long words such as URIs */
 }
 
+/* Monaco scrolls its own code. Hidden overflow keeps the corner handle of resize over the
+   editor; with auto, Chrome hid it after shrinking the editor */
 monaco-editor {
   display: block;
-  overflow: auto;
+  overflow: hidden;
   resize: vertical;
 }
 
