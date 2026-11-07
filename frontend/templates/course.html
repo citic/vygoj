@@ -46,10 +46,10 @@
             </div>
             <p class="course__total">Progress <strong id="course_progress"></strong></p>
           </header>
-          <table class="course__contents">
+          <table class="course__contents" data-course="{{ it.course.name }}">
             <thead>
               <tr>
-                <th scope="col">Contents</th>
+                <th scope="col"><button type="button" id="toggle_all" aria-expanded="true">Contents</button></th>
                 <th scope="col">Deadline</th>
                 <th scope="col">Progress</th>
               </tr>
