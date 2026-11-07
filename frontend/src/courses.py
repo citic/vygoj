@@ -129,8 +129,10 @@ class CourseController:
         """ Return a course dictionary according to the type of participant """
         if not user or not course:
             return course
-        username = user.get('email')
-        if len(username) != 3 or username[0] != 'e':  # If not a student, return empty list
+        username = user.get('email') or ''
+        # If not a student of the experiment (e01, e02...), return the course as is. Other names
+        # such as 'eab' must not reach int(), otherwise the course page fails for that user
+        if len(username) != 3 or username[0] != 'e' or not username[1:].isdigit():
             return course
         num = int(username[1:]) - 1  # Convert 'e01' to 0, 'e02' to 1, etc.
         permutation = EXP_RAND_TYPE[num % 6]

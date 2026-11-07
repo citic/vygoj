@@ -56,7 +56,10 @@ cache disabled; check the browser console for errors and the layout at phone and
   test case data, and anything from the server or `localStorage` count as untrusted.
 - Never use `eval`, `new Function`, or string arguments to `setTimeout`/`setInterval`.
 - Do not store secrets or personal data in `localStorage`; it only holds UI preferences and drafts.
-- Send state-changing requests with POST and the CSRF token that the page provides.
+- Send state-changing requests with POST and the CSRF token that the page provides (the
+  `X-CSRFToken` header, as `ProblemManager.createMessage()` does).
+- Pages are served with a CSP without `'unsafe-inline'` for scripts: no inline `<script>` blocks
+  or event handler attributes; put the code in a module under `js/`.
 - Handle failed or slow `fetch` calls (network errors, non-2xx status, malformed JSON) and keep the
   UI usable; re-enable buttons that were disabled while waiting.
 - External scripts and styles may only come from hosts allowed by the CSP in

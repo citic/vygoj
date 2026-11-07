@@ -25,7 +25,8 @@
           <p>
             {{ it.form.update(class="button confirm") }}
             {#{ it.form.logout(class="button reject") }#}
-            <a href="/logout" class="button reject" id="reject_button">Logout</a>
+            {#- Logout changes the session, so it is a POST with the CSRF token of this form #}
+            <button type="submit" formaction="{{ url_for('logout') }}" formnovalidate class="button reject" id="reject_button">Logout</button>
             {#{ it.form.delete_account(class="button danger") }#}
           </p>
         </form>

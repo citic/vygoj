@@ -99,3 +99,62 @@ sudo a2ensite vygoj
 sudo apachectl configtest
 sudo systemctl restart apache2
 ----
+
+
+[[security]]
+== Security
+
+The frontend is exposed to the Internet and receives untrusted data from students and from course repositories. This section explains the controls it applies, so they are kept when the code changes.
+
+[[secret_key]]
+=== Session key
+
+Flask signs the session cookie with `SECRET_KEY` of `config/config.py`. The session stores the logged user and their role, so anyone who knows the key can forge a session of any user, including administrators. The frontend refuses to start if the key is missing, is the one of `config-example.py`, or has fewer than 32 characters. Generate a random key with:
+
+[source,sh]
+----
+python3 -c 'import secrets; print(secrets.token_hex(32))'
+----
+
+Changing the key logs out all users, because their cookies are no longer valid.
+
+[[csrf]]
+=== Cross-site request forgery (CSRF)
+
+Every POST request must carry the CSRF token of the session (Flask-WTF `CSRFProtect`), otherwise it is rejected with HTTP 400:
+
+* Forms send it in their hidden `csrf_token` field (`form.hidden_tag()`).
+* The problem page writes it in the `data-csrf-token` attribute of `<main id="problem">`, and `problem.js` sends it in the `X-CSRFToken` header. The problem endpoint also requires a JSON body, which HTML forms of other sites cannot send.
+* Tokens last as long as the session (`WTF_CSRF_TIME_LIMIT = None`), because students keep a problem page open for hours.
+* Logout changes the session, so `/logout` only accepts POST.
+
+The session cookie is also `Secure`, `HttpOnly`, and `SameSite=Lax`.
+
+[[csp]]
+=== Content security policy (CSP)
+
+Problem statements come from course repositories and are shown as HTML. Talisman sends a `Content-Security-Policy` header (`cdn` in `src/main.py`) where scripts may only come from files of this site and from the CDNs the pages use (jsDelivr, cdnjs, esm.sh). Inline scripts, event handler attributes (`onclick`), and `javascript:` URLs do not run, so templates must not have them: put behavior in `static/js/`. Styles allow `'unsafe-inline'` because Monaco and MathJax inject `<style>` elements. The policy also forbids plugins (`object-src`), foreign `<base>` elements, forms that post to other sites, and being embedded by other sites.
+
+[[course_repos]]
+=== Course repositories
+
+Problem folders and files are read only if their real path, after resolving symbolic links, is inside the folder of the course repository. Otherwise, a `folder` such as `../..` in `vygoj.json`, or a symbolic link committed to a repo, could show any readable file of the server (e.g. `config.py`) as a statement or a test case. Skipped files are logged as warnings. Files larger than 16 MiB are skipped too. Asciidoc statements are converted in the `safe` mode of `asciidoctor`.
+
+Test cases marked `"hidden": true` are sent to the browser without their input and output.
+
+[[input_limits]]
+=== Requests and errors
+
+* Request bodies are limited to 1 MiB (`MAX_CONTENT_LENGTH`, can be overridden in `config.py`).
+* Problem actions are validated: only `fetch_problem` and `run`, and only the languages enabled for the problem.
+* Errors are answered with generic messages such as `{"error": "the judge is not available"}`; their details (backend addresses, host paths) go to the server log only.
+* The request log (`data/vygoj.tsv`) stores the body of JSON requests only, never the bodies of forms, which carry passwords.
+* Login takes the same time whether the user exists or not, and starts a new session.
+
+[[security_pending]]
+=== Pending risks
+
+* Statements can still load scripts from the allowed CDNs, which serve any npm or GitHub package. Sanitizing the statement HTML on the server would close this gap.
+* There is no limit on login attempts or code runs per user or address. Configure one in the reverse proxy.
+* While the users table is empty, the first visitor of `/user` registers as administrator. Create the administrator before exposing a new installation.
+* The `talisman` package is the old 0.1.0 release. Its maintained fork is `flask-talisman`.

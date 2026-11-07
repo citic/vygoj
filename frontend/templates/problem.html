@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&amp;icon_names=backspace,content_copy,content_cut,content_paste,fullscreen,fullscreen_exit,redo,restart_alt,space_dashboard,splitscreen_left,splitscreen_right,splitscreen_top,undo">
 {%- endblock %}
 {%- block main %}
-      <main id="problem" class="problem" data-name="{{ it.problem.name }}">
+      <main id="problem" class="problem" data-name="{{ it.problem.name }}" data-csrf-token="{{ csrf_token() }}">
         <article class="problem__description">
           <h2 class="problem__title">{{ it.problem.title }}</h2>
           <div class="problem__statement">{{ it.problem.statement|safe }}</div>

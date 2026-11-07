@@ -6,11 +6,13 @@ from logging.handlers import RotatingFileHandler
 import flask
 import requests
 from flask_squeeze import Squeeze
-from talisman import Talisman, GOOGLE_CSP_POLICY
+from flask_wtf.csrf import CSRFError, CSRFProtect
+from talisman import Talisman
+from werkzeug.exceptions import RequestEntityTooLarge
 
 from courses import CourseController
 from problems import BACKEND_CONNECT_TIMEOUT, BACKEND_STATUS_TIMEOUT, ProblemController
-from users import User, UserForm
+from users import UserForm, log_out
 from db import db
 from vyg_log import vyg_log
 
@@ -28,9 +30,13 @@ app = flask.Flask(__name__, template_folder=template_path,
 # Compress responses (bzip) and minify static files
 squeeze = Squeeze(app)
 
-# Provide security headers to mitigate attacks
+# Provide security headers to mitigate attacks. Problem statements come from course repos and are
+# shown as HTML, so the policy must stop the scripts they could carry. Scripts may only come from
+# files of this site and the CDNs that the pages use (no 'unsafe-inline', so no <script> blocks,
+# onclick attributes, or javascript: URLs run). Styles keep 'unsafe-inline' because Monaco and
+# MathJax inject <style> elements. Other resources (frames, images...) follow default-src
 cdn = {
-    'default-src': ("'self' 'unsafe-inline'"
+    'default-src': ("'self'"
                     ' *.google-analytics.com'
                     ' *.googleanalytics.com'
                     ' *.gstatic.com'
@@ -42,16 +48,41 @@ cdn = {
                     ' themes.googleusercontent.com'
                     ' www.google.com'
                     ' www.youtube.com'),
+    'script-src': "'self' cdn.jsdelivr.net cdnjs.cloudflare.com esm.sh",
+    'style-src': ("'self' 'unsafe-inline' cdn.jsdelivr.net cdnjs.cloudflare.com esm.sh"
+                  ' fonts.googleapis.com'),
     'img-src': "'self' data:",
     'font-src': "'self' data: *.gstatic.com cdn.jsdelivr.net",
     'worker-src': 'blob: esm.sh',
+    # Plugins (<object>, <embed>) are not used and can run code outside the policy
+    'object-src': "'none'",
+    # A <base> element injected in a statement could redirect the relative URLs of the scripts
+    'base-uri': "'self'",
+    # Forms may only be sent to this site, so injected forms cannot steal what students type
+    'form-action': "'self'",
+    # Only this site may embed its pages, against clickjacking (as X-Frame-Options: SAMEORIGIN)
+    'frame-ancestors': "'self'",
 }
-# GOOGLE_CSP_POLICY['default-src'] += f" {CDN_URL}"
 Talisman(app, content_security_policy=cdn)
 
 # Load configuration from a Python file with constants
 config_file = os.path.join(app_path, 'config/config.py')
 app.config.from_pyfile(config_file)
+
+# The key that signs session cookies. The session holds the logged user and their role, so anyone
+# who knows or guesses the key can forge a session of any user, including administrators
+MIN_SECRET_KEY_LENGTH = 32
+EXAMPLE_SECRET_KEY = 'A very large and random string that is hard to guess.'
+
+def check_secret_key(secret_key):
+    """ Stop the server if the session key is missing, the one of the example file, or short """
+    if (not isinstance(secret_key, str) or secret_key == EXAMPLE_SECRET_KEY
+            or len(secret_key) < MIN_SECRET_KEY_LENGTH):
+        raise RuntimeError(f'SECRET_KEY in {config_file} must be a random string of at least '
+            f'{MIN_SECRET_KEY_LENGTH} characters, generate one with: '
+            "python3 -c 'import secrets; print(secrets.token_hex(32))'")
+
+check_secret_key(app.config.get('SECRET_KEY'))
 
 # Database ----------------------------------------------------------------------------------------
 
@@ -61,6 +92,18 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SESSION_COOKIE_SECURE'] = True
 # Do not allow JavaScript to access the session cookie
 app.config['SESSION_COOKIE_HTTPONLY'] = True
+# Browsers do not send the session cookie in POST requests started by other sites (defense in
+# depth against cross-site request forgery, the CSRF tokens below are the main protection)
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+# Reject larger request bodies (HTTP 413) before reading them, so a client cannot exhaust the
+# memory of the server, the logs, or the backends. Solutions are source files, 1 MiB is plenty
+app.config.setdefault('MAX_CONTENT_LENGTH', 2**20)
+
+# Every POST request must carry the CSRF token of the session: forms in a hidden field, and fetch()
+# calls in the X-CSRFToken header. Students keep problem pages open for hours, so the token lasts
+# as long as the session instead of expiring after one hour
+app.config.setdefault('WTF_CSRF_TIME_LIMIT', None)
+csrf = CSRFProtect(app)
 # The database object maps Python objects to DB's tuples (ORM, object-relational mapping)
 db.init_app(app)
 # Create the users and progress tables, if they do not exist yet
@@ -105,15 +148,10 @@ def user():
     vyg_log('visit', '/user')
     return UserForm.show_form()
 
-@app.route('/logout')
+@app.route('/logout', methods=['POST'])
 def logout():
-    """ User wants to logout, remove user from session """
-    user_obj = flask.session.get('user')
-    username = user_obj.get('email', '') if user_obj else ''
-    vyg_log('logout', username)
-    flask.session.pop('user', None)
-    flask.flash('User logged out', 'warning')
-    return flask.redirect(flask.url_for('get_index'))
+    """ User wants to logout. Only POST with the CSRF token, so other sites cannot log users out """
+    return log_out()
 
 # Misc --------------------------------------------------------------------------------------------
 
@@ -125,8 +163,10 @@ def get_status():
         uris = app.config.get('BACKENDS', ['http://localhost:9090'])
         return requests.get(f'{uris[0]}/status',
             timeout=(BACKEND_CONNECT_TIMEOUT, BACKEND_STATUS_TIMEOUT)).json()
-    except requests.exceptions.RequestException as error:
-        return flask.jsonify({ 'status': 'offline', 'error': str(error) }), 504
+    except (requests.exceptions.RequestException, ValueError):
+        # The error text has the internal address of the backend, so it is logged, not shown
+        app.logger.exception('could not get the status of the backend')
+        return flask.jsonify({ 'status': 'offline', 'error': 'backend not available' }), 504
 
 @app.route('/help')
 def get_help():
@@ -141,6 +181,19 @@ def get_help():
 def get_not_found(_): # error
     ''' Get the not found page for a 404 error '''
     return flask.render_template('not_found.html', it={ }), 404
+
+@app.errorhandler(CSRFError)
+def handle_csrf_error(error):
+    """ A POST request came without a valid CSRF token: forged by another site, or the session
+    expired. JavaScript clients get a JSON error, and form users go back with a message """
+    app.logger.warning('CSRF rejected %s %s: %s', flask.request.method, flask.request.path,
+        error.description)
+    message = 'Your session expired or the request was not valid. Reload the page and try again.'
+    if flask.request.is_json:
+        return flask.jsonify({ 'error': message }), 400
+    flask.flash(message, 'error')
+    # All the forms of the site are in the user page (login, preferences, and logout)
+    return flask.redirect(flask.url_for('user'))
 
 # Logging -----------------------------------------------------------------------------------------
 
@@ -162,13 +215,23 @@ logger = logging.getLogger('vygoj')
 logger.setLevel(logging.INFO)
 logger.addHandler(log_handler)
 
+def loggable_body(request):
+    """ Return the body of the request to be logged. Form bodies carry passwords and CSRF tokens,
+    so they are never logged; only JSON bodies (code submissions) are """
+    if not request.is_json:
+        return b''
+    try:
+        return request.get_data()
+    except RequestEntityTooLarge:
+        return b'(too large)'
+
 def log_event(request, response, method):
-    '''' Log an entry '''
+    ''' Log an entry '''
     timestamp = time.strftime('%y%m%d\t%H%M%S')
     user_obj = flask.session.get('user')
     username = user_obj.get('email', '') if user_obj else ''
     method('%s\t%s\t%s\t%s\t%s\t%s\t%s', timestamp, request.remote_addr, request.method,
-            request.url, response.status, username, request.get_data())
+            request.url, response.status, username, loggable_body(request))
     return response
 
 @app.after_request

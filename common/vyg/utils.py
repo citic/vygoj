@@ -44,14 +44,14 @@ def to_dict(data_object):
     """ Returns a dictionary with data attributes of data_object. If the class for the data_object
     has a static attribute named encoded fields, the values for those fields are encoded to
     base64 strings. The data_object is not modified. """
-    # By the default, return the direct dictionary representation of the object
+    # By the default, return the direct dictionary representation of the object. Do not export to
+    # JSON private non-serializable attributes (starts with _) or are empty. They are skipped
+    # before copying, because private ones, such as the parent of a material, may reference the
+    # whole course, and copying it on each request would waste time and memory
+    public_fields = {field: value for field, value in data_object.__dict__.items()
+        if not field.startswith('_') and value}
     # Because it may be modified, we make a copy to preserve the original object intact
-    result = copy.deepcopy(data_object.__dict__)
-    # Do not export to JSON private non-serializable attributes (starts with _) or are empty
-    # Traverse original dictionary because copy will be modified
-    for field in data_object.__dict__:
-        if field.startswith('_') or not result[field]:
-            del result[field]
+    result = copy.deepcopy(public_fields)
     # If class has a static attribute encoded_fields as a list of strings (attribute names)
     if hasattr(data_object.__class__, 'encoded_fields'):
         # For each field to be encoded

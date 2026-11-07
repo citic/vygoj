@@ -54,9 +54,14 @@ to the general rules in the root `CLAUDE.md`:
 - Use SQLAlchemy queries with bound parameters; never format SQL strings.
 - Jinja2 autoescaping must stay on. Use `|safe` only on content the server generated or sanitized
   (e.g. Markdown rendered from professor-authored course repos), never on raw user input.
-- Forms use Flask-WTF so they carry CSRF tokens; new state-changing endpoints must be POST and
-  CSRF-protected. Never change state on GET.
-- Keep Talisman enabled. If a new CDN is needed, add only that host to the CSP in `main.py`.
+- `CSRFProtect` checks every POST: forms carry the token with `form.hidden_tag()`, and `fetch()`
+  calls send it in the `X-CSRFToken` header (see `data-csrf-token` in `problem.html`). New
+  state-changing endpoints must be POST. Never change state on GET (e.g. `/logout` is POST).
+- Keep Talisman enabled. If a new CDN is needed, add only that host to the CSP in `main.py`. The
+  CSP forbids inline scripts, so templates have no `<script>` blocks.
+- Course repos are untrusted: read problem files only through `ProblemLoader.read_file()`, which
+  keeps them inside the course repo. Answer errors with generic messages and log the details.
+- The "Security" section of `readme.adoc` explains these controls; update it when they change.
 - Keep `SESSION_COOKIE_SECURE` and `SESSION_COOKIE_HTTPONLY`. Store only minimal data in the
   session. Hash passwords; never log or display them.
 - `requests` timeouts are in seconds. Handle `requests.exceptions.RequestException` so a down

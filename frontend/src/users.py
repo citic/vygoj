@@ -77,6 +77,22 @@ class Progress(db.Model):
 
 logged_users = set()
 
+# Maximum length of the passwords. Hashing is slow on purpose, so huge passwords would let a client
+# keep the server busy
+MAX_PASSWORD_LENGTH = 256
+
+# Hash of a password nobody has. Login checks it when the user does not exist, so the response
+# takes the same time for existing and missing users, and timing does not reveal the usernames
+_MISSING_USER_HASH = generate_password_hash('this user does not exist')
+
+def log_out():
+    """ Remove the logged user and the rest of the session (e.g. its CSRF token) """
+    user_obj = flask.session.get('user')
+    vyg_log('logout', user_obj.get('email', '') if user_obj else '')
+    flask.session.clear()
+    flask.flash('User logged out', 'warning')
+    return flask.redirect(flask.url_for('get_index'))
+
 class UserForm(flask_wtf.FlaskForm):
     """ If no user is logged in, show the login form, otherwise the preferences form """
     # Email field is is the user identification. The validators list are triggered when user
@@ -88,14 +104,17 @@ class UserForm(flask_wtf.FlaskForm):
     email = wtforms.StringField('Username/Email', validators=[#validators.DataRequired(),
         validators.Length(3, 128)]) # validators.Email(),
     # Password is required to login or to change password
-    password = wtforms.PasswordField('Password')
+    password = wtforms.PasswordField('Password',
+        validators=[validators.Length(max=MAX_PASSWORD_LENGTH)])
     # Used only when user wants to change password
-    new_password = wtforms.PasswordField('Password')
+    new_password = wtforms.PasswordField('Password',
+        validators=[validators.Length(max=MAX_PASSWORD_LENGTH)])
     # Asked to make user be sure the new password is well typed
     confirm_password = wtforms.PasswordField('Confirm new password',
         validators=[validators.EqualTo('new_password', message='Passwords must match')])
-    # Full name of the user, needed to professors know their students and vice versa
-    fullname = wtforms.StringField('Full name')
+    # Full name of the user, needed to professors know their students and vice versa. The limit
+    # is the size of its database column
+    fullname = wtforms.StringField('Full name', validators=[validators.Length(max=128)])
     # Color scheme preference: default follows the operating system, light or dark force one
     color_scheme = wtforms.RadioField('Color scheme', choices=[
         ('default', 'Default'),
@@ -125,10 +144,7 @@ class UserForm(flask_wtf.FlaskForm):
         # If user accepted the dialog
         if form.validate_on_submit():
             if form.logout.data:
-                # User wants to logout, remove user from session
-                flask.session.pop('user', None)
-                flask.flash('User logged out', 'warning')
-                return flask.redirect(flask.url_for('get_index'))
+                return log_out()
             # If user was logged in, update preferences
             if user:
                 # Save the chosen color scheme in the database and in the session
@@ -151,8 +167,12 @@ class UserForm(flask_wtf.FlaskForm):
                     db.session.commit()
                 # Find the user in the database and compare the typed password with its hash
                 db_user = db.session.scalar(db.select(User).filter_by(username=name))
-                if db_user and (first_user or check_password_hash(db_user.password,
-                        form.password.data)):
+                password_hash = db_user.password if db_user else _MISSING_USER_HASH
+                password_ok = check_password_hash(password_hash, form.password.data or '')
+                if db_user and (first_user or password_ok):
+                    # A new session for the logged user, so nothing stored before the login (such
+                    # as a CSRF token that an attacker could have planted) is kept
+                    flask.session.clear()
                     user = {
                         'email': name,
                         'fullname': db_user.fullname,
