@@ -153,9 +153,15 @@ class ProblemManager {
     languageList.addEventListener('change', setLanguage);
     editor.getModel().updateOptions({ tabSize: 2 }); // Google code style
     this.editors.push(editor);
-    // The editor is as tall as its code, between the min-height and max-height of the CSS
+    // The editor is as tall as its code, between the min-height and max-height of the CSS, until
+    // the user gives it another height with its corner handle
+    let fittedHeight = '';
     editor.onDidContentSizeChange(() => {
-      editor.getContainerDomNode().style.height = `${editor.getContentHeight()}px`;
+      const { style } = editor.getContainerDomNode();
+      if (style.height === fittedHeight) {
+        fittedHeight = `${editor.getContentHeight()}px`;
+        style.height = fittedHeight;
+      }
     });
     editor.onDidChangeModelContent(() => {
       const code = editor.getValue();
@@ -180,6 +186,20 @@ class ProblemManager {
     this.setupTestCaseEditor('active_test_input');
     this.setupTestCaseEditor('active_test_expected_output');
     this.setupTestCaseEditor('active_test_user_output');
+    ProblemManager.resizeTestCaseEditorsTogether();
+  }
+
+  // Side by side, stretching one of these editors with its corner handle stretches the others too,
+  // so the row stays aligned. One below the other, each one keeps its own height
+  static resizeTestCaseEditorsTogether() {
+    const row = document.getElementById('active_test');
+    const editors = row.querySelectorAll('monaco-editor');
+    const observer = new ResizeObserver(([{ target }]) => {
+      if (getComputedStyle(row).flexDirection === 'row') {
+        editors.forEach((editor) => { editor.style.height = target.style.height; });
+      }
+    });
+    editors.forEach((editor) => observer.observe(editor));
   }
 
   setupTestCaseEditor(id) {
