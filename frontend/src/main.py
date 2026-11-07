@@ -63,7 +63,17 @@ cdn = {
     # Only this site may embed its pages, against clickjacking (as X-Frame-Options: SAMEORIGIN)
     'frame-ancestors': "'self'",
 }
-Talisman(app, content_security_policy=cdn)
+talisman = Talisman(app, content_security_policy=cdn)
+
+# Images of problem folders are written by course authors. An SVG may have scripts: they do not
+# run inside an <img>, but they would run if a student opened the image URL. This policy for those
+# files allows only styles and images, and the sandbox treats them as coming from another origin
+FILE_CSP = {
+    'default-src': "'none'",
+    'img-src': "'self' data:",
+    'style-src': "'unsafe-inline'",
+    'sandbox': '',
+}
 
 # Load configuration from a Python file with constants
 config_file = os.path.join(app_path, 'config/config.py')
@@ -133,6 +143,12 @@ def get_problem(course, problem):
     """ User asked for the problem page """
     vyg_log('visit', f'/problem/{course}/{problem}')
     return ProblemController.get_problem(course, problem)
+
+@app.route('/problem/<course_name>/<problem_name>/files/<path:filename>')
+@talisman(content_security_policy=FILE_CSP)
+def get_problem_file(course_name, problem_name, filename):
+    """ Browser asked for an image of the problem statement """
+    return ProblemController.get_file(course_name, problem_name, filename)
 
 @app.route('/problem/<course_name>/<problem_name>', methods=['POST'])
 def post_problem(course_name, problem_name):

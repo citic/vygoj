@@ -6,10 +6,12 @@ import os
 import re
 import subprocess
 import threading
+import urllib.parse
 
 import markdown
 
 import vyg
+from sanitize import sanitize_statement
 
 # Maximum seconds that asciidoctor may spend converting a problem statement to HTML
 ASCIIDOCTOR_TIMEOUT = 30
@@ -44,22 +46,42 @@ class ProblemLoader:
                         ProblemLoader.load_test_cases(problem, path)
                     else:
                         logger.warning('problem %s: folder out of its course repo', problem.name)
+                    # Sanitize here, also when the folder was not loaded, because the statement
+                    # may come from vygoj.json files too
+                    problem.statement = sanitize_statement(problem.statement,
+                        ProblemLoader.page_url(problem))
                     # Mark it loaded at the end, so other threads never use a partial problem
                     problem.folder_loaded = True
+
+    @staticmethod
+    def page_url(problem: vyg.Problem) -> str:
+        """ URL of the problem page, the base of the relative URLs of its statement. It is built
+        here because build_url() uses the type, which is '_problem' for disabled problems """
+        course_name = urllib.parse.quote(problem.get_course().name)
+        return f'/problem/{course_name}/{urllib.parse.quote(problem.name)}'
+
+    @staticmethod
+    def is_inside(folder: str, path: str) -> bool:
+        """ True if the path is the folder or is inside it. Symbolic links are resolved before
+        comparing, so a link inside the folder that points out of it is out of it """
+        root = os.path.realpath(folder)
+        return os.path.commonpath([root, os.path.realpath(path)]) == root
 
     @staticmethod
     def is_inside_course(problem: vyg.Problem, path: str) -> bool:
         """ True if the path is inside the repository folder of the problem's course. Course repos
         are untrusted: a folder such as '../..' in vygoj.json, or a symbolic link committed to the
         repo, could make the statement or the test cases show any readable file of the server
-        (e.g. config.py with the SECRET_KEY). Symbolic links are resolved before comparing """
-        root = os.path.realpath(problem.get_course().folder)
-        return os.path.commonpath([root, os.path.realpath(path)]) == root
+        (e.g. config.py with the SECRET_KEY) """
+        return ProblemLoader.is_inside(problem.get_course().folder, path)
 
     @staticmethod
     def is_loadable(problem: vyg.Problem, filename: str) -> bool:
         """ True if the file is a regular file inside the course repo, and it is not too large """
-        if not os.path.isfile(filename) or not ProblemLoader.is_inside_course(problem, filename):
+        # A missing file is not loadable, but it is not an error worth logging
+        if not os.path.isfile(filename):
+            return False
+        if not ProblemLoader.is_inside_course(problem, filename):
             logger.warning('problem %s: skipped %s, out of its course repo', problem.name,
                 os.path.basename(filename))
             return False

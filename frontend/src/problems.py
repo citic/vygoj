@@ -1,10 +1,12 @@
 """ Problem management module """
 import json
+import os
 import random
 import requests
 import flask
 from flask import current_app as app
 from werkzeug.exceptions import HTTPException
+from werkzeug.security import safe_join
 
 import vyg
 from vyg_log import vyg_log
@@ -21,6 +23,20 @@ BACKEND_STATUS_TIMEOUT = 5
 
 # Actions that the client JavaScript may ask with a POST to a problem
 VALID_ACTIONS = ('fetch_problem', 'run')
+
+# Files of a problem folder that browsers may get, by extension, with their media type. They are
+# the images of the statements. Other files, such as test cases or solutions, are never served
+FILE_TYPES = {
+    'avif': 'image/avif',
+    'gif': 'image/gif',
+    'jpeg': 'image/jpeg',
+    'jpg': 'image/jpeg',
+    'png': 'image/png',
+    'svg': 'image/svg+xml',
+    'webp': 'image/webp',
+}
+# Seconds that browsers may keep a problem file without asking for it again
+FILE_MAX_AGE = 3600
 
 class ProblemController:
     """Controls problems
@@ -70,6 +86,20 @@ class ProblemController:
                 '<script src="/js/site.js" type="module" async="async"></script>',
             ],
         })
+
+    @staticmethod
+    def get_file(course_name: str, problem_name: str, filename: str):
+        """ Send an image of the problem folder, e.g. img/diagram.svg of the statement """
+        problem = ProblemController.fetch_problem(course_name, problem_name)
+        folder = problem.get_path()
+        # safe_join rejects absolute paths and ../ that go out of the folder. is_inside() also
+        # rejects symbolic links to other folders, even to other problems of the course
+        path = safe_join(folder, filename)
+        file_type = FILE_TYPES.get(os.path.splitext(filename)[1][1:].lower())
+        if (not path or not file_type or not ProblemLoader.is_loadable(problem, path)
+                or not ProblemLoader.is_inside(folder, path)):
+            flask.abort(404)
+        return flask.send_file(os.path.realpath(path), mimetype=file_type, max_age=FILE_MAX_AGE)
 
     @staticmethod
     def post_problem(course_name: str, problem_name: str):

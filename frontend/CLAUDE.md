@@ -13,6 +13,8 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
 - `src/problem_loader.py`: fills a `vyg.Problem` from its folder in a course repo (`vygoj.json`,
   statement rendered from HTML, Asciidoc with `asciidoctor`, or Markdown, initial code, and test
   cases).
+- `src/sanitize.py`: sanitizes the statement HTML with `nh3` (allow lists of tags, attributes, CSS
+  properties, and URL schemes) and rewrites its relative URLs to the problem files route.
 - `src/vyg_log.py`: activity log (`vyg_log(action, ...)`) written as TSV.
 - `src/db.py`: SQLAlchemy instance (PostgreSQL, URI in `SQLALCHEMY_DATABASE_URI` of
   `config/config.py`).
@@ -53,7 +55,9 @@ to the general rules in the root `CLAUDE.md`:
   `DATA_FOLDER`.
 - Use SQLAlchemy queries with bound parameters; never format SQL strings.
 - Jinja2 autoescaping must stay on. Use `|safe` only on content the server generated or sanitized
-  (e.g. Markdown rendered from professor-authored course repos), never on raw user input.
+  (e.g. statements, which `sanitize_statement()` cleans), never on raw user input.
+- `/problem/<course>/<problem>/files/` serves only images (`FILE_TYPES`) inside the problem folder,
+  with a strict CSP. Never widen it to other extensions: test cases and solutions live there.
 - `CSRFProtect` checks every POST: forms carry the token with `form.hidden_tag()`, and `fetch()`
   calls send it in the `X-CSRFToken` header (see `data-csrf-token` in `problem.html`). New
   state-changing endpoints must be POST. Never change state on GET (e.g. `/logout` is POST).
