@@ -81,8 +81,9 @@
 
 .course__contents {
   --indent: 1.25rem;
+  --font-size: 0.95rem;
   width: 100%;
-  font-size: 0.95rem;
+  font-size: var(--font-size);
   margin-top: 1.5rem;
   border-collapse: collapse;
 }
@@ -126,64 +127,37 @@
   background-color: rgb(128 128 128 / 8%);
 }
 
-/* Section titles are buttons that fold their rows; the arrow shows the state */
-.course__section button,
-.course__section button:hover {
+/* Section titles are buttons that fold their rows, and the Contents title folds all of them;
+   the arrow shows the state */
+.course__contents :is(.course__section, thead) button,
+.course__contents :is(.course__section, thead) button:hover {
   all: unset;
   cursor: pointer;
 }
 
-.course__section button:focus-visible {
+.course__contents :is(.course__section, thead) button:focus-visible {
   outline: 2px solid var(--bg-color);
 }
 
-/* Bigger arrow, in a box of fixed width so the title does not move when it changes */
-.course__section button::before {
-  content: '▾';
+/* Arrow in a box of fixed size so the title does not move when it changes. Its size comes from
+   the table font, so every title, small or big, has the same arrow. The arrow is drawn as a mask
+   instead of a text character because fonts draw hollow and filled triangles in different
+   sizes: an expanded section shows a hollow triangle pointing down, and a collapsed one the same
+   triangle filled and pointing right. Like the font, the triangle takes about a third of the
+   box, so it is as tall as the capital letters of the title */
+.course__contents :is(.course__section, thead) button::before {
+  content: '';
   display: inline-block;
   width: 1em;
-  color: gray;
-  font-size: 1.4em;
-  line-height: 1;
-  vertical-align: -0.1em;
-}
-
-.course__section button[aria-expanded="false"]::before {
-  content: '▸';
-}
-
-/* Collapse all / Expand all: a button in the color of the site header, with its icon */
-.course__contents thead button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  min-width: 0;
-  margin-inline-start: 1rem;
-  padding: 0.3rem 0.8rem;
-  border-radius: 0.35rem;
-  box-shadow: 0 2px 4px rgb(0 0 0 / 25%);
-  background-color: var(--bg-color);
-  color: white;
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: none;
-  letter-spacing: normal;
+  height: 1em;
+  font-size: calc(1.8 * var(--font-size));
   vertical-align: middle;
+  background-color: gray;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M3.2 3.6h3.6L5 6.7z' fill='none' stroke='black' stroke-width='0.6' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
-/* A little darker on hover, instead of the bold of the other buttons, so its width does not change */
-.course__contents thead button:hover {
-  font-weight: 600;
-  filter: brightness(0.85);
-}
-
-.course__contents thead button:focus-visible {
-  outline: 2px solid var(--bg-color);
-  outline-offset: 2px;
-}
-
-.course__contents thead .material-symbols-outlined {
-  font-size: 1.25rem;
+.course__contents :is(.course__section, thead) button[aria-expanded="false"]::before {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M3.6 3.2v3.6l3.1 -1.8z' stroke='black' stroke-width='0.6' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
 /* Deadline and progress columns take only the width of their contents */
@@ -218,7 +192,7 @@
 
   .course__contents {
     --indent: 0.75rem;
-    font-size: 0.9rem;
+    --font-size: 0.9rem;
   }
 
   .course__contents :is(th, td) {
@@ -227,11 +201,6 @@
 
   .course__progress:not(:empty)::before {
     display: none;
-  }
-
-  /* The button goes below the column title, so it needs no space before it */
-  .course__contents thead button {
-    margin-inline-start: 0;
   }
 
   /* The deadline column is still empty, so it gives its room to the contents */

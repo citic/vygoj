@@ -47,7 +47,8 @@ class CourseManager {
     }
   }
 
-  // Collapses every section when one at least is expanded, otherwise expands them all
+  // Clicking the Contents title collapses every section when one at least is expanded,
+  // otherwise expands them all
   static toggleAll() {
     const buttons = document.querySelectorAll('.course__section[data-level="2"] button');
     const expanded = ![...buttons].some((button) => button.getAttribute('aria-expanded') === 'true');
@@ -70,10 +71,9 @@ class CourseManager {
     const collapsed = document.querySelectorAll('.course__section [aria-expanded="false"]');
     const titles = [...collapsed].map((button) => button.textContent);
     window.localStorage.setItem(CourseManager.key(), titles.join('\n'));
-    const expanded = document.querySelector('.course__section [aria-expanded="true"]');
-    const [icon, label] = document.getElementById('toggle_all').children;
-    icon.textContent = expanded ? 'unfold_less' : 'unfold_more';
-    label.textContent = expanded ? 'Collapse all' : 'Expand all';
+    // The Contents title shows its arrow expanded while any section is expanded
+    const expanded = document.querySelector('.course__section [aria-expanded="true"]') !== null;
+    document.getElementById('toggle_all').setAttribute('aria-expanded', expanded);
   }
 
   static restore() {
