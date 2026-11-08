@@ -13,11 +13,21 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
 - `src/problem_loader.py`: fills a `vyg.Problem` from its folder in a course repo (`vygoj.json`,
   statement rendered from HTML, Asciidoc with `asciidoctor`, or Markdown, initial code, and test
   cases).
+- `src/sanitize.py`: `sanitize_html()` cleans HTML of course authors (statements, and content pages
+  in the future) with `nh3` (allow lists of tags, attributes, CSS properties, and URL schemes;
+  only videos of the content folder). It rewrites relative URLs to the files route of the content.
+- `src/runs.py`: `Run` model (`runs` table) that limits the code runs of each user: one at a
+  time, 5 seconds between them, 120 per hour, and the same submission answered with the stored
+  result of the last run.
 - `src/vyg_log.py`: activity log (`vyg_log(action, ...)`) written as TSV.
 - `src/db.py`: SQLAlchemy instance (PostgreSQL, URI in `SQLALCHEMY_DATABASE_URI` of
   `config/config.py`).
-- `src/migrate_users.py`: loads the new users into the database from a git-ignored TSV file with
-  plain passwords, `USERS_FILE` in `DATA_FOLDER` (both in `config/config.py`). `make` runs it.
+- `src/manage_users.py`: command line to manage users in the server. `admin [username]` creates
+  an administrator, or resets the password of a user and makes it administrator (`make admin`);
+  the web never creates administrators. `import [users.tsv]` updates the users table and adds the
+  users of a git-ignored TSV file with plain passwords, `USERS_FILE` in `DATA_FOLDER` (both in
+  `config/config.py`); `make` runs it. Their logic is in `users.py` (e.g. `User.add_new()`), so
+  the web application can reuse it.
 - `templates/`: Jinja2 templates. `base.html` is the layout; pages extend it and fill blocks.
   Views pass data to templates in a single `it` object.
 - `config/config.py`: local, git-ignored settings (copy from `config/config-example.py`).
@@ -29,6 +39,7 @@ The common `make` rules (root `CLAUDE.md`) serve the frontend on `0.0.0.0:8080`.
 
 ```sh
 make dev       # npm i (ESLint/Stylelint tooling for static/)
+make admin     # create an administrator or reset its password (make admin ADMIN=name)
 ```
 
 Verify changes by running `make` and exercising the affected pages in a browser. Pages that run
@@ -53,12 +64,24 @@ to the general rules in the root `CLAUDE.md`:
   `DATA_FOLDER`.
 - Use SQLAlchemy queries with bound parameters; never format SQL strings.
 - Jinja2 autoescaping must stay on. Use `|safe` only on content the server generated or sanitized
-  (e.g. Markdown rendered from professor-authored course repos), never on raw user input.
-- Forms use Flask-WTF so they carry CSRF tokens; new state-changing endpoints must be POST and
-  CSRF-protected. Never change state on GET.
-- Keep Talisman enabled. If a new CDN is needed, add only that host to the CSP in `main.py`.
+  (e.g. statements, which `sanitize_html()` cleans), never on raw user input.
+- `/problem/<course>/<problem>/files/` serves only images, videos, and subtitles (`FILE_TYPES`)
+  inside the problem folder, with a strict CSP. Never widen it to other extensions: test cases and
+  solutions live there.
+- `CSRFProtect` checks every POST: forms carry the token with `form.hidden_tag()`, and `fetch()`
+  calls send it in the `X-CSRFToken` header (see `data-csrf-token` in `problem.html`). New
+  state-changing endpoints must be POST. Never change state on GET (e.g. `/logout` is POST).
+- Keep Talisman enabled. If a new CDN is needed, add only that host to the CSP in `main.py`. The
+  CSP forbids inline scripts, so templates have no `<script>` blocks.
+- Course repos are untrusted: read problem files only through `ProblemLoader.read_file()`, which
+  keeps them inside the course repo. Answer errors with generic messages and log the details.
+- The "Security" section of `readme.adoc` explains these controls; update it when they change.
 - Keep `SESSION_COOKIE_SECURE` and `SESSION_COOKIE_HTTPONLY`. Store only minimal data in the
   session. Hash passwords; never log or display them.
+- Limits per client (e.g. `LoginAttempt` in `users.py`) are stored in the database, because
+  gunicorn workers do not share memory. Get the client address from `flask.request.remote_addr`,
+  which `ProxyFix` corrects behind a reverse proxy (`TRUSTED_PROXIES` in `config.py`); never read
+  `X-Forwarded-For` directly, clients can fake it.
 - `requests` timeouts are in seconds. Handle `requests.exceptions.RequestException` so a down
   backend does not crash a page.
 

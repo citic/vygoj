@@ -1,17 +1,26 @@
 """ Loads programming problems from the folders of course repositories """
 import glob
 import json
+import logging
 import os
 import re
 import subprocess
 import threading
+import urllib.parse
 
 import markdown
 
 import vyg
+from sanitize import sanitize_html
 
 # Maximum seconds that asciidoctor may spend converting a problem statement to HTML
 ASCIIDOCTOR_TIMEOUT = 30
+
+# Largest file of a problem folder that is loaded, in bytes. Statements, initial codes, and test
+# cases are kept in memory and sent to clients and backends, so huge files are skipped
+MAX_FILE_SIZE = 16 * 2**20
+
+logger = logging.getLogger(__name__)
 
 # Problems are shared by the threads of a gunicorn worker. The lock prevents two threads from
 # loading the same problem at once, duplicating its statement or exposing it half loaded. A single
@@ -30,21 +39,76 @@ class ProblemLoader:
                 # Another thread may have loaded the problem while this one waited for the lock
                 if problem.folder_loaded is False:
                     path = problem.get_path()
-                    ProblemLoader.load_json(problem, path)
-                    ProblemLoader.load_problem_statement(problem, path)
-                    ProblemLoader.load_initial_code(problem, path)
-                    ProblemLoader.load_test_cases(problem, path)
+                    if ProblemLoader.is_inside_course(problem, path):
+                        ProblemLoader.load_json(problem, path)
+                        ProblemLoader.load_problem_statement(problem, path)
+                        ProblemLoader.load_initial_code(problem, path)
+                        ProblemLoader.load_test_cases(problem, path)
+                    else:
+                        logger.warning('problem %s: folder out of its course repo', problem.name)
+                    # Sanitize here, also when the folder was not loaded, because the statement
+                    # may come from vygoj.json files too
+                    problem.statement = sanitize_html(problem.statement,
+                        f'{ProblemLoader.page_url(problem)}/files/')
                     # Mark it loaded at the end, so other threads never use a partial problem
                     problem.folder_loaded = True
+
+    @staticmethod
+    def page_url(problem: vyg.Problem) -> str:
+        """ URL of the problem page, the base of the relative URLs of its statement. It is built
+        here because build_url() uses the type, which is '_problem' for disabled problems """
+        course_name = urllib.parse.quote(problem.get_course().name)
+        return f'/problem/{course_name}/{urllib.parse.quote(problem.name)}'
+
+    @staticmethod
+    def is_inside(folder: str, path: str) -> bool:
+        """ True if the path is the folder or is inside it. Symbolic links are resolved before
+        comparing, so a link inside the folder that points out of it is out of it """
+        root = os.path.realpath(folder)
+        return os.path.commonpath([root, os.path.realpath(path)]) == root
+
+    @staticmethod
+    def is_inside_course(problem: vyg.Problem, path: str) -> bool:
+        """ True if the path is inside the repository folder of the problem's course. Course repos
+        are untrusted: a folder such as '../..' in vygoj.json, or a symbolic link committed to the
+        repo, could make the statement or the test cases show any readable file of the server
+        (e.g. config.py with the SECRET_KEY) """
+        return ProblemLoader.is_inside(problem.get_course().folder, path)
+
+    @staticmethod
+    def is_loadable(problem: vyg.Problem, filename: str) -> bool:
+        """ True if the file is a regular file inside the course repo, and it is not too large """
+        # A missing file is not loadable, but it is not an error worth logging
+        if not os.path.isfile(filename):
+            return False
+        if not ProblemLoader.is_inside_course(problem, filename):
+            logger.warning('problem %s: skipped %s, out of its course repo', problem.name,
+                os.path.basename(filename))
+            return False
+        if os.path.getsize(filename) > MAX_FILE_SIZE:
+            logger.warning('problem %s: skipped %s, larger than %d bytes', problem.name,
+                os.path.basename(filename), MAX_FILE_SIZE)
+            return False
+        return True
+
+    @staticmethod
+    def read_file(problem: vyg.Problem, filename: str) -> str:
+        """ Return the text of a file of the problem folder, or an empty string if it cannot be
+        loaded safely """
+        if not ProblemLoader.is_loadable(problem, filename):
+            return ''
+        with open(filename, encoding='utf8') as file:
+            return file.read()
 
     @staticmethod
     def load_json(problem: vyg.Problem, path: str):
         """ Load the JSON file, if any, with configuration for this problem """
         path = os.path.join(path, 'vygoj.json')
         if os.path.isfile(path):
-            with open(path, encoding='utf8') as file:
+            text = ProblemLoader.read_file(problem, path)
+            if text:
                 # Files are written by hand, so their values are not base64 encoded
-                problem.merge(json.load(file), False)
+                problem.merge(json.loads(text), False)
 
     @staticmethod
     def load_problem_statement(problem: vyg.Problem, path: str):
@@ -55,13 +119,13 @@ class ProblemLoader:
                 files = glob.glob(os.path.join(path, f'*.{extension}'))
                 for filename in files:
                     if extension == 'html':
-                        with open(filename, encoding='utf8') as file:
-                            problem.statement += file.read()
+                        problem.statement += ProblemLoader.read_file(problem, filename)
                     elif extension == 'adoc':
-                        problem.statement += ProblemLoader.convert_asciidoc(filename)
+                        if ProblemLoader.is_loadable(problem, filename):
+                            problem.statement += ProblemLoader.convert_asciidoc(filename)
                     elif extension == 'md':
-                        with open(filename, encoding='utf8') as file:
-                            problem.statement += markdown.markdown(file.read())
+                        problem.statement += markdown.markdown(
+                            ProblemLoader.read_file(problem, filename))
 
     @staticmethod
     def convert_asciidoc(filename: str) -> str:
@@ -81,20 +145,19 @@ class ProblemLoader:
             files = (glob.glob(os.path.join(path, 'initial/*')) +
                     glob.glob(os.path.join(path, 'given/*')))
             for filename in files:
-                with open(filename, encoding='utf8') as file:
-                    # Extract file extension without dot
-                    ext = os.path.splitext(filename)[1][1:]
-                    # If extension is recognized as a programming language
-                    if ext in vyg.LANGUAGE_EXTENSIONS:
-                        language = vyg.LANGUAGE_EXTENSIONS.get(ext)
-                        initial_code = file.read()
-                        # TODO(jhc): support multi-file initial codes
-                        if language in problem.initialCodeFor:
-                            problem.initialCodeFor[language] += '\n' + initial_code
-                        else:
-                            problem.initialCodeFor[language] = initial_code
-                        if enable_language and language not in problem.languages:
-                            problem.languages.append(language)
+                # Extract file extension without dot
+                ext = os.path.splitext(filename)[1][1:]
+                # If extension is recognized as a programming language
+                if ext in vyg.LANGUAGE_EXTENSIONS:
+                    language = vyg.LANGUAGE_EXTENSIONS.get(ext)
+                    initial_code = ProblemLoader.read_file(problem, filename)
+                    # TODO(jhc): support multi-file initial codes
+                    if language in problem.initialCodeFor:
+                        problem.initialCodeFor[language] += '\n' + initial_code
+                    else:
+                        problem.initialCodeFor[language] = initial_code
+                    if enable_language and language not in problem.languages:
+                        problem.languages.append(language)
             # If initial code remains empty, enable at least one language
             if enable_language and len(problem.languages) == 0:
                 problem.languages.append('C')
@@ -118,13 +181,12 @@ class ProblemLoader:
             output_file = os.path.join(path, f'tests/output{num}.txt')
             if not os.path.exists(output_file):
                 raise ValueError(f'Output file {output_file} not found for input {input_file}')
-            with open(input_file, 'r', encoding='utf8') as file:
-                input_content = file.read()
-            with open(output_file, 'r', encoding='utf8') as file:
-                output_content = file.read()
-            # TODO(jhc): reuse code for files
-            args_content = ProblemLoader.load_test(os.path.join(path, f'tests/args{num}.txt'))
-            error_content = ProblemLoader.load_test(os.path.join(path, f'tests/error{num}.txt'))
+            input_content = ProblemLoader.read_file(problem, input_file)
+            output_content = ProblemLoader.read_file(problem, output_file)
+            args_content = ProblemLoader.load_test(problem,
+                os.path.join(path, f'tests/args{num}.txt'))
+            error_content = ProblemLoader.load_test(problem,
+                os.path.join(path, f'tests/error{num}.txt'))
             # TODO(jhc): if vygoj.json does not contain input/output, fetch from file
             json_dict = {
                 'args': args_content,
@@ -136,9 +198,6 @@ class ProblemLoader:
             problem.tests.append(vyg.TestCase(json_dict, False))
 
     @staticmethod
-    def load_test(file_path: str) -> str:
+    def load_test(problem: vyg.Problem, file_path: str) -> str:
         """ Load the contents of a file, or return an empty string if the file does not exist """
-        if os.path.isfile(file_path):
-            with open(file_path, 'r', encoding='utf8') as file:
-                return file.read()
-        return ''
+        return ProblemLoader.read_file(problem, file_path) if os.path.exists(file_path) else ''

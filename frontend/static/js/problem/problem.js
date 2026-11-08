@@ -67,7 +67,7 @@ class ProblemManager {
     this.problem = null; // class Problem instance
     // Index of the current shown test case
     this.activeTestCaseIndex = 0;
-    // The Run button element
+    // The Run button element, null for anonymous visitors, who cannot run code
     this.runButton = null; // HTMLButtonElement
     // The result after running the user code
     this.result = null; // class ExecutionResult instance
@@ -103,18 +103,20 @@ class ProblemManager {
   }
 
   setupReferences() {
+    // Anonymous visitors get a link to log in instead of the Run button
     this.runButton = document.getElementById('run_button');
-    if (!this.runButton) {
-      throw Error('could not find run_button element');
-    }
   }
 
   // Open the statement links in a new tab, so students do not leave their solution.
-  // Links to sections of the statement itself (#id) stay in this tab
+  // Links to sections of the statement itself (#id) stay in this tab. The opened page must not
+  // get a reference to this tab (window.opener), or it could navigate it to a fake login page
   // eslint-disable-next-line class-methods-use-this
   openStatementLinksInNewTab() {
     const links = document.querySelectorAll('.problem__statement a[href]:not([href^="#"])');
-    links.forEach((link) => link.setAttribute('target', '_blank'));
+    links.forEach((link) => {
+      link.setAttribute('target', '_blank');
+      link.setAttribute('rel', 'noopener noreferrer');
+    });
   }
 
   // The layout chosen in the toolbar menu and the size given to the statement with its corner
@@ -231,18 +233,22 @@ class ProblemManager {
   async fetchProblem() {
     console.assert(this.problem === null);
     const message = { action: 'fetch_problem' }; // Message object
-    const json = await ProblemManager.sendJson(message);
-    // The server answers errors with a JSON object such as {error: '...'}, without the problem
-    if (json?.error) {
-      throw Error(`could not load the problem: ${json.error}`);
+    try {
+      this.problem = new Problem(await ProblemManager.sendJson(message));
+    } catch (error) {
+      throw Error(`could not load the problem: ${error.message}`);
     }
-    this.problem = new Problem(json);
   }
 
+  // Post the object as JSON and return the JSON answer. The server answers errors with a JSON
+  // object such as {error: '...'}, but proxies may answer with HTML pages, so both are thrown
   static async sendJson(object, uri = '') {
     const params = ProblemManager.createMessage(object);
     const response = await fetch(uri || window.location.href, params);
-    const json = await response.json();
+    const json = await response.json().catch(() => null);
+    if (!response.ok || !json || json.error) {
+      throw Error(json?.error || `the server answered ${response.status} ${response.statusText}`);
+    }
     return json;
   }
 
@@ -250,7 +256,12 @@ class ProblemManager {
   static createMessage(object, method = 'POST') {
     return {
       method,
-      headers: { 'Content-Type': 'application/json' },
+      // The server rejects POST requests without the CSRF token of the session, so other sites
+      // cannot run code or change grades on behalf of the student
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': document.getElementById('problem')?.dataset.csrfToken || '',
+      },
       body: JSON.stringify(object),
     };
   }
@@ -273,9 +284,11 @@ class ProblemManager {
         this.showTestCase(index);
       });
     }
-    // Make the last selected test case (in local storage) as the active one
+    // Make the last selected test case (in local storage) as the active one. localStorage can
+    // be edited by anyone, and problems may have fewer test cases now, so check the index
     if (buttons.length > 0) {
-      this.activeTestCaseIndex = parseInt(loadConfig('test') || '0', 10);
+      const index = parseInt(loadConfig('test') || '0', 10);
+      this.activeTestCaseIndex = index >= 0 && index < buttons.length ? index : 0;
       this.showTestCase(this.activeTestCaseIndex);
     }
   }
@@ -283,9 +296,12 @@ class ProblemManager {
   showTestCase(index) {
     console.assert(this.problem);
     console.assert(this.editors.length === 4);
-    // Show input, expected output, and user output for this test case
-    this.editors[1].setValue(this.problem.tests[index].input || '');
-    this.editors[2].setValue(this.problem.tests[index].output || '');
+    // Show input, expected output, and user output for this test case. The server does not
+    // send the contents of hidden test cases
+    const test = this.problem.tests[index];
+    const hidden = test.hidden ? '(hidden test case)' : '';
+    this.editors[1].setValue(test.input || hidden);
+    this.editors[2].setValue(test.output || hidden);
     this.showTestOutput(index);
     // Deselect previous test case number
     const buttons = document.getElementsByClassName('test_button');
@@ -359,10 +375,9 @@ class ProblemManager {
   }
 
   setupRunEnvironment() {
-    console.assert(this.runButton);
     console.assert(this.editors.length > 0);
-    // When the Run button is pressed
-    this.runButton.addEventListener('click', async () => {
+    // When the Run button is pressed, if the user is logged in
+    this.runButton?.addEventListener('click', async () => {
       await this.runSolution();
     });
   }
@@ -373,17 +388,24 @@ class ProblemManager {
     // Disable the Run button while the backend is running the code
     this.runButton.disabled = true;
     this.runButton.textContent = 'Running';
-    // Send the code to the backend and wait the result
-    this.result = new ExecutionResult(await ProblemManager.sendJson({
-      action: 'run',
-      language,
-      code: encode(this.editors[0].getValue()),
-    }));
-    // The result has been received, decode it and update the test cases
-    this.updateResult();
-    // Enable the Run button again
-    this.runButton.textContent = 'Run';
-    this.runButton.disabled = false;
+    try {
+      // Send the code to the backend and wait the result
+      this.result = new ExecutionResult(await ProblemManager.sendJson({
+        action: 'run',
+        language,
+        code: encode(this.editors[0].getValue()),
+      }));
+      // The result has been received, decode it and update the test cases
+      this.updateResult();
+    } catch (error) {
+      // E.g. the network or the judge failed, or the session expired: show it as a diagnostic
+      console.error(error);
+      this.updateCompileOutput(`Could not run the solution: ${error.message}`);
+    } finally {
+      // Enable the Run button again, even if the run failed
+      this.runButton.textContent = 'Run';
+      this.runButton.disabled = false;
+    }
   }
 
   updateResult() {

@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&amp;icon_names=backspace,content_copy,content_cut,content_paste,fullscreen,fullscreen_exit,redo,restart_alt,space_dashboard,splitscreen_left,splitscreen_right,splitscreen_top,undo">
 {%- endblock %}
 {%- block main %}
-      <main id="problem" class="problem" data-name="{{ it.problem.name }}">
+      <main id="problem" class="problem" data-name="{{ it.problem.name }}" data-csrf-token="{{ csrf_token() }}">
         <article class="problem__description">
           <h2 class="problem__title">{{ it.problem.title }}</h2>
           <div class="problem__statement">{{ it.problem.statement|safe }}</div>
@@ -34,7 +34,12 @@
         <div class="solution__evaluation">
           <div class="row">
             <p>
+{%- if it.user %}
               <button id="run_button" class="button action" disabled="disabled" title="Run my solution against the test cases">Run</button>
+{%- else %}
+              {#- Only registered users may run code. After logging in, they come back to this problem #}
+              <a href="{{ url_for('user', next=request.path) }}" id="login_to_run" class="button action">Log in to run</a>
+{%- endif %}
               <a href="{{ it.problem.get_course().build_url() }}" id="finish_button" class="button confirm" title="Return to the course">Finish</a>
             </p>
             <p id="score">

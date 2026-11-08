@@ -91,6 +91,8 @@ Create a new Apache configuration file, for example, `/etc/apache2/sites-availab
 </VirtualHost>
 ----
 
+Apache sends the address of each client in the `X-Forwarded-For` header. Set `TRUSTED_PROXIES = 1` in `config/config.py`, so the frontend uses that address for the login limits (<<login_limits>>) and the logs. Otherwise, every request seems to come from `127.0.0.1`, and the failed logins of all the users count as the ones of a single address. Keep it `0` if clients connect to the frontend directly, because they could fake that header.
+
 Enable the new configuration, test it, and restart Apache:
 
 [source,sh]
@@ -99,3 +101,119 @@ sudo a2ensite vygoj
 sudo apachectl configtest
 sudo systemctl restart apache2
 ----
+
+
+[[security]]
+== Security
+
+The frontend is exposed to the Internet and receives untrusted data from students and from course repositories. This section explains the controls it applies, so they are kept when the code changes.
+
+[[secret_key]]
+=== Session key
+
+Flask signs the session cookie with `SECRET_KEY` of `config/config.py`. The session stores the logged user and their role, so anyone who knows the key can forge a session of any user, including administrators. The frontend refuses to start if the key is missing, is the one of `config-example.py`, or has fewer than 32 characters. Generate a random key with:
+
+[source,sh]
+----
+python3 -c 'import secrets; print(secrets.token_hex(32))'
+----
+
+Changing the key logs out all users, because their cookies are no longer valid.
+
+[[csrf]]
+=== Cross-site request forgery (CSRF)
+
+Every POST request must carry the CSRF token of the session (Flask-WTF `CSRFProtect`), otherwise it is rejected with HTTP 400:
+
+* Forms send it in their hidden `csrf_token` field (`form.hidden_tag()`).
+* The problem page writes it in the `data-csrf-token` attribute of `<main id="problem">`, and `problem.js` sends it in the `X-CSRFToken` header. The problem endpoint also requires a JSON body, which HTML forms of other sites cannot send.
+* Tokens last as long as the session (`WTF_CSRF_TIME_LIMIT = None`), because students keep a problem page open for hours.
+* Logout changes the session, so `/logout` only accepts POST.
+
+The session cookie is also `Secure`, `HttpOnly`, and `SameSite=Lax`.
+
+[[csp]]
+=== Content security policy (CSP)
+
+Problem statements come from course repositories and are shown as HTML. Talisman (the `flask-talisman` package) sends a `Content-Security-Policy` header (`cdn` in `src/main.py`) where scripts may only come from files of this site and from the CDNs the pages use (jsDelivr, cdnjs, esm.sh). Inline scripts, event handler attributes (`onclick`), and `javascript:` URLs do not run, so templates must not have them: put behavior in `static/js/`. Styles allow `'unsafe-inline'` because Monaco and MathJax inject `<style>` elements. The policy also forbids plugins (`object-src`), foreign `<base>` elements, forms that post to other sites, and being embedded by other sites.
+
+Talisman also redirects HTTP to HTTPS (except in debug mode) and sends `Strict-Transport-Security`, `Referrer-Policy: strict-origin` (other sites only see that links came from VygOJ, not from which page), and `Permissions-Policy`, which disables the camera, the microphone, the geolocation, and the Topics API of advertising. `set_headers()` in `src/main.py` adds the `Cross-Origin-*` headers that Talisman does not send. Configure in Talisman the headers it sends, because it sets them after `set_headers()` and would replace them.
+
+[[course_repos]]
+=== Course repositories
+
+Problem folders and files are read only if their real path, after resolving symbolic links, is inside the folder of the course repository. Otherwise, a `folder` such as `../..` in `vygoj.json`, or a symbolic link committed to a repo, could show any readable file of the server (e.g. `config.py`) as a statement or a test case. Skipped files are logged as warnings. Files larger than 16 MiB are skipped too. Asciidoc statements are converted in the `safe` mode of `asciidoctor`.
+
+Test cases marked `"hidden": true` are sent to the browser without their input and output.
+
+[[statements]]
+=== Problem statements
+
+Statements are converted to HTML on the server (Asciidoctor resolves `include::` directives there) and then sanitized with https://pypi.org/project/nh3/[nh3] by `sanitize_html()` in `src/sanitize.py`, once per problem load. The same function is meant for other HTML written by course authors, such as the content pages of the future. The sanitizer keeps an allow list of tags, attributes, and CSS properties, which covers what Asciidoctor, Markdown, and hand-written HTML produce. It removes:
+
+* Scripts, styles, forms, plugins, inline SVG and MathML (with their contents), event handler attributes (`onclick`...), and the `<head>` and `<title>` of statements written as whole HTML documents.
+* Frames and videos of other sites (see <<videos>>).
+* URLs with schemes other than `http`, `https`, and `mailto` (e.g. `javascript:` and `data:`), and URLs such as `//host/path`.
+* CSS properties that could place the statement over the page (e.g. `position`). Allowed ones are listed in `STYLE_PROPERTIES`.
+
+The ids of a statement get the prefix `content_` (and its `#section` links too), so they cannot replace the elements of the page that JavaScript looks for, such as `run_button` or `language`.
+
+Formulas (`stem`) are kept as text, and MathJax typesets them in the browser. To show an SVG image, use `image::` (an `<img>` element), because inline SVG is removed.
+
+[[videos]]
+=== Videos
+
+Statements may play video files of their folder with `video::media/demo.mp4[]` (a `<video>` element), with subtitles in `vtt` files if wanted. Videos of video sites (`video::id[youtube]`, `video::id[vimeo]`, or any `<iframe>`) and video files of other sites are removed for now, and the CSP of the pages forbids frames (`frame-src 'none'`) and media of other sites (`media-src 'self'`). Supporting them requires an allow list of sites and a sandbox for their players, and pages that embed them cannot send `Cross-Origin-Embedder-Policy: require-corp`, because video sites do not opt in to it.
+
+The sanitizer sets `controls` and `preload="metadata"` on every video, and removes `autoplay`. Posters (`poster=`) must be images of the folder too.
+
+[[problem_files]]
+=== Files of problem folders
+
+Statements refer to images and videos of their folder with relative URLs, such as `img/diagram.svg`. The sanitizer rewrites them to `/problem/<course>/<problem>/files/img/diagram.svg`, served by `ProblemController.get_file()`. This route only serves files that:
+
+* have an extension of an image (`avif`, `gif`, `jpeg`, `jpg`, `png`, `svg`, `webp`), a video (`mp4`, `ogv`, `webm`), or subtitles (`vtt`), listed in `FILE_TYPES` in `src/problems.py`. Test cases, solutions, `vygoj.json`, and any other file of the problem folder are never served. Files included in a statement with `include::` are not served either; their contents are already in the statement.
+* are inside the folder of the problem, after resolving symbolic links, not in other problems of the course.
+
+Files are streamed, so videos have no size limit, and range requests let students jump to any second. They are served with their own strict CSP (`FILE_CSP` in `src/main.py`), with `sandbox`, because an SVG may contain scripts that would run if a student opened its URL. Images from other sites stay blocked by the CSP of the pages (`img-src 'self' data:`), so students do not reveal their addresses to third parties.
+
+[[login_limits]]
+=== Login attempts
+
+Failed logins are stored in the `login_attempts` table (`LoginAttempt` in `src/users.py`), so all the gunicorn workers share their counts. During 15 minutes (`LOGIN_WINDOW`), the frontend accepts:
+
+* 5 failed logins of a user from the same address (`MAX_FAILURES_PER_USER`), which stops a student from guessing the password of a classmate.
+* 30 failed logins from the same address for any users (`MAX_FAILURES_PER_ADDRESS`), which stops robots that try many users. It is larger because a whole laboratory may share a public address.
+
+Then, logins from that address are rejected, without checking the password, until the oldest failures are older than 15 minutes. Usernames that do not exist count too, so the limits do not reveal which users exist. A successful login forgets the failures of that user from that address. There is no limit per username alone, otherwise anybody could lock the account of a classmate by typing wrong passwords before an exam. Failed and rejected logins are logged as `login_failed` and `login_blocked`.
+
+The limits depend on the address of the client, so set `TRUSTED_PROXIES` behind a reverse proxy (<<reverse_proxy>>).
+
+[[run_limits]]
+=== Code runs
+
+Only logged users may run code (see <<input_limits>>). Their runs are stored in the `runs` table (`Run` in `src/runs.py`), so all the gunicorn workers apply the same limits. When a user presses Run:
+
+. If the code and language are the same as the last run of that user in that problem, and the problem is judged the same way, the stored result of that run is answered, without running the code again. It covers students who reload the page or press Run again, also from another browser, and robots that repeat a submission. Submissions are compared by a SHA-256 hash (`Run.hash_code()`), which takes less than a millisecond for the largest submissions (1 MiB). The hash includes a hash of the test cases and the fields of the problem that change verdicts (`JUDGED_FIELDS` in `src/runs.py`, such as the time limit), so results are not reused after the professor changes them and the server reloads the course repo. Changes in the statement do not count.
+. Otherwise, the run is rejected with HTTP 429, a message, and a `Retry-After` header if:
+** the previous run of the user has not finished yet (one run at a time). A run without end after 150 seconds (`MAX_RUN_DURATION`, longer than the timeouts of the backend) does not count, so a server restart cannot block users.
+** the previous run started less than 5 seconds ago (`MIN_RUN_INTERVAL`).
+** the user started 120 runs in the last hour (`MAX_RUNS_PER_WINDOW`). A student who runs the code every 30 seconds stays below it.
+
+The checks and the new run are stored while the row of the user is locked (`SELECT ... FOR UPDATE`), so two requests sent at the same time cannot both pass. Only the result of the last run of each problem is kept, if it is smaller than 1 MiB, and runs older than one day are deleted. Repeated and rejected runs are logged as `run_repeated` and `run_rejected`.
+
+[[administrators]]
+=== Administrators
+
+Administrators are created in the server with `make admin` (`src/manage_users.py admin`), never from the web application, so only who can log in the server can create them. The command asks the username and a password of at least 12 characters. If the user exists, it resets its password, makes it administrator, and forgets its failed logins, so it also recovers a forgotten password. While the users table is empty, the frontend writes a warning in its log that suggests `make admin`.
+
+[[input_limits]]
+=== Requests and errors
+
+* Request bodies are limited to 1 MiB (`MAX_CONTENT_LENGTH`, can be overridden in `config.py`).
+* Problem actions are validated: only `fetch_problem` and `run`, and only the languages enabled for the problem.
+* Only logged users may run code. Anonymous visitors may read problems and their test cases, but the problem page shows them a "Log in to run" link instead of the Run button, and the server answers their `run` requests with HTTP 401, also when a robot or a command sends them.
+* Errors are answered with generic messages such as `{"error": "the judge is not available"}`; their details (backend addresses, host paths) go to the server log only.
+* The request log (`data/vygoj.tsv`) stores the body of JSON requests only, never the bodies of forms, which carry passwords.
+* Login takes the same time whether the user exists or not, and starts a new session.
+* After logging in, users go to the page in the `next` parameter of the login page (e.g. `/user?next=/problem/CI0112/hello`, used by the "Log in to run" link). `safe_next_url()` in `src/users.py` accepts only paths of this site, otherwise anybody could write a link to the login of VygOJ that takes students to a fake site after logging in (open redirect).

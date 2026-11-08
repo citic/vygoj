@@ -57,7 +57,11 @@ make clean     # remove .venv
 ```
 
 - Add Python dependencies to `DEPS` in the layer's `Makefile` (there are no requirements files),
-  then run `make deps`.
+  then run `make deps`. Fix only their major version with `~=`, so they get the fixes of their
+  authors, but a new major version, which may break the code, needs a manual update:
+  `flask~=3.0` is `>=3.0,<4`. Packages in version 0.x may break in any minor version, so fix their
+  minor version too: `nh3~=0.3.0` is `>=0.3.0,<0.4`. Do not use `<` or `>` in `DEPS`: the shell
+  would read them as redirections.
 - There is no automated test suite. To test end to end: build the engine image
   (`cd backend/engine && make image`, Docker running), start the backend (`cd backend && make`),
   start the frontend (`cd frontend && make`), and run a problem from its page in the browser.
@@ -71,6 +75,9 @@ make clean     # remove .venv
 - Python: PEP 8 and the existing style: 4-space indentation, lines up to 100 characters,
   `""" Docstrings with surrounding spaces """` on every module, class, and function, and short
   comments explaining *why* before non-obvious statements.
+- Command-line scripts have a single exit point: functions return or raise exceptions, never call
+  `sys.exit()`; `main()` returns the exit status (0 on success) and only the entry point calls
+  `sys.exit(main())`, so the shell and make know whether the script failed.
 - Mark pending work with `TODO(<user>): ...`.
 - Match the style of the surrounding code; review a few neighboring files before writing new code.
 

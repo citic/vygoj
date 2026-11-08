@@ -36,6 +36,19 @@
   overflow-wrap: break-word; /* break long words such as URIs */
 }
 
+/* Videos are as wide as the statement, up to their usual width */
+.problem__statement video {
+  width: 100%;
+  max-width: 640px;
+  height: auto;
+}
+
+/* The sanitizer removes the URLs of videos of other sites, so they are hidden instead of showing
+   an empty player */
+.problem__statement video:not([src]):not(:has(source[src])) {
+  display: none;
+}
+
 /* Monaco scrolls its own code. Hidden overflow keeps the corner handle of resize over the
    editor; with auto, Chrome hid it after shrinking the editor */
 monaco-editor {

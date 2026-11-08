@@ -1,4 +1,7 @@
 """ Manages application users, their preferences, and courses' progress """
+import datetime
+import urllib.parse
+
 import flask
 import flask_wtf
 import wtforms
@@ -33,6 +36,22 @@ class User(db.Model):
     def __repr__(self):
         """ Readable string representation for debugging/testing """
         return f'<User {self.username}>'
+
+    @staticmethod
+    def add_new(rows) -> int:
+        """ Add the users of the given rows that are not in the database yet, and return how many
+        were added. Each row is a dictionary with username and password, e.g. the rows of a TSV
+        file read by csv.DictReader. Existing users are skipped, so a file can be added again """
+        added = 0
+        for row in rows:
+            username = row['username']
+            if not db.session.scalar(db.select(User).filter_by(username=username)):
+                # Full name is required, but the file has none, so use the username
+                db.session.add(User(username=username, fullname=username,
+                    password=generate_password_hash(row['password'])))
+                added += 1
+        db.session.commit()
+        return added
 
 class Progress(db.Model):
     """ The progress is the grade user got for each evaluation """
@@ -75,7 +94,98 @@ class Progress(db.Model):
             .filter(User.username == user['email'], Progress.course == course))
         return {evaluation: round(grade) for evaluation, grade in rows}
 
+# Failed logins are counted during this time. When a limit is reached, logins are rejected until
+# the oldest failures are older than this
+LOGIN_WINDOW = datetime.timedelta(minutes=15)
+# Failed logins allowed in the window for a user from the same address. It stops a student from
+# guessing the password of a classmate
+MAX_FAILURES_PER_USER = 5
+# Failed logins allowed in the window from the same address, for any users. It stops robots that
+# try many users. It is larger because a whole laboratory may share the same public address
+MAX_FAILURES_PER_ADDRESS = 30
+
+class LoginAttempt(db.Model):
+    """ A failed login, kept for a while to limit password guessing. Counts are stored in the
+    database, so all the gunicorn workers share them, and they survive restarts """
+    __tablename__ = 'login_attempts'
+    # Attempts are identified using incremental integer numbers
+    id = db.Column(db.Integer, primary_key=True)
+    # Username typed, even if no user has it, so the limit does not reveal which users exist
+    username = db.Column(db.String(128), nullable=False, index=True)
+    # Network address of the client. Behind a reverse proxy, see TRUSTED_PROXIES in config.py
+    address = db.Column(db.String(64), nullable=False, index=True)
+    # When the attempt failed
+    time = db.Column(db.DateTime(timezone=True), nullable=False, index=True)
+
+    @staticmethod
+    def is_blocked(username: str, address: str) -> bool:
+        """ True if the given user from the given address cannot try to log in for a while. The
+        limit is not per username alone, otherwise anybody could lock the account of a classmate
+        by typing wrong passwords before an exam """
+        recent = (db.select(db.func.count()).select_from(LoginAttempt)
+            .filter(LoginAttempt.time > LoginAttempt.now() - LOGIN_WINDOW,
+                LoginAttempt.address == address))
+        if db.session.scalar(recent) >= MAX_FAILURES_PER_ADDRESS:
+            return True
+        failures = db.session.scalar(recent.filter(LoginAttempt.username == username))
+        return failures >= MAX_FAILURES_PER_USER
+
+    @staticmethod
+    def record_failure(username: str, address: str):
+        """ Remember a failed login of the given user from the given address """
+        now = LoginAttempt.now()
+        # Forget the attempts out of the window, so the table does not grow forever
+        db.session.execute(db.delete(LoginAttempt).filter(LoginAttempt.time <= now - LOGIN_WINDOW))
+        db.session.add(LoginAttempt(username=username, address=address, time=now))
+        db.session.commit()
+
+    @staticmethod
+    def clear(username: str, address: str):
+        """ Forget the failed logins of the given user from the given address, after a success """
+        db.session.execute(db.delete(LoginAttempt).filter(LoginAttempt.username == username,
+            LoginAttempt.address == address))
+        db.session.commit()
+
+    @staticmethod
+    def now() -> datetime.datetime:
+        """ Current time with time zone, as stored in the database """
+        return datetime.datetime.now(datetime.timezone.utc)
+
 logged_users = set()
+
+# Maximum length of the passwords. Hashing is slow on purpose, so huge passwords would let a client
+# keep the server busy
+MAX_PASSWORD_LENGTH = 256
+
+# Hash of a password nobody has. Login checks it when the user does not exist, so the response
+# takes the same time for existing and missing users, and timing does not reveal the usernames
+_MISSING_USER_HASH = generate_password_hash('this user does not exist')
+
+# Longest URL accepted in the next parameter of the login page
+MAX_NEXT_URL_LENGTH = 512
+
+def safe_next_url(url):
+    """ Return the given URL if it is a page of this site where to go after logging in, or None.
+    The URL comes from the query string of the login page (/user?next=/problem/C/p), so anybody
+    could write a link to the login page of VygOJ that redirects to a fake site after logging in
+    (open redirect). Only paths of this site are accepted, such as /problem/CI0112/hello """
+    if not isinstance(url, str) or len(url) > MAX_NEXT_URL_LENGTH:
+        return None
+    # Browsers read //host and /\host as other sites, and they remove tabs and new lines from
+    # URLs, so /<tab>/host becomes //host. Control characters are rejected for that reason
+    if (not url.startswith('/') or url.startswith('//') or '\\' in url
+            or any(ord(char) < 32 or ord(char) == 127 for char in url)):
+        return None
+    parts = urllib.parse.urlsplit(url)
+    return url if not parts.scheme and not parts.netloc else None
+
+def log_out():
+    """ Remove the logged user and the rest of the session (e.g. its CSRF token) """
+    user_obj = flask.session.get('user')
+    vyg_log('logout', user_obj.get('email', '') if user_obj else '')
+    flask.session.clear()
+    flask.flash('User logged out', 'warning')
+    return flask.redirect(flask.url_for('get_index'))
 
 class UserForm(flask_wtf.FlaskForm):
     """ If no user is logged in, show the login form, otherwise the preferences form """
@@ -88,14 +198,17 @@ class UserForm(flask_wtf.FlaskForm):
     email = wtforms.StringField('Username/Email', validators=[#validators.DataRequired(),
         validators.Length(3, 128)]) # validators.Email(),
     # Password is required to login or to change password
-    password = wtforms.PasswordField('Password')
+    password = wtforms.PasswordField('Password',
+        validators=[validators.Length(max=MAX_PASSWORD_LENGTH)])
     # Used only when user wants to change password
-    new_password = wtforms.PasswordField('Password')
+    new_password = wtforms.PasswordField('Password',
+        validators=[validators.Length(max=MAX_PASSWORD_LENGTH)])
     # Asked to make user be sure the new password is well typed
     confirm_password = wtforms.PasswordField('Confirm new password',
         validators=[validators.EqualTo('new_password', message='Passwords must match')])
-    # Full name of the user, needed to professors know their students and vice versa
-    fullname = wtforms.StringField('Full name')
+    # Full name of the user, needed to professors know their students and vice versa. The limit
+    # is the size of its database column
+    fullname = wtforms.StringField('Full name', validators=[validators.Length(max=128)])
     # Color scheme preference: default follows the operating system, light or dark force one
     color_scheme = wtforms.RadioField('Color scheme', choices=[
         ('default', 'Default'),
@@ -115,20 +228,15 @@ class UserForm(flask_wtf.FlaskForm):
     def show_form():
         """ Show the login or preferences form to the user """
         user = flask.session.get('user')
+        # Page to go after logging in, e.g. the problem where the student wanted to run code. The
+        # login form has no action, so it posts to this URL and keeps the next parameter
+        next_url = safe_next_url(flask.request.args.get('next'))
         # Fill the form with the data of the logged in user, if any
         form = UserForm(data=user)
-        # While there are no users, the first one registers as the administrator
-        first_user = not user and not db.session.scalar(db.select(User).limit(1))
-        if first_user:
-            form.fullname.validators += (validators.DataRequired(), )
-            form.new_password.validators += (validators.DataRequired(), )
         # If user accepted the dialog
         if form.validate_on_submit():
             if form.logout.data:
-                # User wants to logout, remove user from session
-                flask.session.pop('user', None)
-                flask.flash('User logged out', 'warning')
-                return flask.redirect(flask.url_for('get_index'))
+                return log_out()
             # If user was logged in, update preferences
             if user:
                 # Save the chosen color scheme in the database and in the session
@@ -144,15 +252,21 @@ class UserForm(flask_wtf.FlaskForm):
             else:
                 # User is not logged in, try to login
                 name = form.email.data
-                if first_user:
-                    # Save the first user as the administrator, and log them in below
-                    db.session.add(User(username=name, fullname=form.fullname.data, role='admin',
-                        password=generate_password_hash(form.new_password.data)))
-                    db.session.commit()
+                address = (flask.request.remote_addr or '')[:64]
+                # Do not even check the password while blocked, so guessing gives no information
+                if LoginAttempt.is_blocked(name, address):
+                    vyg_log('login_blocked', name)
+                    flask.flash('Too many failed logins. Wait '
+                        f'{LOGIN_WINDOW.seconds // 60} minutes and try again.', 'error')
+                    return flask.redirect(flask.url_for('user', next=next_url))
                 # Find the user in the database and compare the typed password with its hash
                 db_user = db.session.scalar(db.select(User).filter_by(username=name))
-                if db_user and (first_user or check_password_hash(db_user.password,
-                        form.password.data)):
+                password_hash = db_user.password if db_user else _MISSING_USER_HASH
+                password_ok = check_password_hash(password_hash, form.password.data or '')
+                if db_user and password_ok:
+                    # A new session for the logged user, so nothing stored before the login (such
+                    # as a CSRF token that an attacker could have planted) is kept
+                    flask.session.clear()
                     user = {
                         'email': name,
                         'fullname': db_user.fullname,
@@ -160,14 +274,17 @@ class UserForm(flask_wtf.FlaskForm):
                         'color_scheme': db_user.color_scheme,
                     }
                     flask.session['user'] = user
+                    LoginAttempt.clear(name, address)
                     logged_users.add(name)
                     flask.flash('Logged in successfully.', 'success')
                     vyg_log('login', name)
-                    return flask.redirect(flask.url_for('get_index'))
+                    return flask.redirect(next_url or flask.url_for('get_index'))
                 else:
                     # User is not logged in, show an error message
+                    LoginAttempt.record_failure(name, address)
+                    vyg_log('login_failed', name)
                     flask.flash('Invalid user or password', 'error')
-                    return flask.redirect(flask.url_for('user'))
+                    return flask.redirect(flask.url_for('user', next=next_url))
         if user:
             # User is logged in, and wants to change preferences, update some labels
             form.password.label = 'Current password'
@@ -179,5 +296,4 @@ class UserForm(flask_wtf.FlaskForm):
             'title': f'User {"preferences" if user else "login"}',
             'form': form,
             'user': user,
-            'first_user': first_user,
         })
