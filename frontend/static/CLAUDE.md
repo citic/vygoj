@@ -21,8 +21,9 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
 
 ## Commands
 
-Run from `frontend/`. `make lint` installs the tools if needed (`make dev`, which runs `npm i`)
-and runs ESLint and Stylelint; it fails if either reports a problem. To run them separately:
+Run from `frontend/`. `make lint-static` installs the tools if needed (`make dev`, which runs
+`npm i`) and runs ESLint and Stylelint; it fails if either reports a problem. `make lint` also runs
+Pylint on the Python code first. To run them separately:
 
 ```sh
 npx eslint static/js                        # lint JavaScript (AirBnB config in .eslintrc.cjs)

@@ -1,15 +1,19 @@
-import flask
+""" Activity log of the web application written as TSV, and a command line tool that extracts the
+log of each user to files """
 import json
 import os
 import sys
 import time
-import vyg
+import flask
 from flask import current_app as app
+import vyg
 
 def escape_field(field:str):
+    """ Escape new lines and tabs, so the field fits in a single TSV cell """
     return field.replace('\n', '\\n').replace('\t', '\\t')
 
 def unescape_field(field:str):
+    """ Restore the new lines and tabs escaped by escape_field() """
     return field.replace('\\n', '\n').replace('\\t', '\t')
 
 def log_event2(fields):
@@ -19,8 +23,8 @@ def log_event2(fields):
     username = user_obj.get('email', '') if user_obj else ''
     request = flask.request
     # date time ip scheme url status_code user body fields
-    log_file = os.path.join(app.config.get('DATA_FOLDER'), 'vyg.tsv')
-    with open(log_file, 'a', encoding='utf8') as log_file:
+    log_path = os.path.join(app.config.get('DATA_FOLDER'), 'vyg.tsv')
+    with open(log_path, 'a', encoding='utf8') as log_file:
         log_file.write(f'{timestamp}\t{request.remote_addr}\t{request.method}\t'
             f'{request.url}\t{username}\t{fields}\n')
 
@@ -44,9 +48,9 @@ def extract_log(log_file:str, output_folder: str):
     # Create output folder if it doesn't exist
     os.makedirs(output_folder, exist_ok=True)
     # For each line of the log file
-    with open(log_file, 'r', encoding='utf8') as log_file:
+    with open(log_file, 'r', encoding='utf8') as lines:
         line_number = 0
-        for line in log_file:
+        for line in lines:
             line_number += 1
             try:
                 extract_line(line_number, line, output_folder)
@@ -244,20 +248,23 @@ def extract_run_result(log_entry:dict, user_folder: str):
     run_tsv = os.path.join(run_folder, f'run-{timestamp}.tsv')
     with open(run_tsv, 'w', encoding='utf8') as run_file:
         run_file.write('test\tstatus\texit_code\twall_time\tmessage\n')
-        results = result.get('results', [])
-        for index1, test_result in enumerate(results, 1):
-            status = test_result.get('status', '')
-            wall_time = test_result.get('wallTime', -0.0)
-            message = vyg.decode(unescape_field(test_result.get('message', '')))
-            stdout = vyg.decode(unescape_field(test_result.get('stdout', '')))
-            exit_code = test_result.get('exitCode', '')
-            run_file.write(f'{index1}\t{status}\t{exit_code}\t{wall_time}\t{message}\n')
-            # If user failed this test, export the output to a file
-            if status != 'passed' and stdout:
-                failed_folder = os.path.join(run_folder, 'failed')
-                os.makedirs(failed_folder, exist_ok=True)
-                test_number = f'{index1:03d}'
-                extract_file(failed_folder, f'output{test_number}.txt', stdout)
+        for index1, test_result in enumerate(result.get('results', []), 1):
+            extract_test_result(run_file, run_folder, index1, test_result)
+
+def extract_test_result(run_file, run_folder: str, index1: int, test_result: dict):
+    """ Write the result of the test case number index1 as a row of the run_file TSV, and its
+    output to the failed subfolder of run_folder if the test case did not pass """
+    status = test_result.get('status', '')
+    wall_time = test_result.get('wallTime', -0.0)
+    message = vyg.decode(unescape_field(test_result.get('message', '')))
+    stdout = vyg.decode(unescape_field(test_result.get('stdout', '')))
+    exit_code = test_result.get('exitCode', '')
+    run_file.write(f'{index1}\t{status}\t{exit_code}\t{wall_time}\t{message}\n')
+    # If user failed this test, export the output to a file
+    if status != 'passed' and stdout:
+        failed_folder = os.path.join(run_folder, 'failed')
+        os.makedirs(failed_folder, exist_ok=True)
+        extract_file(failed_folder, f'output{index1:03d}.txt', stdout)
 
 def extract_file(folder:str, filename:str, content:str):
     """ Export a file to a folder with given content """
@@ -266,9 +273,14 @@ def extract_file(folder:str, filename:str, content:str):
         with open(file_path, 'w', encoding='utf8') as file:
             file.write(content)
 
-if __name__ == '__main__':
-    if len(sys.argv) >= 3:
-        # log_file = os.path.join(app.config.get('DATA_FOLDER'), 'vyg.tsv')
-        extract_log(sys.argv[1], sys.argv[2])
-    else:
+def main(args:list) -> int:
+    """ Extract the log file given in the command line arguments. Return the exit status """
+    if len(args) < 2:
         print('Usage: python vyg_log.py log_file output_folder')
+        return 1
+    # log_file = os.path.join(app.config.get('DATA_FOLDER'), 'vyg.tsv')
+    extract_log(args[0], args[1])
+    return 0
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv[1:]))

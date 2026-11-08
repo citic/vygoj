@@ -4,7 +4,7 @@ from vyg.material import Material
 from vyg.utils import decode_if
 
 
-class Question(Activity):
+class Question(Activity, material_type='question'):
     """ A question is a request for information from students. If student matches the right answer,
     s/he gains points. Questions have variables. Each variable has its own type, text, and answer.
     """

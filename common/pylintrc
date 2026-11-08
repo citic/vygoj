@@ -1,0 +1,18 @@
+# Pylint configuration shared by the Python layers (backend/src, frontend/src, and common/vyg).
+# `make lint` passes it with --rcfile. The rest of the rules keep the Pylint defaults
+
+[MAIN]
+# nh3 is a compiled extension: Pylint must import it to know its members (clean, ALLOWED_TAGS...)
+extension-pkg-allow-list=nh3
+
+[FORMAT]
+# Lines up to 100 characters
+max-line-length=100
+
+[DESIGN]
+# Classes of the data model mirror the JSON fields exchanged with the client and the backend
+max-attributes=12
+
+[MESSAGES CONTROL]
+# Data model classes, exceptions, and controllers with static handlers have few public methods
+disable=too-few-public-methods

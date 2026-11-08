@@ -55,7 +55,7 @@ $ make clean
 [security]
 == Security
 
-The backend runs code written by untrusted users, so each submission runs in a disposable container created with restrictions (see `create_container()` in `src/execution.py`):
+The backend runs code written by untrusted users, so each submission runs in a disposable container created with restrictions (see `_create_container()` in `src/execution.py`):
 
 * Unprivileged `student` user, all Linux capabilities dropped, `no-new-privileges`, and the default seccomp profile of Docker. The container never runs in privileged mode.
 * No network.
@@ -70,4 +70,14 @@ Containers have the label `vygoj=engine`. If a backend process is killed during 
 [source,bash]
 ----
 $ docker rm -f $(docker ps -aq --filter label=vygoj=engine)
+----
+
+[[development]]
+== Development
+
+Check the Python code of `src/` and of the shared `vyg` package with Pylint. The first run installs Pylint in the virtual environment. The configuration, shared with the frontend, is in `common/pylintrc`:
+
+[source,bash]
+----
+$ make lint
 ----

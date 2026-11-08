@@ -11,7 +11,7 @@ JSON. It must assume that every submitted program is malicious.
   (JSON body with `problem` and `solution`).
 - `src/execution.py`: `Execution` class that drives one submission: static checks, container
   creation, file copy, compilation, test case runs, extra proofs (thread count, sanitizers,
-  linting), and container removal. `languageDefaults` holds compiler and lint flags per language.
+  linting), and container removal. `LANGUAGE_DEFAULTS` holds compiler and lint flags per language.
   `FailedSolution` stops the run as soon as a verdict is known.
 - `tests/`: manual scripts. `tests001.sh` targets an old Judge0 API (port 2358) and is stale.
 
@@ -46,12 +46,12 @@ improve isolation, and must never let a submission crash or exhaust the backend 
   `security_opt=['no-new-privileges']`, and read-only file systems with a small writable tmpfs.
   Never pass `privileged=True`. `put_archive` cannot write into a tmpfs, so `/home/student` stays
   on the container's writable layer (bounded by the `fsize` ulimit).
-- Every command run in the container goes through `run_in_container(argv, timeout)`: `argv` is a
+- Every command run in the container goes through `_run_in_container(argv, timeout)`: `argv` is a
   list (never a shell string), it always gets a timeout, and its output is capped at
   `MAX_OUTPUT_BYTES` before decoding.
 - Never interpolate student-controlled data (code, test input, file names, language names) into
   shell commands. Write data to files copied with `put_archive`, use fixed file names, and accept
-  only whitelisted values (e.g. languages in `languageDefaults`, tools `asan`/`tsan`/`ubsan`).
+  only whitelisted values (e.g. languages in `LANGUAGE_DEFAULTS`, tools `asan`/`tsan`/`ubsan`).
 - Validate the `/run` request: correct `Content-Type`, required fields, types, and size limits for
   code and test cases. Reject anything else with a 4xx status, never a 500 with a traceback.
 - Always remove containers in `finally`, even on errors, so they do not pile up.

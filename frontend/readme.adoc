@@ -32,14 +32,14 @@ Now you can access the frontend at http://localhost:8080 or any other port you c
 [[linters]]
 === Linters
 
-The client code in `static/` is checked with ESLint (AirBnB style guide, configured in `.eslintrc.cjs`) and Stylelint (standard configuration with the class names of the project: one snake_case class per component, configured in `.stylelintrc.json`). Run `make lint` in the `frontend/` folder: it installs them with npm the first time, runs both, and fails if either finds problems.
+The Python code in `src/` and in the shared `vyg` package (`common/vyg/`) is checked with Pylint (configured in `common/pylintrc`, shared with the backend). The client code in `static/` is checked with ESLint (AirBnB style guide, configured in `.eslintrc.cjs`) and Stylelint (standard configuration with the class names of the project: one snake_case class per component, configured in `.stylelintrc.json`). Run `make lint` in the `frontend/` folder: the first time it installs Pylint in the virtual environment and the others with npm, then runs the three, and fails if any finds problems. Make stops at the first linter that fails; `make -k lint` runs the rest anyway.
 
 [source,sh]
 ----
 make lint
 ----
 
-To run them separately, or to fix automatically what is safe to fix:
+`make pylint` runs only Pylint, and `make lint-static` only ESLint and Stylelint. To run these two separately, or to fix automatically what is safe to fix:
 
 [source,sh]
 ----

@@ -4,9 +4,9 @@ import os
 import threading
 import flask
 from flask import current_app as app
+import vyg
 #from users import logged_users
 from users import Progress
-import vyg
 
 # Random combinations for experiments of 4-problem courses
 EXP_RAND_TYPE = [
@@ -101,7 +101,9 @@ class CourseController:
                 { 'href': f"/course/{course.name}", 'text': course.name },
             ],
             'course': course,
-            'scripts': [ '<script src="/js/course/course.js" type="module" async="async"></script>' ],
+            'scripts': [
+                '<script src="/js/course/course.js" type="module" async="async"></script>',
+            ],
             'progress': Progress.load(course.name),
         }
         # print(json.dumps(it, indent=2))

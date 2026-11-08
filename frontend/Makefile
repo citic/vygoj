@@ -16,7 +16,7 @@ DEPS+=flask-squeeze~=5.0 flask-sqlalchemy~=3.0 flask-talisman~=1.0 flask-wtf~=1.
 # the web app
 run: users
 
-.PHONY: admin lint users
+.PHONY: admin lint-static users
 users: install
 	$(ACT) && cd $(SRC) && python manage_users.py import
 
@@ -28,7 +28,10 @@ admin: install
 node_modules:
 	npm i
 
-# Lint the client code in static/. Stylelint runs even if ESLint fails, so one run reports the
-# problems of both, and the rule fails if any of them fails
-lint: node_modules
+# Lint the client code in static/ besides the Python code (pylint rule of the common Makefile)
+lint: lint-static
+
+# Stylelint runs even if ESLint fails, so one run reports the problems of both, and the rule fails
+# if any of them fails
+lint-static: node_modules
 	npx eslint static/js; status=$$?; npx stylelint 'static/css/**/*.css' || status=1; exit $$status

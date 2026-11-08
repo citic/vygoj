@@ -39,7 +39,8 @@ The common `make` rules (root `CLAUDE.md`) serve the frontend on `0.0.0.0:8080`.
 
 ```sh
 make dev       # npm i (ESLint/Stylelint tooling for static/)
-make lint      # make dev if needed, then ESLint and Stylelint on static/ (see static/CLAUDE.md)
+make lint      # Pylint (see root CLAUDE.md), then ESLint and Stylelint on static/ (make lint-static,
+               # see static/CLAUDE.md). make -k lint runs the latter even if Pylint fails
 make admin     # create an administrator or reset its password (make admin ADMIN=name)
 ```
 

@@ -53,8 +53,13 @@ make release   # run src/main.py without debug
 make server    # gunicorn daemon (production), logs and pid file in data/
 make stop      # stop the gunicorn daemon started by make server
 make deps      # reinstall Python dependencies into .venv
+make lint      # Pylint on src/ and common/vyg/ (installs pylint into .venv the first time)
 make clean     # remove .venv
 ```
+
+- `make lint` must pass with no messages. Its configuration is shared in `common/pylintrc`; fix the
+  code rather than disabling a check, and when a disable is justified, put it on the line with a
+  comment explaining why (e.g. `# pylint: disable=broad-exception-caught`).
 
 - Add Python dependencies to `DEPS` in the layer's `Makefile` (there are no requirements files),
   then run `make deps`. Fix only their major version with `~=`, so they get the fixes of their

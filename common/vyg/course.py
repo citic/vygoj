@@ -45,6 +45,10 @@ class Course(Resource):
         # TODO(jhc): is status needed? snapshots make editing unnecessary, available is the default
         # self.status = json_dict.get('status', '')
 
+    def get_course(self) -> 'Course':
+        """ A course is the root of the material tree, so it contains itself """
+        return self
+
     def add_symbol(self, material: 'Material'):
         """ Add this material to the course's symbols table, so it can be found by name """
         if material.name:

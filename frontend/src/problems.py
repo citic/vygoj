@@ -122,14 +122,7 @@ class ProblemController:
         if message.action == 'run' and not flask.session.get('user'):
             return ProblemController.error_response('Log in to run code', 401)
         try:
-            problem = ProblemController.fetch_problem(course_name, problem_name)
-            if message.action == 'fetch_problem':
-                return ProblemController.to_client_json(problem)
-            # Only the languages enabled for the problem may be sent to the judge
-            if message.language not in problem.languages:
-                return ProblemController.error_response('language not enabled', 400)
-            vyg_log('run', f'{course_name}/{problem_name}')
-            return ProblemController.judge_solution(problem, message)
+            return ProblemController.do_action(course_name, problem_name, message)
         except HTTPException:
             # E.g. 404 when the problem does not exist, Flask answers it
             raise
@@ -141,6 +134,18 @@ class ProblemController:
             # Details may have host paths or course data, so they go to the log, not to the client
             app.logger.exception('could not %s %s/%s', message.action, course_name, problem_name)
             return ProblemController.error_response('internal error, try again later', 500)
+
+    @staticmethod
+    def do_action(course_name: str, problem_name: str, message: vyg.Message):
+        """ Answer the valid message of the client: send the problem, or judge the solution """
+        problem = ProblemController.fetch_problem(course_name, problem_name)
+        if message.action == 'fetch_problem':
+            return ProblemController.to_client_json(problem)
+        # Only the languages enabled for the problem may be sent to the judge
+        if message.language not in problem.languages:
+            return ProblemController.error_response('language not enabled', 400)
+        vyg_log('run', f'{course_name}/{problem_name}')
+        return ProblemController.judge_solution(problem, message)
 
     @staticmethod
     def parse_message():

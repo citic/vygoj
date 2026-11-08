@@ -261,58 +261,10 @@ class UserForm(flask_wtf.FlaskForm):
         if form.validate_on_submit():
             if form.logout.data:
                 return log_out()
-            # If user was logged in, update preferences
+            # If user was logged in, update preferences, otherwise try to log in
             if user:
-                # Save the chosen color scheme and font in the database and in the session
-                preferences = {
-                    'color_scheme': form.color_scheme.data,
-                    'font': form.font.data,
-                }
-                db.session.execute(db.update(User).filter_by(username=user['email'])
-                    .values(**preferences))
-                db.session.commit()
-                user.update(preferences)
-                flask.session['user'] = user
-                # TODO(I): Update the other user preferences in the database
-                flask.flash('Preferences updated successfully.', 'success')
-                return flask.redirect(flask.url_for('user'))
-            else:
-                # User is not logged in, try to login
-                name = form.email.data
-                address = (flask.request.remote_addr or '')[:64]
-                # Do not even check the password while blocked, so guessing gives no information
-                if LoginAttempt.is_blocked(name, address):
-                    vyg_log('login_blocked', name)
-                    flask.flash('Too many failed logins. Wait '
-                        f'{LOGIN_WINDOW.seconds // 60} minutes and try again.', 'error')
-                    return flask.redirect(flask.url_for('user', next=next_url))
-                # Find the user in the database and compare the typed password with its hash
-                db_user = db.session.scalar(db.select(User).filter_by(username=name))
-                password_hash = db_user.password if db_user else _MISSING_USER_HASH
-                password_ok = check_password_hash(password_hash, form.password.data or '')
-                if db_user and password_ok:
-                    # A new session for the logged user, so nothing stored before the login (such
-                    # as a CSRF token that an attacker could have planted) is kept
-                    flask.session.clear()
-                    user = {
-                        'email': name,
-                        'fullname': db_user.fullname,
-                        'role': db_user.role,
-                        'color_scheme': db_user.color_scheme,
-                        'font': db_user.font,
-                    }
-                    flask.session['user'] = user
-                    LoginAttempt.clear(name, address)
-                    logged_users.add(name)
-                    flask.flash('Logged in successfully.', 'success')
-                    vyg_log('login', name)
-                    return flask.redirect(next_url or flask.url_for('get_index'))
-                else:
-                    # User is not logged in, show an error message
-                    LoginAttempt.record_failure(name, address)
-                    vyg_log('login_failed', name)
-                    flask.flash('Invalid user or password', 'error')
-                    return flask.redirect(flask.url_for('user', next=next_url))
+                return UserForm.update_preferences(form, user)
+            return UserForm.log_in(form, next_url)
         if user:
             # User is logged in, and wants to change preferences, update some labels
             form.password.label = 'Current password'
@@ -325,3 +277,56 @@ class UserForm(flask_wtf.FlaskForm):
             'form': form,
             'user': user,
         })
+
+    @staticmethod
+    def update_preferences(form: 'UserForm', user: dict):
+        """ Save the preferences chosen in the form for the logged in user """
+        # Save the chosen color scheme and font in the database and in the session
+        preferences = {
+            'color_scheme': form.color_scheme.data,
+            'font': form.font.data,
+        }
+        db.session.execute(db.update(User).filter_by(username=user['email'])
+            .values(**preferences))
+        db.session.commit()
+        user.update(preferences)
+        flask.session['user'] = user
+        # TODO(I): Update the other user preferences in the database
+        flask.flash('Preferences updated successfully.', 'success')
+        return flask.redirect(flask.url_for('user'))
+
+    @staticmethod
+    def log_in(form: 'UserForm', next_url: str):
+        """ Log in the user typed in the form if the password matches, and go to next_url """
+        name = form.email.data
+        address = (flask.request.remote_addr or '')[:64]
+        # Do not even check the password while blocked, so guessing gives no information
+        if LoginAttempt.is_blocked(name, address):
+            vyg_log('login_blocked', name)
+            flask.flash('Too many failed logins. Wait '
+                f'{LOGIN_WINDOW.seconds // 60} minutes and try again.', 'error')
+            return flask.redirect(flask.url_for('user', next=next_url))
+        # Find the user in the database and compare the typed password with its hash
+        db_user = db.session.scalar(db.select(User).filter_by(username=name))
+        password_hash = db_user.password if db_user else _MISSING_USER_HASH
+        password_ok = check_password_hash(password_hash, form.password.data or '')
+        if not db_user or not password_ok:
+            LoginAttempt.record_failure(name, address)
+            vyg_log('login_failed', name)
+            flask.flash('Invalid user or password', 'error')
+            return flask.redirect(flask.url_for('user', next=next_url))
+        # A new session for the logged user, so nothing stored before the login (such as a CSRF
+        # token that an attacker could have planted) is kept
+        flask.session.clear()
+        flask.session['user'] = {
+            'email': name,
+            'fullname': db_user.fullname,
+            'role': db_user.role,
+            'color_scheme': db_user.color_scheme,
+            'font': db_user.font,
+        }
+        LoginAttempt.clear(name, address)
+        logged_users.add(name)
+        flask.flash('Logged in successfully.', 'success')
+        vyg_log('login', name)
+        return flask.redirect(next_url or flask.url_for('get_index'))

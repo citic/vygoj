@@ -1,4 +1,4 @@
-# Flask Makefile v1.2.0
+# Flask Makefile v1.3.0
 VENV=.venv# Folder where the virtual environment is installed
 ACT=. $(VENV)/bin/activate# Python command to activate the virtual environment
 SRC=src#Folder where web application source code is
@@ -14,9 +14,12 @@ PY=python3# Command to run python
 LOGDIR=data# Folder for logs and runtime files of the server, ignored by git
 PIDFILE=$(LOGDIR)/gunicorn.pid# Process id of the gunicorn master, used by stop
 GUNICORN_FLAGS=# Extra gunicorn options, layers may append to it with +=
+LINT_DEPS=pylint~=4.0# Development tools, installed only by lint, not needed to run the servers
+PYLINT_SRC=$(SRC) $(SHARED)/vyg# Python code checked by lint: the layer and the shared package
+PYLINTRC=$(SHARED)/pylintrc# Pylint configuration shared by the layers
 
 # Phony targets
-.PHONY: clean debug deps install release server stop
+.PHONY: clean debug deps install lint pylint release server stop
 default: all
 
 debug: export FLASK_DEBUG=1
@@ -58,6 +61,15 @@ $(VENV):
 # The shared package is installed in editable mode, so changes to it apply without reinstalling
 deps: $(VENV)
 	$(ACT) && pip install $(DEPS) && pip install -e $(SHARED)
+
+# Check the Python code with Pylint. Layers may add more checks to lint, e.g. for client code
+lint: pylint
+pylint: $(VENV)/bin/pylint
+	$(ACT) && pylint --rcfile=$(PYLINTRC) $(PYLINT_SRC)
+
+# Pylint is installed the first time lint runs, so servers in production do not need it
+$(VENV)/bin/pylint: | $(VENV)
+	$(ACT) && pip install $(LINT_DEPS)
 
 # Remove installation
 clean:

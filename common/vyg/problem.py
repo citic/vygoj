@@ -8,7 +8,7 @@ from vyg.utils import decode_if
 # Attributes of this class are shared with JS client code and use the JS name convention
 # pylint: disable=invalid-name
 
-class Problem(Activity):
+class Problem(Activity, material_type='problem'):
     """ Represents a programming problem with statement, source code, and test cases """
     # Fields to be encoded using base64 when serializing to JSON
     encoded_fields = Material.encoded_fields + ['statement', 'mustContain', 'initialCodeFor']

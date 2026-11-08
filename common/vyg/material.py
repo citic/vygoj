@@ -13,6 +13,16 @@ class Material(abstract):
     # Fields to be encoded using base64 when serializing to JSON when are send or received by
     # network. Fields loaded from vygoj.json files may be not encoded when created by hand.
     encoded_fields = ['title']
+    # Classes that create() instantiates for each value of the 'type' field in JSON contents
+    _subclasses = {}
+
+    def __init_subclass__(cls, material_type: str = '', **kwargs):
+        """ Register the subclasses that declare their material_type, e.g:
+        class Page(Resource, material_type='page'). Registration avoids importing the subclasses
+        in this module, which would create a cycle because they import this module """
+        super().__init_subclass__(**kwargs)
+        if material_type:
+            Material._subclasses[material_type] = cls
 
     def __init__(self, json_dict: dict, parent: 'Material', should_decode: bool):
         """ Construct the base part of a Material. json_dict is the dictionary where the values for
@@ -71,36 +81,21 @@ class Material(abstract):
     @staticmethod
     def create(json_dict: dict, parent: 'Material', should_decode: bool):
         """ Create a Material object from a JSON dictionary entry. """
-        # Subclasses import this module, so importing them at the top would create a cycle
-        # pylint: disable=import-outside-toplevel
-        from vyg.page import Page
-        from vyg.problem import Problem
-        from vyg.question import Question
-        from vyg.section import Section
         material_type = json_dict.get('type', '')
         # If material starts with underscore, it is disabled
         # TODO(jhc): do not load the disabled materials at all
         if material_type.startswith('_'):
             material_type = material_type[1:]
-        if material_type == 'section':
-            return Section(json_dict, parent, should_decode)
-        if material_type == 'page':
-            return Page(json_dict, parent, should_decode)
-        if material_type == 'question':
-            return Question(json_dict, parent, should_decode)
-        if material_type == 'problem':
-            return Problem(json_dict, parent, should_decode)
-        raise TypeError(f'Unknown material type: {material_type}')
+        # A course is the root of the tree, so it cannot be nested in the contents of a material
+        material_class = Material._subclasses.get(material_type)
+        if material_class is None:
+            raise TypeError(f'Unknown material type: {material_type}')
+        return material_class(json_dict, parent, should_decode)
 
-    def get_course(self) -> 'Course':
-        """ Returns the course that contains this material """
-        # Course is a subclass of Material, so importing it at the top would create a cycle
-        # pylint: disable=import-outside-toplevel
-        from vyg.course import Course
-        # The course has no parent (root material), otherwise, search the parent material
-        if self._parent is None:
-            return self if isinstance(self, Course) else None
-        return self._parent.get_course()
+    def get_course(self) -> 'Material':
+        """ Returns the course that contains this material, or None if it is not in a course.
+        Course overrides this method to return itself """
+        return self._parent.get_course() if self._parent else None
 
     def get_path(self) -> str:
         """ Returns the path where this material is stored, e.g:
