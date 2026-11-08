@@ -21,17 +21,20 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
 
 ## Commands
 
-Run from `frontend/` after `make dev` (which runs `npm i`):
+Run from `frontend/`. `make lint` installs the tools if needed (`make dev`, which runs `npm i`)
+and runs ESLint and Stylelint; it fails if either reports a problem. To run them separately:
 
 ```sh
-npx eslint static/js          # lint JavaScript (AirBnB config in .eslintrc.cjs)
-npx eslint --fix static/js    # auto-fix what is safe to fix
-npx stylelint 'static/css/**/*.css'
+npx eslint static/js                        # lint JavaScript (AirBnB config in .eslintrc.cjs)
+npx eslint --fix static/js                  # auto-fix what is safe to fix
+npx stylelint 'static/css/**/*.css'         # lint CSS (standard config in .stylelintrc.json)
+npx stylelint --fix 'static/css/**/*.css'
 ```
 
-Note: `npm run lint` currently points to `src/`, which has no JavaScript; lint `static/js`
-directly. To see changes, run the frontend (`make` in `frontend/`) and reload the page with the
-cache disabled; check the browser console for errors and the layout at phone and desktop widths.
+`npm run lint` runs the first command and `npm run stylelint` the third. Always pass the folder:
+with ESLint 8, `npx eslint` alone lints no files and exits cleanly. To see changes, run the frontend
+(`make` in `frontend/`) and reload the page with the cache disabled; check the browser console for
+errors and the layout at phone and desktop widths.
 
 ## Rules
 

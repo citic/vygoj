@@ -35,10 +35,11 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
 
 ## Commands
 
-The common `make` rules (root `CLAUDE.md`) serve the frontend on `0.0.0.0:8080`. Extra rule:
+The common `make` rules (root `CLAUDE.md`) serve the frontend on `0.0.0.0:8080`. Extra rules:
 
 ```sh
 make dev       # npm i (ESLint/Stylelint tooling for static/)
+make lint      # make dev if needed, then ESLint and Stylelint on static/ (see static/CLAUDE.md)
 make admin     # create an administrator or reset its password (make admin ADMIN=name)
 ```
 

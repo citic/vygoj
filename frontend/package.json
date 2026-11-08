@@ -7,8 +7,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "npx eslint src --ext .js,.jsx,.ts,.tsx",
-    "stylelint": "npx stylelint '**/*.css'"
+    "lint": "eslint static/js",
+    "stylelint": "stylelint 'static/css/**/*.css'"
   },
   "dependencies": {
   },

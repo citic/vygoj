@@ -1,0 +1,13 @@
+{
+  "extends": "stylelint-config-standard",
+  "rules": {
+    "selector-class-pattern": [
+      "^[a-z][a-z0-9]*([_-][a-z0-9]+)*(__[a-z0-9]+(_[a-z0-9]+)*)?(--[a-z0-9]+(_[a-z0-9]+)*)?$",
+      { "message": "Expected class \"%s\" to be block, block__element or block--modifier in snake_case (kebab-case only for classes of external libraries)" }
+    ],
+    "selector-id-pattern": [
+      "^[a-z][a-z0-9]*(_[a-z0-9]+)*$",
+      { "message": "Expected id \"%s\" to be snake_case" }
+    ]
+  }
+}
