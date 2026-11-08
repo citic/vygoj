@@ -71,6 +71,10 @@ class ProblemManager {
     this.runButton = null; // HTMLButtonElement
     // The result after running the user code
     this.result = null; // class ExecutionResult instance
+    // False while the code editor shows code that is already stored (when loading it, or when
+    // another tab changed it), so the change is not saved again. Saving it again made tabs of the
+    // same problem send each other old versions of the code forever
+    this.savesCode = true;
   }
 
   static main() {
@@ -167,21 +171,37 @@ class ProblemManager {
     });
     editor.onDidChangeModelContent(() => {
       const code = editor.getValue();
-      saveConfig(`code:${languageList.value}`, code);
+      if (this.savesCode) {
+        saveConfig(`code:${languageList.value}`, code);
+      }
       if (this.runButton) {
         this.runButton.disabled = code.trim().length === 0;
       }
     });
     // Another tab of this problem saved its code for the chosen language: show it here too.
-    // An edit instead of setValue() keeps the Undo history of this tab, as its own step
+    // Events arrive late, so an event whose code is not the stored one anymore is old, and it is
+    // ignored. An edit instead of setValue() keeps the Undo history of this tab, as its own step
     window.addEventListener('storage', (event) => {
       if (event.key === `code:${languageList.value}:${window.location.pathname}`
+        && event.newValue !== null && event.newValue === window.localStorage.getItem(event.key)
         && event.newValue !== editor.getValue()) {
-        editor.pushUndoStop();
-        editor.executeEdits('storage', [{ range: editor.getModel().getFullModelRange(), text: event.newValue }]);
-        editor.pushUndoStop();
+        this.showStoredCode(() => {
+          editor.pushUndoStop();
+          editor.executeEdits('storage', [{ range: editor.getModel().getFullModelRange(), text: event.newValue }]);
+          editor.pushUndoStop();
+        });
       }
     });
+  }
+
+  // Run the given function, that shows code already stored in the code editor, without saving it
+  showStoredCode(show) {
+    this.savesCode = false;
+    try {
+      show();
+    } finally {
+      this.savesCode = true;
+    }
   }
 
   setupTestCaseEditors() {
@@ -325,9 +345,12 @@ class ProblemManager {
       const editor = this.editors[0];
       const language = languageList.value;
       const code = loadConfig(`code:${language}`) || this.initialCodeFor(language);
-      editor.setValue(loadConfig(`backup:${language}`) || code);
-      editor.executeEdits('load', [{ range: editor.getModel().getFullModelRange(), text: code }]);
-      editor.pushUndoStop();
+      // The backup is not the current code, so it must not be saved as such
+      this.showStoredCode(() => {
+        editor.setValue(loadConfig(`backup:${language}`) || code);
+        editor.executeEdits('load', [{ range: editor.getModel().getFullModelRange(), text: code }]);
+        editor.pushUndoStop();
+      });
     };
     showCode();
     languageList.addEventListener('change', showCode);
