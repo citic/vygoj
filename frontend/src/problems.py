@@ -200,9 +200,10 @@ class ProblemController:
         if user_id is None:
             return ProblemController.error_response('Log in to run code', 401)
         course_name = problem.get_course().name
-        code_hash = Run.hash_code(message.language, message.code)
+        code_hash = Run.hash_code(problem, message.language, message.code)
         # The same code as the last run of this problem gives the same result: answer it without
-        # running it, e.g. when the student reloads the page and presses Run again
+        # running it, e.g. when the student reloads the page and presses Run again. The hash
+        # includes the test cases, so the result is not reused if the professor changed them
         repeated = Run.find_repeated(user_id, course_name, problem.name, code_hash)
         if repeated:
             vyg_log('run_repeated', f'{course_name}/{problem.name}')

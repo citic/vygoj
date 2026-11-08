@@ -1,7 +1,9 @@
 """ Code runs of the users, kept to limit the abuse of the backends """
 import datetime
 import hashlib
+import json
 
+import vyg
 from db import db
 from users import User
 
@@ -20,6 +22,12 @@ MAX_RUN_DURATION = datetime.timedelta(seconds=150)
 RUNS_KEPT = datetime.timedelta(days=1)
 # Larger results are not stored, so their submissions run again if repeated
 MAX_STORED_RESULT = 2**20
+# Fields of a problem that the backend uses to judge a solution, besides its test cases. If the
+# professor changes them, or the test cases, the stored results of that problem are not reused.
+# Add here the new fields that change verdicts. The statement and the title are not included, so
+# fixing a typo does not make students run their code again
+JUDGED_FIELDS = ('allowIndeterminism', 'maxDuration', 'maxThreads', 'minDuration', 'minThreads',
+    'mustContain', 'tools')
 
 def plural(count: int, noun: str) -> str:
     """ Return the count with the noun in singular or plural, e.g. '1 minute', '2 minutes' """
@@ -58,9 +66,25 @@ class Run(db.Model):
     result = db.Column(db.Text)
 
     @staticmethod
-    def hash_code(language: str, code: str) -> str:
-        """ Return the hash that identifies a submission of the given code """
-        return hashlib.sha256(f'{language}\0{code}'.encode('utf-8')).hexdigest()
+    def hash_code(problem: vyg.Problem, language: str, code: str) -> str:
+        """ Return the hash that identifies a submission of the given code to the problem as it is
+        now. The code goes last, and the other parts have no null characters, so different
+        submissions cannot have the same text to hash """
+        text = f'{Run.hash_problem(problem)}\0{language}\0{code}'
+        return hashlib.sha256(text.encode('utf-8')).hexdigest()
+
+    @staticmethod
+    def hash_problem(problem: vyg.Problem) -> str:
+        """ Return the hash of the test cases and the judged fields of the problem. It is computed
+        once per loaded problem; changes in the course repo are loaded when the server restarts """
+        if getattr(problem, '_judge_hash', None) is None:
+            judged = { field: getattr(problem, field, None) for field in JUDGED_FIELDS }
+            judged['tests'] = problem.tests
+            # Sorted keys, so the same problem always gives the same text
+            text = json.dumps(judged, default=vyg.to_dict, sort_keys=True)
+            # A private attribute (starts with _), so it is not sent to clients or backends
+            setattr(problem, '_judge_hash', hashlib.sha256(text.encode('utf-8')).hexdigest())
+        return getattr(problem, '_judge_hash')
 
     @staticmethod
     def find_user_id(username: str):
