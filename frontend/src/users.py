@@ -1,4 +1,6 @@
 """ Manages application users, their preferences, and courses' progress """
+import datetime
+
 import flask
 import flask_wtf
 import wtforms
@@ -74,6 +76,63 @@ class Progress(db.Model):
         rows = db.session.execute(db.select(Progress.evaluation, Progress.grade).join(User)
             .filter(User.username == user['email'], Progress.course == course))
         return {evaluation: round(grade) for evaluation, grade in rows}
+
+# Failed logins are counted during this time. When a limit is reached, logins are rejected until
+# the oldest failures are older than this
+LOGIN_WINDOW = datetime.timedelta(minutes=15)
+# Failed logins allowed in the window for a user from the same address. It stops a student from
+# guessing the password of a classmate
+MAX_FAILURES_PER_USER = 5
+# Failed logins allowed in the window from the same address, for any users. It stops robots that
+# try many users. It is larger because a whole laboratory may share the same public address
+MAX_FAILURES_PER_ADDRESS = 30
+
+class LoginAttempt(db.Model):
+    """ A failed login, kept for a while to limit password guessing. Counts are stored in the
+    database, so all the gunicorn workers share them, and they survive restarts """
+    __tablename__ = 'login_attempts'
+    # Attempts are identified using incremental integer numbers
+    id = db.Column(db.Integer, primary_key=True)
+    # Username typed, even if no user has it, so the limit does not reveal which users exist
+    username = db.Column(db.String(128), nullable=False, index=True)
+    # Network address of the client. Behind a reverse proxy, see TRUSTED_PROXIES in config.py
+    address = db.Column(db.String(64), nullable=False, index=True)
+    # When the attempt failed
+    time = db.Column(db.DateTime(timezone=True), nullable=False, index=True)
+
+    @staticmethod
+    def is_blocked(username: str, address: str) -> bool:
+        """ True if the given user from the given address cannot try to log in for a while. The
+        limit is not per username alone, otherwise anybody could lock the account of a classmate
+        by typing wrong passwords before an exam """
+        recent = (db.select(db.func.count()).select_from(LoginAttempt)
+            .filter(LoginAttempt.time > LoginAttempt.now() - LOGIN_WINDOW,
+                LoginAttempt.address == address))
+        if db.session.scalar(recent) >= MAX_FAILURES_PER_ADDRESS:
+            return True
+        failures = db.session.scalar(recent.filter(LoginAttempt.username == username))
+        return failures >= MAX_FAILURES_PER_USER
+
+    @staticmethod
+    def record_failure(username: str, address: str):
+        """ Remember a failed login of the given user from the given address """
+        now = LoginAttempt.now()
+        # Forget the attempts out of the window, so the table does not grow forever
+        db.session.execute(db.delete(LoginAttempt).filter(LoginAttempt.time <= now - LOGIN_WINDOW))
+        db.session.add(LoginAttempt(username=username, address=address, time=now))
+        db.session.commit()
+
+    @staticmethod
+    def clear(username: str, address: str):
+        """ Forget the failed logins of the given user from the given address, after a success """
+        db.session.execute(db.delete(LoginAttempt).filter(LoginAttempt.username == username,
+            LoginAttempt.address == address))
+        db.session.commit()
+
+    @staticmethod
+    def now() -> datetime.datetime:
+        """ Current time with time zone, as stored in the database """
+        return datetime.datetime.now(datetime.timezone.utc)
 
 logged_users = set()
 
@@ -160,6 +219,13 @@ class UserForm(flask_wtf.FlaskForm):
             else:
                 # User is not logged in, try to login
                 name = form.email.data
+                address = (flask.request.remote_addr or '')[:64]
+                # Do not even check the password while blocked, so guessing gives no information
+                if not first_user and LoginAttempt.is_blocked(name, address):
+                    vyg_log('login_blocked', name)
+                    flask.flash('Too many failed logins. Wait '
+                        f'{LOGIN_WINDOW.seconds // 60} minutes and try again.', 'error')
+                    return flask.redirect(flask.url_for('user'))
                 if first_user:
                     # Save the first user as the administrator, and log them in below
                     db.session.add(User(username=name, fullname=form.fullname.data, role='admin',
@@ -180,12 +246,15 @@ class UserForm(flask_wtf.FlaskForm):
                         'color_scheme': db_user.color_scheme,
                     }
                     flask.session['user'] = user
+                    LoginAttempt.clear(name, address)
                     logged_users.add(name)
                     flask.flash('Logged in successfully.', 'success')
                     vyg_log('login', name)
                     return flask.redirect(flask.url_for('get_index'))
                 else:
                     # User is not logged in, show an error message
+                    LoginAttempt.record_failure(name, address)
+                    vyg_log('login_failed', name)
                     flask.flash('Invalid user or password', 'error')
                     return flask.redirect(flask.url_for('user'))
         if user:

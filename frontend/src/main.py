@@ -9,6 +9,7 @@ from flask_squeeze import Squeeze
 from flask_wtf.csrf import CSRFError, CSRFProtect
 from talisman import Talisman
 from werkzeug.exceptions import RequestEntityTooLarge
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from courses import CourseController
 from problems import BACKEND_CONNECT_TIMEOUT, BACKEND_STATUS_TIMEOUT, ProblemController
@@ -97,6 +98,15 @@ def check_secret_key(secret_key):
             "python3 -c 'import secrets; print(secrets.token_hex(32))'")
 
 check_secret_key(app.config.get('SECRET_KEY'))
+
+# Behind a reverse proxy, every request comes from the address of the proxy, which adds the address
+# of the client to the X-Forwarded-For header. TRUSTED_PROXIES is the number of proxies that add
+# it. With 0 (clients connect directly) the header is ignored, because clients could fake it
+trusted_proxies = app.config.get('TRUSTED_PROXIES', 0)
+if not isinstance(trusted_proxies, int) or trusted_proxies < 0:
+    raise RuntimeError(f'TRUSTED_PROXIES in {config_file} must be an integer >= 0')
+if trusted_proxies:
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=trusted_proxies)
 
 # Database ----------------------------------------------------------------------------------------
 

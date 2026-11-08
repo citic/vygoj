@@ -70,6 +70,10 @@ to the general rules in the root `CLAUDE.md`:
 - The "Security" section of `readme.adoc` explains these controls; update it when they change.
 - Keep `SESSION_COOKIE_SECURE` and `SESSION_COOKIE_HTTPONLY`. Store only minimal data in the
   session. Hash passwords; never log or display them.
+- Limits per client (e.g. `LoginAttempt` in `users.py`) are stored in the database, because
+  gunicorn workers do not share memory. Get the client address from `flask.request.remote_addr`,
+  which `ProxyFix` corrects behind a reverse proxy (`TRUSTED_PROXIES` in `config.py`); never read
+  `X-Forwarded-For` directly, clients can fake it.
 - `requests` timeouts are in seconds. Handle `requests.exceptions.RequestException` so a down
   backend does not crash a page.
 

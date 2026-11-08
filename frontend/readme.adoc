@@ -91,6 +91,8 @@ Create a new Apache configuration file, for example, `/etc/apache2/sites-availab
 </VirtualHost>
 ----
 
+Apache sends the address of each client in the `X-Forwarded-For` header. Set `TRUSTED_PROXIES = 1` in `config/config.py`, so the frontend uses that address for the login limits (<<login_limits>>) and the logs. Otherwise, every request seems to come from `127.0.0.1`, and the failed logins of all the users count as the ones of a single address. Keep it `0` if clients connect to the frontend directly, because they could fake that header.
+
 Enable the new configuration, test it, and restart Apache:
 
 [source,sh]
@@ -173,6 +175,18 @@ Statements refer to images and videos of their folder with relative URLs, such a
 
 Files are streamed, so videos have no size limit, and range requests let students jump to any second. They are served with their own strict CSP (`FILE_CSP` in `src/main.py`), with `sandbox`, because an SVG may contain scripts that would run if a student opened its URL. Images from other sites stay blocked by the CSP of the pages (`img-src 'self' data:`), so students do not reveal their addresses to third parties.
 
+[[login_limits]]
+=== Login attempts
+
+Failed logins are stored in the `login_attempts` table (`LoginAttempt` in `src/users.py`), so all the gunicorn workers share their counts. During 15 minutes (`LOGIN_WINDOW`), the frontend accepts:
+
+* 5 failed logins of a user from the same address (`MAX_FAILURES_PER_USER`), which stops a student from guessing the password of a classmate.
+* 30 failed logins from the same address for any users (`MAX_FAILURES_PER_ADDRESS`), which stops robots that try many users. It is larger because a whole laboratory may share a public address.
+
+Then, logins from that address are rejected, without checking the password, until the oldest failures are older than 15 minutes. Usernames that do not exist count too, so the limits do not reveal which users exist. A successful login forgets the failures of that user from that address. There is no limit per username alone, otherwise anybody could lock the account of a classmate by typing wrong passwords before an exam. Failed and rejected logins are logged as `login_failed` and `login_blocked`.
+
+The limits depend on the address of the client, so set `TRUSTED_PROXIES` behind a reverse proxy (<<reverse_proxy>>).
+
 [[input_limits]]
 === Requests and errors
 
@@ -185,6 +199,6 @@ Files are streamed, so videos have no size limit, and range requests let student
 [[security_pending]]
 === Pending risks
 
-* There is no limit on login attempts or code runs per user or address. Configure one in the reverse proxy.
+* There is no limit on code runs, and anonymous users may run code.
 * While the users table is empty, the first visitor of `/user` registers as administrator. Create the administrator before exposing a new installation.
 * The `talisman` package is the old 0.1.0 release. Its maintained fork is `flask-talisman`.
