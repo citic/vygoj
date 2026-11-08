@@ -12,6 +12,7 @@ import vyg
 from vyg_log import vyg_log
 from courses import CourseController
 from problem_loader import ProblemLoader
+from runs import Run, RunRejected
 from users import Progress
 
 # Timeouts in seconds for requests to backends, so a hung backend cannot block a worker forever.
@@ -158,9 +159,9 @@ class ProblemController:
         return message
 
     @staticmethod
-    def error_response(message: str, status: int):
+    def error_response(message: str, status: int, headers=None):
         """ Errors are answered with a JSON object {error: message}, that the client shows """
-        return flask.jsonify({ 'error': message }), status
+        return flask.jsonify({ 'error': message }), status, headers or {}
 
     @staticmethod
     def json_response(json_text: str):
@@ -193,15 +194,41 @@ class ProblemController:
 
     @staticmethod
     def judge_solution(problem: vyg.Problem, message: vyg.Message):
-        """ Called when user input a source code solution and press Run button """
-        # Run the test cases and wait for the array of results
-        result = ProblemController.run_solution(problem, message)
-        # Store the same score problem.js saves in localStorage: percentage of passed test cases,
-        # adding 0.5 rounds halves up as JavaScript Math.round does (Python round() goes to even)
-        results = result.get('results') or []
-        grade = int(100 * result.get('passedTestCount', 0) / len(results) + 0.5) if results else 0
-        Progress.store(problem.get_course().name, problem.name, grade)
-        return ProblemController.json_response(vyg.to_json(result))
+        """ Called when user input a source code solution and press Run button. Runs are limited
+        per user (see runs.py), so a user or a robot cannot overload the backends """
+        user_id = Run.find_user_id(flask.session['user'].get('email'))
+        if user_id is None:
+            return ProblemController.error_response('Log in to run code', 401)
+        course_name = problem.get_course().name
+        code_hash = Run.hash_code(message.language, message.code)
+        # The same code as the last run of this problem gives the same result: answer it without
+        # running it, e.g. when the student reloads the page and presses Run again
+        repeated = Run.find_repeated(user_id, course_name, problem.name, code_hash)
+        if repeated:
+            vyg_log('run_repeated', f'{course_name}/{problem.name}')
+            return ProblemController.json_response(repeated)
+        try:
+            run = Run.start(user_id, course_name, problem.name, code_hash)
+        except RunRejected as rejection:
+            vyg_log('run_rejected', f'{course_name}/{problem.name}')
+            return ProblemController.error_response(str(rejection), 429,
+                { 'Retry-After': str(rejection.retry_after) })
+        result_json = None
+        try:
+            # Run the test cases and wait for the array of results
+            result = ProblemController.run_solution(problem, message)
+            # Store the same score problem.js saves in localStorage: percentage of passed test
+            # cases, adding 0.5 rounds halves up as JavaScript Math.round does (Python round() goes
+            # to even)
+            results = result.get('results') or []
+            grade = (int(100 * result.get('passedTestCount', 0) / len(results) + 0.5)
+                if results else 0)
+            Progress.store(course_name, problem.name, grade)
+            result_json = vyg.to_json(result)
+            return ProblemController.json_response(result_json)
+        finally:
+            # Also when the run failed (without result), so the user can run again
+            run.finish(result_json)
 
     @staticmethod
     def run_solution(problem: vyg.Problem, solution: vyg.Message):

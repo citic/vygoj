@@ -187,6 +187,19 @@ Then, logins from that address are rejected, without checking the password, unti
 
 The limits depend on the address of the client, so set `TRUSTED_PROXIES` behind a reverse proxy (<<reverse_proxy>>).
 
+[[run_limits]]
+=== Code runs
+
+Only logged users may run code (see <<input_limits>>). Their runs are stored in the `runs` table (`Run` in `src/runs.py`), so all the gunicorn workers apply the same limits. When a user presses Run:
+
+. If the code and language are the same as the last run of that user in that problem, the stored result of that run is answered, without running the code again. It covers students who reload the page or press Run again, also from another browser, and robots that repeat a submission.
+. Otherwise, the run is rejected with HTTP 429, a message, and a `Retry-After` header if:
+** the previous run of the user has not finished yet (one run at a time). A run without end after 150 seconds (`MAX_RUN_DURATION`, longer than the timeouts of the backend) does not count, so a server restart cannot block users.
+** the previous run started less than 5 seconds ago (`MIN_RUN_INTERVAL`).
+** the user started 120 runs in the last hour (`MAX_RUNS_PER_WINDOW`). A student who runs the code every 30 seconds stays below it.
+
+The checks and the new run are stored while the row of the user is locked (`SELECT ... FOR UPDATE`), so two requests sent at the same time cannot both pass. Only the result of the last run of each problem is kept, if it is smaller than 1 MiB, and runs older than one day are deleted. Repeated and rejected runs are logged as `run_repeated` and `run_rejected`.
+
 [[input_limits]]
 === Requests and errors
 
@@ -201,6 +214,5 @@ The limits depend on the address of the client, so set `TRUSTED_PROXIES` behind 
 [[security_pending]]
 === Pending risks
 
-* There is no limit on the code runs of logged users.
 * While the users table is empty, the first visitor of `/user` registers as administrator. Create the administrator before exposing a new installation.
 * The `talisman` package is the old 0.1.0 release. Its maintained fork is `flask-talisman`.
