@@ -67,7 +67,7 @@ class ProblemManager {
     this.problem = null; // class Problem instance
     // Index of the current shown test case
     this.activeTestCaseIndex = 0;
-    // The Run button element
+    // The Run button element, null for anonymous visitors, who cannot run code
     this.runButton = null; // HTMLButtonElement
     // The result after running the user code
     this.result = null; // class ExecutionResult instance
@@ -99,10 +99,8 @@ class ProblemManager {
   }
 
   setupReferences() {
+    // Anonymous visitors get a link to log in instead of the Run button
     this.runButton = document.getElementById('run_button');
-    if (!this.runButton) {
-      throw Error('could not find run_button element');
-    }
   }
 
   // Open the statement links in a new tab, so students do not leave their solution.
@@ -354,10 +352,9 @@ class ProblemManager {
   }
 
   setupRunEnvironment() {
-    console.assert(this.runButton);
     console.assert(this.editors.length > 0);
-    // When the Run button is pressed
-    this.runButton.addEventListener('click', async () => {
+    // When the Run button is pressed, if the user is logged in
+    this.runButton?.addEventListener('click', async () => {
       await this.runSolution();
     });
   }

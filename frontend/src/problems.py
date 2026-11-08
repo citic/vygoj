@@ -116,6 +116,10 @@ class ProblemController:
         message = ProblemController.parse_message()
         if message is None:
             return ProblemController.error_response('invalid message', 400)
+        # Only registered users may run code, so it cannot be abused anonymously. The problem page
+        # hides the Run button from anonymous visitors, but robots post here directly
+        if message.action == 'run' and not flask.session.get('user'):
+            return ProblemController.error_response('Log in to run code', 401)
         try:
             problem = ProblemController.fetch_problem(course_name, problem_name)
             if message.action == 'fetch_problem':

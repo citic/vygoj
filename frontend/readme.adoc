@@ -192,6 +192,7 @@ The limits depend on the address of the client, so set `TRUSTED_PROXIES` behind 
 
 * Request bodies are limited to 1 MiB (`MAX_CONTENT_LENGTH`, can be overridden in `config.py`).
 * Problem actions are validated: only `fetch_problem` and `run`, and only the languages enabled for the problem.
+* Only logged users may run code. Anonymous visitors may read problems and their test cases, but the problem page shows them a "Log in to run" link instead of the Run button, and the server answers their `run` requests with HTTP 401, also when a robot or a command sends them.
 * Errors are answered with generic messages such as `{"error": "the judge is not available"}`; their details (backend addresses, host paths) go to the server log only.
 * The request log (`data/vygoj.tsv`) stores the body of JSON requests only, never the bodies of forms, which carry passwords.
 * Login takes the same time whether the user exists or not, and starts a new session.
@@ -199,6 +200,6 @@ The limits depend on the address of the client, so set `TRUSTED_PROXIES` behind 
 [[security_pending]]
 === Pending risks
 
-* There is no limit on code runs, and anonymous users may run code.
+* There is no limit on the code runs of logged users.
 * While the users table is empty, the first visitor of `/user` registers as administrator. Create the administrator before exposing a new installation.
 * The `talisman` package is the old 0.1.0 release. Its maintained fork is `flask-talisman`.
