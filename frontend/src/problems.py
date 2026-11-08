@@ -25,14 +25,19 @@ BACKEND_STATUS_TIMEOUT = 5
 VALID_ACTIONS = ('fetch_problem', 'run')
 
 # Files of a problem folder that browsers may get, by extension, with their media type. They are
-# the images of the statements. Other files, such as test cases or solutions, are never served
+# the images, videos, and subtitles of the statements. Other files, such as test cases or
+# solutions, are never served
 FILE_TYPES = {
     'avif': 'image/avif',
     'gif': 'image/gif',
     'jpeg': 'image/jpeg',
     'jpg': 'image/jpeg',
+    'mp4': 'video/mp4',
+    'ogv': 'video/ogg',
     'png': 'image/png',
     'svg': 'image/svg+xml',
+    'vtt': 'text/vtt',
+    'webm': 'video/webm',
     'webp': 'image/webp',
 }
 # Seconds that browsers may keep a problem file without asking for it again
@@ -89,16 +94,19 @@ class ProblemController:
 
     @staticmethod
     def get_file(course_name: str, problem_name: str, filename: str):
-        """ Send an image of the problem folder, e.g. img/diagram.svg of the statement """
+        """ Send an image or video of the problem folder, e.g. img/diagram.svg of the statement """
         problem = ProblemController.fetch_problem(course_name, problem_name)
         folder = problem.get_path()
         # safe_join rejects absolute paths and ../ that go out of the folder. is_inside() also
-        # rejects symbolic links to other folders, even to other problems of the course
+        # rejects symbolic links to other folders, even to other problems of the course. Files are
+        # streamed, not loaded in memory, so large videos are allowed
         path = safe_join(folder, filename)
         file_type = FILE_TYPES.get(os.path.splitext(filename)[1][1:].lower())
-        if (not path or not file_type or not ProblemLoader.is_loadable(problem, path)
+        if (not path or not file_type or not os.path.isfile(path)
+                or not ProblemLoader.is_inside_course(problem, path)
                 or not ProblemLoader.is_inside(folder, path)):
             flask.abort(404)
+        # send_file answers range requests, so students can jump to any second of a video
         return flask.send_file(os.path.realpath(path), mimetype=file_type, max_age=FILE_MAX_AGE)
 
     @staticmethod

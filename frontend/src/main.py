@@ -54,6 +54,10 @@ cdn = {
     'img-src': "'self' data:",
     'font-src': "'self' data: *.gstatic.com cdn.jsdelivr.net",
     'worker-src': 'blob: esm.sh',
+    # Pages have no frames, and videos may only be files of this site (the folders of problems).
+    # Browsers enforce these rules even if the sanitizer of statements failed
+    'frame-src': "'none'",
+    'media-src': "'self'",
     # Plugins (<object>, <embed>) are not used and can run code outside the policy
     'object-src': "'none'",
     # A <base> element injected in a statement could redirect the relative URLs of the scripts

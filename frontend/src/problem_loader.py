@@ -11,7 +11,7 @@ import urllib.parse
 import markdown
 
 import vyg
-from sanitize import sanitize_statement
+from sanitize import sanitize_html
 
 # Maximum seconds that asciidoctor may spend converting a problem statement to HTML
 ASCIIDOCTOR_TIMEOUT = 30
@@ -48,8 +48,8 @@ class ProblemLoader:
                         logger.warning('problem %s: folder out of its course repo', problem.name)
                     # Sanitize here, also when the folder was not loaded, because the statement
                     # may come from vygoj.json files too
-                    problem.statement = sanitize_statement(problem.statement,
-                        ProblemLoader.page_url(problem))
+                    problem.statement = sanitize_html(problem.statement,
+                        f'{ProblemLoader.page_url(problem)}/files/')
                     # Mark it loaded at the end, so other threads never use a partial problem
                     problem.folder_loaded = True
 
