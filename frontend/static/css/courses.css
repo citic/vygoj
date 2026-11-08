@@ -41,11 +41,6 @@
   margin: 0;
 }
 
-/* The system font reads better than Anaheim in long tables and titles */
-.course {
-  font-family: system-ui, sans-serif;
-}
-
 /* Course details as a banner: data at the left, total progress at the right */
 .course__summary {
   display: flex;
@@ -81,7 +76,10 @@
 
 .course__contents {
   --indent: 1.25rem;
-  --font-size: 0.95rem;
+  /* The table text is a little bigger than the body text to be as tall as the arrows of the
+     section titles. --font-scale of site.css makes it smaller for fonts bigger than Anaheim */
+  --font-size: calc(1.1rem * var(--font-scale, 1));
+  --arrow-size: 1.7rem;
   width: 100%;
   font-size: var(--font-size);
   margin-top: 1.5rem;
@@ -99,7 +97,7 @@
 .course__contents thead th {
   border-bottom: 2px solid var(--bg-color);
   color: var(--bg-color);
-  font-size: 0.85rem;
+  font-size: 1em;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -140,7 +138,7 @@
 }
 
 /* Arrow in a box of fixed size so the title does not move when it changes. Its size comes from
-   the table font, so every title, small or big, has the same arrow. The arrow is drawn as a mask
+   the table, so every title, small or big, has the same arrow. The arrow is drawn as a mask
    instead of a text character because fonts draw hollow and filled triangles in different
    sizes: an expanded section shows a hollow triangle pointing down, and a collapsed one the same
    triangle filled and pointing right. Like the font, the triangle takes about a third of the
@@ -150,7 +148,7 @@
   display: inline-block;
   width: 1em;
   height: 1em;
-  font-size: calc(1.8 * var(--font-size));
+  font-size: var(--arrow-size);
   vertical-align: middle;
   background-color: gray;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M3.2 3.6h3.6L5 6.7z' fill='none' stroke='black' stroke-width='0.6' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
@@ -192,7 +190,8 @@
 
   .course__contents {
     --indent: 0.75rem;
-    --font-size: 0.9rem;
+    --font-size: calc(1rem * var(--font-scale, 1));
+    --arrow-size: 1.6rem;
   }
 
   .course__contents :is(th, td) {

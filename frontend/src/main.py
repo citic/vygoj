@@ -13,7 +13,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from courses import CourseController
 from problems import BACKEND_CONNECT_TIMEOUT, BACKEND_STATUS_TIMEOUT, ProblemController
-from users import User, UserForm, log_out
+from users import DEFAULT_FONT, FONTS, User, UserForm, font_url, log_out
 from db import db
 from vyg_log import vyg_log
 
@@ -27,6 +27,9 @@ static_path = os.path.join(app_path, 'static/')
 # Flask web application instance requires the name of the application (this filename)
 app = flask.Flask(__name__, template_folder=template_path,
         static_url_path='', static_folder=static_path)
+
+# Every page uses the font chosen by the user, base.html loads it with these names
+app.jinja_env.globals.update(FONTS=FONTS, DEFAULT_FONT=DEFAULT_FONT, font_url=font_url)
 
 # Compress responses (bzip) and minify static files
 squeeze = Squeeze(app)

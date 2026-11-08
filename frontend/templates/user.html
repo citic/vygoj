@@ -22,6 +22,15 @@
           <fieldset class="preferences">
             {{ it.form.color_scheme.label }} {{ it.form.color_scheme(class="radio") }}
           </fieldset>
+          <fieldset class="preferences">
+            {{ it.form.font.label }}
+            {#- Each option is written in its font, so the user sees it before choosing #}
+            <ul class="radio" id="{{ it.form.font.id }}">
+            {%- for option in it.form.font %}
+              <li>{{ option() }} {{ option.label(class="font_sample", **{'data-font': option.data}) }}</li>
+            {%- endfor %}
+            </ul>
+          </fieldset>
           <p>
             {{ it.form.update(class="button confirm") }}
             {#{ it.form.logout(class="button reject") }#}
@@ -48,6 +57,15 @@
 {%- endblock %}
 {%- block styles %}
     <link rel="stylesheet" href="/css/user.css">
+{%- endblock %}
+{#- The preferences show a sample of every font. Google sends only their @font-face rules, the
+    browser downloads the files of the fonts used in the page #}
+{%- block fonts %}
+  {%- if it.user %}
+    {%- for key in FONTS if font_url(key) and key != font %}
+    <link rel="stylesheet" href="{{ font_url(key) }}">
+    {%- endfor %}
+  {%- endif %}
 {%- endblock %}
 {%- block scripts %}
   {{ super() }}

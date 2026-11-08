@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="en"{% if it.user and it.user.color_scheme in ['light', 'dark'] %} data-color-scheme="{{ it.user.color_scheme }}"{% endif %}>
+{#- Font chosen by the user, the default one for visitors and unknown values #}
+{%- set font = it.user.font if it.user and it.user.font in FONTS else DEFAULT_FONT %}
+<html lang="en"{% if it.user and it.user.color_scheme in ['light', 'dark'] %} data-color-scheme="{{ it.user.color_scheme }}"{% endif %} data-font="{{ font }}">
   <head>
     <meta charset="utf-8">
     <title>{%block title %}{{ it.get('title', 'Vygotsky Online Judge') }}{% endblock %} - VygOJ</title>
@@ -13,7 +15,10 @@
     <link rel="icon" type="image/svg+xml" href="/img/logo.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-    <link rel="stylesheet preload" href="https://fonts.googleapis.com/css2?family=Anaheim:wght@400..800&amp;display=swap" as="style">
+{%- if font_url(font) %}
+    <link rel="stylesheet" href="{{ font_url(font) }}">
+{%- endif %}
+{%- block fonts %}{% endblock %}
   </head>
   <body>
     <header class="site_header">

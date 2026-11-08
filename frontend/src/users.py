@@ -11,6 +11,25 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from db import db
 from vyg_log import vyg_log
 
+# Fonts the user may choose for the site: key stored in the database, label shown in the
+# preferences, and the family query of Google Fonts that loads it (None for fonts of the system).
+# site.css gives the CSS font family of each key
+FONTS = {
+    'anaheim': ('Anaheim', 'Anaheim:wght@400..800'),
+    'system': ('System UI', None),
+    'atkinson': ('Atkinson Hyperlegible', 'Atkinson+Hyperlegible+Next:wght@400..800'),
+    'inter': ('Inter', 'Inter:wght@400..800'),
+    'lexend': ('Lexend', 'Lexend:wght@400..800'),
+    'source_serif': ('Source Serif', 'Source+Serif+4:wght@400..800'),
+}
+DEFAULT_FONT = 'anaheim'
+
+def font_url(font: str) -> str | None:
+    """ Return the URL of the Google Fonts stylesheet that loads the given font, or None if the
+    font comes with the system. Unknown fonts get the default one """
+    query = FONTS.get(font, FONTS[DEFAULT_FONT])[1]
+    return f'https://fonts.googleapis.com/css2?family={query}&display=swap' if query else None
+
 class User(db.Model):
     """ Users are database models with personal data, credentials, and course progress """
     # SQLAlchemy uses the class name for the table, we prefer overriding it to add plural
@@ -29,6 +48,8 @@ class User(db.Model):
     role = db.Column(db.String(16), nullable=False, default='student')
     # Color scheme: 'default' follows the operating system, 'light' or 'dark' force one
     color_scheme = db.Column(db.String(8), nullable=False, default='default')
+    # Font of the site, one of the keys of FONTS
+    font = db.Column(db.String(16), nullable=False, default=DEFAULT_FONT)
     # Access all grades this user got in evaluations
     # backref adds a reference to this user in the Progress model
     progress = db.relationship('Progress', backref='role')
@@ -215,6 +236,9 @@ class UserForm(flask_wtf.FlaskForm):
         ('light', 'Light mode'),
         ('dark', 'Dark mode'),
     ], default='default')
+    # Font of the site. RadioField rejects values that are not in the choices
+    font = wtforms.RadioField('Font', choices=[(key, label) for key, (label, _) in FONTS.items()],
+        default=DEFAULT_FONT)
     # Save button. SubmitField renders <input type=submit> element
     update = wtforms.SubmitField('Save', id='confirm_button')
     # Login button, enabled when user is not logged in
@@ -239,12 +263,15 @@ class UserForm(flask_wtf.FlaskForm):
                 return log_out()
             # If user was logged in, update preferences
             if user:
-                # Save the chosen color scheme in the database and in the session
-                color_scheme = form.color_scheme.data
+                # Save the chosen color scheme and font in the database and in the session
+                preferences = {
+                    'color_scheme': form.color_scheme.data,
+                    'font': form.font.data,
+                }
                 db.session.execute(db.update(User).filter_by(username=user['email'])
-                    .values(color_scheme=color_scheme))
+                    .values(**preferences))
                 db.session.commit()
-                user['color_scheme'] = color_scheme
+                user.update(preferences)
                 flask.session['user'] = user
                 # TODO(I): Update the other user preferences in the database
                 flask.flash('Preferences updated successfully.', 'success')
@@ -272,6 +299,7 @@ class UserForm(flask_wtf.FlaskForm):
                         'fullname': db_user.fullname,
                         'role': db_user.role,
                         'color_scheme': db_user.color_scheme,
+                        'font': db_user.font,
                     }
                     flask.session['user'] = user
                     LoginAttempt.clear(name, address)

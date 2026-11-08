@@ -29,6 +29,43 @@ Monospace:
   --toolbar-icon: light-dark(#64748b, #94a3b8);
 }
 
+/* Font chosen by the user in the preferences (FONTS in src/users.py), on the page or on a sample
+   of the preferences. --font-scale makes the fonts with big letters a little smaller, so all of
+   them look as big as Anaheim, which is narrow and small */
+[data-font] {
+  --font-family: 'Anaheim', sans-serif;
+  --font-scale: 1;
+}
+
+[data-font="system"] {
+  --font-family: system-ui, sans-serif;
+  --font-scale: 0.9;
+}
+
+[data-font="atkinson"] {
+  --font-family: 'Atkinson Hyperlegible Next', sans-serif;
+  --font-scale: 0.9;
+}
+
+[data-font="inter"] {
+  --font-family: 'Inter', sans-serif;
+  --font-scale: 0.88;
+}
+
+[data-font="lexend"] {
+  --font-family: 'Lexend', sans-serif;
+  --font-scale: 0.88;
+}
+
+[data-font="source_serif"] {
+  --font-family: 'Source Serif 4', serif;
+  --font-scale: 0.95;
+}
+
+.font_sample {
+  font-family: var(--font-family);
+}
+
 /* Color scheme chosen by the user in the preferences, instead of the one of the OS */
 :root[data-color-scheme="light"] {
   color-scheme: light;
@@ -43,8 +80,8 @@ html {
 }
 
 body {
-  font-family: 'Anaheim', sans-serif;
-  font-size: 12pt;
+  font-family: var(--font-family, 'Anaheim', sans-serif);
+  font-size: calc(12pt * var(--font-scale, 1));
   font-display: swap;
   margin: 0;
   height: 100%;

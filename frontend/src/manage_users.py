@@ -95,7 +95,8 @@ def add_new_columns():
             "ALTER TABLE users RENAME COLUMN interface_mode TO color_scheme"))
     db.session.execute(db.text("ALTER TABLE users"
         " ADD COLUMN IF NOT EXISTS role VARCHAR(16) NOT NULL DEFAULT 'student',"
-        " ADD COLUMN IF NOT EXISTS color_scheme VARCHAR(8) NOT NULL DEFAULT 'default'"))
+        " ADD COLUMN IF NOT EXISTS color_scheme VARCHAR(8) NOT NULL DEFAULT 'default',"
+        " ADD COLUMN IF NOT EXISTS font VARCHAR(16) NOT NULL DEFAULT 'anaheim'"))
     db.session.commit()
 
 # Main --------------------------------------------------------------------------------------------
