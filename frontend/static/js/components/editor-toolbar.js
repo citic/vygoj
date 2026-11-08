@@ -45,6 +45,8 @@ class EditorToolbar extends HTMLElement {
       paste: async () => write(await navigator.clipboard.readText()),
       undo: () => editor.trigger('toolbar', 'undo'),
       redo: () => editor.trigger('toolbar', 'redo'),
+      // The native dialogs of the browser are enough for a simple confirmation
+      // eslint-disable-next-line no-alert
       clear: () => window.confirm('Do you want to clear all the code?') && write('', model.getFullModelRange()),
       // Fullscreen for the parent, so the toolbar and the editor stay together
       fullscreen: () => (document.fullscreenElement
@@ -53,6 +55,7 @@ class EditorToolbar extends HTMLElement {
     try {
       await actions[action]?.();
     } catch {
+      // eslint-disable-next-line no-alert
       window.alert('The browser blocked the clipboard. Use Ctrl+X, Ctrl+C or Ctrl+V.');
     }
     editor.focus();

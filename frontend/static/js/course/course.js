@@ -7,7 +7,7 @@ class CourseManager {
     const groups = [course];
     // Sections that contain the current row, from the course to the innermost one
     const open = [course];
-    for (const row of document.querySelectorAll('.course__contents tbody tr')) {
+    document.querySelectorAll('.course__contents tbody tr').forEach((row) => {
       const level = Number(row.dataset.level);
       while (open.at(-1).level >= level) {
         open.pop();
@@ -22,17 +22,18 @@ class CourseManager {
       } else if (element.dataset.problem) {
         // Anonymous users have no grade in the database, so they keep their local progress.
         // localStorage can be edited by anyone, so accept only integers from 0 to 100
-        const stored = element.dataset.grade ?? window.localStorage.getItem(element.dataset.problem);
+        const { grade, problem } = element.dataset;
+        const stored = grade ?? window.localStorage.getItem(problem);
         const saved = Math.round(Number(stored));
         const score = Math.min(Math.max(saved || 0, 0), 100);
         open.forEach((group) => group.scores.push(score));
         CourseManager.show(element, score);
       }
-    }
-    for (const { element, scores } of groups) {
+    });
+    groups.forEach(({ element, scores }) => {
       const sum = scores.reduce((total, score) => total + score, 0);
       CourseManager.show(element, scores.length ? Math.round(sum / scores.length) : 0);
-    }
+    });
     CourseManager.restore();
     document.querySelector('.course__contents').addEventListener('click', CourseManager.toggle);
     document.getElementById('toggle_all').addEventListener('click', CourseManager.toggleAll);
@@ -57,10 +58,11 @@ class CourseManager {
   }
 
   static expand(button, expanded) {
-    let row = button.closest('tr');
-    const level = Number(row.dataset.level);
+    const header = button.closest('tr');
+    const level = Number(header.dataset.level);
     button.setAttribute('aria-expanded', expanded);
-    while ((row = row.nextElementSibling) && Number(row.dataset.level) > level) {
+    for (let row = header.nextElementSibling; row && Number(row.dataset.level) > level;
+      row = row.nextElementSibling) {
       row.hidden = !expanded;
       row.querySelector('button')?.setAttribute('aria-expanded', expanded);
     }

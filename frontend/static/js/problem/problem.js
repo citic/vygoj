@@ -363,6 +363,8 @@ class ProblemManager {
     });
 
     document.getElementById('revert_button').addEventListener('click', () => {
+      // The native dialogs of the browser are enough for a simple confirmation
+      // eslint-disable-next-line no-alert
       if (window.confirm('Do you want to revert to the initial code?')) {
         // An edit instead of setValue(), so Undo can bring back the code that was replaced
         const editor = this.editors[0];
