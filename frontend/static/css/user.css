@@ -1,19 +1,27 @@
 @import url('site.css');
 @import url('form.css');
 
+/* Preferences of a logged user */
+.user_preferences {
+  & ul {
+    list-style: none;
+  }
+
+  /* Each font is written in itself; site.css sets --font-family for its data-font */
+  & label[data-font] {
+    font-family: var(--font-family);
+  }
+}
+
+/* Login form for visitors */
 .login {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-}
 
-/*
-.login_form {
-}
-*/
-
-.login_credentials {
-  display: flex;
-  flex-direction: column;
-  padding-bottom: 2em;
+  & .credentials {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 2em;
+  }
 }

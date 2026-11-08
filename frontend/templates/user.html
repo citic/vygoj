@@ -3,35 +3,32 @@
   {%- if it.user %}
       <main class="user_preferences">
         <h2>Preferences for {{ it.user.role }} user {{ it.user.email }}</h2>
-    {%- if it.errorMessage %}
-        <p class="login_message error">{{ it.errorMessage }}</p>
-    {%- endif %}
-        <form class="preferences_form" method="post">
+        <form method="post">
           {{ it.form.hidden_tag() }}
           <fieldset class="user_information">
             <legend>User information</legend>
             {{ it.form.fullname.label }} {{ it.form.fullname() }}
             {{ it.form.email.label }} {{ it.form.email() }}
           </fieldset>
-          <fieldset class="user_password">
+          <fieldset class="password">
             <legend>Change password</legend>
             {{ it.form.password.label }} {{ it.form.password() }}
             {{ it.form.new_password.label }} {{ it.form.new_password() }}
             {{ it.form.confirm_password.label }} {{ it.form.confirm_password() }}
           </fieldset>
-          <fieldset class="preferences">
-            {{ it.form.color_scheme.label }} {{ it.form.color_scheme(class="radio") }}
+          <fieldset class="color_scheme">
+            {{ it.form.color_scheme.label }} {{ it.form.color_scheme() }}
           </fieldset>
-          <fieldset class="preferences">
+          <fieldset class="font">
             {{ it.form.font.label }}
             {#- Each option is written in its font, so the user sees it before choosing #}
-            <ul class="radio" id="{{ it.form.font.id }}">
+            <ul id="{{ it.form.font.id }}">
             {%- for option in it.form.font %}
-              <li>{{ option() }} {{ option.label(class="font_sample", **{'data-font': option.data}) }}</li>
+              <li>{{ option() }} {{ option.label(**{'data-font': option.data}) }}</li>
             {%- endfor %}
             </ul>
           </fieldset>
-          <p>
+          <p class="actions">
             {{ it.form.update(class="button confirm") }}
             {#{ it.form.logout(class="button reject") }#}
             {#- Logout changes the session, so it is a POST with the CSRF token of this form #}
@@ -42,14 +39,14 @@
       </main>
     {%- else %}
       <main class="login">
-        <form class="login_form" method="post">
+        <form method="post">
           {{ it.form.hidden_tag() }}
-          <fieldset class="login_credentials">
+          <fieldset class="credentials">
             <legend>User credentials</legend>
             {{ it.form.email.label }} {{ it.form.email() }}
             {{ it.form.password.label }} {{ it.form.password() }}
           </fieldset>
-          <p><small>By pressing the button below you are accepting the use of cookies in this site to keep your session active.</small></p>
+          <p class="cookie_notice"><small>By pressing the button below you are accepting the use of cookies in this site to keep your session active.</small></p>
           {{ it.form.login() }}
         </form>
       </main>

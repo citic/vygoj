@@ -8,23 +8,23 @@
   {%- for item in contents if not item.type.startswith('_') %}
     {%- set number = prefix ~ loop.index %}
     {%- set label = number ~ ('.' if level == 2 else '') ~ ' ' ~ (item.title or item.folder) %}
-            <tr class="course__{{ item.type }}" data-level="{{ level }}">
+            <tr data-type="{{ item.type }}" data-level="{{ level }}">
     {%- if item.type == 'section' %}
-              <th scope="row"><h{{ [level, 6]|min }}><button type="button" aria-expanded="true">{{ label }}</button></h{{ [level, 6]|min }}></th>
-              <td class="course__deadline"></td>
-              <td class="course__progress"></td>
+              <th scope="row" class="name"><h{{ [level, 6]|min }}><button type="button" aria-expanded="true">{{ label }}</button></h{{ [level, 6]|min }}></th>
+              <td class="deadline"></td>
+              <td class="progress"></td>
             </tr>
 {{- course_rows(item.contents, level + 1, number ~ '.') }}
     {%- else %}
-              <td>
+              <td class="name">
       {%- if item.type == 'problem' -%}
                 <a href="{{ item.build_url() }}">{{ label }}</a>
       {%- else -%}
                 {{ label }}
       {%- endif -%}
               </td>
-              <td class="course__deadline"></td>
-              <td class="course__progress"{% if item.type == 'problem' %} data-problem="{{ item.name }}"
+              <td class="deadline"></td>
+              <td class="progress"{% if item.type == 'problem' %} data-problem="{{ item.name }}"
                 {%- if item.name in it.progress %} data-grade="{{ it.progress[item.name] }}"{% endif %}{% endif %}></td>
             </tr>
     {%- endif %}
@@ -33,25 +33,30 @@
 
 {%- block main %}
       <main class="course">
-        <article class="course__description">
-          <header class="course__summary">
-            <div>
-              <h3 class="course__title">{{ it.course.title }}</h3>
-              <p class="course__code line">Code: {{ it.course.name }}</p>
-              <p class="course__instructors">Instructors:
+        <article class="description">
+          <header class="summary">
+            <h3>{{ it.course.title }}</h3>
+            <dl>
+              <dt>Code</dt>
+              <dd>{{ it.course.name }}</dd>
+              <dt>Instructors</dt>
+              <dd>
 {%- for instructor in it.course.authors %}
-                <a class="course__instructor" href="/prof/{{ instructor }}">{{ instructor }}</a>
+                <a href="/prof/{{ instructor }}">{{ instructor }}</a>
 {%- endfor %}
-              </p>
-            </div>
-            <p class="course__total">Progress <strong id="course_progress"></strong></p>
+              </dd>
+            </dl>
+            <dl class="total">
+              <dt>Progress</dt>
+              <dd id="course_progress"></dd>
+            </dl>
           </header>
-          <table class="course__contents" data-course="{{ it.course.name }}">
+          <table class="contents" data-course="{{ it.course.name }}">
             <thead>
               <tr>
-                <th scope="col"><button type="button" id="toggle_all" aria-expanded="true">Contents</button></th>
-                <th scope="col">Deadline</th>
-                <th scope="col">Progress</th>
+                <th scope="col" class="name"><button type="button" id="toggle_all" aria-expanded="true">Contents</button></th>
+                <th scope="col" class="deadline">Deadline</th>
+                <th scope="col" class="progress">Progress</th>
               </tr>
             </thead>
             <tbody>

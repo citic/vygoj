@@ -91,10 +91,22 @@ to the general rules in the root `CLAUDE.md`:
 - Use semantic HTML5: `header`, `nav`, `main`, `article`, `section`, `aside`, `footer`,
   headings in order, `button` for actions and `a` for navigation, `label` linked to its control,
   and lists for lists. Do not use `div` when a semantic element fits.
+- Name the role of elements with a class, or an `id` when they are unique in the page, also when
+  no CSS or JS uses it yet: developers read the role in the markup, whatever language its text is
+  in. Name every element that repeats among its siblings (the `fieldset`s of a form, the cells of
+  a row) and every element whose role the element itself does not tell (`nav class="breadcrumbs"`,
+  `details class="solution"`). Every `div` and `span` has a class or an `id`, unless a more
+  semantic element fits: `p` for a text, `ul` for a list (also
+  of cards), `dl` for names and values, `figure` and `figcaption` for an output with its title,
+  `output` for the result of an action. Keep the markup compact: drop a wrapper `div` when a grid
+  can place the elements without it.
 - Every `img` needs a meaningful `alt` (empty `alt=""` only for decorative images), and icon-only
   buttons need `aria-label`.
 - No inline `style` attributes or inline event handlers (`onclick`); styles go to `static/css/`
   and behavior to `static/js/`.
 - Load page scripts as ES modules: `<script src="/js/..." type="module" async></script>`.
-- CSS classes follow the existing BEM-like naming with underscores:
-  `block`, `block__element`, `block--modifier` (e.g. `site_header__title`).
+- One CSS class per component, in snake_case (e.g. `site_header`, `flash_messages`). CSS selects
+  its parts by element (`.site_header h1`); a part whose role the element does not tell uses a
+  more specific element (`dl` for names and values) or a short role class (`progress`). States
+  go in standard or `data-*`/`aria-*` attributes (`hidden`, `open`, `aria-expanded`,
+  `data-status`). See the CSS rules in `static/CLAUDE.md`.

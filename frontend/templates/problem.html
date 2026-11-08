@@ -6,17 +6,17 @@
 {%- endblock %}
 {%- block main %}
       <main id="problem" class="problem" data-name="{{ it.problem.name }}" data-csrf-token="{{ csrf_token() }}">
-        <article class="problem__description">
-          <h2 class="problem__title">{{ it.problem.title }}</h2>
-          <div class="problem__statement">{{ it.problem.statement|safe }}</div>
+        <article class="description">
+          <h2>{{ it.problem.title }}</h2>
+          <div class="statement">{{ it.problem.statement|safe }}</div>
         </article>
-        <details class="problem__solution" open>
+        <details class="solution" open>
           <summary>Your solution</summary>
-          <div>
+          <div class="editor">
             <editor-toolbar for="code_editor">
               <div class="layout_menu">
                 <button type="button" class="material-symbols-outlined" title="Layout" aria-label="Layout">space_dashboard</button>
-                <form id="layouts" class="layout_menu__options">
+                <form id="layouts">
                   <label><input type="radio" name="layout" value="top" checked><span class="material-symbols-outlined" aria-hidden="true">splitscreen_top</span> Statement on top</label>
                   <label><input type="radio" name="layout" value="left"><span class="material-symbols-outlined" aria-hidden="true">splitscreen_left</span> Statement on the left</label>
                   <label><input type="radio" name="layout" value="right"><span class="material-symbols-outlined" aria-hidden="true">splitscreen_right</span> Statement on the right</label>
@@ -31,9 +31,9 @@
             <monaco-editor id="code_editor" aria-label="Your solution"></monaco-editor>
           </div>
         </details>
-        <div class="solution__evaluation">
-          <div class="row">
-            <p>
+        <section class="evaluation">
+          <header>
+            <p class="actions">
 {%- if it.user %}
               <button id="run_button" class="button action" disabled="disabled" title="Run my solution against the test cases">Run</button>
 {%- else %}
@@ -46,39 +46,39 @@
               <span id="passed_test_count">0</span>/<span id="total_test_count">{{ it.problem.tests.length }}</span>
               test cases passed (<span id="user_points">0</span>/<span id="total_points">{{ it.problem.calculate_total_points() }}</span> points)
             </p>
-          </div>
-          <div id="diagnostics_wrapper" class="hidden">
-            <em class="error">Compiler output</em>
-            <pre id="diagnostics" class="output">No errors</pre>
-          </div>
-          <div id="test_cases">
+          </header>
+          <figure id="diagnostics_wrapper" hidden>
+            <figcaption>Compiler output</figcaption>
+            <pre id="diagnostics">No errors</pre>
+          </figure>
+          <div class="test_cases">
 {%- for test in it.problem.tests %}
-            <button class="test_button button small" title="Test case {{ loop.index }}">{{ loop.index }}</button>
+            <button class="button small" title="Test case {{ loop.index }}">{{ loop.index }}</button>
 {%- endfor %}
           </div>
-          <div id="active_test" class="row top">
-            <div id="active_test_input_wrapper" class="editor_wrapper">
+          <div id="active_test" class="test_editors">
+            <div id="active_test_input_wrapper">
               <label for="active_test_input">Input</label>
               <monaco-editor id="active_test_input" readonly></monaco-editor>
             </div>
-            <div id="active_test_expected_output_wrapper" class="editor_wrapper">
+            <div id="active_test_expected_output_wrapper">
               <label for="active_test_expected_output">Expected output</label>
               <monaco-editor id="active_test_expected_output" readonly></monaco-editor>
             </div>
-            <div id="active_test_user_output_wrapper" class="editor_wrapper">
+            <div id="active_test_user_output_wrapper">
               <label for="active_test_user_output">Your output</label>
               <monaco-editor id="active_test_user_output" readonly></monaco-editor>
             </div>
-            <div id="output_diff_wrapper" class="editor_wrapper hidden">
-              <div class="row"><label for="output_diff">Expected output</label><label for="output_diff">Your output</label></div>
+            <div id="output_diff_wrapper" hidden>
+              <header><label for="output_diff">Expected output</label><label for="output_diff">Your output</label></header>
               <monaco-editor id="output_diff" readonly diff></monaco-editor>
             </div>
           </div>
-          <div id="stderr_wrapper" class="hidden">
-            <em class="error">Standard error output</em>
-            <pre id="stderr" class="output"></pre>
-          </div>
-          <div id="test_verdict"></div>
-        </div>
+          <figure id="stderr_wrapper" hidden>
+            <figcaption>Standard error output</figcaption>
+            <pre id="stderr"></pre>
+          </figure>
+          <output id="test_verdict"></output>
+        </section>
       </main>
 {%- endblock %}

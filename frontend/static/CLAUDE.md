@@ -50,7 +50,9 @@ errors and the layout at phone and desktop widths.
 - Comment each class field with its purpose and type (`// HTMLButtonElement`), as existing code
   does. 2-space indentation, single quotes, semicolons, trailing commas (AirBnB).
 - Attach behavior with `addEventListener` from the module, not inline attributes.
-- Show and hide elements by toggling CSS classes (e.g. `hidden`), not by writing inline styles.
+- Show and hide elements with their `hidden` property (`element.hidden = true`), and keep other
+  states in attributes (`aria-current`, `data-status`...) that CSS selects; do not write inline
+  styles or toggle classes.
 
 ### Security
 
@@ -82,8 +84,33 @@ errors and the layout at phone and desktop widths.
   overflow a phone screen. Images use `max-width: 100%`.
 - Reuse the custom properties declared in `:root` of `site.css` (`--success`, `--error`...)
   instead of hard-coding colors; add new ones there.
-- Class names follow the BEM-like underscore convention: `block`, `block__element`,
-  `block--modifier`. Avoid styling by `id` and avoid `!important`.
+- Semantic HTML with native CSS nesting, without a naming methodology such as BEM:
+  - Each component has one class in snake_case (`flash_messages`, `layout_menu`) or is a custom
+    element (`editor-toolbar`). Its rules are nested in one block of its CSS file, with a comment
+    that says what the component is.
+  - Its parts are selected by element and structure in nested rules (`& > header`, `& li`). Use
+    `>` where the structure matters, and keep nesting shallow.
+  - Name the role of the parts with a short class (or an `id` if unique), also when no CSS or JS
+    uses it yet: every part that repeats among its siblings (`td class="deadline"`, `fieldset
+    class="password"`) and every part whose role the element does not tell (`details
+    class="solution"`). Every `div` and `span` has a class or an `id`. Before a class, look for a
+    more specific semantic element: `dl` for pairs of names and values
+    (`<dt>Code</dt><dd>test101</dd>`, laid out with a grid of two columns), `ul` for lists (also of
+    cards), `figure`/`figcaption`, `output`, `time`, `address`. CSS and JS prefer these names over
+    positions (`.progress`, not `td:last-child`). Select a part class only inside its component
+    (`.course .contents`), never alone, and do not use names that Asciidoctor or Markdown generate
+    (`title`, `content`, `paragraph`...): statements keep their classes, so they would get those
+    styles.
+  - States are standard or `data-*`/`aria-*` attributes, not classes: `hidden`, `disabled`,
+    `open`, `aria-expanded`, `aria-current="true"`, `data-status="passed"`,
+    `data-category="error"`.
+  - The shared variants of buttons are the only extra classes: `button` (a link that looks like a
+    button), `small`, and the colors `confirm`, `reject`, `danger`, and `action` (`form.css`).
+  - Kebab-case only for classes of external libraries (`material-symbols-outlined`).
+  - Avoid styling by `id` and avoid `!important`.
+- Stylelint (`no-descending-specificity`) asks for the less specific selectors first. When it
+  complains about selectors that never match the same element, reorder the components instead of
+  splitting them; a rule that must win over another should do it by specificity, not by order.
 - Each animation (`@keyframes`, `transition`) goes in the CSS of the component it animates;
   only animations shared by several pages go in `site.css`. The `prefers-reduced-motion` rule of
   `site.css` stops all of them for users who ask their OS to reduce motion (it is the only place

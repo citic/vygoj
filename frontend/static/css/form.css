@@ -1,6 +1,8 @@
 /* Adapted from https://www.sanwebe.com/2014/08/css-html-forms-designs */
 
-label:not(:first-of-type) {
+/* Space between the fields of a form. Only in fieldsets: labels elsewhere, such as the ones of
+   the editors in the problem page, are not form fields */
+fieldset label:not(:first-of-type) {
   margin-top: 1rem;
 }
 
@@ -70,16 +72,4 @@ button:hover:not([disabled]),
 .button:hover:not([disabled]) {
   font-weight: bold;
   filter: drop-shadow(2px 2px 2px gray);
-}
-
-.form_controls {
-  text-align: center;
-}
-
-.button_bar {
-  margin-bottom: 0;
-}
-
-.radio {
-  list-style: none;
 }

@@ -87,38 +87,32 @@ class Site {
   }
 
   showBackendOffline(message, log) {
-    Site.setStatusImage(this.backendOfflineElement, 'visible_inline', message, log);
-    Site.setStatusImage(this.backendOnlineElement, 'hidden', message, log);
+    Site.setStatusImage(this.backendOfflineElement, true, message, log);
+    Site.setStatusImage(this.backendOnlineElement, false, message, log);
   }
 
   showBackendOnline(message) {
-    Site.setStatusImage(this.backendOfflineElement, 'hidden', message, false);
-    Site.setStatusImage(this.backendOnlineElement, 'visible_inline', message, false);
+    Site.setStatusImage(this.backendOfflineElement, false, message, false);
+    Site.setStatusImage(this.backendOnlineElement, true, message, false);
   }
 
-  static setStatusImage(element, status, message, log) {
+  static setStatusImage(element, visible, message, log) {
     if (log) {
       console.error(message);
     }
-    element.className = status;
+    element.hidden = !visible;
     element.title = message;
   }
 
   // eslint-disable-next-line class-methods-use-this
   setupFlashMessages() {
-    // Find all close buttons
-    const closeButtons = document.querySelectorAll('.flash_message__close');
-    // Add click event to each button
-    closeButtons.forEach((button) => {
-      button.addEventListener('click', (/* element */) => {
-        const flashMessage = button.closest('.flash_message');
-        if (flashMessage) {
-          flashMessage.remove();
-          // If no more flash messages, remove the container
-          const flashContainer = document.querySelector('.flash_messages');
-          if (flashContainer && flashContainer.children.length === 0) {
-            flashContainer.remove();
-          }
+    // The close button of each message removes it, and the list after its last message
+    document.querySelectorAll('.flash_messages button').forEach((button) => {
+      button.addEventListener('click', () => {
+        const list = button.closest('.flash_messages');
+        button.closest('li').remove();
+        if (list.children.length === 0) {
+          list.remove();
         }
       });
     });

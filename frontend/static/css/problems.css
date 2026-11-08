@@ -1,65 +1,12 @@
 @import url('site.css');
 @import url('form.css');
 
-.problem_section__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin: 2rem 0 0.5rem;
-}
-
-.problem_section__header h3 {
-  margin: 0;
-}
-
-.problem_item {
-  border: 1px solid gray;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  display: flex;
-  box-shadow: 0 3px 8px rgb(0 0 0 / 25%);
-  background-color: var(--surface);
-}
-
-.problem_item:not(:first-child) {
-  margin-top: 1rem;
-}
-
-.problem__statement pre {
-  margin-top: 0;
-  background-color: var(--surface-alt);
-  border: 1px solid gray;
-  border-radius: 5px;
-  padding: 0.5em 1rem;
-  font-size: smaller;
-  white-space: pre-wrap; /* enable word-wrap */
-  overflow-wrap: break-word; /* break long words such as URIs */
-}
-
-/* Videos are as wide as the statement, up to their usual width */
-.problem__statement video {
-  width: 100%;
-  max-width: 640px;
-  height: auto;
-}
-
-/* The sanitizer removes the URLs of videos of other sites, so they are hidden instead of showing
-   an empty player */
-.problem__statement video:not([src], :has(source[src])) {
-  display: none;
-}
-
 /* Monaco scrolls its own code. Hidden overflow keeps the corner handle of resize over the
    editor; with auto, Chrome hid it after shrinking the editor */
 monaco-editor {
   display: block;
   overflow: hidden;
   resize: vertical;
-}
-
-.problem__solution monaco-editor {
-  min-height: 5rem;
-  max-height: 60vh;
 }
 
 label,
@@ -75,81 +22,34 @@ summary {
   cursor: pointer;
 }
 
-.editor_wrapper {
-  width: 100%;
-  min-width: 0; /* Lets the editors shrink when the page gets narrower, e.g. with zoom */
-  margin-right: 1px;
-}
+/* Statement written by the course authors, cleaned by the sanitizer. The narrower the statement,
+   the bigger its letters: 1rem when wide, up to 1.25rem when narrow */
+.statement {
+  font-size: clamp(1rem, 1.5rem - 1.2cqw, 1.25rem);
 
-.editor_wrapper monaco-editor {
-  height: 6.25rem;
-}
+  & pre {
+    margin-top: 0;
+    background-color: var(--surface-alt);
+    border: 1px solid gray;
+    border-radius: 5px;
+    padding: 0.5em 1rem;
+    font-size: smaller;
+    white-space: pre-wrap; /* enable word-wrap */
+    overflow-wrap: break-word; /* break long words such as URIs */
+  }
 
-/* The second label of the diff must not get the top margin that form.css gives to form labels */
-.editor_wrapper label {
-  margin-top: 0;
-}
+  /* Videos are as wide as the statement, up to their usual width */
+  & video {
+    width: 100%;
+    max-width: 640px;
+    height: auto;
+  }
 
-/* Each label of the diff is as wide as its side, so they stay where the output labels were */
-.editor_wrapper .row label {
-  flex: 1;
-}
-
-/* The diff replaces the expected and user outputs, so it shrinks half as much to take their
-   two thirds and the input keeps its width */
-.editor_wrapper:has([diff]) {
-  flex-shrink: 0.5;
-}
-
-/* The diff is one box, so a double line in its middle draws the borders of the two output boxes
-   that it replaces */
-monaco-editor[diff] {
-  position: relative;
-}
-
-monaco-editor[diff]::after {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 calc(50% - 1px);
-  z-index: 1;
-  width: 1px;
-  border-inline: 1px solid black;
-}
-
-.passed {
-  background: #40963581;
-}
-
-.failed {
-  background: rgb(255 0 0 / 50%);
-}
-
-.output {
-  height: auto;
-  max-height: 200px;
-  overflow: auto;
-  background-color: var(--surface-alt);
-}
-
-.test_button:hover:not(.disabled, .selected) {
-  border: 1px dashed;
-}
-
-.test_button.selected {
-  position: relative;
-  border: 1px solid;
-}
-
-.test_button.selected::after {
-  /* Triangle below active test case https://stackoverflow.com/a/41328158 */
-  border-right: solid 10px transparent;
-  border-left: solid 10px transparent;
-  border-top: solid 10px CanvasText;
-  transform: translateX(-50%);
-  position: absolute;
-  content: '';
-  top: 100%;
-  left: 50%;
+  /* The sanitizer removes the URLs of videos of other sites, so they are hidden instead of
+     showing an empty player */
+  & video:not([src], :has(source[src])) {
+    display: none;
+  }
 }
 
 /* Toolbar of the code editor: a row of small icon buttons */
@@ -160,127 +60,248 @@ editor-toolbar {
   padding: 2px;
   border: 1px solid var(--toolbar-border);
   background: var(--toolbar-bg);
-}
 
-editor-toolbar button.material-symbols-outlined {
-  min-width: 0;
-  padding: 4px;
-  font-size: 18px;
-  box-shadow: none;
-  background: none;
-  color: var(--toolbar-icon);
-}
+  & button.material-symbols-outlined {
+    min-width: 0;
+    padding: 4px;
+    font-size: 18px;
+    box-shadow: none;
+    background: none;
+    color: var(--toolbar-icon);
+  }
 
-/* Replaces the bold and shadow that form.css gives to buttons on hover */
-editor-toolbar button:hover:not([disabled]) {
-  filter: none;
-  background: var(--toolbar-border);
-}
+  /* Replaces the bold and shadow that form.css gives to buttons on hover */
+  & button:hover:not([disabled]) {
+    filter: none;
+    background: var(--toolbar-border);
+  }
 
-/* The language list goes at the right end of the toolbar */
-editor-toolbar select {
-  margin-left: auto;
+  /* The language list goes at the right end of the toolbar */
+  & select {
+    margin-left: auto;
+  }
 }
 
 /* Layout menu: its options show while the mouse is over it or it has the focus (keyboard, touch) */
 .layout_menu {
   display: flex; /* Its button is a flex item like the other buttons, so it is not lifted by the line height */
   position: relative;
+
+  /* Its icon is drawn smaller than the others: a bigger font with less padding keeps the button size */
+  & button.material-symbols-outlined {
+    padding: 3.5px;
+    font-size: 19px;
+  }
+
+  & form {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 10; /* Over the Monaco editor */
+    padding: 4px;
+    border: 1px solid var(--toolbar-border);
+    border-radius: 6px;
+    background: var(--toolbar-bg);
+    white-space: nowrap;
+  }
+
+  &:hover form,
+  &:focus-within form {
+    display: block;
+  }
+
+  /* Each option: its icon next to its text, without the bold of the other labels */
+  & label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-weight: normal;
+    font-style: normal;
+    cursor: pointer;
+  }
+
+  /* The radio is hidden but still works with the keyboard; the chosen option is highlighted */
+  & input {
+    position: absolute;
+    opacity: 0;
+  }
+
+  & label:hover,
+  & label:has(:checked) {
+    background: var(--toolbar-border);
+  }
+
+  & label:has(:focus-visible) {
+    outline: 2px solid var(--toolbar-icon);
+  }
+
+  /* Same size and color as the toolbar icons */
+  & label span {
+    font-size: 18px;
+    color: var(--toolbar-icon);
+  }
 }
 
-/* Its icon is drawn smaller than the others: a bigger font with less padding keeps the button size */
-.layout_menu button.material-symbols-outlined {
-  padding: 3.5px;
-  font-size: 19px;
-}
-
-.layout_menu__options {
-  display: none;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  z-index: 10; /* Over the Monaco editor */
-  padding: 4px;
-  border: 1px solid var(--toolbar-border);
-  border-radius: 6px;
-  background: var(--toolbar-bg);
-  white-space: nowrap;
-}
-
-.layout_menu:hover .layout_menu__options,
-.layout_menu:focus-within .layout_menu__options {
-  display: block;
-}
-
-/* Each option: its icon next to its text, without the margin and bold of the other labels.
-   The labels of the editor wrapper are other elements, so the order with them does not matter */
-/* stylelint-disable-next-line no-descending-specificity */
-.layout_menu__options label {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin: 0;
-  padding: 2px 6px;
-  border-radius: 6px;
-  font-weight: normal;
-  font-style: normal;
-  cursor: pointer;
-}
-
-/* The radio is hidden but still works with the keyboard; the chosen option is highlighted */
-.layout_menu__options input {
-  position: absolute;
-  opacity: 0;
-}
-
-.layout_menu__options label:hover,
-.layout_menu__options label:has(:checked) {
-  background: var(--toolbar-border);
-}
-
-.layout_menu__options label:has(:focus-visible) {
-  outline: 2px solid var(--toolbar-icon);
-}
-
-/* Same size and color as the toolbar icons */
-.layout_menu__options .material-symbols-outlined {
-  font-size: 18px;
-  color: var(--toolbar-icon);
-}
-
-/* Fullscreen button of the toolbar: the editor fills the screen below the toolbar */
-:fullscreen {
-  display: flex;
-  flex-direction: column;
-  background: Canvas;
-}
-
-:fullscreen monaco-editor {
-  flex: 1;
-  max-height: none;
-}
-
-/* The statement can be made shorter with its corner handle; problem.js remembers its size */
-.problem__description {
-  max-width: 100%;
-  overflow: auto;
-  resize: vertical;
-  container-type: inline-size; /* For the cqw unit of its text */
-}
-
-/* The narrower the statement, the bigger its letters: 1rem when wide, up to 1.25rem when narrow */
-.problem__statement {
-  font-size: clamp(1rem, 1.5rem - 1.2cqw, 1.25rem);
-}
-
-/* A narrow evaluation puts its parts one below the other, as site.css does on small screens */
-.solution__evaluation {
+/* Evaluation of the solution: run buttons and score, compiler output, test cases, outputs of the
+   selected test case, and its verdict. A narrow evaluation puts its parts one below the other,
+   as on small screens */
+.evaluation {
   container-type: inline-size;
+
+  /* Run and Finish buttons on one side, the score on the other */
+  & > header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  /* Compiler and standard error outputs, each one with its title */
+  & figure {
+    margin: 0;
+  }
+
+  & figcaption {
+    font-style: italic;
+    color: red;
+  }
+
+  /* Verdict of the selected test case */
+  & output {
+    display: block;
+  }
+
+  & pre {
+    height: auto;
+    max-height: 200px;
+    overflow: auto;
+    background-color: var(--surface-alt);
+  }
+}
+
+/* A button for each test case. The selected one has a triangle below, and after a run, each
+   one has the color of its result */
+.test_cases button {
+  &:hover:not([aria-current="true"]) {
+    border: 1px dashed;
+  }
+
+  &[aria-current="true"] {
+    position: relative;
+    border: 1px solid;
+  }
+
+  &[aria-current="true"]::after {
+    /* Triangle below active test case https://stackoverflow.com/a/41328158 */
+    border-right: solid 10px transparent;
+    border-left: solid 10px transparent;
+    border-top: solid 10px CanvasText;
+    transform: translateX(-50%);
+    position: absolute;
+    content: '';
+    top: 100%;
+    left: 50%;
+  }
+
+  &[data-status="passed"] {
+    background: #40963581;
+  }
+
+  &[data-status="failed"] {
+    background: rgb(255 0 0 / 50%);
+  }
+}
+
+/* Input, expected output, and user output of the selected test case, side by side. With a wrong
+   output, a diff takes the place of the two outputs */
+.test_editors {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+
+  & > div {
+    width: 100%;
+    min-width: 0; /* Lets the editors shrink when the page gets narrower, e.g. with zoom */
+    margin-right: 1px;
+  }
+
+  /* The diff replaces the expected and user outputs, so it shrinks half as much to take their
+     two thirds and the input keeps its width */
+  & > div:has([diff]) {
+    flex-shrink: 0.5;
+  }
+
+  /* Each label of the diff is as wide as its side, so they stay where the output labels were */
+  & header {
+    display: flex;
+
+    & > * {
+      flex: 1;
+    }
+  }
+
+  & monaco-editor {
+    height: 6.25rem;
+  }
+
+  /* The diff is one box, so a double line in its middle draws the borders of the two output
+     boxes that it replaces */
+  & monaco-editor[diff] {
+    position: relative;
+  }
+
+  & monaco-editor[diff]::after {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 calc(50% - 1px);
+    z-index: 1;
+    width: 1px;
+    border-inline: 1px solid black;
+  }
+}
+
+/* Problem page: the statement, the solution (code editor), and the evaluation. Its layout is
+   chosen in the layout menu */
+.problem {
+  /* The statement can be made shorter with its corner handle; problem.js remembers its size */
+  & > .description {
+    max-width: 100%;
+    overflow: auto;
+    resize: vertical;
+    container-type: inline-size; /* For the cqw unit of its text */
+  }
+
+  & > .solution monaco-editor {
+    min-height: 5rem;
+    max-height: 60vh;
+  }
+
+  /* Fullscreen button of the toolbar: the editor fills the screen below the toolbar */
+  & .editor:fullscreen {
+    display: flex;
+    flex-direction: column;
+    background: Canvas;
+
+    & monaco-editor {
+      flex: 1;
+      max-height: none;
+    }
+  }
+}
+
+@media (width <= 640px) {
+  .evaluation > header,
+  .test_editors {
+    flex-direction: column;
+  }
 }
 
 @container (width < 30rem) {
-  .solution__evaluation > .row,
-  .solution__evaluation .row.top {
+  .evaluation > header,
+  .test_editors {
     flex-direction: column;
     align-items: stretch;
   }
@@ -292,61 +313,59 @@ editor-toolbar select {
   .problem {
     column-gap: 1rem;
     align-items: start;
-  }
 
-  .problem__description {
-    grid-area: description;
-  }
+    & > .description {
+      grid-area: description;
+    }
 
-  .problem__solution {
-    grid-area: solution;
-  }
+    & > .solution {
+      grid-area: solution;
+    }
 
-  /* As wide as the statement: width 0 keeps its content from widening the column */
-  .solution__evaluation {
-    grid-area: evaluation;
-    width: 0;
-    min-width: 100%;
-  }
+    /* As wide as the statement: width 0 keeps its content from widening the column */
+    & > .evaluation {
+      grid-area: evaluation;
+      width: 0;
+      min-width: 100%;
+    }
 
-  .problem:has([value="left"]:checked) {
-    display: grid;
-    grid-template: "description solution" auto "evaluation solution" 1fr / auto minmax(0, 1fr);
-  }
+    /* With the editor hidden, everything goes one below the other, as in the top layout.
+       min-width wins over the width given by the corner handle, which is kept for later */
+    &:has(> .solution:not([open])) > .description {
+      min-width: 100%;
+      max-height: none;
+      resize: vertical;
+    }
 
-  .problem:has([value="right"]:checked) {
-    display: grid;
-    grid-template: "solution description" auto "solution evaluation" 1fr / minmax(0, 1fr) auto;
-  }
+    /* Right to left moves the corner handle to the bottom left, next to the editor */
+    &:has([value="right"]:checked) > .description {
+      direction: rtl;
 
-  /* Side by side, the corner handle changes the width of the statement and the editor takes the rest.
-     The statement scrolls inside a box shorter than the screen, so its corner handle is in sight */
-  .problem:has([value="left"]:checked, [value="right"]:checked) .problem__description {
-    width: 45vw;
-    min-width: 20vw;
-    max-width: 70vw;
-    max-height: 80vh;
-    resize: horizontal;
-  }
+      & > * {
+        direction: ltr;
+      }
+    }
 
-  /* Right to left moves the corner handle to the bottom left, next to the editor */
-  .problem:has([value="right"]:checked) .problem__description {
-    direction: rtl;
-  }
+    /* Side by side only while the editor is open */
+    &:has(> .solution[open]):has([value="left"]:checked) {
+      display: grid;
+      grid-template: "description solution" auto "evaluation solution" 1fr / auto minmax(0, 1fr);
+    }
 
-  .problem:has([value="right"]:checked) .problem__description > * {
-    direction: ltr;
-  }
+    &:has(> .solution[open]):has([value="right"]:checked) {
+      display: grid;
+      grid-template: "solution description" auto "solution evaluation" 1fr / minmax(0, 1fr) auto;
+    }
 
-  /* With the editor hidden, everything goes one below the other, as in the top layout.
-     min-width wins over the width given by the corner handle, which is kept for later */
-  .problem:has(.problem__solution:not([open])) {
-    display: block;
-  }
-
-  .problem:has(.problem__solution:not([open])) .problem__description {
-    min-width: 100%;
-    max-height: none;
-    resize: vertical;
+    /* Side by side, the corner handle changes the width of the statement and the editor takes
+       the rest. The statement scrolls inside a box shorter than the screen, so its corner handle
+       is in sight */
+    &:has(> .solution[open]):has([value="left"]:checked, [value="right"]:checked) > .description {
+      width: 45vw;
+      min-width: 20vw;
+      max-width: 70vw;
+      max-height: 80vh;
+      resize: horizontal;
+    }
   }
 }

@@ -49,13 +49,13 @@ function saveConfig(key, value) {
 function hideElement(id) {
   const element = document.getElementById(id);
   console.assert(element);
-  element.classList.add('hidden');
+  element.hidden = true;
 }
 
 function showElement(id) {
   const element = document.getElementById(id);
   console.assert(element);
-  element.classList.remove('hidden');
+  element.hidden = false;
 }
 
 class ProblemManager {
@@ -112,7 +112,7 @@ class ProblemManager {
   // get a reference to this tab (window.opener), or it could navigate it to a fake login page
   // eslint-disable-next-line class-methods-use-this
   openStatementLinksInNewTab() {
-    const links = document.querySelectorAll('.problem__statement a[href]:not([href^="#"])');
+    const links = document.querySelectorAll('.statement a[href]:not([href^="#"])');
     links.forEach((link) => {
       link.setAttribute('target', '_blank');
       link.setAttribute('rel', 'noopener noreferrer');
@@ -123,7 +123,7 @@ class ProblemManager {
   // handle are remembered for each problem. Each layout has its own statement size
   static setupLayoutMenu() {
     const menu = document.getElementById('layouts');
-    const statement = document.querySelector('.problem__description');
+    const statement = document.querySelector('.problem > .description');
     const sizeKey = () => `size:${menu.elements.layout.value}`;
     // CSS resize writes the size in the style attribute. Only the width and height are kept, and
     // the browser ignores them if localStorage has invalid values
@@ -276,7 +276,7 @@ class ProblemManager {
 
   loadTestCases() {
     console.assert(this.problem);
-    const buttons = document.getElementsByClassName('test_button');
+    const buttons = document.querySelectorAll('.test_cases button');
     console.assert(buttons.length === this.problem.tests.length);
     // Make each test case button clickable
     for (let index = 0; index < buttons.length; index += 1) {
@@ -304,13 +304,13 @@ class ProblemManager {
     this.editors[2].setValue(test.output || hidden);
     this.showTestOutput(index);
     // Deselect previous test case number
-    const buttons = document.getElementsByClassName('test_button');
+    const buttons = document.querySelectorAll('.test_cases button');
     console.assert(this.activeTestCaseIndex < buttons.length);
-    buttons[this.activeTestCaseIndex].classList.remove('selected');
+    buttons[this.activeTestCaseIndex].removeAttribute('aria-current');
     // Mark this test case as the active in the interface
     console.assert(index < buttons.length);
     this.activeTestCaseIndex = index;
-    buttons[index].classList.add('selected');
+    buttons[index].setAttribute('aria-current', 'true');
     saveConfig('test', `${index}`);
   }
 
@@ -520,19 +520,16 @@ class ProblemManager {
   // Updates the test cases buttons after a run
   updateTestCases() {
     // Update the test case handlers (buttons) to show if passed or failed
-    const buttons = document.querySelectorAll('#test_cases button');
+    const buttons = document.querySelectorAll('.test_cases button');
     console.assert(this.result);
     for (let index = 0; index < buttons.length; index += 1) {
       const test = index < this.result.results.length ? this.result.results[index] : null;
       const button = buttons[index];
-      button.classList.remove('failed');
-      button.classList.remove('passed');
       if (test === null) {
-        // Do not add any class to the button, possible compilation error, no test case were run
-      } else if (test.status === Status.PASSED) {
-        button.classList.add('passed');
+        // No status for the button, possible compilation error, no test case were run
+        delete button.dataset.status;
       } else {
-        button.classList.add('failed');
+        button.dataset.status = test.status === Status.PASSED ? 'passed' : 'failed';
       }
       // Updates the standard output/error of the selected test case
       this.showTestOutput(this.activeTestCaseIndex);

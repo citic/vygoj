@@ -6,5 +6,5 @@ window.MathJax = {
   tex: { processEscapes: false },
   asciimath: { delimiters: [['\\$', '\\$']] },
   // Only typeset the statement, not the code editors
-  startup: { elements: ['.problem__statement'] },
+  startup: { elements: ['.statement'] },
 };

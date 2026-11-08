@@ -1,80 +1,120 @@
 @import url('site.css');
 @import url('form.css');
 
-.course_section__header {
+/* Lists of courses: each one is an article with a title bar and a card per course */
+.courses > article > header {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   margin: 2rem 0 0.5rem;
+
+  & h3 {
+    margin: 0;
+  }
 }
 
-.course_section__header h3 {
-  margin: 0;
-}
-
+/* Card of a course in the lists: its image at the left of its name, instructors, and
+   description. The last row takes the height of the image that is left */
 .course_item {
+  display: grid;
+  grid-template: auto auto 1fr / auto 1fr;
+  column-gap: 0.5rem;
   border: 1px solid gray;
   border-radius: 0.5rem;
   padding: 1rem;
-  display: flex;
   box-shadow: 0 3px 8px rgb(0 0 0 / 25%);
   background-color: var(--surface);
+
+  & > img {
+    grid-row: span 3;
+  }
+
+  & :is(h4, ul, p) {
+    margin: 0;
+  }
+
+  & ul {
+    padding: 0;
+    list-style: none;
+  }
+
+  & li {
+    display: inline;
+  }
 }
 
-.course_item:not(:first-child) {
-  margin-top: 1rem;
-}
-
-.course__image {
-  margin-right: 0.5rem;
-}
-
-.course__header {
+/* Courses of a list, one card below the other */
+.course_list {
   margin: 0;
+  padding: 0;
+  list-style: none;
+
+  & > li + li {
+    margin-top: 1rem;
+  }
 }
 
-.course__instructors {
-  margin: 0;
-}
-
-.course_statistics {
-  margin: 0;
-}
-
-/* Course details as a banner: data at the left, total progress at the right */
-.course__summary {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem 2rem;
+/* Course details as a banner: title and data at the left, total progress at the right. The
+   title and the data meet in the middle, so they stay together when the progress is taller */
+.course .summary {
+  display: grid;
+  grid-template: "title progress" auto "data progress" auto / minmax(0, 1fr) auto;
+  column-gap: 2rem;
   margin-top: 1.5rem;
   padding: 1.5rem 2rem;
   border-radius: 0.5rem;
   background-color: rgb(128 128 128 / 8%);
+
+  & h3 {
+    grid-area: title;
+    align-self: end;
+    margin: 0 0 0.25rem;
+    font-size: 1.15rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  /* Data of the course: the names in a column and their values next to them */
+  & dl {
+    grid-area: data;
+    align-self: start;
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.25rem 0.5ch;
+    margin: 0 0 0.25rem;
+    overflow-wrap: anywhere;
+  }
+
+  & dd {
+    margin: 0;
+  }
+
+  & dt::after {
+    content: ":";
+  }
+
+  /* Total progress of the course: its title above a big percentage */
+  & .total {
+    grid-area: progress;
+    align-self: center;
+    display: block;
+    text-align: center;
+    color: var(--bg-color);
+
+    & dt::after {
+      content: none;
+    }
+
+    & dd {
+      font-size: clamp(1.75rem, 1.25rem + 1.5vw, 2.5rem);
+      font-weight: bolder;
+    }
+  }
 }
 
-.course__summary :is(h3, p) {
-  margin: 0 0 0.25rem;
-  overflow-wrap: anywhere;
-}
-
-.course__summary h3 {
-  font-size: 1.15rem;
-  font-weight: 600;
-}
-
-.course__total {
-  text-align: center;
-  color: var(--bg-color);
-}
-
-.course__total strong {
-  display: block;
-  font-size: clamp(1.75rem, 1.25rem + 1.5vw, 2.5rem);
-}
-
-.course__contents {
+/* Contents of the course: a row for each section, problem, or page, with its deadline and
+   progress. course.js sets --depth and --progress */
+.course .contents {
   --indent: 1.25rem;
 
   /* The table text is a little bigger than the body text to be as tall as the arrows of the
@@ -86,132 +126,127 @@
   font-size: var(--font-size);
   margin-top: 1.5rem;
   border-collapse: collapse;
-}
 
-.course__contents :is(th, td) {
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid rgb(128 128 128 / 25%);
-  text-align: start;
+  & :is(th, td) {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid rgb(128 128 128 / 25%);
+    text-align: start;
 
-  /* Long problem names like scient_notation_hw wrap on small screens */
-  overflow-wrap: anywhere;
-}
+    /* Long problem names like scient_notation_hw wrap on small screens */
+    overflow-wrap: anywhere;
+  }
 
-.course__contents thead th {
-  border-bottom: 2px solid var(--bg-color);
-  color: var(--bg-color);
-  font-size: 1em;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
+  & thead th {
+    border-bottom: 2px solid var(--bg-color);
+    color: var(--bg-color);
+    font-size: 1em;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
 
-/* Section titles as big as the table text; only the top level is a little bigger */
-.course__contents :is(h2, h3, h4, h5, h6) {
-  margin: 0;
-  font-size: 1em;
-  font-weight: 600;
-}
+  /* Section titles as big as the table text; only the top level is a little bigger */
+  & :is(h2, h3, h4, h5, h6) {
+    margin: 0;
+    font-size: 1em;
+    font-weight: 600;
+  }
 
-.course__contents h2 {
-  font-size: 1.05em;
-}
+  & h2 {
+    font-size: 1.05em;
+  }
 
-.course__contents tbody a {
-  color: var(--bg-color);
-}
+  & tbody a {
+    color: var(--bg-color);
+  }
 
-.course__contents tbody a:hover {
-  text-decoration: underline;
-}
+  & tbody a:hover {
+    text-decoration: underline;
+  }
 
-.course__section {
-  background-color: rgb(128 128 128 / 8%);
-}
+  & tr[data-type="section"] {
+    background-color: rgb(128 128 128 / 8%);
+  }
 
-/* Section titles are buttons that fold their rows, and the Contents title folds all of them;
-   the arrow shows the state */
-.course__contents :is(.course__section, thead) button,
-.course__contents :is(.course__section, thead) button:hover {
-  all: unset;
-  cursor: pointer;
-}
+  /* Section titles are buttons that fold their rows, and the Contents title folds all of them;
+     the arrow shows the state */
+  & button,
+  & button:hover {
+    all: unset;
+    cursor: pointer;
+  }
 
-.course__contents :is(.course__section, thead) button:focus-visible {
-  outline: 2px solid var(--bg-color);
-}
+  & button:focus-visible {
+    outline: 2px solid var(--bg-color);
+  }
 
-/* Arrow in a box of fixed size so the title does not move when it changes. Its size comes from
-   the table, so every title, small or big, has the same arrow. The arrow is drawn as a mask
-   instead of a text character because fonts draw hollow and filled triangles in different
-   sizes: an expanded section shows a hollow triangle pointing down, and a collapsed one the same
-   triangle filled and pointing right. Like the font, the triangle takes about a third of the
-   box, so it is as tall as the capital letters of the title */
-.course__contents :is(.course__section, thead) button::before {
-  content: '';
-  display: inline-block;
-  width: 1em;
-  height: 1em;
-  font-size: var(--arrow-size);
-  vertical-align: middle;
-  background-color: gray;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M3.2 3.6h3.6L5 6.7z' fill='none' stroke='black' stroke-width='0.6' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
-}
+  /* Arrow in a box of fixed size so the title does not move when it changes. Its size comes from
+     the table, so every title, small or big, has the same arrow. The arrow is drawn as a mask
+     instead of a text character because fonts draw hollow and filled triangles in different
+     sizes: an expanded section shows a hollow triangle pointing down, and a collapsed one the
+     same triangle filled and pointing right. Like the font, the triangle takes about a third of
+     the box, so it is as tall as the capital letters of the title */
+  & button::before {
+    content: '';
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    font-size: var(--arrow-size);
+    vertical-align: middle;
+    background-color: gray;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M3.2 3.6h3.6L5 6.7z' fill='none' stroke='black' stroke-width='0.6' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
 
-.course__contents :is(.course__section, thead) button[aria-expanded="false"]::before {
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M3.6 3.2v3.6l3.1 -1.8z' stroke='black' stroke-width='0.6' stroke-linejoin='round'/%3E%3C/svg%3E");
-}
+  & button[aria-expanded="false"]::before {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M3.6 3.2v3.6l3.1 -1.8z' stroke='black' stroke-width='0.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  }
 
-/* Deadline and progress columns take only the width of their contents */
-.course__contents :is(th, td):not(:first-child) {
-  width: 1%;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
+  /* Deadline and progress columns take only the width of their contents */
+  & :is(.deadline, .progress) {
+    width: 1%;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
 
-/* Progress bar before the percentage; course.js sets --progress */
-.course__progress:not(:empty)::before {
-  content: '';
-  display: inline-block;
-  width: clamp(4rem, 12vw, 14rem);
-  height: 0.5rem;
-  margin-inline-end: 0.75rem;
-  border-radius: 1rem;
-  vertical-align: middle;
-  background: linear-gradient(to right, var(--success) var(--progress), rgb(128 128 128 / 20%) 0);
-}
+  /* Progress bar before the percentage */
+  & td.progress:not(:empty)::before {
+    content: '';
+    display: inline-block;
+    width: clamp(4rem, 12vw, 14rem);
+    height: 0.5rem;
+    margin-inline-end: 0.75rem;
+    border-radius: 1rem;
+    vertical-align: middle;
+    background: linear-gradient(to right, var(--success) var(--progress), rgb(128 128 128 / 20%) 0);
+  }
 
-/* Indent the first cell of each row by its depth in the course; course.js sets --depth */
-.course__contents tbody > tr > :first-child {
-  padding-inline-start: calc(0.75rem + var(--depth, 0) * var(--indent));
+  /* Indent the name of each row by its depth in the course */
+  & tbody .name {
+    padding-inline-start: calc(0.75rem + var(--depth, 0) * var(--indent));
+  }
 }
 
 /* Small screens: thinner cells and no bars leave room for the contents column */
 @media (width <= 640px) {
-  .course__summary {
+  .course .summary {
     padding: 1rem;
   }
 
-  .course__contents {
+  .course .contents {
     --indent: 0.75rem;
     --font-size: calc(1rem * var(--font-scale, 1));
     --arrow-size: 1.6rem;
-  }
 
-  .course__contents :is(th, td) {
-    padding-inline: 0.25rem;
-  }
+    & :is(th, td) {
+      padding-inline: 0.25rem;
+    }
 
-  .course__progress:not(:empty)::before {
-    display: none;
-  }
+    & td.progress:not(:empty)::before {
+      display: none;
+    }
 
-  /* The deadline column is still empty, so it gives its room to the contents */
-  .course__deadline,
-  .course__contents thead th:nth-child(2) {
-    display: none;
+    /* The deadline column is still empty, so it gives its room to the contents */
+    & .deadline {
+      display: none;
+    }
   }
-}
-
-.line {
-  margin: 0;
 }

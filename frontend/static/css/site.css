@@ -64,10 +64,6 @@ Monospace:
   --font-scale: 0.95;
 }
 
-.font_sample {
-  font-family: var(--font-family);
-}
-
 /* Color scheme chosen by the user in the preferences, instead of the one of the OS */
 :root[data-color-scheme="light"] {
   color-scheme: light;
@@ -112,16 +108,66 @@ a:hover {
   text-decoration: underline;
 }
 
-/* Logo on the left and user on the right, closer to the edges than to the title on wide screens */
-.site_header--row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-inline: clamp(1rem, 6vw, 8rem);
+/* The footer and the breadcrumbs are bands of the color of the site */
+.site_footer,
+.breadcrumbs {
+  border-top: var(--head-foot-border);
+  color: white;
+  background-color: var(--bg-color);
+  box-shadow: 0 3px 5px grey;
+
+  & a {
+    color: rgb(206 236 255);
+  }
 }
 
-.site_header__title {
-  text-shadow: 0 5px 5px gray;
+/* Header of every page: logo, title, and user in a row, and the breadcrumbs below */
+.site_header {
+  /* Logo on the left and user on the right, closer to the edges than to the title on wide
+     screens */
+  & > .banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-inline: clamp(1rem, 6vw, 8rem);
+  }
+
+  & h1 {
+    text-shadow: 0 5px 5px gray;
+  }
+}
+
+/* Path from the home page to the current one, at the bottom of the site header */
+.breadcrumbs {
+  border-bottom: var(--head-foot-border);
+
+  & ul {
+    display: flex;
+    list-style-type: none;
+    padding: 0;
+    margin: 0.25rem 0 0.25rem 1rem;
+  }
+
+  & li {
+    margin-right: 1rem;
+  }
+
+  & li:not(:first-child)::before {
+    content: "≫";
+    margin-right: 0.75rem;
+  }
+}
+
+/* Link with an icon above its caption */
+.icon_control {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+
+  & img {
+    min-width: 2.75rem;
+  }
 }
 
 .panel {
@@ -132,48 +178,59 @@ a:hover {
   padding: 1rem;
 }
 
-.icon_control {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: center;
+.page_content {
+  flex-grow: 1;
+  margin: 0.5rem 2.5rem;
 }
 
-.icon_control__image {
-  min-width: 2.75rem;
-}
-
-.filled {
-  border-top: var(--head-foot-border);
-  color: white;
-  background-color: var(--bg-color);
-  box-shadow: 0 3px 5px grey;
-}
-
-.filled a {
-  color: rgb(206 236 255);
-}
-
-.breadcumbs {
-  border-bottom: var(--head-foot-border);
-}
-
-.breadcumb__list {
-  display: flex;
-  list-style-type: none;
+/* Messages of the server (flask.flash), each one with the color of its category and a button
+   that closes it */
+.flash_messages {
+  list-style: none;
   padding: 0;
-  margin: 0.25rem 0 0.25rem 1rem;
+
+  & li {
+    display: flex;
+    align-items: center;
+    padding: 0.5em 1em;
+    color: white;
+    background-color: var(--success);
+    box-shadow: 0 2px 10px rgb(0 0 0 / 10%);
+  }
+
+  & li[data-category="info"] {
+    background-color: var(--info);
+  }
+
+  & li[data-category="warning"] {
+    background-color: var(--warning);
+  }
+
+  & li[data-category="error"] {
+    background-color: var(--error);
+  }
+
+  & p {
+    flex: 1 1 auto;
+    margin: 0;
+  }
+
+  & button {
+    background: transparent;
+    padding: 0;
+    border: none;
+    color: inherit;
+    font-size: x-large;
+    cursor: pointer;
+    box-shadow: none;
+  }
+
+  & button:hover {
+    filter: none;
+  }
 }
 
-.breadcumb__item {
-  margin-right: 1rem;
-}
-
-.breadcumb__item:not(:first-child)::before {
-  content: "≫";
-  margin-right: 0.75rem;
-}
-
+/* Footer of every page: versions, connection to the backend, and help */
 .site_footer {
   min-height: 1.5rem;
   margin-top: 1rem;
@@ -183,59 +240,33 @@ a:hover {
   font-size: smaller;
   display: flex;
   justify-content: space-between;
+
+  & > span {
+    flex: 1 1 0px;
+  }
+
+  /* The help link at the right end */
+  & > .help {
+    text-align: right;
+  }
+
+  & #backend_status {
+    text-align: center;
+  }
+
+  & #backend_offline {
+    color: orangered;
+    fill: currentcolor;
+  }
 }
 
-.site_footer > span {
-  flex: 1 1 0px;
-}
-
-.help_controls {
-  text-align: right;
-}
-
-.page_content {
-  flex-grow: 1;
-  margin: 0.5rem 2.5rem;
-}
-
-.error {
+.not_found h2 {
   color: red;
-}
-
-#backend_status {
-  text-align: center;
-}
-
-#backend_offline {
-  color: orangered;
-  fill: currentcolor;
-}
-
-.hidden {
-  display: none;
-}
-
-.visible_block {
-  display: block;
-}
-
-.visible_inline {
-  display: inline;
 }
 
 pre, code {
   font-family: 'JetBrains Mono', monospace;
   font-size: smaller;
-}
-
-.row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-}
-
-.row.top {
-  align-items: flex-start;
 }
 
 pre, monaco-editor {
@@ -245,59 +276,4 @@ pre, monaco-editor {
 pre {
   margin-top: 0;
   padding: 0.5em;
-}
-
-@media (width <= 640px) {
-  .row {
-    flex-direction: column;
-  }
-}
-
-.flash_messages {
-  list-style: none;
-  padding: 0;
-}
-
-.flash_message {
-  display: flex;
-  align-items: center;
-  padding: 0.5em 1em;
-  color: white;
-  background-color: var(--success);
-  box-shadow: 0 2px 10px rgb(0 0 0 / 10%);
-}
-
-/* Different message types */
-.flash_message.success {
-  background-color: var(--success);
-}
-
-.flash_message.info {
-  background-color: var(--info);
-}
-
-.flash_message.warning {
-  background-color: var(--warning);
-}
-
-.flash_message.error {
-  background-color: var(--error);
-}
-
-.flash_message__text {
-  flex: 1 1 auto;
-}
-
-.flash_message__close {
-  background: transparent;
-  padding: 0;
-  border: none;
-  color: inherit;
-  font-size: x-large;
-  cursor: pointer;
-  box-shadow: none;
-}
-
-.flash_message__close:hover {
-  filter: none;
 }

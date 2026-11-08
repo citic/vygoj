@@ -22,22 +22,22 @@
   </head>
   <body>
     <header class="site_header">
-      <div class="site_header--row">
-        <a href="/"><img class="site_logo" src="/img/logo.svg" alt="Site logo" width="64" height="64"></a>
-        <h1 class="site_header__title">Vygotsky Online Judge</h1>
+      <div class="banner">
+        <a href="/"><img class="logo" src="/img/logo.svg" alt="Site logo" width="64" height="64"></a>
+        <h1>Vygotsky Online Judge</h1>
         <a class="icon_control" href="/user">
-          <img class="icon_control__image" src="/icon/user.svg" alt="User control" width="44" height="44">
-          <span class="icon_control__caption">{{ (it.user and it.user.email) or 'Login' }}</span>
+          <img src="/icon/user.svg" alt="User control" width="44" height="44">
+          <span class="caption">{{ (it.user and it.user.email) or 'Login' }}</span>
         </a>
       </div>
-      <nav class="breadcumbs filled">
-        <ul class="breadcumb__list">
-          <li class="breadcumb__item">
+      <nav class="breadcrumbs">
+        <ul>
+          <li>
             <a href="/">Home</a>
           </li>
 {%- if it.breadcrumbs %}
 {%-   for link in it.breadcrumbs %}
-          <li class="breadcumb__item">
+          <li>
             <a href="{{ link.href }}">{{ link.text }}</a>
           </li>
 {%-   endfor %}
@@ -50,9 +50,9 @@
   {% if messages %}
       <ul class="flash_messages">
       {%- for category, message in messages %}
-        <li class="flash_message {{ category }}">
-          <span class="flash_message__text">{{ message }}</span>
-          <button class="flash_message__close" type="button" aria-label="Close">&times;</button>
+        <li data-category="{{ category }}">
+          <p>{{ message }}</p>
+          <button type="button" aria-label="Close">&times;</button>
         </li>
       {%- endfor %}
       </ul>
@@ -62,20 +62,20 @@
 {{- it.body | safe }}
 {%- endblock %}
     </div>
-    <footer class="site_footer filled">
-      <span id="software_version" class="software_version"> VygOJ
+    <footer class="site_footer">
+      <span id="software_version"> VygOJ
         <span id="frontend_version">f0.2.0</span>
         <span id="backend_version">b</span>
       </span>
       <span id="backend_status">
-        <span id="backend_offline" class="hidden">
+        <span id="backend_offline" hidden>
           <img src="/icon/cloud_offline.svg" width="22" height="22" alt="Not connected to backend">
         </span>
-        <span id="backend_online" class="hidden">
+        <span id="backend_online" hidden>
           <img src="/icon/cloud_online.svg" width="22" height="22" alt="Connected to backend">
         </span>
       </span>
-      <span class="help_controls"><a href="/help" target="_blank">Help</a></span>
+      <span class="help"><a href="/help" target="_blank">Help</a></span>
     </footer>
 {%- block scripts %}
 {%- if it.scripts %}
