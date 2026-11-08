@@ -36,20 +36,12 @@
         <form class="login_form" method="post">
           {{ it.form.hidden_tag() }}
           <fieldset class="login_credentials">
-      {%- if it.first_user %}
-            <legend>Administrator registration</legend>
-            {{ it.form.fullname.label }} {{ it.form.fullname(required=True) }}
-            {{ it.form.email.label }} {{ it.form.email(required=True) }}
-            {{ it.form.new_password.label }} {{ it.form.new_password(required=True) }}
-            {{ it.form.confirm_password.label }} {{ it.form.confirm_password(required=True) }}
-      {%- else %}
             <legend>User credentials</legend>
             {{ it.form.email.label }} {{ it.form.email() }}
             {{ it.form.password.label }} {{ it.form.password() }}
-      {%- endif %}
           </fieldset>
           <p><small>By pressing the button below you are accepting the use of cookies in this site to keep your session active.</small></p>
-          {{ it.form.login(value='Register' if it.first_user else 'Login') }}
+          {{ it.form.login() }}
         </form>
       </main>
   {%- endif %}

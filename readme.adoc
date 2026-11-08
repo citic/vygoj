@@ -119,10 +119,18 @@ sudo apt install postgresql
 sudo -u postgres createuser $USER
 sudo -u postgres createdb -O $USER vygoj
 cd vygoj/frontend/src
-../.venv/bin/python migrate_users.py
+../.venv/bin/python manage_users.py import
 ----
 
-The script only adds users that are not in the database yet. `make` and `make users` run it automatically. An optional argument loads a different file: `migrate_users.py /path/to/users.tsv`.
+The script only adds users that are not in the database yet. `make` and `make users` run it automatically. An optional argument loads a different file: `manage_users.py import /path/to/users.tsv`.
+
+Create the administrator in the server. The command asks the username, the full name, and the password (at least 12 characters, not shown while typed). Run it again to reset the password of an administrator who forgot it; the username can be given as `make admin ADMIN=name`:
+
+[source,console]
+----
+cd vygoj/frontend
+make admin
+----
 
 Fourth, run the frontend as a production server:
 

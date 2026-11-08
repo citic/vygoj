@@ -200,6 +200,11 @@ Only logged users may run code (see <<input_limits>>). Their runs are stored in 
 
 The checks and the new run are stored while the row of the user is locked (`SELECT ... FOR UPDATE`), so two requests sent at the same time cannot both pass. Only the result of the last run of each problem is kept, if it is smaller than 1 MiB, and runs older than one day are deleted. Repeated and rejected runs are logged as `run_repeated` and `run_rejected`.
 
+[[administrators]]
+=== Administrators
+
+Administrators are created in the server with `make admin` (`src/manage_users.py admin`), never from the web application, so only who can log in the server can create them. The command asks the username and a password of at least 12 characters. If the user exists, it resets its password, makes it administrator, and forgets its failed logins, so it also recovers a forgotten password. While the users table is empty, the frontend writes a warning in its log that suggests `make admin`.
+
 [[input_limits]]
 === Requests and errors
 
@@ -214,5 +219,4 @@ The checks and the new run are stored while the row of the user is locked (`SELE
 [[security_pending]]
 === Pending risks
 
-* While the users table is empty, the first visitor of `/user` registers as administrator. Create the administrator before exposing a new installation.
 * The `talisman` package is the old 0.1.0 release. Its maintained fork is `flask-talisman`.

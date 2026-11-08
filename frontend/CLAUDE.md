@@ -22,8 +22,12 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
 - `src/vyg_log.py`: activity log (`vyg_log(action, ...)`) written as TSV.
 - `src/db.py`: SQLAlchemy instance (PostgreSQL, URI in `SQLALCHEMY_DATABASE_URI` of
   `config/config.py`).
-- `src/migrate_users.py`: loads the new users into the database from a git-ignored TSV file with
-  plain passwords, `USERS_FILE` in `DATA_FOLDER` (both in `config/config.py`). `make` runs it.
+- `src/manage_users.py`: command line to manage users in the server. `admin [username]` creates
+  an administrator, or resets the password of a user and makes it administrator (`make admin`);
+  the web never creates administrators. `import [users.tsv]` updates the users table and adds the
+  users of a git-ignored TSV file with plain passwords, `USERS_FILE` in `DATA_FOLDER` (both in
+  `config/config.py`); `make` runs it. Their logic is in `users.py` (e.g. `User.add_new()`), so
+  the web application can reuse it.
 - `templates/`: Jinja2 templates. `base.html` is the layout; pages extend it and fill blocks.
   Views pass data to templates in a single `it` object.
 - `config/config.py`: local, git-ignored settings (copy from `config/config-example.py`).
@@ -35,6 +39,7 @@ The common `make` rules (root `CLAUDE.md`) serve the frontend on `0.0.0.0:8080`.
 
 ```sh
 make dev       # npm i (ESLint/Stylelint tooling for static/)
+make admin     # create an administrator or reset its password (make admin ADMIN=name)
 ```
 
 Verify changes by running `make` and exercising the affected pages in a browser. Pages that run

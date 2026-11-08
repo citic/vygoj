@@ -13,7 +13,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from courses import CourseController
 from problems import BACKEND_CONNECT_TIMEOUT, BACKEND_STATUS_TIMEOUT, ProblemController
-from users import UserForm, log_out
+from users import User, UserForm, log_out
 from db import db
 from vyg_log import vyg_log
 
@@ -133,6 +133,10 @@ db.init_app(app)
 # Create the users and progress tables, if they do not exist yet
 with app.app_context():
     db.create_all()
+    # Nobody can log in without users. The administrator is created in the server, not in the web
+    if not db.session.scalar(db.select(User.id).limit(1)):
+        app.logger.warning('There are no users yet. Create the administrator in command line with: '
+                'make admin')
 
 # Courses -----------------------------------------------------------------------------------------
 

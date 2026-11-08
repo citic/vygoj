@@ -37,6 +37,22 @@ class User(db.Model):
         """ Readable string representation for debugging/testing """
         return f'<User {self.username}>'
 
+    @staticmethod
+    def add_new(rows) -> int:
+        """ Add the users of the given rows that are not in the database yet, and return how many
+        were added. Each row is a dictionary with username and password, e.g. the rows of a TSV
+        file read by csv.DictReader. Existing users are skipped, so a file can be added again """
+        added = 0
+        for row in rows:
+            username = row['username']
+            if not db.session.scalar(db.select(User).filter_by(username=username)):
+                # Full name is required, but the file has none, so use the username
+                db.session.add(User(username=username, fullname=username,
+                    password=generate_password_hash(row['password'])))
+                added += 1
+        db.session.commit()
+        return added
+
 class Progress(db.Model):
     """ The progress is the grade user got for each evaluation """
     # SQLAlchemy uses the class name for the table, we override it for lowercase
@@ -217,11 +233,6 @@ class UserForm(flask_wtf.FlaskForm):
         next_url = safe_next_url(flask.request.args.get('next'))
         # Fill the form with the data of the logged in user, if any
         form = UserForm(data=user)
-        # While there are no users, the first one registers as the administrator
-        first_user = not user and not db.session.scalar(db.select(User).limit(1))
-        if first_user:
-            form.fullname.validators += (validators.DataRequired(), )
-            form.new_password.validators += (validators.DataRequired(), )
         # If user accepted the dialog
         if form.validate_on_submit():
             if form.logout.data:
@@ -243,21 +254,16 @@ class UserForm(flask_wtf.FlaskForm):
                 name = form.email.data
                 address = (flask.request.remote_addr or '')[:64]
                 # Do not even check the password while blocked, so guessing gives no information
-                if not first_user and LoginAttempt.is_blocked(name, address):
+                if LoginAttempt.is_blocked(name, address):
                     vyg_log('login_blocked', name)
                     flask.flash('Too many failed logins. Wait '
                         f'{LOGIN_WINDOW.seconds // 60} minutes and try again.', 'error')
                     return flask.redirect(flask.url_for('user', next=next_url))
-                if first_user:
-                    # Save the first user as the administrator, and log them in below
-                    db.session.add(User(username=name, fullname=form.fullname.data, role='admin',
-                        password=generate_password_hash(form.new_password.data)))
-                    db.session.commit()
                 # Find the user in the database and compare the typed password with its hash
                 db_user = db.session.scalar(db.select(User).filter_by(username=name))
                 password_hash = db_user.password if db_user else _MISSING_USER_HASH
                 password_ok = check_password_hash(password_hash, form.password.data or '')
-                if db_user and (first_user or password_ok):
+                if db_user and password_ok:
                     # A new session for the logged user, so nothing stored before the login (such
                     # as a CSRF token that an attacker could have planted) is kept
                     flask.session.clear()
@@ -290,5 +296,4 @@ class UserForm(flask_wtf.FlaskForm):
             'title': f'User {"preferences" if user else "login"}',
             'form': form,
             'user': user,
-            'first_user': first_user,
         })

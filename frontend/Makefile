@@ -12,9 +12,14 @@ DEPS+=flask-squeeze flask-sqlalchemy flask-wtf markdown nh3 psycopg psycopg-bina
 # the web app
 run: users
 
-.PHONY: users
+.PHONY: admin users
 users: install
-	$(ACT) && cd $(SRC) && python migrate_users.py
+	$(ACT) && cd $(SRC) && python manage_users.py import
+
+# Create an administrator, or reset the password of a user and make it administrator. Optional
+# username: make admin ADMIN=name (not USER, which make takes from the environment)
+admin: install
+	$(ACT) && cd $(SRC) && python manage_users.py admin $(ADMIN)
 
 node_modules:
 	npm i

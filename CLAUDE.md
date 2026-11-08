@@ -71,6 +71,9 @@ make clean     # remove .venv
 - Python: PEP 8 and the existing style: 4-space indentation, lines up to 100 characters,
   `""" Docstrings with surrounding spaces """` on every module, class, and function, and short
   comments explaining *why* before non-obvious statements.
+- Command-line scripts have a single exit point: functions return or raise exceptions, never call
+  `sys.exit()`; `main()` returns the exit status (0 on success) and only the entry point calls
+  `sys.exit(main())`, so the shell and make know whether the script failed.
 - Mark pending work with `TODO(<user>): ...`.
 - Match the style of the surrounding code; review a few neighboring files before writing new code.
 
