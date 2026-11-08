@@ -1,5 +1,6 @@
 """ Manages application users, their preferences, and courses' progress """
 import datetime
+import urllib.parse
 
 import flask
 import flask_wtf
@@ -144,6 +145,24 @@ MAX_PASSWORD_LENGTH = 256
 # takes the same time for existing and missing users, and timing does not reveal the usernames
 _MISSING_USER_HASH = generate_password_hash('this user does not exist')
 
+# Longest URL accepted in the next parameter of the login page
+MAX_NEXT_URL_LENGTH = 512
+
+def safe_next_url(url):
+    """ Return the given URL if it is a page of this site where to go after logging in, or None.
+    The URL comes from the query string of the login page (/user?next=/problem/C/p), so anybody
+    could write a link to the login page of VygOJ that redirects to a fake site after logging in
+    (open redirect). Only paths of this site are accepted, such as /problem/CI0112/hello """
+    if not isinstance(url, str) or len(url) > MAX_NEXT_URL_LENGTH:
+        return None
+    # Browsers read //host and /\host as other sites, and they remove tabs and new lines from
+    # URLs, so /<tab>/host becomes //host. Control characters are rejected for that reason
+    if (not url.startswith('/') or url.startswith('//') or '\\' in url
+            or any(ord(char) < 32 or ord(char) == 127 for char in url)):
+        return None
+    parts = urllib.parse.urlsplit(url)
+    return url if not parts.scheme and not parts.netloc else None
+
 def log_out():
     """ Remove the logged user and the rest of the session (e.g. its CSRF token) """
     user_obj = flask.session.get('user')
@@ -193,6 +212,9 @@ class UserForm(flask_wtf.FlaskForm):
     def show_form():
         """ Show the login or preferences form to the user """
         user = flask.session.get('user')
+        # Page to go after logging in, e.g. the problem where the student wanted to run code. The
+        # login form has no action, so it posts to this URL and keeps the next parameter
+        next_url = safe_next_url(flask.request.args.get('next'))
         # Fill the form with the data of the logged in user, if any
         form = UserForm(data=user)
         # While there are no users, the first one registers as the administrator
@@ -225,7 +247,7 @@ class UserForm(flask_wtf.FlaskForm):
                     vyg_log('login_blocked', name)
                     flask.flash('Too many failed logins. Wait '
                         f'{LOGIN_WINDOW.seconds // 60} minutes and try again.', 'error')
-                    return flask.redirect(flask.url_for('user'))
+                    return flask.redirect(flask.url_for('user', next=next_url))
                 if first_user:
                     # Save the first user as the administrator, and log them in below
                     db.session.add(User(username=name, fullname=form.fullname.data, role='admin',
@@ -250,13 +272,13 @@ class UserForm(flask_wtf.FlaskForm):
                     logged_users.add(name)
                     flask.flash('Logged in successfully.', 'success')
                     vyg_log('login', name)
-                    return flask.redirect(flask.url_for('get_index'))
+                    return flask.redirect(next_url or flask.url_for('get_index'))
                 else:
                     # User is not logged in, show an error message
                     LoginAttempt.record_failure(name, address)
                     vyg_log('login_failed', name)
                     flask.flash('Invalid user or password', 'error')
-                    return flask.redirect(flask.url_for('user'))
+                    return flask.redirect(flask.url_for('user', next=next_url))
         if user:
             # User is logged in, and wants to change preferences, update some labels
             form.password.label = 'Current password'

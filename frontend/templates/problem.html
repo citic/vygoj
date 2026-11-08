@@ -37,8 +37,8 @@
 {%- if it.user %}
               <button id="run_button" class="button action" disabled="disabled" title="Run my solution against the test cases">Run</button>
 {%- else %}
-              {#- Only registered users may run code #}
-              <a href="{{ url_for('user') }}" id="login_to_run" class="button action">Log in to run</a>
+              {#- Only registered users may run code. After logging in, they come back to this problem #}
+              <a href="{{ url_for('user', next=request.path) }}" id="login_to_run" class="button action">Log in to run</a>
 {%- endif %}
               <a href="{{ it.problem.get_course().build_url() }}" id="finish_button" class="button confirm" title="Return to the course">Finish</a>
             </p>

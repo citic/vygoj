@@ -196,6 +196,7 @@ The limits depend on the address of the client, so set `TRUSTED_PROXIES` behind 
 * Errors are answered with generic messages such as `{"error": "the judge is not available"}`; their details (backend addresses, host paths) go to the server log only.
 * The request log (`data/vygoj.tsv`) stores the body of JSON requests only, never the bodies of forms, which carry passwords.
 * Login takes the same time whether the user exists or not, and starts a new session.
+* After logging in, users go to the page in the `next` parameter of the login page (e.g. `/user?next=/problem/CI0112/hello`, used by the "Log in to run" link). `safe_next_url()` in `src/users.py` accepts only paths of this site, otherwise anybody could write a link to the login of VygOJ that takes students to a fake site after logging in (open redirect).
 
 [[security_pending]]
 === Pending risks
