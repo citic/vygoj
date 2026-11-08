@@ -6,7 +6,11 @@ include ../common/Makefile
 # Submissions wait for a backend, so threads keep the frontend responsive meanwhile
 THREADS=16# Number of threads per gunicorn worker
 
-DEPS+=flask-squeeze flask-sqlalchemy flask-wtf markdown nh3 psycopg psycopg-binary requests talisman
+# Each dependency accepts the updates of its current major version (e.g. ~=3.0 is >=3.0,<4), which
+# fix bugs and security issues; a new major version may break the code, so it is updated by hand.
+# Packages in version 0.x may break in any minor version, so their minor version is fixed too
+DEPS+=flask-squeeze~=5.0 flask-sqlalchemy~=3.0 flask-talisman~=1.0 flask-wtf~=1.0 markdown~=3.0 \
+    nh3~=0.3.0 psycopg~=3.0 psycopg-binary~=3.0 requests~=2.0
 
 # Add the new users of the TSV file set in config.py, if it exists, to the database before running
 # the web app

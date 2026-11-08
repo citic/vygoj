@@ -135,7 +135,9 @@ The session cookie is also `Secure`, `HttpOnly`, and `SameSite=Lax`.
 [[csp]]
 === Content security policy (CSP)
 
-Problem statements come from course repositories and are shown as HTML. Talisman sends a `Content-Security-Policy` header (`cdn` in `src/main.py`) where scripts may only come from files of this site and from the CDNs the pages use (jsDelivr, cdnjs, esm.sh). Inline scripts, event handler attributes (`onclick`), and `javascript:` URLs do not run, so templates must not have them: put behavior in `static/js/`. Styles allow `'unsafe-inline'` because Monaco and MathJax inject `<style>` elements. The policy also forbids plugins (`object-src`), foreign `<base>` elements, forms that post to other sites, and being embedded by other sites.
+Problem statements come from course repositories and are shown as HTML. Talisman (the `flask-talisman` package) sends a `Content-Security-Policy` header (`cdn` in `src/main.py`) where scripts may only come from files of this site and from the CDNs the pages use (jsDelivr, cdnjs, esm.sh). Inline scripts, event handler attributes (`onclick`), and `javascript:` URLs do not run, so templates must not have them: put behavior in `static/js/`. Styles allow `'unsafe-inline'` because Monaco and MathJax inject `<style>` elements. The policy also forbids plugins (`object-src`), foreign `<base>` elements, forms that post to other sites, and being embedded by other sites.
+
+Talisman also redirects HTTP to HTTPS (except in debug mode) and sends `Strict-Transport-Security`, `Referrer-Policy: strict-origin` (other sites only see that links came from VygOJ, not from which page), and `Permissions-Policy`, which disables the camera, the microphone, the geolocation, and the Topics API of advertising. `set_headers()` in `src/main.py` adds the `Cross-Origin-*` headers that Talisman does not send. Configure in Talisman the headers it sends, because it sets them after `set_headers()` and would replace them.
 
 [[course_repos]]
 === Course repositories
@@ -215,8 +217,3 @@ Administrators are created in the server with `make admin` (`src/manage_users.py
 * The request log (`data/vygoj.tsv`) stores the body of JSON requests only, never the bodies of forms, which carry passwords.
 * Login takes the same time whether the user exists or not, and starts a new session.
 * After logging in, users go to the page in the `next` parameter of the login page (e.g. `/user?next=/problem/CI0112/hello`, used by the "Log in to run" link). `safe_next_url()` in `src/users.py` accepts only paths of this site, otherwise anybody could write a link to the login of VygOJ that takes students to a fake site after logging in (open redirect).
-
-[[security_pending]]
-=== Pending risks
-
-* The `talisman` package is the old 0.1.0 release. Its maintained fork is `flask-talisman`.

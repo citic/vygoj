@@ -57,7 +57,11 @@ make clean     # remove .venv
 ```
 
 - Add Python dependencies to `DEPS` in the layer's `Makefile` (there are no requirements files),
-  then run `make deps`.
+  then run `make deps`. Fix only their major version with `~=`, so they get the fixes of their
+  authors, but a new major version, which may break the code, needs a manual update:
+  `flask~=3.0` is `>=3.0,<4`. Packages in version 0.x may break in any minor version, so fix their
+  minor version too: `nh3~=0.3.0` is `>=0.3.0,<0.4`. Do not use `<` or `>` in `DEPS`: the shell
+  would read them as redirections.
 - There is no automated test suite. To test end to end: build the engine image
   (`cd backend/engine && make image`, Docker running), start the backend (`cd backend && make`),
   start the frontend (`cd frontend && make`), and run a problem from its page in the browser.

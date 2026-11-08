@@ -7,7 +7,7 @@ import flask
 import requests
 from flask_squeeze import Squeeze
 from flask_wtf.csrf import CSRFError, CSRFProtect
-from talisman import Talisman
+from flask_talisman import Talisman
 from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -68,7 +68,14 @@ cdn = {
     # Only this site may embed its pages, against clickjacking (as X-Frame-Options: SAMEORIGIN)
     'frame-ancestors': "'self'",
 }
-talisman = Talisman(app, content_security_policy=cdn)
+talisman = Talisman(app, content_security_policy=cdn,
+    # Do not serve information about who linked to this page, only the site
+    referrer_policy='strict-origin',
+    # Disable browser features that we do not use, also for third parties (Topics API)
+    permissions_policy={'browsing-topics': '()', 'camera': '()', 'geolocation': '()',
+        'microphone': '()'},
+    # Browsers may only use HTTPS for this site, and its subdomains, as before this package
+    strict_transport_security_preload=True)
 
 # Images of problem folders are written by course authors. An SVG may have scripts: they do not
 # run inside an <img>, but they would run if a student opened the image URL. This policy for those
@@ -275,11 +282,8 @@ def log_request(response):
 
 @app.after_request
 def set_headers(response):
-    """ Set other security policy headers that Talisman does not set """
-    # Do not serve information about who linked to this page
-    response.headers['Referrer-Policy'] = 'strict-origin'
-    # Disable browser features that we do not use
-    response.headers['Permissions-Policy'] = 'geolocation=(), camera=(), microphone=()'
+    """ Set other security policy headers that Talisman does not set. Talisman sets its headers
+    after this function, so the ones it sets (e.g. Referrer-Policy) are configured in Talisman """
     # Avoid other websites to embed our resources
     response.headers['Cross-Origin-Resource-Policy'] = 'same-site'
     # Allow only embeds resources that explicitly grant permission to be loaded
