@@ -10,20 +10,22 @@ Monospace:
 
 :root {
   color-scheme: light dark;
-  --bg-color: rgb(53, 104, 100);
+
+  --bg-color: rgb(53 104 100);
   --head-foot-border: 1px solid gray;
   --success: #4CAF50;
   --error: #F44336;
   --warning: #FF9800;
   --info: #2196F3;
+
   /* Colors as light-dark(light, dark), chosen by the color-scheme above */
-  --surface: light-dark(rgb(248, 248, 248), rgb(38, 38, 38));
-  --surface-alt: light-dark(rgb(228, 227, 227), rgb(58, 58, 58));
-  --form-bg: light-dark(#f3f3f3, rgb(30, 30, 30));
+  --surface: light-dark(rgb(248 248 248), rgb(38 38 38));
+  --surface-alt: light-dark(rgb(228 227 227), rgb(58 58 58));
+  --form-bg: light-dark(#f3f3f3, rgb(30 30 30));
   --form-shadow: light-dark(#ebebeb, transparent);
   --button-shadow: light-dark(#dadada, black);
   --border: light-dark(black, gray);
-  --label-color: light-dark(var(--bg-color), rgb(120, 190, 182));
+  --label-color: light-dark(var(--bg-color), rgb(120 190 182));
   --toolbar-bg: light-dark(#f8fafc, #1e293b);
   --toolbar-border: light-dark(#e2e6ee, #334155);
   --toolbar-icon: light-dark(#64748b, #94a3b8);
@@ -73,6 +75,18 @@ Monospace:
 
 :root[data-color-scheme="dark"] {
   color-scheme: dark;
+}
+
+/* Animations and transitions end at once for users who ask their OS to reduce motion. Each
+   animation goes with the CSS of the component it animates; this rule covers all of them */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 html {
@@ -137,7 +151,7 @@ a:hover {
 }
 
 .filled a {
-  color: rgb(206, 236, 255);
+  color: rgb(206 236 255);
 }
 
 .breadcumbs {
@@ -194,7 +208,7 @@ a:hover {
 
 #backend_offline {
   color: orangered;
-  fill: currentColor;
+  fill: currentcolor;
 }
 
 .hidden {
@@ -233,7 +247,7 @@ pre {
   padding: 0.5em;
 }
 
-@media (max-width: 640px) {
+@media (width <= 640px) {
   .row {
     flex-direction: column;
   }
@@ -250,7 +264,7 @@ pre {
   padding: 0.5em 1em;
   color: white;
   background-color: var(--success);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 10%);
 }
 
 /* Different message types */

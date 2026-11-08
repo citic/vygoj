@@ -17,7 +17,7 @@
   border-radius: 0.5rem;
   padding: 1rem;
   display: flex;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 3px 8px rgb(0 0 0 / 25%);
   background-color: var(--surface);
 }
 
@@ -76,10 +76,12 @@
 
 .course__contents {
   --indent: 1.25rem;
+
   /* The table text is a little bigger than the body text to be as tall as the arrows of the
      section titles. --font-scale of site.css makes it smaller for fonts bigger than Anaheim */
   --font-size: calc(1.1rem * var(--font-scale, 1));
   --arrow-size: 1.7rem;
+
   width: 100%;
   font-size: var(--font-size);
   margin-top: 1.5rem;
@@ -90,6 +92,7 @@
   padding: 0.5rem 0.75rem;
   border-bottom: 1px solid rgb(128 128 128 / 25%);
   text-align: start;
+
   /* Long problem names like scient_notation_hw wrap on small screens */
   overflow-wrap: anywhere;
 }
@@ -183,7 +186,7 @@
 }
 
 /* Small screens: thinner cells and no bars leave room for the contents column */
-@media (max-width: 640px) {
+@media (width <= 640px) {
   .course__summary {
     padding: 1rem;
   }

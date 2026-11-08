@@ -17,7 +17,7 @@
   border-radius: 0.5rem;
   padding: 1rem;
   display: flex;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 3px 8px rgb(0 0 0 / 25%);
   background-color: var(--surface);
 }
 
@@ -45,7 +45,7 @@
 
 /* The sanitizer removes the URLs of videos of other sites, so they are hidden instead of showing
    an empty player */
-.problem__statement video:not([src]):not(:has(source[src])) {
+.problem__statement video:not([src], :has(source[src])) {
   display: none;
 }
 
@@ -60,6 +60,19 @@ monaco-editor {
 .problem__solution monaco-editor {
   min-height: 5rem;
   max-height: 60vh;
+}
+
+label,
+summary {
+  font-weight: 600;
+  font-style: italic;
+  color: var(--label-color);
+}
+
+/* Clicking anywhere on the title shows or hides the editor */
+summary {
+  margin-bottom: 0.25rem;
+  cursor: pointer;
 }
 
 .editor_wrapper {
@@ -108,7 +121,7 @@ monaco-editor[diff]::after {
 }
 
 .failed {
-  background: rgba(255, 0, 0, 0.5);
+  background: rgb(255 0 0 / 50%);
 }
 
 .output {
@@ -118,7 +131,7 @@ monaco-editor[diff]::after {
   background-color: var(--surface-alt);
 }
 
-.test_button:hover:not(.disabled):not(.selected) {
+.test_button:hover:not(.disabled, .selected) {
   border: 1px dashed;
 }
 
@@ -127,7 +140,7 @@ monaco-editor[diff]::after {
   border: 1px solid;
 }
 
-.test_button.selected:after {
+.test_button.selected::after {
   /* Triangle below active test case https://stackoverflow.com/a/41328158 */
   border-right: solid 10px transparent;
   border-left: solid 10px transparent;
@@ -199,7 +212,9 @@ editor-toolbar select {
   display: block;
 }
 
-/* Each option: its icon next to its text, without the margin and bold of the other labels */
+/* Each option: its icon next to its text, without the margin and bold of the other labels.
+   The labels of the editor wrapper are other elements, so the order with them does not matter */
+/* stylelint-disable-next-line no-descending-specificity */
 .layout_menu__options label {
   display: flex;
   align-items: center;
@@ -245,19 +260,6 @@ editor-toolbar select {
   max-height: none;
 }
 
-label,
-summary {
-  font-weight: 600;
-  font-style: italic;
-  color: var(--label-color);
-}
-
-/* Clicking anywhere on the title shows or hides the editor */
-summary {
-  margin-bottom: 0.25rem;
-  cursor: pointer;
-}
-
 /* The statement can be made shorter with its corner handle; problem.js remembers its size */
 .problem__description {
   max-width: 100%;
@@ -286,10 +288,25 @@ summary {
 
 /* Statement and evaluation on one side and the editor on the other, chosen in the layout menu.
    Narrow screens keep the statement on top */
-@media (min-width: 641px) {
+@media (width >= 641px) {
   .problem {
     column-gap: 1rem;
     align-items: start;
+  }
+
+  .problem__description {
+    grid-area: description;
+  }
+
+  .problem__solution {
+    grid-area: solution;
+  }
+
+  /* As wide as the statement: width 0 keeps its content from widening the column */
+  .solution__evaluation {
+    grid-area: evaluation;
+    width: 0;
+    min-width: 100%;
   }
 
   .problem:has([value="left"]:checked) {
@@ -319,21 +336,6 @@ summary {
 
   .problem:has([value="right"]:checked) .problem__description > * {
     direction: ltr;
-  }
-
-  .problem__description {
-    grid-area: description;
-  }
-
-  .problem__solution {
-    grid-area: solution;
-  }
-
-  /* As wide as the statement: width 0 keeps its content from widening the column */
-  .solution__evaluation {
-    grid-area: evaluation;
-    width: 0;
-    min-width: 100%;
   }
 
   /* With the editor hidden, everything goes one below the other, as in the top layout.

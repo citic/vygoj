@@ -76,7 +76,7 @@ errors and the layout at phone and desktop widths.
 
 ### CSS
 
-- Responsive by default: mobile-first rules, `@media (min-width: ...)` breakpoints to enhance
+- Responsive by default: mobile-first rules, `@media (width >= ...)` breakpoints to enhance
   for larger screens (match existing breakpoints such as `640px` when adjusting old rules),
   flexbox/grid that wraps, relative units (`rem`, `%`, `fr`, `ch`), and no fixed widths that
   overflow a phone screen. Images use `max-width: 100%`.
@@ -84,4 +84,8 @@ errors and the layout at phone and desktop widths.
   instead of hard-coding colors; add new ones there.
 - Class names follow the BEM-like underscore convention: `block`, `block__element`,
   `block--modifier`. Avoid styling by `id` and avoid `!important`.
+- Each animation (`@keyframes`, `transition`) goes in the CSS of the component it animates;
+  only animations shared by several pages go in `site.css`. The `prefers-reduced-motion` rule of
+  `site.css` stops all of them for users who ask their OS to reduce motion (it is the only place
+  that needs `!important`), so do not repeat it per animation.
 - Keep sufficient color contrast and visible focus styles for keyboard users.
