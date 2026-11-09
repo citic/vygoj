@@ -9,7 +9,7 @@ from wtforms import validators
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from db import db
-from vyg_log import vyg_log
+from activity_log import log_event
 
 # Fonts the user may choose for the site: key stored in the database, label shown in the
 # preferences, and the family query of Google Fonts that loads it (None for fonts of the system).
@@ -63,16 +63,19 @@ class User(db.Model):
         """ Add the users of the given rows that are not in the database yet, and return how many
         were added. Each row is a dictionary with username and password, e.g. the rows of a TSV
         file read by csv.DictReader. Existing users are skipped, so a file can be added again """
-        added = 0
+        new_users = []
         for row in rows:
             username = row['username']
             if not db.session.scalar(db.select(User).filter_by(username=username)):
                 # Full name is required, but the file has none, so use the username
                 db.session.add(User(username=username, fullname=username,
                     password=generate_password_hash(row['password'])))
-                added += 1
+                new_users.append(username)
         db.session.commit()
-        return added
+        # Logged after the commit, so the log has only the users that the database has
+        for username in new_users:
+            log_event('user_create', { 'source': 'import' }, user=username, role='student')
+        return len(new_users)
 
 class Progress(db.Model):
     """ The progress is the grade user got for each evaluation """
@@ -202,8 +205,7 @@ def safe_next_url(url):
 
 def log_out():
     """ Remove the logged user and the rest of the session (e.g. its CSRF token) """
-    user_obj = flask.session.get('user')
-    vyg_log('logout', user_obj.get('email', '') if user_obj else '')
+    log_event('logout')
     flask.session.clear()
     flask.flash('User logged out', 'warning')
     return flask.redirect(flask.url_for('get_index'))
@@ -291,6 +293,7 @@ class UserForm(flask_wtf.FlaskForm):
         db.session.commit()
         user.update(preferences)
         flask.session['user'] = user
+        log_event('preferences', preferences)
         # TODO(I): Update the other user preferences in the database
         flask.flash('Preferences updated successfully.', 'success')
         return flask.redirect(flask.url_for('user'))
@@ -302,7 +305,7 @@ class UserForm(flask_wtf.FlaskForm):
         address = (flask.request.remote_addr or '')[:64]
         # Do not even check the password while blocked, so guessing gives no information
         if LoginAttempt.is_blocked(name, address):
-            vyg_log('login_blocked', name)
+            log_event('login_blocked', user=name, role=None)
             flask.flash('Too many failed logins. Wait '
                 f'{LOGIN_WINDOW.seconds // 60} minutes and try again.', 'error')
             return flask.redirect(flask.url_for('user', next=next_url))
@@ -312,7 +315,7 @@ class UserForm(flask_wtf.FlaskForm):
         password_ok = check_password_hash(password_hash, form.password.data or '')
         if not db_user or not password_ok:
             LoginAttempt.record_failure(name, address)
-            vyg_log('login_failed', name)
+            log_event('login_failed', user=name, role=None)
             flask.flash('Invalid user or password', 'error')
             return flask.redirect(flask.url_for('user', next=next_url))
         # A new session for the logged user, so nothing stored before the login (such as a CSRF
@@ -328,5 +331,5 @@ class UserForm(flask_wtf.FlaskForm):
         LoginAttempt.clear(name, address)
         logged_users.add(name)
         flask.flash('Logged in successfully.', 'success')
-        vyg_log('login', name)
+        log_event('login')
         return flask.redirect(next_url or flask.url_for('get_index'))

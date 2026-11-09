@@ -18,12 +18,12 @@ run: users
 
 .PHONY: admin lint-static users
 users: install
-	$(ACT) && cd $(SRC) && python manage_users.py import
+	$(ACT) && cd $(SRC) && python manage.py import
 
 # Create an administrator, or reset the password of a user and make it administrator. Optional
 # username: make admin ADMIN=name (not USER, which make takes from the environment)
 admin: install
-	$(ACT) && cd $(SRC) && python manage_users.py admin $(ADMIN)
+	$(ACT) && cd $(SRC) && python manage.py admin $(ADMIN)
 
 node_modules:
 	npm i

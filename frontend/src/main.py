@@ -1,14 +1,10 @@
 """ Start frontend execution """
-import logging
 import os
-import time
-from logging.handlers import RotatingFileHandler
 import flask
 import requests
 from flask_squeeze import Squeeze
 from flask_wtf.csrf import CSRFError, CSRFProtect
 from flask_talisman import Talisman
-from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from courses import CourseController
@@ -16,7 +12,7 @@ from limits import BACKEND_CONNECT_TIMEOUT, Limits
 from problems import BACKEND_STATUS_TIMEOUT, ProblemController
 from users import DEFAULT_FONT, FONTS, User, UserForm, font_url, log_out
 from db import db
-from vyg_log import vyg_log
+from activity_log import LogController, log_event
 
 # Web application ---------------------------------------------------------------------------------
 
@@ -166,14 +162,14 @@ with app.app_context():
 def get_index():
     """ Homepage: list of my courses and available courses """
     # The return value of a view function is the response to the client
-    vyg_log('visit', '/')
+    log_event('visit')
     return CourseController.get_index()
 
 @app.route('/course/<name>')
 def get_course(name):
     """ Get the contents of the course identified by name """
     # The return value of a view function is the response to the client
-    vyg_log('visit', f'/course/{name}')
+    log_event('visit', course=name, material=name, type='course')
     return CourseController.get_course(name)
 
 # Problems ----------------------------------------------------------------------------------------
@@ -181,7 +177,7 @@ def get_course(name):
 @app.route('/problem/<course>/<problem>')
 def get_problem(course, problem):
     """ User asked for the problem page """
-    vyg_log('visit', f'/problem/{course}/{problem}')
+    log_event('visit', course=course, material=problem, type='problem')
     return ProblemController.get_problem(course, problem)
 
 @app.route('/problem/<course_name>/<problem_name>/files/<path:filename>')
@@ -201,13 +197,25 @@ def post_problem(course_name, problem_name):
 @app.route('/user', methods=['GET', 'POST'])
 def user():
     """ Get/post the login or preferences dialog """
-    vyg_log('visit', '/user')
+    log_event('visit')
     return UserForm.show_form()
 
 @app.route('/logout', methods=['POST'])
 def logout():
     """ User wants to logout. Only POST with the CSRF token, so other sites cannot log users out """
     return log_out()
+
+# Administration ----------------------------------------------------------------------------------
+
+@app.route('/admin/log')
+def get_log():
+    """ Administrator asked for the activity log and its analysis tables, as a zip file """
+    return LogController.download('log', CourseController.cache_courses)
+
+@app.route('/admin/submissions')
+def get_submissions():
+    """ Administrator asked for the code of the runs, a folder per submission, as a zip file """
+    return LogController.download('submissions', CourseController.cache_courses)
 
 # Misc --------------------------------------------------------------------------------------------
 
@@ -227,7 +235,7 @@ def get_status():
 @app.route('/help')
 def get_help():
     """ Used in experiment to provide reference about the concepts to solve the tasks """
-    vyg_log('visit', '/help')
+    log_event('visit')
     return flask.render_template('help.html', it={ })
 
 
@@ -251,49 +259,7 @@ def handle_csrf_error(error):
     # All the forms of the site are in the user page (login, preferences, and logout)
     return flask.redirect(flask.url_for('user'))
 
-# Logging -----------------------------------------------------------------------------------------
-
-# Adapted from https://gist.github.com/alexaleluia12/e40f1dfa4ce598c2e958611f67d28966
-
-# If data/ dir does not exist, create it
-data_dir = app.config['DATA_FOLDER']
-if not os.path.exists(data_dir):
-    os.mkdir(data_dir)
-# If log file does not exist, create it and add its header
-log_filename = os.path.join(data_dir, 'vygoj.tsv')
-if not os.path.exists(log_filename):
-    with open(log_filename, 'a', encoding='utf8') as log_file:
-        log_file.write('date\ttime\tip\tscheme\turl\tstatus_code\tuser\tbody\n')
-# This object manages the log and slices it each 1MB
-log_handler = RotatingFileHandler(log_filename, maxBytes=10**6, backupCount=1000)
-# Set the handler as the default
-logger = logging.getLogger('vygoj')
-logger.setLevel(logging.INFO)
-logger.addHandler(log_handler)
-
-def loggable_body(request):
-    """ Return the body of the request to be logged. Form bodies carry passwords and CSRF tokens,
-    so they are never logged; only JSON bodies (code submissions) are """
-    if not request.is_json:
-        return b''
-    try:
-        return request.get_data()
-    except RequestEntityTooLarge:
-        return b'(too large)'
-
-def log_event(request, response, method):
-    ''' Log an entry '''
-    timestamp = time.strftime('%y%m%d\t%H%M%S')
-    user_obj = flask.session.get('user')
-    username = user_obj.get('email', '') if user_obj else ''
-    method('%s\t%s\t%s\t%s\t%s\t%s\t%s', timestamp, request.remote_addr, request.method,
-            request.url, response.status, username, loggable_body(request))
-    return response
-
-@app.after_request
-def log_request(response):
-    ''' Log all http requests '''
-    return log_event(flask.request, response, logger.info)
+# Headers ------------------------------------------------------------------------------------------
 
 @app.after_request
 def set_headers(response):

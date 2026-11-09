@@ -22,15 +22,23 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
 - `src/runs.py`: `Run` model (`runs` table) that limits the code runs of each user: one at a
   time, 5 seconds between them, 120 per hour, and the same submission answered with the stored
   result of the last run.
-- `src/vyg_log.py`: activity log (`vyg_log(action, ...)`) written as TSV.
+- `src/activity_log.py`: activity log: `log_event(event, data, **cells)` appends a row to a
+  monthly TSV in `DATA_FOLDER/log/` with fixed columns (`COLUMNS`) and the fields of each event as
+  JSON in `data`, and `save_code()` saves the code of a run by its hash. Events are in `EVENTS`;
+  document new events and data fields in `readme.adoc`. New kinds of materials add data fields,
+  not columns. It also makes the zip archives of the log on demand: the log with tables for
+  statistical software (`TABLES`), and the submissions in a folder per user, course, material,
+  and time, with the statement, initial code, and test cases of the problem taken from the course
+  repo in the commit of each run (`git archive`, `ProblemFiles`). `LogController` serves them to administrators (`/admin/log`, `/admin/submissions`).
 - `src/db.py`: SQLAlchemy instance (PostgreSQL, URI in `SQLALCHEMY_DATABASE_URI` of
   `config/config.py`).
-- `src/manage_users.py`: command line to manage users in the server. `admin [username]` creates
+- `src/manage.py`: command line to manage the frontend in the server. `admin [username]` creates
   an administrator, or resets the password of a user and makes it administrator (`make admin`);
   the web never creates administrators. `import [users.tsv]` updates the users table and adds the
   users of a git-ignored TSV file with plain passwords, `USERS_FILE` in `DATA_FOLDER` (both in
-  `config/config.py`); `make` runs it. Their logic is in `users.py` (e.g. `User.add_new()`), so
-  the web application can reuse it.
+  `config/config.py`); `make` runs it. `log output.zip` and `submissions output.zip` write the
+  archives of the activity log. Their logic is in `users.py` (e.g. `User.add_new()`) and
+  `activity_log.py`, so the web application can reuse it.
 - `templates/`: Jinja2 templates. `base.html` is the layout; pages extend it and fill blocks.
   Views pass data to templates in a single `it` object.
 - `config/defaults.py`: default value and explanation of every setting. `main.py` loads it, and
