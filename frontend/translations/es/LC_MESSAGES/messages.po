@@ -1,0 +1,256 @@
+# Spanish translations of the interface of VygOJ. Update them with
+# make update-translations and fill the empty msgstr, see "Translations"
+# in readme.adoc
+msgid ""
+msgstr ""
+"Project-Id-Version: VygOJ \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-09 15:45-0600\n"
+"PO-Revision-Date: 2026-11-09 15:19-0600\n"
+"Last-Translator: \n"
+"Language: es\n"
+"Language-Team: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#, python-format
+msgid "%(passed)s test cases passed (%(points)s points)"
+msgstr "%(passed)s casos de prueba aprobados (%(points)s puntos)"
+
+msgid "Add Course"
+msgstr "Agregar curso"
+
+msgid "Admin Users"
+msgstr "Administrar usuarios"
+
+msgid "Administration"
+msgstr "Administración"
+
+msgid ""
+"An educative online judge for teaching and learning computing programming"
+" with emphasis in concurrent programming paradigm"
+msgstr ""
+"Un juez en línea educativo para enseñar y aprender programación de "
+"computadoras con énfasis en el paradigma de programación concurrente"
+
+msgid "Available courses"
+msgstr "Cursos disponibles"
+
+msgid ""
+"By pressing the button below you are accepting the use of cookies in this"
+" site to keep your session active."
+msgstr ""
+"Al presionar el botón de abajo, acepta el uso de cookies en este sitio "
+"para mantener su sesión activa."
+
+msgid "Change password"
+msgstr "Cambiar contraseña"
+
+msgid "Close"
+msgstr "Cerrar"
+
+msgid "Code"
+msgstr "Código"
+
+msgid "Color scheme"
+msgstr "Esquema de colores"
+
+msgid "Confirm new password"
+msgstr "Confirmar la nueva contraseña"
+
+msgid "Connected to backend"
+msgstr "Conectado al backend"
+
+msgid "Contents"
+msgstr "Contenido"
+
+msgid "Current password"
+msgstr "Contraseña actual"
+
+msgid "Dark mode"
+msgstr "Modo oscuro"
+
+msgid "Deadline"
+msgstr "Fecha límite"
+
+msgid "Default"
+msgstr "Predeterminado"
+
+msgid "Delete account"
+msgstr "Eliminar cuenta"
+
+msgid "Diagnostics"
+msgstr "Diagnósticos"
+
+msgid "Expected output"
+msgstr "Salida esperada"
+
+msgid "Finish"
+msgstr "Terminar"
+
+msgid "Font"
+msgstr "Fuente"
+
+msgid "Full name"
+msgstr "Nombre completo"
+
+msgid "Help"
+msgstr "Ayuda"
+
+msgid "Home"
+msgstr "Inicio"
+
+msgid "Input"
+msgstr "Entrada"
+
+msgid "Instructors"
+msgstr "Instructores"
+
+msgid "Invalid user or password"
+msgstr "Usuario o contraseña inválidos"
+
+msgid "Language"
+msgstr "Idioma"
+
+msgid "Layout"
+msgstr "Distribución"
+
+msgid "Light mode"
+msgstr "Modo claro"
+
+msgid "Log in to run"
+msgstr "Inicie sesión para ejecutar"
+
+msgid "Logged in successfully."
+msgstr "Sesión iniciada con éxito."
+
+msgid "Login"
+msgstr "Iniciar sesión"
+
+msgid "Logout"
+msgstr "Cerrar sesión"
+
+msgid "My courses"
+msgstr "Mis cursos"
+
+msgid "No errors"
+msgstr "Sin errores"
+
+msgid "Not connected to backend"
+msgstr "Sin conexión con el backend"
+
+msgid "Not found"
+msgstr "No encontrado"
+
+msgid "Password"
+msgstr "Contraseña"
+
+msgid "Passwords must match"
+msgstr "Las contraseñas deben coincidir"
+
+msgid "Please login to see your courses."
+msgstr "Inicie sesión para ver sus cursos."
+
+#, python-format
+msgid "Preferences for %(role)s user %(email)s"
+msgstr "Preferencias del usuario %(role)s %(email)s"
+
+msgid "Preferences updated successfully."
+msgstr "Preferencias actualizadas con éxito."
+
+msgid "Programming language"
+msgstr "Lenguaje de programación"
+
+msgid "Progress"
+msgstr "Progreso"
+
+msgid "Return to the course"
+msgstr "Volver al curso"
+
+msgid "Run"
+msgstr "Ejecutar"
+
+msgid "Run my solution against the test cases"
+msgstr "Ejecutar mi solución con los casos de prueba"
+
+msgid "Save"
+msgstr "Guardar"
+
+msgid "Site logo"
+msgstr "Logo del sitio"
+
+msgid "Standard error output"
+msgstr "Salida de error estándar"
+
+msgid "Statement on the left"
+msgstr "Enunciado a la izquierda"
+
+msgid "Statement on the right"
+msgstr "Enunciado a la derecha"
+
+msgid "Statement on top"
+msgstr "Enunciado arriba"
+
+#, python-format
+msgid "Test case %(number)d"
+msgstr "Caso de prueba %(number)d"
+
+msgid ""
+"The connection with the judge was lost. Running code is disabled until it"
+" is restored."
+msgstr ""
+"Se perdió la conexión con el juez. No se puede ejecutar código hasta que "
+"se restablezca."
+
+msgid "The requested resource was not found in this site."
+msgstr "El recurso solicitado no se encontró en este sitio."
+
+#, python-format
+msgid "Too many failed logins. Wait %(minutes)d minutes and try again."
+msgstr ""
+"Demasiados intentos fallidos de inicio de sesión. Espere %(minutes)d "
+"minutos e intente de nuevo."
+
+msgid "User control"
+msgstr "Control de usuario"
+
+msgid "User credentials"
+msgstr "Credenciales del usuario"
+
+msgid "User information"
+msgstr "Información del usuario"
+
+msgid "User logged out"
+msgstr "Sesión cerrada"
+
+msgid "User login"
+msgstr "Inicio de sesión"
+
+msgid "User preferences"
+msgstr "Preferencias del usuario"
+
+msgid "Username/Email"
+msgstr "Usuario/correo"
+
+msgid "Users"
+msgstr "Usuarios"
+
+msgid "Vygotsky Online Judge"
+msgstr "Juez en línea Vygotsky"
+
+msgid "Your output"
+msgstr "Su salida"
+
+msgid ""
+"Your session expired or the request was not valid. Reload the page and "
+"try again."
+msgstr ""
+"Su sesión expiró o la solicitud no era válida. Recargue la página e "
+"intente de nuevo."
+
+msgid "Your solution"
+msgstr "Su solución"
+

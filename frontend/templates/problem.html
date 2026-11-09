@@ -11,73 +11,74 @@
           <div class="statement">{{ it.problem.statement|safe }}</div>
         </article>
         <details class="solution" open>
-          <summary>Your solution</summary>
+          <summary>{{ _('Your solution') }}</summary>
           <div class="editor">
             <editor-toolbar for="code_editor">
               <div class="layout_menu">
-                <button type="button" class="material-symbols-outlined" title="Layout" aria-label="Layout">space_dashboard</button>
+                <button type="button" class="material-symbols-outlined" title="{{ _('Layout') }}" aria-label="{{ _('Layout') }}">space_dashboard</button>
                 <form id="layouts">
-                  <label><input type="radio" name="layout" value="top" checked><span class="material-symbols-outlined" aria-hidden="true">splitscreen_top</span> Statement on top</label>
-                  <label><input type="radio" name="layout" value="left"><span class="material-symbols-outlined" aria-hidden="true">splitscreen_left</span> Statement on the left</label>
-                  <label><input type="radio" name="layout" value="right"><span class="material-symbols-outlined" aria-hidden="true">splitscreen_right</span> Statement on the right</label>
+                  <label><input type="radio" name="layout" value="top" checked><span class="material-symbols-outlined" aria-hidden="true">splitscreen_top</span> {{ _('Statement on top') }}</label>
+                  <label><input type="radio" name="layout" value="left"><span class="material-symbols-outlined" aria-hidden="true">splitscreen_left</span> {{ _('Statement on the left') }}</label>
+                  <label><input type="radio" name="layout" value="right"><span class="material-symbols-outlined" aria-hidden="true">splitscreen_right</span> {{ _('Statement on the right') }}</label>
                 </form>
               </div>
-              <select id="language" aria-label="Programming language">
+              <select id="language" aria-label="{{ _('Programming language') }}">
 {%- for language in it.problem.languages %}
                 <option>{{ language }}</option>
 {%- endfor %}
               </select>
             </editor-toolbar>
-            <monaco-editor id="code_editor" aria-label="Your solution"></monaco-editor>
+            <monaco-editor id="code_editor" aria-label="{{ _('Your solution') }}"></monaco-editor>
           </div>
         </details>
         <section class="evaluation">
           <header>
             <p class="actions">
 {%- if it.user %}
-              <button id="run_button" class="button action" disabled="disabled" title="Run my solution against the test cases">Run</button>
+              <button id="run_button" class="button action" disabled="disabled" title="{{ _('Run my solution against the test cases') }}">{{ _('Run') }}</button>
 {%- else %}
               {#- Only registered users may run code. After logging in, they come back to this problem #}
-              <a href="{{ url_for('user', next=request.path) }}" id="login_to_run" class="button action">Log in to run</a>
+              <a href="{{ url_for('user', next=request.path) }}" id="login_to_run" class="button action">{{ _('Log in to run') }}</a>
 {%- endif %}
-              <a href="{{ it.problem.get_course().build_url() }}" id="finish_button" class="button confirm" title="Return to the course">Finish</a>
+              <a href="{{ it.problem.get_course().build_url() }}" id="finish_button" class="button confirm" title="{{ _('Return to the course') }}">{{ _('Finish') }}</a>
             </p>
             <p id="score">
-              <span id="passed_test_count">0</span>/<span id="total_test_count">{{ it.problem.tests.length }}</span>
-              test cases passed (<span id="user_points">0</span>/<span id="total_points">{{ it.problem.calculate_total_points() }}</span> points)
+              {%- set passed %}<span id="passed_test_count">0</span>/<span id="total_test_count">{{ it.problem.tests.length }}</span>{% endset %}
+              {%- set points %}<span id="user_points">0</span>/<span id="total_points">{{ it.problem.calculate_total_points() }}</span>{% endset %}
+              {{ _('%(passed)s test cases passed (%(points)s points)', passed=passed, points=points) }}
             </p>
           </header>
           {#- problem.js shows it while the connection with the frontend or the backend is lost #}
-          <p id="connection_error" role="alert" hidden>The connection with the judge was lost. Running code is disabled until it is restored.</p>
+          <p id="connection_error" role="alert" hidden>{{ _('The connection with the judge was lost. Running code is disabled until it is restored.') }}</p>
           <figure id="diagnostics_wrapper" hidden>
-            <figcaption>Diagnostics</figcaption>
-            <pre id="diagnostics">No errors</pre>
+            <figcaption>{{ _('Diagnostics') }}</figcaption>
+            <pre id="diagnostics">{{ _('No errors') }}</pre>
           </figure>
           <div class="test_cases">
 {%- for test in it.problem.tests %}
-            <button class="button small" title="Test case {{ loop.index }}">{{ loop.index }}</button>
+            <button class="button small" title="{{ _('Test case %(number)d', number=loop.index) }}">{{ loop.index }}</button>
 {%- endfor %}
           </div>
           <div id="active_test" class="test_editors">
             <div id="active_test_input_wrapper">
-              <label for="active_test_input">Input</label>
+              <label for="active_test_input">{{ _('Input') }}</label>
               <monaco-editor id="active_test_input" readonly></monaco-editor>
             </div>
             <div id="active_test_expected_output_wrapper">
-              <label for="active_test_expected_output">Expected output</label>
+              <label for="active_test_expected_output">{{ _('Expected output') }}</label>
               <monaco-editor id="active_test_expected_output" readonly></monaco-editor>
             </div>
             <div id="active_test_user_output_wrapper">
-              <label for="active_test_user_output">Your output</label>
+              <label for="active_test_user_output">{{ _('Your output') }}</label>
               <monaco-editor id="active_test_user_output" readonly></monaco-editor>
             </div>
             <div id="output_diff_wrapper" hidden>
-              <header><label for="output_diff">Expected output</label><label for="output_diff">Your output</label></header>
+              <header><label for="output_diff">{{ _('Expected output') }}</label><label for="output_diff">{{ _('Your output') }}</label></header>
               <monaco-editor id="output_diff" readonly diff></monaco-editor>
             </div>
           </div>
           <figure id="stderr_wrapper" hidden>
-            <figcaption>Standard error output</figcaption>
+            <figcaption>{{ _('Standard error output') }}</figcaption>
             <pre id="stderr"></pre>
           </figure>
           <output id="test_verdict"></output>

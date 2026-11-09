@@ -1,9 +1,11 @@
 """ Manages application users, their preferences, and courses' progress """
 import datetime
+import os
 import urllib.parse
 
 import flask
 import flask_wtf
+from flask_babel import gettext, lazy_gettext
 import wtforms
 from wtforms import validators
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -23,6 +25,26 @@ FONTS = {
     'source_serif': ('Source Serif', 'Source+Serif+4:wght@400..800'),
 }
 DEFAULT_FONT = 'anaheim'
+
+# Languages of the interface: code stored in the database and name shown in the preferences, in
+# its own language, so users find theirs. Each one but English needs its translations/ folder
+LANGUAGES = {
+    'en': 'English',
+    'es': 'Español',
+}
+DEFAULT_LANGUAGE = 'en'
+# Folder with the translations of the interface, a subfolder for each language but English
+TRANSLATIONS_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    'translations')
+
+def select_language() -> str:
+    """ Return the language of the interface for this request: the one chosen by the logged in
+    user, or else the one that the browser prefers among LANGUAGES, or else English """
+    user = flask.session.get('user')
+    language = user.get('language') if user else None
+    if language in LANGUAGES:
+        return language
+    return flask.request.accept_languages.best_match(LANGUAGES) or DEFAULT_LANGUAGE
 
 def font_url(font: str) -> str | None:
     """ Return the URL of the Google Fonts stylesheet that loads the given font, or None if the
@@ -50,6 +72,8 @@ class User(db.Model):
     color_scheme = db.Column(db.String(8), nullable=False, default='default')
     # Font of the site, one of the keys of FONTS
     font = db.Column(db.String(16), nullable=False, default=DEFAULT_FONT)
+    # Language of the interface: 'default' follows the browser, or one of the keys of LANGUAGES
+    language = db.Column(db.String(8), nullable=False, default='default')
     # Access all grades this user got in evaluations
     # backref adds a reference to this user in the Progress model
     progress = db.relationship('Progress', backref='role')
@@ -205,7 +229,7 @@ def log_out():
     user_obj = flask.session.get('user')
     vyg_log('logout', user_obj.get('email', '') if user_obj else '')
     flask.session.clear()
-    flask.flash('User logged out', 'warning')
+    flask.flash(gettext('User logged out'), 'warning')
     return flask.redirect(flask.url_for('get_index'))
 
 class UserForm(flask_wtf.FlaskForm):
@@ -216,37 +240,44 @@ class UserForm(flask_wtf.FlaskForm):
     # StringField renders <input type=text> element
     # The 'User name' is the field lab
     #username = wtforms.StringField('User name', validators=[validators.DataRequired()])
-    email = wtforms.StringField('Username/Email', validators=[#validators.DataRequired(),
+    email = wtforms.StringField(lazy_gettext('Username/Email'),
+        validators=[#validators.DataRequired(),
         validators.Length(3, 128)]) # validators.Email(),
     # Password is required to login or to change password
-    password = wtforms.PasswordField('Password',
+    password = wtforms.PasswordField(lazy_gettext('Password'),
         validators=[validators.Length(max=MAX_PASSWORD_LENGTH)])
     # Used only when user wants to change password
-    new_password = wtforms.PasswordField('Password',
+    new_password = wtforms.PasswordField(lazy_gettext('Password'),
         validators=[validators.Length(max=MAX_PASSWORD_LENGTH)])
     # Asked to make user be sure the new password is well typed
-    confirm_password = wtforms.PasswordField('Confirm new password',
-        validators=[validators.EqualTo('new_password', message='Passwords must match')])
+    confirm_password = wtforms.PasswordField(lazy_gettext('Confirm new password'),
+        validators=[validators.EqualTo('new_password',
+            message=lazy_gettext('Passwords must match'))])
     # Full name of the user, needed to professors know their students and vice versa. The limit
     # is the size of its database column
-    fullname = wtforms.StringField('Full name', validators=[validators.Length(max=128)])
+    fullname = wtforms.StringField(lazy_gettext('Full name'),
+        validators=[validators.Length(max=128)])
     # Color scheme preference: default follows the operating system, light or dark force one
-    color_scheme = wtforms.RadioField('Color scheme', choices=[
-        ('default', 'Default'),
-        ('light', 'Light mode'),
-        ('dark', 'Dark mode'),
+    color_scheme = wtforms.RadioField(lazy_gettext('Color scheme'), choices=[
+        ('default', lazy_gettext('Default')),
+        ('light', lazy_gettext('Light mode')),
+        ('dark', lazy_gettext('Dark mode')),
     ], default='default')
     # Font of the site. RadioField rejects values that are not in the choices
-    font = wtforms.RadioField('Font', choices=[(key, label) for key, (label, _) in FONTS.items()],
-        default=DEFAULT_FONT)
+    font = wtforms.RadioField(lazy_gettext('Font'),
+        choices=[(key, label) for key, (label, _) in FONTS.items()], default=DEFAULT_FONT)
+    # Language of the interface: default follows the browser, the others force one
+    language = wtforms.RadioField(lazy_gettext('Language'),
+        choices=[('default', lazy_gettext('Default')), *LANGUAGES.items()], default='default')
     # Save button. SubmitField renders <input type=submit> element
-    update = wtforms.SubmitField('Save', id='confirm_button')
+    update = wtforms.SubmitField(lazy_gettext('Save'), id='confirm_button')
     # Login button, enabled when user is not logged in
-    login = wtforms.SubmitField('Login', id='login_button', name='login')
+    login = wtforms.SubmitField(lazy_gettext('Login'), id='login_button', name='login')
     # Logout button, when user is logged in
-    logout = wtforms.SubmitField('Logout', id='reject_button', name='action')
+    logout = wtforms.SubmitField(lazy_gettext('Logout'), id='reject_button', name='action')
     # Delete account button, if it is allowed
-    delete_account = wtforms.SubmitField('Delete account', id='delete_button', name='action')
+    delete_account = wtforms.SubmitField(lazy_gettext('Delete account'), id='delete_button',
+        name='action')
 
     @staticmethod
     def show_form():
@@ -267,13 +298,15 @@ class UserForm(flask_wtf.FlaskForm):
             return UserForm.log_in(form, next_url)
         if user:
             # User is logged in, and wants to change preferences, update some labels
-            form.password.label = 'Current password'
+            form.password.label = gettext('Current password')
         else:
-            # User is not logged in, the password field is required to login
-            form.password.validators += (validators.DataRequired(), )
+            # User is not logged in, the password field is required to login. The list of
+            # validators is shared by every form, so it is replaced instead of extended: otherwise
+            # one visit to the login page makes the password required in the preferences too
+            form.password.validators = [*form.password.validators, validators.DataRequired()]
         # Show the versatile form
         return flask.render_template('user.html', it={
-            'title': f'User {"preferences" if user else "login"}',
+            'title': gettext('User preferences') if user else gettext('User login'),
             'form': form,
             'user': user,
         })
@@ -281,10 +314,11 @@ class UserForm(flask_wtf.FlaskForm):
     @staticmethod
     def update_preferences(form: 'UserForm', user: dict):
         """ Save the preferences chosen in the form for the logged in user """
-        # Save the chosen color scheme and font in the database and in the session
+        # Save the chosen color scheme, font, and language in the database and in the session
         preferences = {
             'color_scheme': form.color_scheme.data,
             'font': form.font.data,
+            'language': form.language.data,
         }
         db.session.execute(db.update(User).filter_by(username=user['email'])
             .values(**preferences))
@@ -292,7 +326,7 @@ class UserForm(flask_wtf.FlaskForm):
         user.update(preferences)
         flask.session['user'] = user
         # TODO(I): Update the other user preferences in the database
-        flask.flash('Preferences updated successfully.', 'success')
+        flask.flash(gettext('Preferences updated successfully.'), 'success')
         return flask.redirect(flask.url_for('user'))
 
     @staticmethod
@@ -303,8 +337,8 @@ class UserForm(flask_wtf.FlaskForm):
         # Do not even check the password while blocked, so guessing gives no information
         if LoginAttempt.is_blocked(name, address):
             vyg_log('login_blocked', name)
-            flask.flash('Too many failed logins. Wait '
-                f'{LOGIN_WINDOW.seconds // 60} minutes and try again.', 'error')
+            flask.flash(gettext('Too many failed logins. Wait %(minutes)d minutes and try again.',
+                minutes=LOGIN_WINDOW.seconds // 60), 'error')
             return flask.redirect(flask.url_for('user', next=next_url))
         # Find the user in the database and compare the typed password with its hash
         db_user = db.session.scalar(db.select(User).filter_by(username=name))
@@ -313,7 +347,7 @@ class UserForm(flask_wtf.FlaskForm):
         if not db_user or not password_ok:
             LoginAttempt.record_failure(name, address)
             vyg_log('login_failed', name)
-            flask.flash('Invalid user or password', 'error')
+            flask.flash(gettext('Invalid user or password'), 'error')
             return flask.redirect(flask.url_for('user', next=next_url))
         # A new session for the logged user, so nothing stored before the login (such as a CSRF
         # token that an attacker could have planted) is kept
@@ -324,9 +358,10 @@ class UserForm(flask_wtf.FlaskForm):
             'role': db_user.role,
             'color_scheme': db_user.color_scheme,
             'font': db_user.font,
+            'language': db_user.language,
         }
         LoginAttempt.clear(name, address)
         logged_users.add(name)
-        flask.flash('Logged in successfully.', 'success')
+        flask.flash(gettext('Logged in successfully.'), 'success')
         vyg_log('login', name)
         return flask.redirect(next_url or flask.url_for('get_index'))
