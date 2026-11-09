@@ -1,6 +1,9 @@
 {%- macro course_entry(course) %}
             <article class="course_item">
-              <img src="{{ course.image }}" alt="{{ course.title }}" width="64" height="60">
+{%- if course.banner %}
+              <img class="banner" src="{{ course.file_url(course.banner) }}" alt="">
+{%- endif %}
+              <img src="{{ course.file_url(course.image) }}" alt="{{ course.title }}" width="64" height="60">
               <h4>
                 <a href="/course/{{ course.name }}"><span class="code">{{ course.name }}</span> {{ course.title }}</a>
               </h4>

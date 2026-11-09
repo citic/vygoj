@@ -176,6 +176,12 @@ def get_course(name):
     vyg_log('visit', f'/course/{name}')
     return CourseController.get_course(name)
 
+@app.route('/course/<course_name>/files/<path:filename>')
+@talisman(content_security_policy=FILE_CSP)
+def get_course_file(course_name, filename):
+    """ Browser asked for an image of the course, e.g. its picture or banner """
+    return ProblemController.get_course_file(course_name, filename)
+
 # Problems ----------------------------------------------------------------------------------------
 
 @app.route('/problem/<course>/<problem>')

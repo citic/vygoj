@@ -117,6 +117,20 @@ class ProblemController:
         return flask.send_file(os.path.realpath(path), mimetype=file_type, max_age=FILE_MAX_AGE)
 
     @staticmethod
+    def get_course_file(course_name: str, filename: str):
+        """ Send an image of the course repository, e.g. the picture or the banner of the course.
+        It follows the rules of the files of problems, but only images are served """
+        course = CourseController.find_course(course_name)
+        if not course:
+            flask.abort(404)
+        path = safe_join(course.folder, filename)
+        file_type = FILE_TYPES.get(os.path.splitext(filename)[1][1:].lower(), '')
+        if (not path or not file_type.startswith('image/') or not os.path.isfile(path)
+                or not ProblemLoader.is_inside(course.folder, path)):
+            flask.abort(404)
+        return flask.send_file(os.path.realpath(path), mimetype=file_type, max_age=FILE_MAX_AGE)
+
+    @staticmethod
     def post_problem(course_name: str, problem_name: str):
         """ Client JavaScript asked for an action: fetch a problem, run user solution,
         save user code, ... All communication is made with JSON objects """

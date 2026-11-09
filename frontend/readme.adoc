@@ -199,6 +199,18 @@ Statements refer to images and videos of their folder with relative URLs, such a
 
 Files are streamed, so videos have no size limit, and range requests let students jump to any second. They are served with their own strict CSP (`FILE_CSP` in `src/main.py`), with `sandbox`, because an SVG may contain scripts that would run if a student opened its URL. Images from other sites stay blocked by the CSP of the pages (`img-src 'self' data:`), so students do not reveal their addresses to third parties.
 
+=== Images of courses
+
+A course of `vygoj.json` may have an `image`, shown at the left of its name, and a `banner`, a wide image shown behind its card in _My courses_ and behind its summary in the course page:
+
+[source,json]
+----
+"image": "img/progra1.svg",
+"banner": "img/progra1_banner.svg"
+----
+
+A path relative to the folder of the course repository is served by `/course/<course>/files/<path>` (`ProblemController.get_course_file()`), and a path that starts with `/`, such as `/img/logo2.svg`, is a file of this site. Courses without `image` show the gavel (`/img/logo2.svg`), and courses without `banner` show none. The route has the same controls as the files of problem folders, but it serves images only: `vygoj.json`, problems, and any other file of the repository are never served. A layer of the surface color and a halo around the letters keep the text readable over any banner, in the light and dark schemes. Courses are cached by the server, so it must be restarted after changing these fields.
+
 [[login_limits]]
 === Login attempts
 
