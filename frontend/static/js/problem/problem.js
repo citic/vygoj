@@ -12,6 +12,11 @@ const FETCH_TIMEOUT = 30000;
 const DEFAULT_RUN_TIMEOUT = 120000;
 // HTTP statuses of the frontend or a proxy when the judge cannot be reached
 const UNREACHABLE_STATUSES = [502, 503, 504];
+// A line of the compiler, the linker, or the linter about a line of the solution, with its line,
+// its column or section of the linker, its severity, and its message. E.g. "solution.c:4:18:
+// error: 'y' undeclared" (gcc), "/tmp/solution.c:3:(.text+0x5): undefined reference to `foo'"
+// (ld), or "solution.c:5:  Missing space after ,  [whitespace/comma] [3]" (cpplint)
+const DIAGNOSTIC = /^(?:\S*\/)?solution\.\w+:(\d+):(?:(\d+):|(\(\.[^)]*\)):)?\s*(?:(?:fatal )?(error|warning|note):)?\s*(.*)$/;
 
 // An error that means that the server or the judge could not be reached, not that the request was
 // wrong. The connection is checked again after it
@@ -216,6 +221,13 @@ class ProblemManager {
           editor.executeEdits('storage', [{ range: editor.getModel().getFullModelRange(), text: event.newValue }]);
           editor.pushUndoStop();
         });
+      }
+    });
+    // Clicking a line of the diagnostics about a line of the code goes to its code
+    document.getElementById('diagnostics').addEventListener('click', ({ target }) => {
+      const index = target.closest('button')?.dataset.index;
+      if (index) {
+        codeEditor.goToDiagnostic(Number(index));
       }
     });
   }
@@ -519,9 +531,6 @@ class ProblemManager {
 
   // Shows the diagnostics of the judge and the compiler (warnings or errors), if any
   updateCompileOutput(message = null) {
-    // The DOM element where the output will be shown
-    const diagnosticsElement = document.getElementById('diagnostics');
-    console.assert(diagnosticsElement);
     // The compiler output text
     let compileOutput = message;
     // If no message was provided, get the message of the judge for the whole run (e.g. a missing
@@ -530,13 +539,45 @@ class ProblemManager {
       compileOutput = [this.result.message, this.result.compileOutput]
         .filter((text) => text).join('\n\n');
     }
+    // Without diagnostics, the code editor underlines nothing
+    ProblemManager.showDiagnostics(compileOutput || '');
     // If there is a diagnostic, show it
     if (compileOutput && compileOutput.length > 0) {
-      diagnosticsElement.textContent = compileOutput;
       showElement('diagnostics_wrapper');
     } else {
       hideElement('diagnostics_wrapper');
     }
+  }
+
+  // Shows the text of the diagnostics. Its lines about a line of the code are buttons that go to
+  // that line, and the code editor underlines them
+  static showDiagnostics(text) {
+    const diagnostics = [];
+    const nodes = text.split('\n').flatMap((line) => {
+      const match = line.match(DIAGNOSTIC);
+      // Line 0 of cpplint is about the whole file, e.g. a missing copyright
+      if (!match || Number(match[1]) < 1) {
+        return [line, '\n'];
+      }
+      const [, row, column, section, severity, message] = match;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.index = diagnostics.length;
+      button.textContent = line;
+      // Without a severity, a line of the linker is an error, one of gcc with a column gives the
+      // context of another, e.g. "required from here", and one of cpplint is a warning of style
+      diagnostics.push({
+        line: Number(row),
+        column: Number(column) || 0,
+        severity: severity || (section && 'error') || (column && 'note') || 'warning',
+        message,
+      });
+      return [button, '\n'];
+    });
+    // The last line break is not needed
+    nodes.pop();
+    document.getElementById('diagnostics').replaceChildren(...nodes);
+    document.getElementById('code_editor').showDiagnostics(diagnostics);
   }
 
   // Shows standard error output for the selected test case

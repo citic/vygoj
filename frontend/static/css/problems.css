@@ -187,6 +187,22 @@ editor-toolbar {
     overflow: auto;
     background-color: var(--surface-alt);
   }
+
+  /* Lines of the compiler about a line of the code look as the rest of the text, and clicking
+     them goes to that line in the code editor */
+  & pre button[data-index],
+  & pre button[data-index]:hover {
+    all: unset;
+    cursor: pointer;
+  }
+
+  & pre button[data-index]:hover {
+    text-decoration: underline;
+  }
+
+  & pre button[data-index]:focus-visible {
+    outline: 2px solid var(--bg-color);
+  }
 }
 
 /* A button for each test case. The selected one has a triangle below, and after a run, each
