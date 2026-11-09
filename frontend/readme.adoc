@@ -133,7 +133,7 @@ The frontend is exposed to the Internet and receives untrusted data from student
 [[secret_key]]
 === Session key
 
-Flask signs the session cookie with `SECRET_KEY` of `config/config.py`. The session stores the logged user and their role, so anyone who knows the key can forge a session of any user, including administrators. The frontend refuses to start if the key is missing, is the one of `config-example.py`, or has fewer than 32 characters. Generate a random key with:
+Flask signs the session cookie with `SECRET_KEY` of `config/config.py`. The session stores the logged user and their role, so anyone who knows the key can forge a session of any user, including administrators. The frontend refuses to start if the key is missing (it is empty in `config/defaults.py`), is the public example key of an old configuration file, or has fewer than 32 characters. Generate a random key with:
 
 [source,sh]
 ----
@@ -226,7 +226,7 @@ The checks and the new run are stored while the row of the user is locked (`SELE
 
 The frontend sends the backend a compact JSON object (`run_solution()` in `src/problems.py`) with only two parts: the solution, and the fields of the problem that judge it (`BACKEND_FIELDS`: the test cases, the languages, the limits, and other fields that change verdicts), not the statement or the initial code. It answers the browser the JSON of the backend as it came, parsed only to store the grade. Texts travel as JSON strings, so code and output in any language arrive intact.
 
-The administrator sets the limits of the runs in `config.py` (see `config/config-example.py`). Each limit has an absolute range (`ABS_MIN_*`, `ABS_MAX_*`) and a default (`DEF_*`), which may be a number or a dictionary with a number for each language. Professors may choose a value in `vygoj.json`, for the problem or for a test case; values out of the range are clamped, and a missing value or 0 means the default. `src/limits.py` computes the effective values and sends them in the problem. The frontend does not start with invalid limits.
+The administrator sets the limits of the runs in `config.py` (their defaults and explanation are in `config/defaults.py`). Each limit has an absolute range (`ABS_MIN_*`, `ABS_MAX_*`) and a default (`DEF_*`), which may be a number or a dictionary with a number for each language. Professors may choose a value in `vygoj.json`, for the problem or for a test case; values out of the range are clamped, and a missing value or 0 means the default. `src/limits.py` computes the effective values and sends them in the problem. The frontend does not start with invalid limits.
 
 [cols="2,3,1,1",options="header"]
 |===

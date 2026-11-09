@@ -43,7 +43,7 @@ class CourseController:
     @staticmethod
     def cache_courses():
         ''' Load the courses from the repository and store them in the cache of this process '''
-        repo = os.path.join(app.config.get('DATA_FOLDER'), COURSES_REPO)
+        repo = os.path.join(app.config['DATA_FOLDER'], COURSES_REPO)
         courses = CourseController.load_courses(repo)
         with _cache_lock:
             # Store each course in the cache as a pair {course.name: course}

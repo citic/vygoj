@@ -91,13 +91,16 @@ FILE_CSP = {
     'sandbox': '',
 }
 
-# Load configuration from a Python file with constants
+# Load the default configuration, and replace it with the settings of this server, if any. Every
+# setting is defined in defaults.py, so the code needs no fallback values
+app.config.from_pyfile(os.path.join(app_path, 'config/defaults.py'))
 config_file = os.path.join(app_path, 'config/config.py')
-app.config.from_pyfile(config_file)
+app.config.from_pyfile(config_file, silent=True)
 
 # The key that signs session cookies. The session holds the logged user and their role, so anyone
 # who knows or guesses the key can forge a session of any user, including administrators
 MIN_SECRET_KEY_LENGTH = 32
+# The public example key of an old configuration file
 EXAMPLE_SECRET_KEY = 'A very large and random string that is hard to guess.'
 
 def check_secret_key(secret_key):
@@ -108,18 +111,24 @@ def check_secret_key(secret_key):
             f'{MIN_SECRET_KEY_LENGTH} characters, generate one with: '
             "python3 -c 'import secrets; print(secrets.token_hex(32))'")
 
-check_secret_key(app.config.get('SECRET_KEY'))
+check_secret_key(app.config['SECRET_KEY'])
 # Invalid limits of runs would fail every run, so the server does not start with them
 Limits.check_config(app.config)
 
 # Behind a reverse proxy, every request comes from the address of the proxy, which adds the address
 # of the client to the X-Forwarded-For header. TRUSTED_PROXIES is the number of proxies that add
 # it. With 0 (clients connect directly) the header is ignored, because clients could fake it
-trusted_proxies = app.config.get('TRUSTED_PROXIES', 0)
+trusted_proxies = app.config['TRUSTED_PROXIES']
 if not isinstance(trusted_proxies, int) or trusted_proxies < 0:
     raise RuntimeError(f'TRUSTED_PROXIES in {config_file} must be an integer >= 0')
 if trusted_proxies:
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=trusted_proxies)
+
+# Runs and the status of the judge need at least one backend
+backends = app.config['BACKENDS']
+if (not isinstance(backends, list) or not backends
+        or not all(isinstance(uri, str) for uri in backends)):
+    raise RuntimeError(f'BACKENDS in {config_file} must be a list of at least one URI')
 
 # Database ----------------------------------------------------------------------------------------
 
@@ -207,7 +216,7 @@ def get_status():
     """ Client JS asked for backend status, propagate it """
     try:
         # TODO(jhc): summarize status of all available backends
-        uris = app.config.get('BACKENDS', ['http://localhost:9090'])
+        uris = app.config['BACKENDS']
         return requests.get(f'{uris[0]}/status',
             timeout=(BACKEND_CONNECT_TIMEOUT, BACKEND_STATUS_TIMEOUT)).json()
     except (requests.exceptions.RequestException, ValueError):
@@ -247,7 +256,7 @@ def handle_csrf_error(error):
 # Adapted from https://gist.github.com/alexaleluia12/e40f1dfa4ce598c2e958611f67d28966
 
 # If data/ dir does not exist, create it
-data_dir = app.config.get('DATA_FOLDER', './data')
+data_dir = app.config['DATA_FOLDER']
 if not os.path.exists(data_dir):
     os.mkdir(data_dir)
 # If log file does not exist, create it and add its header

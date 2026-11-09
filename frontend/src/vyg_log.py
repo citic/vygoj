@@ -23,7 +23,7 @@ def log_event2(fields):
     username = user_obj.get('email', '') if user_obj else ''
     request = flask.request
     # date time ip scheme url status_code user body fields
-    log_path = os.path.join(app.config.get('DATA_FOLDER'), 'vyg.tsv')
+    log_path = os.path.join(app.config['DATA_FOLDER'], 'vyg.tsv')
     with open(log_path, 'a', encoding='utf8') as log_file:
         log_file.write(f'{timestamp}\t{request.remote_addr}\t{request.method}\t'
             f'{request.url}\t{username}\t{fields}\n')
@@ -273,7 +273,7 @@ def main(args:list) -> int:
     if len(args) < 2:
         print('Usage: python vyg_log.py log_file output_folder')
         return 1
-    # log_file = os.path.join(app.config.get('DATA_FOLDER'), 'vyg.tsv')
+    # log_file = os.path.join(app.config['DATA_FOLDER'], 'vyg.tsv')
     extract_log(args[0], args[1])
     return 0
 

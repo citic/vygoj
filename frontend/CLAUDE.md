@@ -33,7 +33,10 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
   the web application can reuse it.
 - `templates/`: Jinja2 templates. `base.html` is the layout; pages extend it and fill blocks.
   Views pass data to templates in a single `it` object.
-- `config/config.py`: local, git-ignored settings (copy from `config/config-example.py`).
+- `config/defaults.py`: default value and explanation of every setting. `main.py` loads it, and
+  then `config/config.py`: local, git-ignored settings that replace only the defaults that differ.
+  Add new settings to `defaults.py` and read them with `app.config['NAME']`, without fallback
+  values in the code.
 - `vygdata/`, `data/`: runtime data (course repos, logs). Git-ignored.
 
 ## Commands

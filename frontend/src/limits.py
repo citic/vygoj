@@ -1,7 +1,8 @@
-""" Limits of the code runs. The administrator of the judge sets them in config.py: each constraint
-has an absolute range (ABS_MIN_*, ABS_MAX_*) and a default (DEF_*). Professors may choose a value
-in a problem or a test case; it is clamped to the range, and missing or 0 means the default. The
-backend receives the effective values in the problem, so it only receives a problem and a solution
+""" Limits of the code runs. The administrator of the judge sets them in config.py (their defaults
+and explanation are in config/defaults.py): each constraint has an absolute range (ABS_MIN_*,
+ABS_MAX_*) and a default (DEF_*). Professors may choose a value in a problem or a test case; it is
+clamped to the range, and missing or 0 means the default. The backend receives the effective values
+in the problem, so it only receives a problem and a solution
 """
 import math
 
@@ -20,21 +21,6 @@ CONSTRAINED_FIELDS = {
 # Fields that a test case may set for itself. Missing or 0 means the effective value of the problem
 TEST_FIELDS = ('minDuration', 'maxDuration')
 
-# Values used when config.py does not set them. config/config-example.py explains each one.
-# Defaults (DEF_*) may be a number, or a dictionary with a number for each language
-DEFAULTS = {
-    'ABS_MIN_RUN_DURATION': 0,
-    'ABS_MAX_RUN_DURATION': 10,
-    'DEF_MIN_RUN_DURATION': 0,
-    'DEF_MAX_RUN_DURATION': 2,
-    'ABS_MIN_TOTAL_DURATION': 0,
-    'ABS_MAX_TOTAL_DURATION': 60,
-    'DEF_MAX_TOTAL_DURATION': 30,
-    'ABS_MIN_OUTPUT_SIZE': 0,
-    'ABS_MAX_OUTPUT_SIZE': 10 * 1024,
-    'DEF_MAX_OUTPUT_SIZE': 10 * 1024,
-}
-
 # Seconds to connect to a backend
 BACKEND_CONNECT_TIMEOUT = 5
 # Seconds that a backend may answer after the maxTotalDuration of the submission: it creates and
@@ -50,27 +36,27 @@ class Limits:
 
     @staticmethod
     def setting(name: str):
-        """ Return the value of the setting of config.py, or its default """
-        return app.config.get(name, DEFAULTS[name])
+        """ Return the value of the setting of config.py, or of config/defaults.py """
+        return app.config[name]
 
     @staticmethod
     def check_config(config: dict):
         """ Raise RuntimeError if a limit in config.py is not valid, so the server does not start
         with limits that would fail every run """
         for range_name in set(CONSTRAINED_FIELDS.values()):
-            low = config.get(f'ABS_MIN_{range_name}', DEFAULTS[f'ABS_MIN_{range_name}'])
-            high = config.get(f'ABS_MAX_{range_name}', DEFAULTS[f'ABS_MAX_{range_name}'])
+            low = config[f'ABS_MIN_{range_name}']
+            high = config[f'ABS_MAX_{range_name}']
             if not Limits.is_number(low) or not Limits.is_number(high) or not 0 <= low <= high:
                 raise RuntimeError(f'ABS_MIN_{range_name} and ABS_MAX_{range_name} in config.py '
                     'must be numbers with 0 <= min <= max')
         for field in CONSTRAINED_FIELDS:
             name = Limits.default_name(field)
-            default = config.get(name, DEFAULTS[name])
+            default = config[name]
             values = default.values() if isinstance(default, dict) else [default]
             if not all(Limits.is_number(value) for value in values):
                 raise RuntimeError(f'{name} in config.py must be a number, or a dictionary with a '
                     'number for each language')
-        if config.get('ABS_MAX_TOTAL_DURATION', DEFAULTS['ABS_MAX_TOTAL_DURATION']) <= 0:
+        if config['ABS_MAX_TOTAL_DURATION'] <= 0:
             raise RuntimeError('ABS_MAX_TOTAL_DURATION in config.py must be greater than 0')
 
     @staticmethod

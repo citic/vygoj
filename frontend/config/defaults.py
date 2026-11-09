@@ -1,3 +1,9 @@
+# Default configuration of the frontend. The frontend loads this file, and then config/config.py
+# (git-ignored), which only needs the settings of each server that differ from these: at least
+# SECRET_KEY, and usually DATA_FOLDER and BACKENDS. A setting in config.py replaces the whole value
+# of this file, e.g. a dictionary of defaults per language is not merged. Keep this file complete
+# and valid: the code reads every setting from it without fallback values
+
 # Data folder to store course repos, student code submissions
 DATA_FOLDER = "/home/user/vygdata"
 # TSV file in DATA_FOLDER with the users to add to the database (username and password columns)
@@ -6,7 +12,7 @@ USERS_FILE = "users-passwords.tsv"
 SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg:///vygoj'
 # Frontend network port to listen on
 PORT = 8080
-# Backend server URIs. A random one will be selected for each code run request
+# Backend server URIs, at least one. A random one will be selected for each code run request
 BACKENDS = [ "http://localhost:9090" ]
 # Limits of the code runs. Each one has an absolute range [ABS_MIN_*, ABS_MAX_*] for this judge, and
 # a default DEF_* used when a problem does not choose a value. Professors may choose values in the
@@ -36,12 +42,10 @@ DEF_MAX_TOTAL_DURATION = 30
 ABS_MIN_OUTPUT_SIZE = 0
 ABS_MAX_OUTPUT_SIZE = 10 * 1024
 DEF_MAX_OUTPUT_SIZE = 10 * 1024
-# Check status of backend servers every this amount of milliseconds
-BACKEND_STATUS_INTERVAL = 60000
 # Secret key that signs the session cookies and the CSRF tokens. Anyone who knows it can log in as
-# any user, so the frontend refuses to start with this example value or with fewer than 32
-# characters. Generate one with: python3 -c 'import secrets; print(secrets.token_hex(32))'
-SECRET_KEY = 'A very large and random string that is hard to guess.'
+# any user, so it must be set in config.py: the frontend refuses to start without it or with fewer
+# than 32 characters. Generate one with: python3 -c 'import secrets; print(secrets.token_hex(32))'
+SECRET_KEY = ''
 # Number of reverse proxies (e.g. Apache, see readme.adoc) between clients and this server. Login
 # limits and logs use the address of the client, which proxies send in X-Forwarded-For. Use 0 if
 # clients connect directly, otherwise they could fake that header to avoid the limits

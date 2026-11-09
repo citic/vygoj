@@ -102,12 +102,12 @@ cd vygoj/frontend
 make install
 ----
 
-Second, configure the frontend. Copy the example configuration file and edit it. Follow the instructions in the file. At least, you must provide an existing folder to store data and a list of backend servers.
+Second, configure the frontend. It loads the default settings of `config/defaults.py`, which explains each one, and replaces them with the ones of `config/config.py`. Create that file with only the settings that differ in your server. At least, you must provide a random `SECRET_KEY`, and usually an existing folder to store data (`DATA_FOLDER`) and a list of backend servers (`BACKENDS`). Do not edit `defaults.py`, it is part of the repository.
 
 [source,console]
 ----
 cd vygoj/frontend/config
-cp -n config-example.py config.py
+echo "SECRET_KEY = '$(python3 -c 'import secrets; print(secrets.token_hex(32))')'" >> config.py
 nano config.py
 ----
 

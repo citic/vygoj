@@ -289,8 +289,6 @@ class ProblemController:
 
     @staticmethod
     def select_random_backend():
-        """ Choose a random URI from the configuration BACKENDS array """
-        backends = app.config['BACKENDS']
-        if not backends or len(backends) == 0:
-            backends = ['http://localhost:9090']
-        return random.choice(backends)
+        """ Choose a random URI from the configuration BACKENDS array. main.py checks that it is
+        not empty """
+        return random.choice(app.config['BACKENDS'])
