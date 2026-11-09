@@ -2,6 +2,7 @@ import {
   ExecutionResult, Problem, Status,
 } from '../vyg.js';
 import { CHECK_EVENT, STATUS_EVENT } from '../site.js';
+import _ from '../i18n.js';
 import '../components/monaco-editor.js';
 import '../components/editor-toolbar.js';
 
@@ -280,13 +281,16 @@ class ProblemManager {
       json = await response.json().catch(() => null);
     } catch (error) {
       if (error.name === 'TimeoutError') {
-        throw new ConnectionError(`the server did not answer in ${timeout / 1000} seconds`);
+        const seconds = timeout / 1000;
+        throw new ConnectionError(_('the server did not answer in %(seconds)s seconds', { seconds }));
       }
       // fetch() rejects with a TypeError when the network or the server is down
-      throw new ConnectionError(`could not connect to the server (${error.message})`);
+      const { message } = error;
+      throw new ConnectionError(_('could not connect to the server (%(message)s)', { message }));
     }
     if (!response.ok || !json || json.error) {
-      const message = json?.error || `the server answered ${response.status} ${response.statusText}`;
+      const { status, statusText: text } = response;
+      const message = json?.error || _('the server answered %(status)s %(text)s', { status, text });
       throw UNREACHABLE_STATUSES.includes(response.status)
         ? new ConnectionError(message) : new Error(message);
     }
@@ -413,7 +417,7 @@ class ProblemManager {
     document.getElementById('revert_button').addEventListener('click', () => {
       // The native dialogs of the browser are enough for a simple confirmation
       // eslint-disable-next-line no-alert
-      if (window.confirm('Do you want to revert to the initial code?')) {
+      if (window.confirm(_('Do you want to revert to the initial code?'))) {
         // An edit instead of setValue(), so Undo can bring back the code that was replaced
         const editor = this.editors[0];
         const text = this.initialCodeFor(languageList.value);
@@ -452,7 +456,7 @@ class ProblemManager {
     }
     const hasCode = this.editors[0].getValue().trim().length > 0;
     this.runButton.disabled = this.running || !this.online || !hasCode;
-    this.runButton.textContent = this.running ? 'Running' : 'Run';
+    this.runButton.textContent = this.running ? _('Running') : _('Run');
   }
 
   async runSolution() {
@@ -473,7 +477,7 @@ class ProblemManager {
     } catch (error) {
       // E.g. the network or the judge failed, or the session expired: show it as a diagnostic
       console.error(error);
-      this.updateCompileOutput(`Could not run the solution: ${error.message}`);
+      this.updateCompileOutput(_('Could not run the solution: %(error)s', { error: error.message }));
       // site.js checks the connection now, and disables Run until it is restored if it is lost
       if (error instanceof ConnectionError) {
         window.dispatchEvent(new Event(CHECK_EVENT));
@@ -625,23 +629,24 @@ class ProblemManager {
     if (this.result && index < this.result.results.length) {
       const test = this.result.results[index];
       // console.dir(test);
-      verdict = `Test case ${index + 1} verdict: ${test.status}`;
+      const { status } = test;
+      verdict = _('Test case %(number)s verdict: %(status)s', { number: index + 1, status });
       if (test.message) {
         verdict += `: ${test.message}`;
       }
-      verdict += `. It took ${test.wallTime.toFixed(3)} s`;
+      verdict += _('. It took %(seconds)s s', { seconds: test.wallTime.toFixed(3) });
       if (test.cpuTime) {
         // CPU time adds up all threads, so it is longer than the wall time in parallel code
-        verdict += ` (CPU ${test.cpuTime.toFixed(3)} s)`;
+        verdict += _(' (CPU %(seconds)s s)', { seconds: test.cpuTime.toFixed(3) });
       }
       if (test.memory) {
-        verdict += `, ${formatBytes(test.memory)} of memory`;
+        verdict += _(', %(memory)s of memory', { memory: formatBytes(test.memory) });
       }
       if (test.threadCount) {
-        verdict += `, ${test.threadCount} secondary threads`;
+        verdict += _(', %(count)s secondary threads', { count: test.threadCount });
       }
       if (test.exitCode) {
-        verdict += `, and exited with code ${test.exitCode}`;
+        verdict += _(', and exited with code %(code)s', { code: test.exitCode });
       }
     }
     // If there is output text, show it

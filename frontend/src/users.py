@@ -5,6 +5,7 @@ import urllib.parse
 
 import flask
 import flask_wtf
+from babel.messages.mofile import read_mo
 from flask_babel import gettext, lazy_gettext
 import wtforms
 from wtforms import validators
@@ -45,6 +46,17 @@ def select_language() -> str:
     if language in LANGUAGES:
         return language
     return flask.request.accept_languages.best_match(LANGUAGES) or DEFAULT_LANGUAGE
+
+def client_translations(language: str) -> dict:
+    """ Return the translations of the interface to the given language as {text: translation},
+    for the texts written by JavaScript. English and unknown languages have none. The language is
+    checked against LANGUAGES before building the path of its file """
+    path = os.path.join(TRANSLATIONS_FOLDER, language, 'LC_MESSAGES', 'messages.mo')
+    if language not in LANGUAGES or not os.path.isfile(path):
+        return {}
+    with open(path, 'rb') as file:
+        return {message.id: message.string for message in read_mo(file)
+            if message.id and message.string}
 
 def font_url(font: str) -> str | None:
     """ Return the URL of the Google Fonts stylesheet that loads the given font, or None if the

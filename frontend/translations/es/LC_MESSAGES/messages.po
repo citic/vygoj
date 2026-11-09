@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: VygOJ \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-09 15:45-0600\n"
+"POT-Creation-Date: 2026-11-09 15:42-0600\n"
 "PO-Revision-Date: 2026-11-09 15:19-0600\n"
 "Last-Translator: \n"
 "Language: es\n"
@@ -17,8 +17,28 @@ msgstr ""
 "Generated-By: Babel 2.18.0\n"
 
 #, python-format
+msgid " (CPU %(seconds)s s)"
+msgstr " (CPU %(seconds)s s)"
+
+#, python-format
 msgid "%(passed)s test cases passed (%(points)s points)"
 msgstr "%(passed)s casos de prueba aprobados (%(points)s puntos)"
+
+#, python-format
+msgid ", %(count)s secondary threads"
+msgstr ", %(count)s hilos secundarios"
+
+#, python-format
+msgid ", %(memory)s of memory"
+msgstr ", %(memory)s de memoria"
+
+#, python-format
+msgid ", and exited with code %(code)s"
+msgstr " y terminó con el código %(code)s"
+
+#, python-format
+msgid ". It took %(seconds)s s"
+msgstr ". Tardó %(seconds)s s"
 
 msgid "Add Course"
 msgstr "Agregar curso"
@@ -49,6 +69,9 @@ msgstr ""
 msgid "Change password"
 msgstr "Cambiar contraseña"
 
+msgid "Clear all"
+msgstr "Borrar todo"
+
 msgid "Close"
 msgstr "Cerrar"
 
@@ -61,14 +84,27 @@ msgstr "Esquema de colores"
 msgid "Confirm new password"
 msgstr "Confirmar la nueva contraseña"
 
+msgid "Connected"
+msgstr "Conectado"
+
 msgid "Connected to backend"
 msgstr "Conectado al backend"
 
 msgid "Contents"
 msgstr "Contenido"
 
+msgid "Copy"
+msgstr "Copiar"
+
+#, python-format
+msgid "Could not run the solution: %(error)s"
+msgstr "No se pudo ejecutar la solución: %(error)s"
+
 msgid "Current password"
 msgstr "Contraseña actual"
+
+msgid "Cut"
+msgstr "Cortar"
 
 msgid "Dark mode"
 msgstr "Modo oscuro"
@@ -85,6 +121,22 @@ msgstr "Eliminar cuenta"
 msgid "Diagnostics"
 msgstr "Diagnósticos"
 
+msgid "Disconnected"
+msgstr "Desconectado"
+
+#, python-format
+msgid "Disconnected: %(error)s"
+msgstr "Desconectado: %(error)s"
+
+msgid "Do you want to clear all the code?"
+msgstr "¿Desea borrar todo el código?"
+
+msgid "Do you want to revert to the initial code?"
+msgstr "¿Desea volver al código inicial?"
+
+msgid "Exit fullscreen"
+msgstr "Salir de pantalla completa"
+
 msgid "Expected output"
 msgstr "Salida esperada"
 
@@ -96,6 +148,9 @@ msgstr "Fuente"
 
 msgid "Full name"
 msgstr "Nombre completo"
+
+msgid "Fullscreen"
+msgstr "Pantalla completa"
 
 msgid "Help"
 msgstr "Ayuda"
@@ -139,6 +194,9 @@ msgstr "Mis cursos"
 msgid "No errors"
 msgstr "Sin errores"
 
+msgid "No network connection"
+msgstr "Sin conexión a la red"
+
 msgid "Not connected to backend"
 msgstr "Sin conexión con el backend"
 
@@ -150,6 +208,9 @@ msgstr "Contraseña"
 
 msgid "Passwords must match"
 msgstr "Las contraseñas deben coincidir"
+
+msgid "Paste"
+msgstr "Pegar"
 
 msgid "Please login to see your courses."
 msgstr "Inicie sesión para ver sus cursos."
@@ -167,14 +228,23 @@ msgstr "Lenguaje de programación"
 msgid "Progress"
 msgstr "Progreso"
 
+msgid "Redo"
+msgstr "Rehacer"
+
 msgid "Return to the course"
 msgstr "Volver al curso"
+
+msgid "Revert to initial code"
+msgstr "Volver al código inicial"
 
 msgid "Run"
 msgstr "Ejecutar"
 
 msgid "Run my solution against the test cases"
 msgstr "Ejecutar mi solución con los casos de prueba"
+
+msgid "Running"
+msgstr "Ejecutando"
 
 msgid "Save"
 msgstr "Guardar"
@@ -198,6 +268,13 @@ msgstr "Enunciado arriba"
 msgid "Test case %(number)d"
 msgstr "Caso de prueba %(number)d"
 
+#, python-format
+msgid "Test case %(number)s verdict: %(status)s"
+msgstr "Veredicto del caso de prueba %(number)s: %(status)s"
+
+msgid "The browser blocked the clipboard. Use Ctrl+X, Ctrl+C or Ctrl+V."
+msgstr "El navegador bloqueó el portapapeles. Use Ctrl+X, Ctrl+C o Ctrl+V."
+
 msgid ""
 "The connection with the judge was lost. Running code is disabled until it"
 " is restored."
@@ -213,6 +290,9 @@ msgid "Too many failed logins. Wait %(minutes)d minutes and try again."
 msgstr ""
 "Demasiados intentos fallidos de inicio de sesión. Espere %(minutes)d "
 "minutos e intente de nuevo."
+
+msgid "Undo"
+msgstr "Deshacer"
 
 msgid "User control"
 msgstr "Control de usuario"
@@ -253,4 +333,16 @@ msgstr ""
 
 msgid "Your solution"
 msgstr "Su solución"
+
+#, python-format
+msgid "could not connect to the server (%(message)s)"
+msgstr "no se pudo conectar con el servidor (%(message)s)"
+
+#, python-format
+msgid "the server answered %(status)s %(text)s"
+msgstr "el servidor respondió %(status)s %(text)s"
+
+#, python-format
+msgid "the server did not answer in %(seconds)s seconds"
+msgstr "el servidor no respondió en %(seconds)s segundos"
 

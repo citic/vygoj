@@ -15,8 +15,8 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from courses import CourseController
 from limits import BACKEND_CONNECT_TIMEOUT, Limits
 from problems import BACKEND_STATUS_TIMEOUT, ProblemController
-from users import (DEFAULT_FONT, FONTS, TRANSLATIONS_FOLDER, User, UserForm, font_url, log_out,
-    select_language)
+from users import (DEFAULT_FONT, FONTS, TRANSLATIONS_FOLDER, User, UserForm, client_translations,
+    font_url, log_out, select_language)
 from db import db
 from vyg_log import vyg_log
 
@@ -36,7 +36,7 @@ app.jinja_env.globals.update(FONTS=FONTS, DEFAULT_FONT=DEFAULT_FONT, font_url=fo
 
 # Texts of the interface marked with _() are shown in the language chosen by the user or by the
 # browser. Their translations are in translations/ (see "Translations" in readme.adoc), and
-# base.html writes the language in <html lang>
+# base.html writes the language in <html lang>, which static/js/i18n.js reads
 babel = Babel(app, locale_selector=select_language,
     default_translation_directories=TRANSLATIONS_FOLDER)
 app.jinja_env.globals.update(get_locale=get_locale)
@@ -232,6 +232,11 @@ def get_status():
         # The error text has the internal address of the backend, so it is logged, not shown
         app.logger.exception('could not get the status of the backend')
         return flask.jsonify({ 'status': 'offline', 'error': 'backend not available' }), 504
+
+@app.route('/translations/<language>.json')
+def get_translations(language):
+    """ Client JavaScript asked for the translations of its texts to the language of the page """
+    return flask.jsonify(client_translations(language))
 
 @app.route('/help')
 def get_help():
