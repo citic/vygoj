@@ -3,8 +3,8 @@ import datetime
 import hashlib
 import json
 
-import vyg
 from db import db
+from limits import Limits
 from users import User
 
 # Runs of a user that are counted to limit them
@@ -14,20 +14,14 @@ RUNS_WINDOW = datetime.timedelta(hours=1)
 MAX_RUNS_PER_WINDOW = 120
 # Minimum time between the starts of two runs of a user. Students take longer to fix their code
 MIN_RUN_INTERVAL = datetime.timedelta(seconds=5)
-# A run that has not finished after this time is not running anymore, e.g. the server stopped
-# before storing its end. It must be longer than the backend timeouts in problems.py (5 + 120 s)
-MAX_RUN_DURATION = datetime.timedelta(seconds=150)
+# A run that has not finished this many seconds after the longest wait for a backend
+# (Limits.max_backend_wait()) is not running anymore, e.g. the server stopped before storing its end
+STALE_RUN_GRACE = 15
 # Runs are deleted after this time. The result of the last run of each problem is kept until then
 # to answer the same submission again without running it
 RUNS_KEPT = datetime.timedelta(days=1)
 # Larger results are not stored, so their submissions run again if repeated
 MAX_STORED_RESULT = 2**20
-# Fields of a problem that the backend uses to judge a solution, besides its test cases. If the
-# professor changes them, or the test cases, the stored results of that problem are not reused.
-# Add here the new fields that change verdicts. The statement and the title are not included, so
-# fixing a typo does not make students run their code again
-JUDGED_FIELDS = ('allowIndeterminism', 'maxDuration', 'maxThreads', 'minDuration', 'minThreads',
-    'mustContain', 'tools')
 
 def plural(count: int, noun: str) -> str:
     """ Return the count with the noun in singular or plural, e.g. '1 minute', '2 minutes' """
@@ -66,25 +60,16 @@ class Run(db.Model):
     result = db.Column(db.Text)
 
     @staticmethod
-    def hash_code(problem: vyg.Problem, language: str, code: str) -> str:
-        """ Return the hash that identifies a submission of the given code to the problem as it is
-        now. The code goes last, and the other parts have no null characters, so different
+    def hash_code(problem_dict: dict, language: str, code: str) -> str:
+        """ Return the hash that identifies a submission of the given code to the problem, as it is
+        sent to the backend: its test cases, effective limits, and other fields that judge it, but
+        not the statement, so fixing a typo does not make students run their code again. The code
+        goes last, and the other parts have no null characters (JSON escapes them), so different
         submissions cannot have the same text to hash """
-        text = f'{Run.hash_problem(problem)}\0{language}\0{code}'
+        # Sorted keys, so the same problem always gives the same text
+        problem_json = json.dumps(problem_dict, sort_keys=True, separators=(',', ':'))
+        text = f'{problem_json}\0{language}\0{code}'
         return hashlib.sha256(text.encode('utf-8')).hexdigest()
-
-    @staticmethod
-    def hash_problem(problem: vyg.Problem) -> str:
-        """ Return the hash of the test cases and the judged fields of the problem. It is computed
-        once per loaded problem; changes in the course repo are loaded when the server restarts """
-        if getattr(problem, '_judge_hash', None) is None:
-            judged = { field: getattr(problem, field, None) for field in JUDGED_FIELDS }
-            judged['tests'] = problem.tests
-            # Sorted keys, so the same problem always gives the same text
-            text = json.dumps(judged, default=vyg.to_dict, sort_keys=True)
-            # A private attribute (starts with _), so it is not sent to clients or backends
-            setattr(problem, '_judge_hash', hashlib.sha256(text.encode('utf-8')).hexdigest())
-        return getattr(problem, '_judge_hash')
 
     @staticmethod
     def find_user_id(username: str):
@@ -129,7 +114,8 @@ class Run(db.Model):
         """ Raise RunRejected if the user cannot run code now """
         recent = db.select(Run).filter(Run.user_id == user_id, Run.started > now - RUNS_WINDOW)
         last = db.session.scalar(recent.order_by(Run.started.desc()).limit(1))
-        if last and not last.finished and last.started > now - MAX_RUN_DURATION:
+        max_duration = datetime.timedelta(seconds=Limits.max_backend_wait() + STALE_RUN_GRACE)
+        if last and not last.finished and last.started > now - max_duration:
             # Most runs take a few seconds, so the client may try again soon
             raise RunRejected('Your previous run has not finished yet. Wait for its result.',
                 MIN_RUN_INTERVAL)

@@ -1,18 +1,14 @@
 """ Questions asked to students """
 from vyg.activity import Activity
 from vyg.material import Material
-from vyg.utils import decode_if
 
 
 class Question(Activity, material_type='question'):
     """ A question is a request for information from students. If student matches the right answer,
     s/he gains points. Questions have variables. Each variable has its own type, text, and answer.
     """
-    # Fields to be encoded using base64 when serializing to JSON for network exchange.
-    encoded_fields = ['text']
-
-    def __init__(self, json_dict: dict, parent: Material, should_decode: bool):
+    def __init__(self, json_dict: dict, parent: Material):
         """ Construct this object getting values from the given dictionary """
-        super().__init__(json_dict, parent, should_decode)
+        super().__init__(json_dict, parent)
         # Sections may include a short description. For large text nest a Page object
-        self.text = decode_if(json_dict.get('text', ''), should_decode)
+        self.text = json_dict.get('text', '')

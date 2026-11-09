@@ -1,74 +1,34 @@
-""" Helper functions for encoding and serialization """
-import base64
-import copy
+""" Helper functions for texts and serialization """
 import json
 
 
-def encode(value): # :str|dict
-    """ Codifies the given text to base64 in order to transport it as a JSON value """
-    if isinstance(value, dict):
-        return encode_dict(value)
-    return str(base64.b64encode(value.encode('utf-8')))[2:-1] if value else ''
-
-def encode_dict(json_dict:dict):
-    """ Codifies the values of dictionary to base64 in order to transport it as a JSON value """
-    for key in json_dict.keys():
-        json_dict[key] = encode(json_dict[key])
-    return json_dict
-
-def decode(value): # :str|dict
-    """ De-codifies the given text in base64 to plain text """
-    if isinstance(value, dict):
-        return decode_dict(value)
-    return base64.b64decode(value).decode('utf-8')
-
-def decode_dict(json_dict:dict):
-    """ De-codifies the values of the given dictionary in base64 to plain text """
-    for key in json_dict.keys():
-        json_dict[key] = decode(json_dict[key])
-    return json_dict
-
-def decode_if(value, cond):
-    """ Decodes the given value only if the condition is true """
-    return decode(value) if cond else value
-
 def prepend(text, prefix, sep = ' '):
-    """ Prepends the prefix to the text separated by sep if prefix is not empty """
-    return f'{prefix}{sep}{text}' if prefix else text
+    """ Prepends the prefix to the text separated by sep. The separator is not added if the text
+    or the prefix is empty """
+    if not text or not prefix:
+        return text or prefix
+    return f'{prefix}{sep}{text}'
 
 def append(text, suffix, sep = ' '):
-    """ Appends the suffix to the text separated by sep if suffix is not empty """
-    return f'{text}{sep}{suffix}' if suffix else text
+    """ Appends the suffix to the text separated by sep. The separator is not added if the text
+    or the suffix is empty """
+    if not text or not suffix:
+        return text or suffix
+    return f'{text}{sep}{suffix}'
 
 def to_dict(data_object):
-    """ Returns a dictionary with data attributes of data_object. If the class for the data_object
-    has a static attribute named encoded fields, the values for those fields are encoded to
-    base64 strings. The data_object is not modified. """
-    # By the default, return the direct dictionary representation of the object. Do not export to
-    # JSON private non-serializable attributes (starts with _) or are empty. They are skipped
-    # before copying, because private ones, such as the parent of a material, may reference the
-    # whole course, and copying it on each request would waste time and memory
-    public_fields = {field: value for field, value in data_object.__dict__.items()
+    """ Returns a dictionary with the public, non-empty data attributes of data_object, to be
+    converted to JSON. Texts travel as they are: JSON strings carry any Unicode character. The
+    data_object is not modified """
+    # Private attributes (start with _) are not serializable, e.g. the parent of a material
+    # references the whole course. Empty values are skipped to make messages shorter; readers use
+    # the same defaults. The dictionary is new, but its values are shared with the object: callers
+    # must replace them, not modify them
+    return {field: value for field, value in data_object.__dict__.items()
         if not field.startswith('_') and value}
-    # Because it may be modified, we make a copy to preserve the original object intact
-    result = copy.deepcopy(public_fields)
-    # If class has a static attribute encoded_fields as a list of strings (attribute names)
-    if hasattr(data_object.__class__, 'encoded_fields'):
-        # For each field to be encoded
-        for field in data_object.__class__.encoded_fields:
-            # If the object has a value for the attribute
-            if field in result:
-                # Encode the value of the attribute to the temporary dictionary
-                if isinstance(result[field], dict):
-                    # The field contains a dictionary, but only its values must be encoded
-                    for key in result[field].keys():
-                        result[field][key] = encode(result[field][key])
-                else:
-                    result[field] = encode(result[field])
-    # Return the dictionary that will be converted to JSON
-    return result
 
 def to_json(data_object):
-    """ Convert the given Python object to JSON string """
+    """ Convert the given Python object to a compact JSON string, without spaces or indentation,
+    because it travels between servers and to the browser, and it is stored in logs """
     # See https://docs.python.org/3/library/json.html#json.dump
-    return json.dumps(data_object, default=to_dict, indent=2)
+    return json.dumps(data_object, default=to_dict, separators=(',', ':'))

@@ -107,8 +107,7 @@ class ProblemLoader:
         if os.path.isfile(path):
             text = ProblemLoader.read_file(problem, path)
             if text:
-                # Files are written by hand, so their values are not base64 encoded
-                problem.merge(json.loads(text), False)
+                problem.merge(json.loads(text))
 
     @staticmethod
     def load_problem_statement(problem: vyg.Problem, path: str):
@@ -168,10 +167,9 @@ class ProblemLoader:
         if len(problem.tests) > 0:
             return  # Test cases are already loaded
         # TODO(jhc): implement test case generators
-        # For each file tests/input<number>.txt read its entire contents to a variable input,
-        # read the content of its correspondent tests/output<number>txt file to a variable
-        # output, create a dictionary {'input': input, 'output': output} and append it to the
-        # test_cases list
+        # For each file tests/input<number>.txt read its entire contents, read the content of its
+        # correspondent tests/output<number>.txt file, and the optional args<number>.txt and
+        # error<number>.txt files, and append a test case {'args', 'stdin', 'stdout', 'stderr'}
         input_files = sorted(glob.glob(os.path.join(path, 'tests/input*.txt')))
         for input_file in input_files:
             match = re.search(r'input(\d+)\.txt$', input_file)
@@ -187,15 +185,15 @@ class ProblemLoader:
                 os.path.join(path, f'tests/args{num}.txt'))
             error_content = ProblemLoader.load_test(problem,
                 os.path.join(path, f'tests/error{num}.txt'))
-            # TODO(jhc): if vygoj.json does not contain input/output, fetch from file
+            # TODO(jhc): if vygoj.json does not contain stdin/stdout, fetch from file
             json_dict = {
                 'args': args_content,
-                'input': input_content,
-                'output': output_content,
-                'error': error_content,
+                'stdin': input_content,
+                'stdout': output_content,
+                'stderr': error_content,
                 'points': 1
             }
-            problem.tests.append(vyg.TestCase(json_dict, False))
+            problem.tests.append(vyg.TestCase(json_dict))
 
     @staticmethod
     def load_test(problem: vyg.Problem, file_path: str) -> str:

@@ -12,7 +12,8 @@ from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from courses import CourseController
-from problems import BACKEND_CONNECT_TIMEOUT, BACKEND_STATUS_TIMEOUT, ProblemController
+from limits import BACKEND_CONNECT_TIMEOUT, Limits
+from problems import BACKEND_STATUS_TIMEOUT, ProblemController
 from users import DEFAULT_FONT, FONTS, User, UserForm, font_url, log_out
 from db import db
 from vyg_log import vyg_log
@@ -108,6 +109,8 @@ def check_secret_key(secret_key):
             "python3 -c 'import secrets; print(secrets.token_hex(32))'")
 
 check_secret_key(app.config.get('SECRET_KEY'))
+# Invalid limits of runs would fail every run, so the server does not start with them
+Limits.check_config(app.config)
 
 # Behind a reverse proxy, every request comes from the address of the proxy, which adds the address
 # of the client to the X-Forwarded-For header. TRUSTED_PROXIES is the number of proxies that add

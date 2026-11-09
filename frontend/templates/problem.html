@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&amp;icon_names=backspace,content_copy,content_cut,content_paste,fullscreen,fullscreen_exit,redo,restart_alt,space_dashboard,splitscreen_left,splitscreen_right,splitscreen_top,undo">
 {%- endblock %}
 {%- block main %}
-      <main id="problem" class="problem" data-name="{{ it.problem.name }}" data-csrf-token="{{ csrf_token() }}">
+      <main id="problem" class="problem" data-name="{{ it.problem.name }}" data-csrf-token="{{ csrf_token() }}" data-run-timeout="{{ it.run_timeout }}">
         <article class="description">
           <h2>{{ it.problem.title }}</h2>
           <div class="statement">{{ it.problem.statement|safe }}</div>
@@ -47,8 +47,10 @@
               test cases passed (<span id="user_points">0</span>/<span id="total_points">{{ it.problem.calculate_total_points() }}</span> points)
             </p>
           </header>
+          {#- problem.js shows it while the connection with the frontend or the backend is lost #}
+          <p id="connection_error" role="alert" hidden>The connection with the judge was lost. Running code is disabled until it is restored.</p>
           <figure id="diagnostics_wrapper" hidden>
-            <figcaption>Compiler output</figcaption>
+            <figcaption>Diagnostics</figcaption>
             <pre id="diagnostics">No errors</pre>
           </figure>
           <div class="test_cases">

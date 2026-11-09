@@ -71,9 +71,6 @@ def parse_submission(body:bytes):
         is malformed """
     try:
         submission = json.loads(body)
-        # The frontend encodes the submission as a JSON string, and then sends it encoded as JSON
-        if isinstance(submission, str):
-            submission = json.loads(submission)
     except (ValueError, RecursionError):
         # Invalid JSON or UTF-8, or nesting too deep
         return None

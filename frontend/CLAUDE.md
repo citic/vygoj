@@ -16,6 +16,9 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
 - `src/sanitize.py`: `sanitize_html()` cleans HTML of course authors (statements, and content pages
   in the future) with `nh3` (allow lists of tags, attributes, CSS properties, and URL schemes;
   only videos of the content folder). It rewrites relative URLs to the files route of the content.
+- `src/limits.py`: limits of the runs (time, output size). `config.py` sets an absolute range and
+  a default per limit (per language if a dictionary), professors choose values in the problem,
+  and `Limits` computes the effective values sent to the backend and the timeouts that follow.
 - `src/runs.py`: `Run` model (`runs` table) that limits the code runs of each user: one at a
   time, 5 seconds between them, 120 per hour, and the same submission answered with the stored
   result of the last run.

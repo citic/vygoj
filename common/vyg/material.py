@@ -3,16 +3,12 @@ import os
 from abc import ABC as abstract
 
 from vyg.constants import LANGUAGE_NAMES
-from vyg.utils import decode_if
 
 
 class Material(abstract):
     """ A material is any educational resource created by professors to support the learning of
     students in a course. It can be a page, a question, a programming problem, even a course itself.
     """
-    # Fields to be encoded using base64 when serializing to JSON when are send or received by
-    # network. Fields loaded from vygoj.json files may be not encoded when created by hand.
-    encoded_fields = ['title']
     # Classes that create() instantiates for each value of the 'type' field in JSON contents
     _subclasses = {}
 
@@ -24,12 +20,10 @@ class Material(abstract):
         if material_type:
             Material._subclasses[material_type] = cls
 
-    def __init__(self, json_dict: dict, parent: 'Material', should_decode: bool):
+    def __init__(self, json_dict: dict, parent: 'Material'):
         """ Construct the base part of a Material. json_dict is the dictionary where the values for
-        attributes will be loaded from. If should_decode is false, means json_dict was read from a
-        vygoj.json file created by humans, so the its values are not base64 encoded. If
-        should_decode is true, means the json_dict was received by network. parent is the material
-        that contains this material.
+        attributes will be loaded from, read from a vygoj.json file or received by network. parent
+        is the material that contains this material.
         """
         # Reference to the parent material that contains this material, or None if it is the course
         # It is a private attribute, not serialized to JSON, so it starts with _
@@ -46,7 +40,7 @@ class Material(abstract):
         # course. If no name is specified, use the folder as the identification name.
         self.name = json_dict.get('name', self.folder)
         # A human readable title, such as 'Programming I', 'Hello world'
-        self.title = decode_if(json_dict.get('title', ''), should_decode)
+        self.title = json_dict.get('title', '')
         # Relative date when the material is enabled to students access it. Use relative dates in
         # repository, because they are recommendations. Absolute dates are override by course
         # offerings in the database. A real value means weeks. An empty value means "always enabled"
@@ -70,16 +64,16 @@ class Material(abstract):
         # Materials can be nested, so a material can have a list of contents. Load them
         self.contents = []
         # Notice parent is not used for child materials, because self is the parent for them
-        self.load(json_dict.get('contents', []), should_decode)
+        self.load(json_dict.get('contents', []))
 
-    def load(self, contents: list, should_decode: bool):
+    def load(self, contents: list):
         """ Load the contents of this material that are also materials. """
         # For each entry in the JSON contents list, create a Material object
         for entry in contents:
-            self.contents.append(Material.create(entry, self, should_decode))
+            self.contents.append(Material.create(entry, self))
 
     @staticmethod
-    def create(json_dict: dict, parent: 'Material', should_decode: bool):
+    def create(json_dict: dict, parent: 'Material'):
         """ Create a Material object from a JSON dictionary entry. """
         material_type = json_dict.get('type', '')
         # If material starts with underscore, it is disabled
@@ -90,7 +84,7 @@ class Material(abstract):
         material_class = Material._subclasses.get(material_type)
         if material_class is None:
             raise TypeError(f'Unknown material type: {material_type}')
-        return material_class(json_dict, parent, should_decode)
+        return material_class(json_dict, parent)
 
     def get_course(self) -> 'Material':
         """ Returns the course that contains this material, or None if it is not in a course.

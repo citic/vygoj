@@ -29,11 +29,11 @@ class Course(Resource):
     - Active: When it is being used by students.
     - Finalized: When its finish date passed or professors closed it.
     """
-    def __init__(self, json_dict: dict, should_decode: bool, folder: str):
+    def __init__(self, json_dict: dict, folder: str):
         """ Construct this object getting values from the given dictionary """
         # A table of symbols that maps the material names to their objects
         self._symbols = {}
-        super().__init__(json_dict, None, should_decode)
+        super().__init__(json_dict, None)
         # Override the folder with the repository folder where courses are stored, e.g:
         # data/u13/pexercises
         self.folder = folder

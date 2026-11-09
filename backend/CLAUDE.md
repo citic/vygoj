@@ -8,7 +8,9 @@ JSON. It must assume that every submitted program is malicious.
 ## Layout
 
 - `src/main.py`: Flask app and endpoints: `GET /status` (health and job count) and `POST /run`
-  (JSON body with `problem` and `solution`).
+  (JSON body with `problem` and `solution`). The problem carries the effective limits chosen by
+  the frontend (`maxDuration`, `maxTotalDuration`, `maxOutputSize`); the backend clamps them to its
+  own ranges in `execution.py`.
 - `src/execution.py`: `Execution` class that drives one submission: static checks, container
   creation, file copy, compilation, test case runs, extra proofs (thread count, sanitizers,
   linting), and container removal. `LANGUAGE_DEFAULTS` holds compiler and lint flags per language.

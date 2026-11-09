@@ -122,7 +122,7 @@ class CourseController:
             json_dict = json.load(file)
             # Load each course from the JSON dictionary
             for contents in json_dict.values():
-                courses.append(vyg.Course(contents, False, folder))
+                courses.append(vyg.Course(contents, folder))
             return courses
         raise RuntimeError(f'could not find course {path}')
 

@@ -11,16 +11,20 @@ from werkzeug.security import safe_join
 import vyg
 from vyg_log import vyg_log
 from courses import CourseController
+from limits import CONSTRAINED_FIELDS, Limits
 from problem_loader import ProblemLoader
 from runs import Run, RunRejected
 from users import Progress
 
-# Timeouts in seconds for requests to backends, so a hung backend cannot block a worker forever.
-# A run compiles and executes every test case sequentially, each one limited by maxDuration
-BACKEND_CONNECT_TIMEOUT = 5
-BACKEND_RUN_TIMEOUT = 120
-# The status is a light health check shown to clients, so it must answer quickly
+# Timeout in seconds for the status of backends. It is a light health check shown to clients, so
+# it must answer quickly. The timeouts of runs depend on their limits (see limits.py)
 BACKEND_STATUS_TIMEOUT = 5
+
+# Fields of a problem that the backend needs to judge a solution, besides its test cases. Others,
+# such as the statement or the initial code, are not sent, so submissions are smaller. The
+# constrained fields are sent with their effective values
+BACKEND_FIELDS = ('allowIndeterminism', 'languages', 'maxThreads', 'minThreads', 'mustContain',
+    'name', 'tools') + tuple(CONSTRAINED_FIELDS)
 
 # Actions that the client JavaScript may ask with a POST to a problem
 VALID_ACTIONS = ('fetch_problem', 'run')
@@ -84,6 +88,8 @@ class ProblemController:
                 { 'href': problem.build_url(), 'text': problem.name },
             ],
             'problem': problem,
+            # The browser waits for the answer of a run longer than the frontend waits a backend
+            'run_timeout': Limits.client_run_timeout(),
             'scripts': [
                 '<script src="/js/problem/mathjax-config.js" defer="defer"></script>',
                 '<script src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js"'
@@ -154,12 +160,9 @@ class ProblemController:
         json_dict = flask.request.get_json(silent=True)
         if not isinstance(json_dict, dict) or json_dict.get('action') not in VALID_ACTIONS:
             return None
-        try:
-            message = vyg.Message(json_dict)
-        except (ValueError, TypeError):
-            # Invalid base64 or UTF-8 in the encoded fields (binascii.Error is a ValueError)
-            return None
-        if not isinstance(message.language, str):
+        message = vyg.Message(json_dict)
+        # JSON may carry any type in these fields. The body size is bounded by MAX_CONTENT_LENGTH
+        if not isinstance(message.language, str) or not isinstance(message.code, str):
             return None
         return message
 
@@ -183,7 +186,7 @@ class ProblemController:
             client_dict['tests'] = [{ 'hidden': True, 'points': test.points } if test.hidden
                 else test for test in problem.tests]
         return ProblemController.json_response(
-            json.dumps(client_dict, default=vyg.to_dict, indent=2))
+            json.dumps(client_dict, default=vyg.to_dict, separators=(',', ':')))
 
     @staticmethod
     def fetch_problem(course_name: str, problem_name: str):
@@ -205,10 +208,12 @@ class ProblemController:
         if user_id is None:
             return ProblemController.error_response('Log in to run code', 401)
         course_name = problem.get_course().name
-        code_hash = Run.hash_code(problem, message.language, message.code)
+        problem_dict = ProblemController.backend_problem(problem, message.language)
+        code_hash = Run.hash_code(problem_dict, message.language, message.code)
         # The same code as the last run of this problem gives the same result: answer it without
         # running it, e.g. when the student reloads the page and presses Run again. The hash
-        # includes the test cases, so the result is not reused if the professor changed them
+        # includes the problem sent to the backend, so the result is not reused if the professor
+        # changed its test cases or the administrator changed the limits
         repeated = Run.find_repeated(user_id, course_name, problem.name, code_hash)
         if repeated:
             vyg_log('run_repeated', f'{course_name}/{problem.name}')
@@ -221,36 +226,66 @@ class ProblemController:
                 { 'Retry-After': str(rejection.retry_after) })
         result_json = None
         try:
-            # Run the test cases and wait for the array of results
-            result = ProblemController.run_solution(problem, message)
-            # Store the same score problem.js saves in localStorage: percentage of passed test
-            # cases, adding 0.5 rounds halves up as JavaScript Math.round does (Python round() goes
-            # to even)
-            results = result.get('results') or []
-            grade = (int(100 * result.get('passedTestCount', 0) / len(results) + 0.5)
-                if results else 0)
-            Progress.store(course_name, problem.name, grade)
-            result_json = vyg.to_json(result)
+            # Run the test cases and wait for the array of results. The JSON of the backend is
+            # answered as it came, it is parsed only to grade it. It is stored for repeated runs
+            # only after it was graded, so an invalid answer is not reused
+            backend_json = ProblemController.run_solution(problem_dict, message)
+            Progress.store(course_name, problem.name, ProblemController.grade(backend_json))
+            result_json = backend_json
             return ProblemController.json_response(result_json)
         finally:
             # Also when the run failed (without result), so the user can run again
             run.finish(result_json)
 
     @staticmethod
-    def run_solution(problem: vyg.Problem, solution: vyg.Message):
-        """ Compile solution and run it against all test cases. Return an array of verdicts """
-        submission = vyg.to_json({ 'problem': problem, 'solution': solution })
+    def grade(result_json: str) -> int:
+        """ Return the same score problem.js saves in localStorage for the ExecutionResult in JSON:
+        percentage of passed test cases. Raises ValueError if it is not a JSON object """
+        result = json.loads(result_json)
+        if not isinstance(result, dict):
+            raise ValueError('the backend did not answer an ExecutionResult object')
+        results = result.get('results')
+        passed = result.get('passedTestCount', 0)
+        if not isinstance(results, list) or not results or not isinstance(passed, int):
+            return 0
+        # Adding 0.5 rounds halves up as JavaScript Math.round does (Python round() goes to even)
+        return int(100 * passed / len(results) + 0.5)
+
+    @staticmethod
+    def backend_problem(problem: vyg.Problem, language: str) -> dict:
+        """ Return the fields of the problem that the backend needs to judge a solution in the
+        language, with the effective limits of the problem and of each test case """
+        problem_dict = { field: value for field, value in vyg.to_dict(problem).items()
+            if field in BACKEND_FIELDS }
+        # Limits of the professor out of the range of config.py, or missing, are replaced
+        for field in CONSTRAINED_FIELDS:
+            problem_dict.pop(field, None)
+        problem_dict.update(Limits.effective_problem(problem, language))
+        problem_dict['tests'] = [Limits.effective_test(test, problem_dict)
+            for test in problem.tests]
+        return problem_dict
+
+    @staticmethod
+    def run_solution(problem_dict: dict, solution: vyg.Message) -> str:
+        """ Compile solution and run it against all test cases of the problem returned by
+        backend_problem(). Return the ExecutionResult in JSON, as the backend answered it """
+        # The backend truncates the output of visible test cases to maxOutputSize, and does not
+        # send the output of hidden ones, so large outputs do not travel to the browser
+        submission = vyg.to_json({ 'problem': problem_dict, 'solution': solution })
         vyg_log('run_submission', submission)
-        # Create an array of results, one for each test case
-        # TODO(jhc): get these args from config
         uri = f'{ProblemController.select_random_backend()}/run'
-        plain_result = requests.post(uri, json=submission,
-            timeout=(BACKEND_CONNECT_TIMEOUT, BACKEND_RUN_TIMEOUT))
-        plain_result.raise_for_status()
-        vyg_log('run_result', plain_result.text)
+        # The submission is already JSON text. json= would encode it again as a JSON string. The
+        # backend stops the run after maxTotalDuration, so this timeout is not reached
+        response = requests.post(uri, data=submission.encode('utf-8'),
+            headers={ 'Content-Type': 'application/json; charset=utf-8' },
+            timeout=Limits.backend_timeout(problem_dict))
+        response.raise_for_status()
+        # The backend writes UTF-8 JSON. requests would guess the encoding of .text otherwise
+        response.encoding = 'utf-8'
+        vyg_log('run_result', response.text)
         # The user program is executed once for each test case
         # TODO(jhc): Run in parallel
-        return plain_result.json()
+        return response.text
 
     @staticmethod
     def select_random_backend():
