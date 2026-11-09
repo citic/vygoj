@@ -8,6 +8,17 @@
 //   failed: number;
 // }
 
+// Milliseconds between status checks while connected, and while disconnected. Disconnected pages
+// check more often, so they notice soon that the connection is back
+const STATUS_INTERVAL_ONLINE = 60000;
+const STATUS_INTERVAL_OFFLINE = 10000;
+// Milliseconds to wait for the status before considering the server unreachable
+const STATUS_TIMEOUT = 10000;
+// Event dispatched on window when the connection to the judge is lost or restored. Its detail is
+// { online: boolean }. Pages dispatch CHECK_EVENT to ask for a check now, e.g. after a failed run
+export const STATUS_EVENT = 'vyg:backendstatus';
+export const CHECK_EVENT = 'vyg:checkbackend';
+
 class BackendStatus {
   constructor() {
     // The status of the backend: 'online', 'offline', 'maintenance'
@@ -31,6 +42,10 @@ class Site {
     this.wantsBackendDetails = true;
     // A copy of the last status received
     this.backendStatus = new BackendStatus();
+    // True if the last check reached an online backend, null before the first check
+    this.online = null; // boolean | null
+    // The timer of the next status check
+    this.statusTimer = 0; // number
     // Error checking
     if (!this.backendOfflineElement || !this.backendOnlineElement) {
       throw new Error('Could not find backend status elements');
@@ -43,22 +58,29 @@ class Site {
   }
 
   setup() {
-    // Update the backend status indicator each minute
+    // Update the backend status indicator now and then periodically
     this.checkBackendStatus();
-    window.setInterval(() => {
-      this.checkBackendStatus();
-    }, 60000);
+    // The browser knows at once when the network goes down or up
+    window.addEventListener('offline', () => this.setOnline(false, 'No network connection', false));
+    window.addEventListener('online', () => this.checkBackendStatus());
+    window.addEventListener(CHECK_EVENT, () => this.checkBackendStatus());
     // Register event handlers for flash messages' close buttons
     this.setupFlashMessages();
   }
 
-  // Called at some intervals to pull the backend status
-  checkBackendStatus() {
+  // Ask the server for the backend status, then schedule the next check
+  async checkBackendStatus() {
     // TODO: Replace by a WebSocket. Instead of pulling, server pushes changes
-    fetch(`${window.location.protocol}//${window.location.host}/status`)
-      .then((httpResponse) => httpResponse.json())
-      .then((json) => this.updateBackendStatus(json))
-      .catch((error) => this.showBackendOffline(error.message, true));
+    window.clearTimeout(this.statusTimer);
+    try {
+      // The timeout ensures a hung connection is reported, instead of waiting forever
+      const response = await fetch('/status', { signal: AbortSignal.timeout(STATUS_TIMEOUT) });
+      this.updateBackendStatus(await response.json());
+    } catch (error) {
+      this.setOnline(false, `Disconnected: ${error.message}`, true);
+    }
+    const interval = this.online ? STATUS_INTERVAL_ONLINE : STATUS_INTERVAL_OFFLINE;
+    this.statusTimer = window.setTimeout(() => this.checkBackendStatus(), interval);
   }
 
   // Called when the backend status arrived to update the UI
@@ -67,16 +89,34 @@ class Site {
     if (this.wantsBackendDetails) {
       this.showBackendDetails();
     }
-    if (json.status === 'online') {
-      this.showBackendOnline('Connected');
+    if (json?.status === 'online') {
+      this.setOnline(true, 'Connected', false);
     } else {
-      this.showBackendOffline('Disconnected', false);
+      this.setOnline(false, 'Disconnected', false);
+    }
+  }
+
+  // Show the connection state, keep it in the data-status attribute of #backend_status for pages
+  // that load later, and tell the pages when it changes
+  setOnline(online, message, log) {
+    if (online) {
+      this.showBackendOnline(message);
+    } else {
+      this.showBackendOffline(message, log);
+    }
+    if (online !== this.online) {
+      this.online = online;
+      const statusElement = document.getElementById('backend_status');
+      if (statusElement) {
+        statusElement.dataset.status = online ? 'online' : 'offline';
+      }
+      window.dispatchEvent(new CustomEvent(STATUS_EVENT, { detail: { online } }));
     }
   }
 
   showBackendDetails() {
     const element = document.getElementById('backend_version');
-    element.innerText = this.buildBackendDetails();
+    element.textContent = this.buildBackendDetails();
   }
 
   buildBackendDetails() {

@@ -133,7 +133,7 @@ The frontend is exposed to the Internet and receives untrusted data from student
 [[secret_key]]
 === Session key
 
-Flask signs the session cookie with `SECRET_KEY` of `config/config.py`. The session stores the logged user and their role, so anyone who knows the key can forge a session of any user, including administrators. The frontend refuses to start if the key is missing, is the one of `config-example.py`, or has fewer than 32 characters. Generate a random key with:
+Flask signs the session cookie with `SECRET_KEY` of `config/config.py`. The session stores the logged user and their role, so anyone who knows the key can forge a session of any user, including administrators. The frontend refuses to start if the key is missing (it is empty in `config/defaults.py`), is the public example key of an old configuration file, or has fewer than 32 characters. Generate a random key with:
 
 [source,sh]
 ----
@@ -166,7 +166,7 @@ Talisman also redirects HTTP to HTTPS (except in debug mode) and sends `Strict-T
 
 Problem folders and files are read only if their real path, after resolving symbolic links, is inside the folder of the course repository. Otherwise, a `folder` such as `../..` in `vygoj.json`, or a symbolic link committed to a repo, could show any readable file of the server (e.g. `config.py`) as a statement or a test case. Skipped files are logged as warnings. Files larger than 16 MiB are skipped too. Asciidoc statements are converted in the `safe` mode of `asciidoctor`.
 
-Test cases marked `"hidden": true` are sent to the browser without their input and output.
+A test case has the keys `args` (command line arguments, split as a shell would), `stdin`, `stdout`, and `stderr` (expected outputs), the same names of the outputs of its result. In the `tests` folder of a problem they are the files `args<n>.txt`, `input<n>.txt`, `output<n>.txt`, and `error<n>.txt`. Test cases marked `"hidden": true` are sent to the browser without them.
 
 [[statements]]
 === Problem statements
@@ -216,13 +216,29 @@ The limits depend on the address of the client, so set `TRUSTED_PROXIES` behind 
 
 Only logged users may run code (see <<input_limits>>). Their runs are stored in the `runs` table (`Run` in `src/runs.py`), so all the gunicorn workers apply the same limits. When a user presses Run:
 
-. If the code and language are the same as the last run of that user in that problem, and the problem is judged the same way, the stored result of that run is answered, without running the code again. It covers students who reload the page or press Run again, also from another browser, and robots that repeat a submission. Submissions are compared by a SHA-256 hash (`Run.hash_code()`), which takes less than a millisecond for the largest submissions (1 MiB). The hash includes a hash of the test cases and the fields of the problem that change verdicts (`JUDGED_FIELDS` in `src/runs.py`, such as the time limit), so results are not reused after the professor changes them and the server reloads the course repo. Changes in the statement do not count.
+. If the code and language are the same as the last run of that user in that problem, and the problem is judged the same way, the stored result of that run is answered, without running the code again. It covers students who reload the page or press Run again, also from another browser, and robots that repeat a submission. Submissions are compared by a SHA-256 hash (`Run.hash_code()`), which takes less than a millisecond for the largest submissions (1 MiB). The hash includes the problem as it is sent to the backend (its test cases, effective limits, and other fields that change verdicts), so results are not reused after the professor changes them and the server reloads the course repo, or after the administrator changes the limits. Changes in the statement do not count.
 . Otherwise, the run is rejected with HTTP 429, a message, and a `Retry-After` header if:
-** the previous run of the user has not finished yet (one run at a time). A run without end after 150 seconds (`MAX_RUN_DURATION`, longer than the timeouts of the backend) does not count, so a server restart cannot block users.
+** the previous run of the user has not finished yet (one run at a time). A run without end 15 seconds (`STALE_RUN_GRACE`) after the longest wait for a backend (110 seconds with the example limits) does not count, so a server restart cannot block users.
 ** the previous run started less than 5 seconds ago (`MIN_RUN_INTERVAL`).
 ** the user started 120 runs in the last hour (`MAX_RUNS_PER_WINDOW`). A student who runs the code every 30 seconds stays below it.
 
 The checks and the new run are stored while the row of the user is locked (`SELECT ... FOR UPDATE`), so two requests sent at the same time cannot both pass. Only the result of the last run of each problem is kept, if it is smaller than 1 MiB, and runs older than one day are deleted. Repeated and rejected runs are logged as `run_repeated` and `run_rejected`.
+
+The frontend sends the backend a compact JSON object (`run_solution()` in `src/problems.py`) with only two parts: the solution, and the fields of the problem that judge it (`BACKEND_FIELDS`: the test cases, the languages, the limits, and other fields that change verdicts), not the statement or the initial code. It answers the browser the JSON of the backend as it came, parsed only to store the grade. Texts travel as JSON strings, so code and output in any language arrive intact.
+
+The administrator sets the limits of the runs in `config.py` (their defaults and explanation are in `config/defaults.py`). Each limit has an absolute range (`ABS_MIN_*`, `ABS_MAX_*`) and a default (`DEF_*`), which may be a number or a dictionary with a number for each language. Professors may choose a value in `vygoj.json`, for the problem or for a test case; values out of the range are clamped, and a missing value or 0 means the default. `src/limits.py` computes the effective values and sends them in the problem. The frontend does not start with invalid limits.
+
+[cols="2,3,1,1",options="header"]
+|===
+| Field | Meaning | Range | Default
+| `minDuration`, `maxDuration` | Wall time in seconds of each test case (`*_RUN_DURATION`). A `minDuration` of 0 means no minimum. The wall time is measured in hundredths of a second (see `backend/readme.adoc`) | 0 to 10 | 0 and 2 (C, C++) to 6 (Python)
+| `maxTotalDuration` | Seconds of the whole submission. Test cases that do not fit are not run (`*_TOTAL_DURATION`) | 0 to 60 | 30
+| `maxOutputSize` | Bytes of the standard output and error of each visible test case, and of the compiler output, shown to students, followed by `(truncated)` (`*_OUTPUT_SIZE`) | 0 to 10 KiB | 10 KiB
+|===
+
+Outputs are compared complete, and hidden test cases send no output, so students cannot see what their inputs made the program write.
+
+The browser never waits forever, and it always gets an answer before giving up. The frontend waits for the backend the `maxTotalDuration` of the submission plus 30 seconds (`BACKEND_GRACE` in `src/limits.py`), and the backend answers before. The problem page gets in `data-run-timeout` how long the browser waits for a run: the longest wait for a backend plus 10 seconds (105 seconds with the example limits). Other requests are aborted after 30 seconds. `site.js` checks the connection with the judge (`/status`) every minute, and every 10 seconds while it is lost. While the browser is offline, the status check fails, or a run cannot reach the judge, the problem page shows an error and disables the Run button; it enables it again when the connection is restored.
 
 [[administrators]]
 === Administrators

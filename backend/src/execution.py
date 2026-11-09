@@ -7,6 +7,7 @@ import re
 import shlex
 import tarfile
 import threading
+import time
 import docker
 import vyg
 
@@ -19,34 +20,46 @@ STUDENT_USER = 'student'
 STUDENT_UID = 1000
 # Working directory of the student inside the container, where solution and inputs are copied
 WORKDIR = '/home/student'
-# Maximum time allowed to a user solution to run in seconds
-MAX_DURATION = 10 # seconds
-# Wall time limit for a test case when neither the test case nor the problem set one
+# The frontend sends the effective time limits in the problem (maxDuration of each test case, and
+# maxTotalDuration), chosen by its administrator and professors. The backend clamps them to these
+# ranges, which must contain the ranges of the frontends (ABS_*_DURATION in their config.py)
+# MIN_DURATION is the smallest maxDuration: a limit near 0 s, but never 0, because `timeout 0` does
+# not limit the command. minDuration may be 0
+MIN_DURATION = 1e-9 # seconds
+MAX_DURATION = 30 # seconds
+MAX_TOTAL_DURATION = 120 # seconds
+# Limits used when the problem does not send them
 DEFAULT_DURATION = 2 # seconds
+DEFAULT_TOTAL_DURATION = 30 # seconds
 # Time limits for compiling, linting, and reading statistics in the container
 COMPILE_TIMEOUT = 2 # seconds
 LINT_TIMEOUT = 2 # seconds
 STATS_TIMEOUT = 2 # seconds
-# Time limit for the gdb run that counts the threads created by the solution
-THREAD_PROOF_TIMEOUT = 3 # seconds
+# Seconds that the gdb run that counts the threads may last beyond the limit of the test case
+THREAD_PROOF_EXTRA = 2 # seconds
 # Seconds between the SIGTERM and the SIGKILL sent by `timeout` to a command that does not end
 KILL_GRACE = 1 # seconds
 # Extra seconds a command may last after its timeout before the backend kills all student processes
 # in the container. Background processes may keep the output pipe open after `timeout` ends
 HANG_GRACE = 3 # seconds
-# Total time for a submission. The container is killed when it expires. It must be shorter than
-# BACKEND_RUN_TIMEOUT in frontend/src/problems.py
-SUBMISSION_DEADLINE = 100 # seconds
+# Test cases do not start after the maxTotalDuration of the submission, and the running one is cut
+# at that time. The container is killed if the submission lasts this many seconds more, enough to
+# stop the last commands. It must be shorter than BACKEND_GRACE in frontend/src/limits.py
+DEADLINE_GRACE = 20 # seconds
 # Read timeout for each call to the Docker API, longer than any command run in the container
-DOCKER_TIMEOUT = MAX_DURATION + KILL_GRACE + HANG_GRACE + 10 # seconds
+DOCKER_TIMEOUT = MAX_DURATION + THREAD_PROOF_EXTRA + KILL_GRACE + HANG_GRACE + 10 # seconds
 
 # Bounds for the data received from the frontend. Each value is untrusted
 MAX_CODE_BYTES = 256 * 1024
 MAX_TESTS = 100
 MAX_TEST_INPUT_BYTES = 4 * 1024 * 1024
 MAX_ARGS_LENGTH = 4096
-# Bytes kept from the stdout and from the stderr of each command, the rest is discarded
+# Bytes kept from the stdout and from the stderr of each command, the rest is discarded. It also
+# bounds the maxOutputSize of the problem: the bytes of the stdout and stderr of each visible test
+# case, and of the compiler output, sent to the frontend. Outputs are compared before truncating
 MAX_OUTPUT_BYTES = 1024 * 1024
+# Appended to a truncated output, so students know that their program wrote more
+TRUNCATED_MARK = '\n(truncated)'
 
 # Resource limits of the container. Threads count as processes in pids_limit
 CONTAINER_MEMORY = '512m'
@@ -112,6 +125,13 @@ TIMEOUT_EXIT_CODE = 124
 KILLED_EXIT_CODE = 137
 # File where /usr/bin/time writes the statistics of a test case run
 TIME_FILE = 'vyg_time.txt'
+# Lines of `/usr/bin/time -v` with the statistics sent to the frontend. The elapsed time is written
+# as h:mm:ss or m:ss with decimals, e.g: 0:01.25
+WALL_TIME_PATTERN = re.compile(
+        r'Elapsed \(wall clock\) time \(h:mm:ss or m:ss\): (?:(\d+):)?(\d+):(\d+(?:\.\d+)?)')
+USER_TIME_PATTERN = re.compile(r'User time \(seconds\): (\d+(?:\.\d+)?)')
+SYSTEM_TIME_PATTERN = re.compile(r'System time \(seconds\): (\d+(?:\.\d+)?)')
+MEMORY_PATTERN = re.compile(r'Maximum resident set size \(kbytes\): (\d+)')
 
 class InvalidSubmission(ValueError):
     """ The problem or solution received from the frontend is malformed or exceeds a limit. The
@@ -142,6 +162,15 @@ def append_bounded(buffer:bytearray, chunk:bytes):
     if chunk and len(buffer) < MAX_OUTPUT_BYTES:
         buffer += chunk[:MAX_OUTPUT_BYTES - len(buffer)]
 
+def truncate_output(text:str, limit:int) -> str:
+    """ Return the text cut to limit bytes of UTF-8 followed by TRUNCATED_MARK, or the text if it
+        is not longer """
+    data = text.encode('utf-8')
+    if len(data) <= limit:
+        return text
+    # A character cut in the middle of its bytes is dropped
+    return data[:limit].decode('utf-8', errors='ignore') + TRUNCATED_MARK
+
 def decode_output(buffer:bytearray) -> str:
     """ Decode the output of a program. Student programs may print invalid UTF-8 """
     return buffer.decode('utf-8', errors='replace').strip()
@@ -162,14 +191,15 @@ class Execution:
     - Results of static and dynamic code proofs if asked in problem object
     """
     def __init__(self, problem_json:dict, solution_json:dict):
-        """ Constructor. Raises InvalidSubmission if the problem or the solution is malformed """
+        """ Constructor. The problem carries the limits of the run. Raises InvalidSubmission if the
+            problem or the solution is malformed """
         try:
             # The problem to be solved, sent by VygOJ frontend
-            self.problem = vyg.Problem(problem_json, None, True)
+            self.problem = vyg.Problem(problem_json, None)
             # The solution submitted by user, sent by VygOJ frontend as a message
             self.solution = vyg.Message(solution_json)
         except (ValueError, TypeError, AttributeError) as error:
-            # Invalid base64, UTF-8, or JSON types in the fields
+            # Invalid JSON types in the fields, e.g. a language that is not a text
             raise InvalidSubmission('Malformed problem or solution') from error
         # The programming language used by user to write the code solution
         # Language is sent by client, but if omitted, we suppose 'C'
@@ -183,12 +213,17 @@ class Execution:
         self.executable = 'solution'
         # Docker container to compiler and run test cases
         self.container:docker.models.containers.Container = None
-        # Kills the container when the submission lasts longer than SUBMISSION_DEADLINE
+        # Kills the container when the submission lasts DEADLINE_GRACE seconds after its deadline
         self.watchdog:threading.Timer = None
         # True if the watchdog killed the container
         self.deadline_expired = False
         # The execution result of each test case and a brief to be returned to frontend
         self.result = vyg.ExecutionResult({})
+        # Bytes of the outputs sent back for each visible test case. The frontend omits 0
+        self.output_limit = int(bounded_number(self.problem.maxOutputSize, 0, 0,
+                MAX_OUTPUT_BYTES))
+        # The time.monotonic() when the time of the whole submission expires
+        self.deadline = math.inf
 
     def _validate(self):
         """ Check types and sizes of the untrusted data used to run the solution """
@@ -200,20 +235,31 @@ class Execution:
             raise InvalidSubmission(f'Source code exceeds {MAX_CODE_BYTES} bytes')
         if not isinstance(self.problem.languages, list):
             raise InvalidSubmission('Invalid problem languages')
+        if not Execution._is_list_of_texts(self.problem.mustContain):
+            raise InvalidSubmission('Invalid problem mustContain')
+        if not isinstance(self.problem.tools, str):
+            raise InvalidSubmission('Invalid problem tools')
         if len(self.problem.tests) > MAX_TESTS:
             raise InvalidSubmission(f'Problem has more than {MAX_TESTS} test cases')
         for test in self.problem.tests:
             self._validate_test_case(test)
 
     @staticmethod
+    def _is_list_of_texts(value) -> bool:
+        """ True if value is a text, or a list of texts. Texts arrive as they are in JSON, so their
+            types must be checked """
+        return isinstance(value, str) or (isinstance(value, list)
+                and all(isinstance(item, str) for item in value))
+
+    @staticmethod
     def _validate_test_case(test:vyg.TestCase):
         """ Check types and sizes of the fields of a test case """
-        for text in (test.input, test.output, test.stderr, test.commandLineArguments):
+        for text in (test.stdin, test.stdout, test.stderr, test.args):
             if not isinstance(text, str):
                 raise InvalidSubmission('Invalid test case')
-        if len(test.input.encode('utf-8')) > MAX_TEST_INPUT_BYTES:
+        if len(test.stdin.encode('utf-8')) > MAX_TEST_INPUT_BYTES:
             raise InvalidSubmission(f'Test case input exceeds {MAX_TEST_INPUT_BYTES} bytes')
-        if len(test.commandLineArguments) > MAX_ARGS_LENGTH:
+        if len(test.args) > MAX_ARGS_LENGTH:
             raise InvalidSubmission('Test case arguments are too long')
         # Raises InvalidSubmission if the arguments cannot be split, e.g: unbalanced quotes
         Execution._build_args(test)
@@ -222,6 +268,7 @@ class Execution:
 
     def execute(self) -> str:
         """ Execute the solution against all test cases. Return the result as a JSON string """
+        self.deadline = time.monotonic() + self._total_limit()
         try:
             # TODO(jhc): log the run in database
             # Run static analysis checks before compiling and run the test cases
@@ -234,11 +281,12 @@ class Execution:
             self._copy_files()
             # If the solution is in a language that should be compiled, compile it
             self._compile()
-            # Run all test cases. TODO(jhc): test in parallel? needed?
+            # Run all test cases. TODO(jhc): test in parallel to finish sooner
             for index0, test_case in enumerate(self.problem.tests):
-                # Create an execution object, run it, and wait its execution result
+                self._check_deadline(len(self.problem.tests) - index0)
                 self._run_test_case(index0, test_case)
             # Run after test case proofs, e.g: linting
+            self._check_deadline(0)
             self._after_run_proofs()
             # TODO(jhc): self.build_message() for the entire execution result
         except FailedSolution:
@@ -263,12 +311,33 @@ class Execution:
         # Execution finished, encode the result to JSON and send it to frontend
         return vyg.to_json(self.result)
 
+    def _total_limit(self) -> float:
+        """ Return the seconds for the whole submission """
+        return bounded_number(self.problem.maxTotalDuration, DEFAULT_TOTAL_DURATION,
+                MIN_DURATION, MAX_TOTAL_DURATION)
+
+    def _time_left(self, limit:float) -> float:
+        """ Return the limit in seconds for a command, cut to the time left until the deadline """
+        # timeout needs a positive limit. A command started at the deadline ends at once
+        return max(min(limit, self.deadline - time.monotonic()), MIN_DURATION)
+
+    def _check_deadline(self, pending:int):
+        """ Stop the submission if its total time is over. pending: test cases not run yet """
+        if time.monotonic() < self.deadline:
+            return
+        message = f'Total time limit exceeded ({self._total_limit():g} s)'
+        if pending:
+            message += f': {pending} test case{"s" if pending > 1 else ""} not run'
+        raise FailedSolution(self.result, vyg.Status.TIMEOUT, message)
+
     def _check_static_analysis(self):
         """ If professor asked to do static analysis, eg: check some words are in code"""
         if not self.problem.mustContain:
             return
         code = self.solution.code or ''
-        for token in self.problem.mustContain:
+        # A single text is one token, not a list of characters
+        tokens = self.problem.mustContain
+        for token in [tokens] if isinstance(tokens, str) else tokens:
             if not token in code:
                 # The token is missing, launch an exception to stop the execution
                 raise FailedSolution(self.result, vyg.Status.WRONG, f'Missing {token} in solution')
@@ -333,7 +402,8 @@ class Execution:
             #sysctls={'kernel.perf_event_paranoid': 1},
             labels=CONTAINER_LABELS)
         # Bound the total time of the submission, whatever the student code does
-        self.watchdog = threading.Timer(SUBMISSION_DEADLINE, self._expire_deadline)
+        self.watchdog = threading.Timer(self.deadline - time.monotonic() + DEADLINE_GRACE,
+                self._expire_deadline)
         self.watchdog.daemon = True
         self.watchdog.start()
 
@@ -341,7 +411,7 @@ class Execution:
         """ Called by the watchdog when the submission lasts too long: kill the container """
         self.deadline_expired = True
         logger.warning('Submission exceeded %s seconds, killing its container',
-                SUBMISSION_DEADLINE)
+                self._total_limit() + DEADLINE_GRACE)
         try:
             self.container.kill()
         except docker.errors.DockerException:
@@ -368,7 +438,7 @@ class Execution:
             Execution._add_to_tar(tar_file, self.source_file, self.solution.code)
             # Copy input files of all test cases
             for index0, test in enumerate(self.problem.tests):
-                Execution._add_to_tar(tar_file, Execution._input_file(index0), test.input)
+                Execution._add_to_tar(tar_file, Execution._input_file(index0), test.stdin)
         # Extract the tar file in the container
         self.container.put_archive(path=WORKDIR, data=mem_tar.getvalue())
 
@@ -399,8 +469,9 @@ class Execution:
         stderr are kept. exit_code is None if Docker could not report it
         """
         assert isinstance(argv, list) and timeout > 0
-        # timeout sends SIGTERM when time is over, and SIGKILL later if the program ignores it
-        command = (prefix or []) + ['timeout', '-k', str(KILL_GRACE), f'{timeout:.3f}'] + argv
+        # timeout sends SIGTERM when time is over, and SIGKILL later if the program ignores it. Nine
+        # decimals (its resolution, nanoseconds) keep MIN_DURATION above 0, which means no limit
+        command = (prefix or []) + ['timeout', '-k', str(KILL_GRACE), f'{timeout:.9f}'] + argv
         if stdin_file:
             command = ['bash', '-c', STDIN_SCRIPT, 'bash', stdin_file] + command
         logger.debug('Running in container: %s', command)
@@ -443,11 +514,11 @@ class Execution:
                 + [self.source_file, '-o', self.executable] + flags.libraries.split())
         # Run the compilation command, if it fails, report to frontend
         stdout, stderr, exit_code = self._run_in_container(cmd, COMPILE_TIMEOUT)
-        self.result.compileOutput = stdout + stderr
+        self.result.compileOutput = truncate_output(stdout + stderr, self.output_limit)
         if exit_code != 0:
-            # Student code produced compiling errors
-            raise FailedSolution(self.result, vyg.Status.COMPILER_ERROR,
-                    vyg.append(stdout, stderr, '\n'))
+            # Student code produced compiling errors. They are in compileOutput, the client shows
+            # it after the message
+            raise FailedSolution(self.result, vyg.Status.COMPILER_ERROR, 'Compilation failed')
         # TODO(jhc): Check if the executable is created
         # TODO(jhc): Create a snapshot (commit/image) of the container in order to restore it
         # after running the student solution against each test case. Disabled until efficiency
@@ -470,17 +541,17 @@ class Execution:
         # Get the test case to run
         assert 0 <= index0 < len(self.problem.tests)
         input_file = Execution._input_file(index0)
-        expected_output = test_case.output
+        expected_output = test_case.stdout
         expected_error = test_case.stderr
-        # TODO(jhc): get wall time limit from min(problem, max_for_language)
-        wall_time_limit = bounded_number(test_case.maxDuration or self.problem.maxDuration,
-                DEFAULT_DURATION, 0.1, MAX_DURATION)
+        wall_time_limit = self._wall_time_limit(test_case)
+        # The last test case before the deadline may have less time than its limit
+        run_limit = self._time_left(wall_time_limit)
         # Prepare run command: /usr/bin/time -v -o vyg_time.txt timeout 2 ./solution < input.txt
         cmd = self._build_run_prefix() + [f'./{self.executable}'] + self._build_args(test_case)
         time_prefix = ['/usr/bin/time', '-v', '-o', TIME_FILE]
         test_result = vyg.TestCaseResult({})
         test_result.stdout, test_result.stderr, test_result.exitCode = (
-                self._run_in_container(cmd, wall_time_limit, input_file, time_prefix))
+                self._run_in_container(cmd, run_limit, input_file, time_prefix))
         # Background processes must not interfere with the statistics or the next test cases
         self._kill_student_processes()
         # Fetch the statistics generated by the /usr/bin/time command
@@ -488,33 +559,53 @@ class Execution:
         # Compare standard output and error against expected ones in test case
         self._compare_output('stdout', expected_output, test_result)
         self._compare_output('stderr', expected_error, test_result)
-        if Execution._timed_out(test_result, wall_time_limit):
+        if Execution._timed_out(test_result, run_limit):
             # The solution was killed by timeout
             test_result.status = vyg.Status.TIMEOUT
             self.result.status = vyg.Status.TIMEOUT
-            test_result.message = 'Time limit exceeded'
-        elif (test_result.exitCode != 0 or test_result.stderr and
-            'ERROR SUMMARY: 0 errors' not in test_result.stderr):
-            # If the exit code is not 0, mark the test case as failed
+            test_result.message = ('Time limit exceeded' if run_limit >= wall_time_limit
+                    else 'Total time limit exceeded')
+        elif (test_result.exitCode != 0 or not expected_error.strip() and test_result.stderr
+                and 'ERROR SUMMARY: 0 errors' not in test_result.stderr):
+            # If the exit code is not 0, or the solution wrote to stderr when the test case did not
+            # expect it (e.g. a sanitizer report), mark the test case as failed. An expected
+            # stderr was already compared by _compare_output()
             test_result.status = vyg.Status.RUNTIME_ERROR
             self.result.status = vyg.Status.RUNTIME_ERROR
-            test_result.message = f'Exit code {test_result.exitCode}'
+            test_result.message = (f'Exit code {test_result.exitCode}' if test_result.exitCode
+                    else 'Unexpected standard error output')
             #self.result.message = vyg.append(self.result.message, test_result.message)
         # Check solution is in time range
         self._check_time_range(test_case, test_result)
-        # If there further proofs, execute them
-        if self.result.status == vyg.Status.PASSED and self.problem.has_proofs():
-            self._run_thread_count_proof(index0, input_file)
-        # Store the result in the array to be returned to the client
-        # TODO(jhc): Each step should save into the self.result dictionary
+        # If there further proofs, execute them. Each test case is checked on its own, so later
+        # test cases also report their threads after a failed one
+        if test_result.status == vyg.Status.PASSED and self.problem.has_proofs():
+            self._run_thread_count_proof(index0, input_file, test_result)
+        # Store the result in the array to be returned to the client, without outputs that are too
+        # large or hidden
+        self._bound_outputs(test_case, test_result)
         self.result.results.append(test_result)
+        self.result.totalPoints += test_case.points
         # If the test was passed
         if test_result.status == vyg.Status.PASSED:
             # Increase the count of passed test cases and accumulate the points
             self.result.passedTestCount += 1
             self.result.points += test_case.points
-            self.result.totalPoints += test_case.points
         logger.debug('Test case %d: %s', index0 + 1, test_result.status)
+
+    def _wall_time_limit(self, test_case:vyg.TestCase) -> float:
+        """ Return the seconds that the solution may run the test case """
+        return bounded_number(test_case.maxDuration or self.problem.maxDuration,
+                DEFAULT_DURATION, MIN_DURATION, MAX_DURATION)
+
+    def _bound_outputs(self, test_case:vyg.TestCase, test_result:vyg.TestCaseResult):
+        """ Remove the outputs of a hidden test case, students must not see what its input made
+            their program write. Truncate the outputs of a visible test case to output_limit """
+        if test_case.hidden:
+            test_result.stdout = test_result.stderr = ''
+        else:
+            test_result.stdout = truncate_output(test_result.stdout, self.output_limit)
+            test_result.stderr = truncate_output(test_result.stderr, self.output_limit)
 
     @staticmethod
     def _timed_out(test_result:vyg.TestCaseResult, wall_time_limit:float) -> bool:
@@ -529,7 +620,7 @@ class Execution:
         """ Split the command line arguments of the test case as a shell would, but without
             expanding variables, globs, or running commands """
         try:
-            return shlex.split(test_case.commandLineArguments)
+            return shlex.split(test_case.args)
         except ValueError as error:
             # E.g: unbalanced quotes
             raise InvalidSubmission('Invalid test case arguments') from error
@@ -542,19 +633,30 @@ class Execution:
         return []
 
     def _fetch_stats(self, test_result:vyg.TestCaseResult):
-        """ Fetch /usr/bin/time output, parse it to extract some statistics for the frontend """
-        # TODO(jhc): Fetch CPU time, used RAM
-        # TODO(jhc): The student can write this file, so a solution could forge its duration.
-        # Measure the time outside the student's reach
+        """ Fetch /usr/bin/time output, parse it to extract the wall time, the CPU time (all
+            threads added up), and the maximum memory of the test case for the frontend """
+        # TODO(jhc): The student can write this file, so a solution could forge its statistics.
+        # Measure them outside the student's reach
         time_output, _, _ = self._run_in_container(['cat', TIME_FILE], STATS_TIMEOUT)
-        match = re.search(r'Elapsed \(wall clock\) time \(h:mm:ss or m:ss\): 0:(\d+\.\d+)',
-                time_output)
+        match = WALL_TIME_PATTERN.search(time_output)
         if match:
-            test_result.wallTime = float(match.group(1))
+            hours, minutes, seconds = match.groups()
+            test_result.wallTime = (int(hours or 0) * 3600 + int(minutes) * 60
+                    + float(seconds))
         else:
             test_result.wallTime = 0.0
+        test_result.cpuTime = round(Execution._parse_stat(USER_TIME_PATTERN, time_output)
+                + Execution._parse_stat(SYSTEM_TIME_PATTERN, time_output), 3)
+        # /usr/bin/time reports kibibytes, the frontend expects bytes
+        test_result.memory = int(Execution._parse_stat(MEMORY_PATTERN, time_output)) * 1024
         # If this test case lasted longer than the longest known, even if it failed
         self.result.maxWallTime = max(self.result.maxWallTime, test_result.wallTime)
+
+    @staticmethod
+    def _parse_stat(pattern:re.Pattern, time_output:str) -> float:
+        """ Return the number captured by pattern in the output of /usr/bin/time, or 0 """
+        match = pattern.search(time_output)
+        return float(match.group(1)) if match else 0.0
 
     def _compare_output(self, output_type:str, expected_output:str,
                 test_result:vyg.TestCaseResult):
@@ -575,15 +677,15 @@ class Execution:
             #self.result.message = vyg.append(self.result.message, test_result.message)
 
     def _check_time_range(self, test_case:vyg.TestCase, test_result:vyg.TestCaseResult):
-        """ Check if the solution run within the time range allowed by the problem """
-        if self.result.status != vyg.Status.PASSED:
+        """ Check if the test case run within the time range allowed by the problem """
+        if test_result.status != vyg.Status.PASSED:
             return
-        duration = self.result.maxWallTime # or self.result.maxCpuTime
+        # Each test case is judged by its own duration, not by the longest one of the run
+        duration = test_result.wallTime # or test_result.cpuTime
         assert duration >= 0.0
         min_duration = bounded_number(test_case.minDuration or self.problem.minDuration,
                 0.0, 0.0, MAX_DURATION)
-        max_duration = bounded_number(test_case.maxDuration or self.problem.maxDuration,
-                MAX_DURATION, 0.0, MAX_DURATION)
+        max_duration = self._wall_time_limit(test_case)
         if min_duration and duration < min_duration:
             self.result.status = test_result.status = vyg.Status.TIMEOUT
             test_result.message = vyg.append(test_result.message,
@@ -593,8 +695,9 @@ class Execution:
             test_result.message = vyg.append(test_result.message,
                     'Execution slower than expected')
 
-    def _run_thread_count_proof(self, index:int, stdin:str):
-        """ Checks that user solution created the required count of threads """
+    def _run_thread_count_proof(self, index:int, stdin:str, test_result:vyg.TestCaseResult):
+        """ Checks that user solution created the required count of threads in the test case at
+            index, and stores the count in its result """
         # Get the test case
         assert 0 <= index < len(self.problem.tests)
         test = self.problem.tests[index]
@@ -603,26 +706,29 @@ class Execution:
         # report New Thread events
         cmd = (['gdb', '-q', '-batch', f'-ex=run < {stdin}', '--args', f'./{self.executable}']
                 + self._build_args(test))
-        stdout, _, _ = self._run_in_container(cmd, THREAD_PROOF_TIMEOUT)
+        # gdb runs the solution slower than the test case
+        proof_limit = self._time_left(self._wall_time_limit(test) + THREAD_PROOF_EXTRA)
+        stdout, _, _ = self._run_in_container(cmd, proof_limit)
         self._kill_student_processes()
-        self.result.threadCount = sum('New Thread' in line for line in stdout.splitlines())
+        test_result.threadCount = sum('New Thread' in line for line in stdout.splitlines())
         # Get the accepted range, min may be the first number in stdin
         min_threads = test.minThreads or self.problem.minThreads
         if min_threads == 'stdin':
-            words = test.input.split(maxsplit=1)
+            words = test.stdin.split(maxsplit=1)
             min_threads = int(words[0]) if words and words[0].isdecimal() else None
         min_threads = bounded_number(min_threads, 1, 0, vyg.MAX_THREADS)
         max_threads = bounded_number(test.maxThreads or self.problem.maxThreads,
                 vyg.MAX_THREADS, 0, vyg.MAX_THREADS)
         # Check it is in range
-        in_range = min_threads <= self.result.threadCount <= max_threads
+        in_range = min_threads <= test_result.threadCount <= max_threads
         # If user did not create the asked amount of threads
         if not in_range:
-            # Mark the test case failed
-            self.result.status = vyg.Status.RUNTIME_ERROR
-            # Provide a descriptive message
-            self.result.message = vyg.append(self.result.message,
-                    f'Invalid amount of secondary threads ({self.result.threadCount})')
+            # Mark the test case failed, and the whole run
+            test_result.status = self.result.status = vyg.Status.RUNTIME_ERROR
+            # Provide a descriptive message. The proof runs only on passed test cases, which
+            # have no message yet
+            test_result.message = (
+                    f'Invalid amount of secondary threads ({test_result.threadCount})')
 
     def _after_run_proofs(self):
         """ Run after test case proofs, e.g: linting """
@@ -633,7 +739,8 @@ class Execution:
             stdout, stderr, exit_code = self._run_in_container(cmd, LINT_TIMEOUT)
             if exit_code != 0:
                 # Linter found errors, report them
-                self.result.compileOutput += vyg.append(stdout, stderr, '\n')
+                self.result.compileOutput = truncate_output(vyg.append(self.result.compileOutput,
+                        vyg.append(stdout, stderr, '\n'), '\n'), self.output_limit)
                 self.result.status = vyg.Status.COMPILER_ERROR
                 self.result.message = vyg.append(self.result.message,
                         'Linter found errors in the code')

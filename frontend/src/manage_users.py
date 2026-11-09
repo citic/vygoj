@@ -76,7 +76,7 @@ def import_users(users_file: str = None) -> int:
     if users_file is None:
         # The file has plain passwords, so it is kept out of git in the data folder
         users_file = os.path.join(app.config['DATA_FOLDER'],
-            app.config.get('USERS_FILE', 'users-passwords.tsv'))
+            app.config['USERS_FILE'])
     # A missing file is not an error, because make runs this script before every start
     if not os.path.isfile(users_file):
         print(f'manage_users: no users file {users_file}, skipped')

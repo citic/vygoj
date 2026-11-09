@@ -23,7 +23,7 @@ def log_event2(fields):
     username = user_obj.get('email', '') if user_obj else ''
     request = flask.request
     # date time ip scheme url status_code user body fields
-    log_path = os.path.join(app.config.get('DATA_FOLDER'), 'vyg.tsv')
+    log_path = os.path.join(app.config['DATA_FOLDER'], 'vyg.tsv')
     with open(log_path, 'a', encoding='utf8') as log_file:
         log_file.write(f'{timestamp}\t{request.remote_addr}\t{request.method}\t'
             f'{request.url}\t{username}\t{fields}\n')
@@ -131,7 +131,7 @@ def extract_submission(log_entry:dict, user_folder: str):
     problem_name = log_entry.get('url', '').split('/')[-1]
     # Submission has two parts, the problem and the solution
     # Extract the problem if not already done
-    problem = vyg.Problem(submission.get('problem', {}), None, True)
+    problem = vyg.Problem(submission.get('problem', {}), None)
     problem_folder = os.path.join(user_folder, problem_name)
     # Create a folder for this submission using the problem name and timestamp
     if not os.path.exists(problem_folder):
@@ -143,14 +143,11 @@ def extract_submission(log_entry:dict, user_folder: str):
 # Submission example:
 # {
 #   "problem": {
-#     "title": "base64encoded",
-#     "overdue_policy": "disabled",
-#     "weight": 1.0,
-#     "statement": "base64encoded",
+#     "name": "hello",
 #     "tests": [
 #       {
-#         "input": "base64encoded=",
-#         "output": "base64encoded=",
+#         "stdin": "World\n",
+#         "stdout": "Hello World\n",
 #         "points": 1,
 #         "minThreads": 1,
 #         "maxThreads": 32768
@@ -159,19 +156,17 @@ def extract_submission(log_entry:dict, user_folder: str):
 #     "languages": [
 #       "C++"
 #     ],
-#     "initialCodeFor": {
-#       "C++": "base64encoded"
-#     },
 #     "maxThreads": 32768,
 #     "allowIndeterminism": "none",
 #     "maxDuration": 1.0,
-#     "tools": "tsan lint",
-#     "folder_loaded": true
+#     "maxTotalDuration": 30,
+#     "maxOutputSize": 10240,
+#     "tools": "tsan lint"
 #   },
 #   "solution": {
 #     "action": "run",
 #     "language": "C++",
-#     "code": "base64encoded"
+#     "code": "#include <iostream>..."
 #   }
 # }
 
@@ -187,9 +182,9 @@ def extract_problem(problem:vyg.Problem, problem_folder: str):
         for index, test in enumerate(tests):
             # Use three leading zeros for test case number
             test_number = f'{index + 1:03d}'
-            extract_file(test_folder, f'args{test_number}.txt', test.commandLineArguments)
-            extract_file(test_folder, f'input{test_number}.txt', test.input)
-            extract_file(test_folder, f'output{test_number}.txt', test.output)
+            extract_file(test_folder, f'args{test_number}.txt', test.args)
+            extract_file(test_folder, f'input{test_number}.txt', test.stdin)
+            extract_file(test_folder, f'output{test_number}.txt', test.stdout)
             extract_file(test_folder, f'stderr{test_number}.txt', test.stderr)
     # Export initial code for each language
     for language, initial_code in problem.initialCodeFor.items():
@@ -256,8 +251,8 @@ def extract_test_result(run_file, run_folder: str, index1: int, test_result: dic
     output to the failed subfolder of run_folder if the test case did not pass """
     status = test_result.get('status', '')
     wall_time = test_result.get('wallTime', -0.0)
-    message = vyg.decode(unescape_field(test_result.get('message', '')))
-    stdout = vyg.decode(unescape_field(test_result.get('stdout', '')))
+    message = unescape_field(test_result.get('message', ''))
+    stdout = unescape_field(test_result.get('stdout', ''))
     exit_code = test_result.get('exitCode', '')
     run_file.write(f'{index1}\t{status}\t{exit_code}\t{wall_time}\t{message}\n')
     # If user failed this test, export the output to a file
@@ -278,7 +273,7 @@ def main(args:list) -> int:
     if len(args) < 2:
         print('Usage: python vyg_log.py log_file output_folder')
         return 1
-    # log_file = os.path.join(app.config.get('DATA_FOLDER'), 'vyg.tsv')
+    # log_file = os.path.join(app.config['DATA_FOLDER'], 'vyg.tsv')
     extract_log(args[0], args[1])
     return 0
 

@@ -43,7 +43,7 @@ class CourseController:
     @staticmethod
     def cache_courses():
         ''' Load the courses from the repository and store them in the cache of this process '''
-        repo = os.path.join(app.config.get('DATA_FOLDER'), COURSES_REPO)
+        repo = os.path.join(app.config['DATA_FOLDER'], COURSES_REPO)
         courses = CourseController.load_courses(repo)
         with _cache_lock:
             # Store each course in the cache as a pair {course.name: course}
@@ -122,7 +122,7 @@ class CourseController:
             json_dict = json.load(file)
             # Load each course from the JSON dictionary
             for contents in json_dict.values():
-                courses.append(vyg.Course(contents, False, folder))
+                courses.append(vyg.Course(contents, folder))
             return courses
         raise RuntimeError(f'could not find course {path}')
 

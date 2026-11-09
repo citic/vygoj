@@ -1,17 +1,5 @@
 // Common JavaScript code for the VygOJ client-side JavaScript
 
-// Encode a string to base64 format
-export function encode(text) {
-  // text 'int main(int argc, char* argv[]) {\n  return atoi(argv[--argc]);\n}\n'
-  // btoa 'aW50IG1haW4oaW50IGFyZ2MsIGNoYXIqIGFyZ3ZbXSkgewogIHJldHVybiBhdG9pKGFyZ3ZbLS1hcmdjXSk7Cn0K'
-  return window.btoa(text);
-}
-
-/// Decode a base64 encoded string to its original text
-export function decode(data) {
-  return window.atob(data);
-}
-
 /// Class to create enum objects serializable to JSON
 class Enum {
   constructor(fields) {
@@ -77,14 +65,14 @@ export class TestCase {
   constructor(json) {
     console.assert(json);
     // Command line arguments to send to the user solution when running this test case
-    this.commandLineArguments = decode(json?.args || '');
-    // Text to send to user solution through stdin
-    this.input = decode(json?.input || '');
-    // Expected output
-    this.output = decode(json?.output || '');
-    // Expected error
+    this.args = json?.args || '';
+    // Text to send to user solution through its standard input
+    this.stdin = json?.stdin || '';
+    // Expected standard output
+    this.stdout = json?.stdout || '';
+    // Expected standard error
     // TODO(jhc): If missing (None), allow using stderr for debug, because '' must match
-    this.stderr = decode(json?.stderr || '');
+    this.stderr = json?.stderr || '';
     // Points that user earns if its solution matches the expected output
     this.points = json?.points || 0;
     // If true, the test case is hidden for users, so they cannot see what is in it
@@ -93,11 +81,10 @@ export class TestCase {
     this.minThreads = json?.minThreads || 1;
     // Maximum number of threads that user solution may create to consider it correct
     this.maxThreads = json?.maxThreads || MAX_THREADS;
-    // Minimum wall time duration that user solution must spent to consider it correct
-    this.minDuration = json?.minDuration || 0.0;
-    // Maximum wall time duration that user solution must spent to consider it correct
-    // Undefined means no limit
-    this.maxDuration = json?.maxDuration;
+    // Range of wall time in seconds that the solution may spend in this test case. 0 means the
+    // range of the problem
+    this.minDuration = json?.minDuration || 0;
+    this.maxDuration = json?.maxDuration || 0;
   }
 }
 
@@ -108,16 +95,17 @@ export class Problem {
     // An identifier name for the problem, eg "uint64_adder"
     this.name = json?.name || '';
     // Title describing the problem, eg "Unsigned 64-bits adder"
-    this.title = decode(json?.title || '');
+    this.title = json?.title || '';
     // Problem statement in HTML code
     // TODO(jhc): use problem.{en|es|...}.{md|adoc|html} files instead
-    this.statement = decode(json?.statement || '');
+    this.statement = json?.statement || '';
     // Convert json test cases to TestCase objects
     this.tests = (json?.tests || []).map((test) => new TestCase(test));
     // Allowed programming languages for this problem
     this.languages = json?.languages || [];
-    // Map<string, string> but not supported by JSON. A simple object used instead
-    this.initialCodeFor = {}; // json?.initialCodeFor || {};
+    // Initial code of each language. Map<string, string> but not supported by JSON. A simple
+    // object used instead, filled below
+    this.initialCodeFor = {};
     // Minimum number of secondary threads to solve the problem. If this number
     // is one or more, additional runs will be conducted for each test case
     this.minThreads = json?.minThreads || 1;
@@ -128,17 +116,22 @@ export class Problem {
     this.allowIndeterminism = json?.allowIndeterminism || 'none';
     // Considers invalid a solution if it does NOT contains words in this array
     this.mustContain = json?.mustContain || [];
-    // Allowed time range in seconds specified by professor for all test cases
-    this.minDuration = json?.minDuration || 0.0;
-    // Maximum wall time duration that user solution must spent to consider it correct
-    this.maxDuration = json?.maxDuration;
+    // Range of wall time in seconds that the solution may spend in each test case. 0 means the
+    // default of the judge
+    this.minDuration = json?.minDuration || 0;
+    this.maxDuration = json?.maxDuration || 0;
+    // Maximum seconds for the whole submission. 0 means the default of the judge
+    this.maxTotalDuration = json?.maxTotalDuration || 0;
+    // Bytes of each output of a visible test case shown to the student. 0 means the default
+    this.maxOutputSize = json?.maxOutputSize || 0;
     // Extra tools, one of: asan tsan ubsan memcheck helgrind
     // this.tools = json?.tools || '';
 
-    // Decode the initial code for each language
-    const initials = json?.initialCodeFor || {};
-    Object.keys(initials).forEach((key) => {
-      this.initialCodeFor[key] = decode(initials[key] || '');
+    // Copy only the texts of the initial code, the JSON may have values of any type
+    Object.entries(json?.initialCodeFor || {}).forEach(([language, code]) => {
+      if (typeof code === 'string') {
+        this.initialCodeFor[language] = code;
+      }
     });
   }
 }
@@ -152,17 +145,17 @@ export class TestCaseResult {
     // An enumeration value code of the verdict, see vyg.Status
     this.status = Status.parse(json?.status) || Status.PENDING;
     // A human-readable verdict emitted by the judge
-    this.message = decode(json?.message || ''); // text
+    this.message = json?.message || ''; // text
     // CPU time, i.e all threads added
     this.cpuTime = json?.cpuTime || 0.0; // elapsed seconds
     // Exit code reported by the program to the operating system after running this test case
     this.exitCode = json?.exitCode || 0; // int
-    // Memory used by the process (bytes)
+    // Maximum memory used by the process (bytes)
     this.memory = json?.memory || 0; // Used bytes
     // Text sent by the user solution to the standard output
-    this.stdout = decode(json?.stdout || ''); // text
+    this.stdout = json?.stdout || ''; // text
     // Text sent by the user solution to the standard error
-    this.stderr = decode(json?.stderr || ''); // text
+    this.stderr = json?.stderr || ''; // text
     // Number of threads created by solution for this test case
     this.threadCount = json?.threadCount || 0; // int
     // Wall time in seconds
@@ -180,9 +173,9 @@ export class ExecutionResult {
     // except one, the status will be 'wrong'.
     this.status = Status.parse(json?.status) || Status.PENDING;
     // A human-readable verdict emitted by the judge
-    this.message = decode(json?.message || ''); // text
+    this.message = json?.message || ''; // text
     // Compiler output or null if no output was generated
-    this.compileOutput = decode(json?.compileOutput || ''); // text
+    this.compileOutput = json?.compileOutput || ''; // text
     // Count of passed test cases
     this.passedTestCount = json?.passedTestCount || 0; // int
     // Points gained by this solution
@@ -194,8 +187,5 @@ export class ExecutionResult {
     this.maxWallTime = json?.maxWallTime || -1.0; // elapsed seconds
     // Load the result of each test case
     this.results = (json?.results || []).map((result) => new TestCaseResult(result));
-
-    // TODO: Change LC_ALL=en_US in compiler environment to avoid Unicode quotes
-    this.compileOutput = this.compileOutput.replace(/â/g, '‘');
   }
 }

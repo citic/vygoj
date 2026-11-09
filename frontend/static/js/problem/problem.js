@@ -1,8 +1,21 @@
 import {
-  encode, ExecutionResult, Problem, Status,
+  ExecutionResult, Problem, Status,
 } from '../vyg.js';
+import { CHECK_EVENT, STATUS_EVENT } from '../site.js';
 import '../components/monaco-editor.js';
 import '../components/editor-toolbar.js';
+
+// Milliseconds to wait for the answers of the server, so the page never waits forever. The time of
+// a run depends on the limits of the judge, so the page gets it in data-run-timeout (seconds, see
+// Limits.client_run_timeout() in limits.py). DEFAULT_RUN_TIMEOUT is used if it is missing
+const FETCH_TIMEOUT = 30000;
+const DEFAULT_RUN_TIMEOUT = 120000;
+// HTTP statuses of the frontend or a proxy when the judge cannot be reached
+const UNREACHABLE_STATUSES = [502, 503, 504];
+
+// An error that means that the server or the judge could not be reached, not that the request was
+// wrong. The connection is checked again after it
+class ConnectionError extends Error {}
 
 // Default given code for each supported programming language
 // It may be a Map<string, string>
@@ -46,6 +59,18 @@ function saveConfig(key, value) {
   window.localStorage.setItem(`${key}:${window.location.pathname}`, value);
 }
 
+// Show a number of bytes with a binary unit, e.g. 1536 as '1.5 KiB'
+function formatBytes(bytes) {
+  const units = ['B', 'KiB', 'MiB', 'GiB'];
+  let value = bytes;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  return unit === 0 ? `${value} ${units[0]}` : `${value.toFixed(1)} ${units[unit]}`;
+}
+
 function hideElement(id) {
   const element = document.getElementById(id);
   console.assert(element);
@@ -71,6 +96,10 @@ class ProblemManager {
     this.runButton = null; // HTMLButtonElement
     // The result after running the user code
     this.result = null; // class ExecutionResult instance
+    // True while a run is waiting for its result
+    this.running = false; // boolean
+    // False while the connection with the frontend or the backend is lost
+    this.online = true; // boolean
     // False while the code editor shows code that is already stored (when loading it, or when
     // another tab changed it), so the change is not saved again. Saving it again made tabs of the
     // same problem send each other old versions of the code forever
@@ -170,13 +199,10 @@ class ProblemManager {
       }
     });
     editor.onDidChangeModelContent(() => {
-      const code = editor.getValue();
       if (this.savesCode) {
-        saveConfig(`code:${languageList.value}`, code);
+        saveConfig(`code:${languageList.value}`, editor.getValue());
       }
-      if (this.runButton) {
-        this.runButton.disabled = code.trim().length === 0;
-      }
+      this.updateRunButton();
     });
     // Another tab of this problem saved its code for the chosen language: show it here too.
     // Events arrive late, so an event whose code is not the stored one anymore is old, and it is
@@ -234,20 +260,35 @@ class ProblemManager {
     console.assert(this.problem === null);
     const message = { action: 'fetch_problem' }; // Message object
     try {
-      this.problem = new Problem(await ProblemManager.sendJson(message));
+      this.problem = new Problem(await ProblemManager.sendJson(message, FETCH_TIMEOUT));
     } catch (error) {
       throw Error(`could not load the problem: ${error.message}`);
     }
   }
 
   // Post the object as JSON and return the JSON answer. The server answers errors with a JSON
-  // object such as {error: '...'}, but proxies may answer with HTML pages, so both are thrown
-  static async sendJson(object, uri = '') {
+  // object such as {error: '...'}, but proxies may answer with HTML pages, so both are thrown.
+  // A request without answer after timeout milliseconds is aborted. Failed connections, timeouts,
+  // and unreachable judges are thrown as ConnectionError
+  static async sendJson(object, timeout, uri = '') {
     const params = ProblemManager.createMessage(object);
-    const response = await fetch(uri || window.location.href, params);
-    const json = await response.json().catch(() => null);
+    params.signal = AbortSignal.timeout(timeout);
+    let response = null;
+    let json = null;
+    try {
+      response = await fetch(uri || window.location.href, params);
+      json = await response.json().catch(() => null);
+    } catch (error) {
+      if (error.name === 'TimeoutError') {
+        throw new ConnectionError(`the server did not answer in ${timeout / 1000} seconds`);
+      }
+      // fetch() rejects with a TypeError when the network or the server is down
+      throw new ConnectionError(`could not connect to the server (${error.message})`);
+    }
     if (!response.ok || !json || json.error) {
-      throw Error(json?.error || `the server answered ${response.status} ${response.statusText}`);
+      const message = json?.error || `the server answered ${response.status} ${response.statusText}`;
+      throw UNREACHABLE_STATUSES.includes(response.status)
+        ? new ConnectionError(message) : new Error(message);
     }
     return json;
   }
@@ -264,6 +305,12 @@ class ProblemManager {
       },
       body: JSON.stringify(object),
     };
+  }
+
+  /// Return the milliseconds to wait for the answer of a run, from the data-run-timeout seconds
+  static getRunTimeout() {
+    const seconds = Number(document.getElementById('problem')?.dataset.runTimeout);
+    return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : DEFAULT_RUN_TIMEOUT;
   }
 
   /// Return the name of the problem from the loaded web page in browser
@@ -300,8 +347,8 @@ class ProblemManager {
     // send the contents of hidden test cases
     const test = this.problem.tests[index];
     const hidden = test.hidden ? '(hidden test case)' : '';
-    this.editors[1].setValue(test.input || hidden);
-    this.editors[2].setValue(test.output || hidden);
+    this.editors[1].setValue(test.stdin || hidden);
+    this.editors[2].setValue(test.stdout || hidden);
     this.showTestOutput(index);
     // Deselect previous test case number
     const buttons = document.querySelectorAll('.test_cases button');
@@ -319,8 +366,9 @@ class ProblemManager {
     if (this.result) {
       // Show standard output
       const test = index < this.result.results.length ? this.result.results[index] : null;
-      const output = test?.stdout || '';
-      this.editors[3].setValue(output);
+      // The backend does not send the output of hidden test cases
+      const hidden = this.problem.tests[index].hidden ? '(hidden test case)' : '';
+      this.editors[3].setValue(test?.stdout || hidden);
       // But if test case was failed, show diff instead
       this.showOutputDiff(index);
       // Show standard error
@@ -382,31 +430,58 @@ class ProblemManager {
     this.runButton?.addEventListener('click', async () => {
       await this.runSolution();
     });
+    // site.js checks the connection with the judge. It may have checked it before this page was
+    // ready, so the last known state is read from its attribute
+    const knownStatus = document.getElementById('backend_status')?.dataset.status;
+    this.setOnline(knownStatus !== 'offline');
+    window.addEventListener(STATUS_EVENT, (event) => this.setOnline(event.detail.online));
+  }
+
+  // Show or hide the connection error, and enable or disable the Run button
+  setOnline(online) {
+    this.online = online;
+    document.getElementById('connection_error').hidden = online;
+    this.updateRunButton();
+  }
+
+  // The Run button is enabled only if there is code to run, no run is waiting for its result, and
+  // the judge can be reached
+  updateRunButton() {
+    if (!this.runButton) {
+      return;
+    }
+    const hasCode = this.editors[0].getValue().trim().length > 0;
+    this.runButton.disabled = this.running || !this.online || !hasCode;
+    this.runButton.textContent = this.running ? 'Running' : 'Run';
   }
 
   async runSolution() {
     // The language chosen in the list of the toolbar
     const language = document.getElementById('language').value;
     // Disable the Run button while the backend is running the code
-    this.runButton.disabled = true;
-    this.runButton.textContent = 'Running';
+    this.running = true;
+    this.updateRunButton();
     try {
       // Send the code to the backend and wait the result
       this.result = new ExecutionResult(await ProblemManager.sendJson({
         action: 'run',
         language,
-        code: encode(this.editors[0].getValue()),
-      }));
-      // The result has been received, decode it and update the test cases
+        code: this.editors[0].getValue(),
+      }, ProblemManager.getRunTimeout()));
+      // The result has been received, update the test cases
       this.updateResult();
     } catch (error) {
       // E.g. the network or the judge failed, or the session expired: show it as a diagnostic
       console.error(error);
       this.updateCompileOutput(`Could not run the solution: ${error.message}`);
+      // site.js checks the connection now, and disables Run until it is restored if it is lost
+      if (error instanceof ConnectionError) {
+        window.dispatchEvent(new Event(CHECK_EVENT));
+      }
     } finally {
-      // Enable the Run button again, even if the run failed
-      this.runButton.textContent = 'Run';
-      this.runButton.disabled = false;
+      // Enable the Run button again, even if the run failed, unless the connection is lost
+      this.running = false;
+      this.updateRunButton();
     }
   }
 
@@ -442,16 +517,18 @@ class ProblemManager {
     totalPointsElement.textContent = String(this.result.points);
   }
 
-  // Shows the compiler diagnostics (warnings or errors), if any
+  // Shows the diagnostics of the judge and the compiler (warnings or errors), if any
   updateCompileOutput(message = null) {
     // The DOM element where the output will be shown
     const diagnosticsElement = document.getElementById('diagnostics');
     console.assert(diagnosticsElement);
     // The compiler output text
     let compileOutput = message;
-    // If no message was provided, get the compiler output from the result
+    // If no message was provided, get the message of the judge for the whole run (e.g. a missing
+    // word in the code, linter errors, or the total time limit) and the compiler output
     if (message === null && this.result) {
-      compileOutput = this.result.compileOutput;
+      compileOutput = [this.result.message, this.result.compileOutput]
+        .filter((text) => text).join('\n\n');
     }
     // If there is a diagnostic, show it
     if (compileOutput && compileOutput.length > 0) {
@@ -492,7 +569,7 @@ class ProblemManager {
     // Expected output
     console.assert(this.problem);
     console.assert(index < this.problem.tests.length);
-    const expectedOutput = this.problem.tests[index].output;
+    const expectedOutput = this.problem.tests[index].stdout;
     // User output
     console.assert(this.result);
     // If the test case result exists, get its message, otherwise (compilation error?) clear field
@@ -552,10 +629,13 @@ class ProblemManager {
       if (test.message) {
         verdict += `: ${test.message}`;
       }
-      const time = test.wallTime || test.cpuTime || '';
-      verdict += `. It took ${time}s`;
+      verdict += `. It took ${test.wallTime.toFixed(3)} s`;
+      if (test.cpuTime) {
+        // CPU time adds up all threads, so it is longer than the wall time in parallel code
+        verdict += ` (CPU ${test.cpuTime.toFixed(3)} s)`;
+      }
       if (test.memory) {
-        verdict += `, ${test.memory}B`;
+        verdict += `, ${formatBytes(test.memory)} of memory`;
       }
       if (test.threadCount) {
         verdict += `, ${test.threadCount} secondary threads`;

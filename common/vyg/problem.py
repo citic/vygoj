@@ -3,26 +3,23 @@ from vyg.activity import Activity
 from vyg.constants import MAX_THREADS
 from vyg.material import Material
 from vyg.testcase import TestCase
-from vyg.utils import decode_if
 
 # Attributes of this class are shared with JS client code and use the JS name convention
 # pylint: disable=invalid-name
 
-class Problem(Activity, material_type='problem'):
+# A data model with an attribute for each field of its JSON, not a class with behavior
+class Problem(Activity, material_type='problem'): # pylint: disable=too-many-instance-attributes
     """ Represents a programming problem with statement, source code, and test cases """
-    # Fields to be encoded using base64 when serializing to JSON
-    encoded_fields = Material.encoded_fields + ['statement', 'mustContain', 'initialCodeFor']
-
-    def __init__(self, json_dict: dict, parent: Material, should_decode: bool):
+    def __init__(self, json_dict: dict, parent: Material):
         """ Load the fields of this object from JSON dictionary """
-        super().__init__(json_dict, parent, should_decode)
+        super().__init__(json_dict, parent)
         # Problem statement in HTML code
         # TODO(jhc): use problem.{en|es|...}.{md|adoc|html} files instead
-        self.statement = decode_if(json_dict.get('statement', ''), should_decode)
+        self.statement = json_dict.get('statement', '')
         # An array of test cases
-        self.tests = Problem.load_tests(json_dict.get('tests', []), should_decode)
+        self.tests = Problem.load_tests(json_dict.get('tests', []))
         # The given initial source code for the problem and programming language
-        self.initialCodeFor = decode_if(json_dict.get('initialCodeFor', { }), should_decode)
+        self.initialCodeFor = json_dict.get('initialCodeFor', { })
         # Minimum number of secondary threads to solve the problem. If this number
         # is one or more, additional runs will be conducted for each test case
         self.minThreads = json_dict.get('minThreads', 0)
@@ -32,11 +29,18 @@ class Problem(Activity, material_type='problem'):
         # Supported values: 'none', 'lines'
         self.allowIndeterminism = json_dict.get('allowIndeterminism', 'none')
         # Considers invalid a solution if it does NOT contains words in this array
-        self.mustContain = decode_if(json_dict.get('mustContain', ''), should_decode)
-        # Allowed time range in seconds specified by professor for all test cases
-        self.minDuration = json_dict.get('minDuration', '')
-        # Maximum wall time duration that user solution must spent to consider it correct
-        self.maxDuration = json_dict.get('maxDuration')
+        self.mustContain = json_dict.get('mustContain', '')
+        # Range of wall time in seconds that the solution may spend in each test case. Test cases
+        # may set their own. 0 or missing in a statement means the default of the judge, and the
+        # frontend sends the backend the effective values (see frontend/src/limits.py)
+        self.minDuration = json_dict.get('minDuration', 0)
+        self.maxDuration = json_dict.get('maxDuration', 0)
+        # Maximum seconds for the whole submission: compiling and running all test cases. The
+        # test cases that do not fit are not run
+        self.maxTotalDuration = json_dict.get('maxTotalDuration', 0)
+        # Bytes of the standard output and error of each visible test case, and of the compiler
+        # output, sent back to the student. Longer outputs are truncated
+        self.maxOutputSize = json_dict.get('maxOutputSize', 0)
         # Extra tools, one of: asan tsan ubsan memcheck helgrind
         self.tools = json_dict.get('tools', '')
         # Remove HTML escaping for all languages
@@ -49,11 +53,11 @@ class Problem(Activity, material_type='problem'):
         self.folder_loaded = False
 
     @staticmethod
-    def load_tests(json_tests, should_decode=True):
+    def load_tests(json_tests):
         """ For each given test case, add it to the self.test[] array """
         tests = []
         for test in json_tests:
-            tests.append(TestCase(test, should_decode))
+            tests.append(TestCase(test))
         return tests
 
     def calculate_total_points(self):
@@ -71,10 +75,10 @@ class Problem(Activity, material_type='problem'):
             return True
         return isinstance(self.minThreads, (int, float)) and self.minThreads >= 1
 
-    def merge(self, json_dict: dict, should_decode: bool):
+    def merge(self, json_dict: dict):
         """ Copy to this problem the non-empty fields of the given JSON dictionary """
         # Load the fields of this object from JSON dictionary to a new object
-        problem = Problem(json_dict, self._parent, should_decode)
+        problem = Problem(json_dict, self._parent)
         # Copy the fields from the loaded problem to this problem. Dictionary update does
         # not work because some fields in problem are empty and would erase existing data
         # Merge non empty properties of problem into self. An object replacement

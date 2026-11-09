@@ -17,6 +17,18 @@ inside a disposable engine container and returns an `ExecutionResult`. Other fol
 (shared `Makefile` and `vyg` Python package), `docs/` (analysis and design, in Spanish), `cli/`
 (legacy Node.js tool).
 
+## Development phase
+
+VygOJ is in development (frontend and backend are in version 0.x.y), and no course uses it now.
+The owner controls every frontend and backend in production and updates them together, so:
+
+- Do not keep backward compatibility: change the HTTP/JSON protocol, the shared model, the
+  database schema, stored data, and file formats as needed, and remove old formats and code paths
+  instead of supporting both. Mention the changes that need a coordinated deploy or a database
+  migration when reporting.
+- This section stays until the owner announces that VygOJ is in production; then replace it with
+  rules to keep compatibility.
+
 ## Language
 
 - All source code, identifiers, comments, docstrings, log messages, UI text, and commit messages
@@ -38,8 +50,11 @@ inside a disposable engine container and returns an `ExecutionResult`. Other fol
   enumerations (`Status`) are in `constants.py` and helper functions in `utils.py`.
   `vyg/__init__.py` re-exports the public names, so layers write `vyg.Problem`. Add new public
   names there and to `__all__`.
-- `frontend/static/js/vyg.js` mirrors that model on the client. Keep the three in sync, and keep
-  `Status` values and `ExecutionResult` fields stable since they cross the HTTP boundary.
+- `frontend/static/js/vyg.js` mirrors that model on the client. Keep the three in sync: `Status`
+  values and the fields of the model cross the HTTP boundary, so change them in the three at once.
+- Objects travel as compact JSON (`vyg.to_json()`), with the attribute names as keys and empty
+  values omitted (readers use the same defaults). Texts travel as JSON strings, which carry any
+  Unicode character; do not encode them again (e.g. base64).
 
 ## Commands and testing
 

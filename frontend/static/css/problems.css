@@ -159,6 +159,13 @@ editor-toolbar {
     align-items: flex-end;
   }
 
+  /* Shown while the connection with the judge is lost */
+  & > [role="alert"] {
+    padding: 0.5rem;
+    border-left: 0.3rem solid var(--error);
+    background-color: var(--surface-alt);
+  }
+
   /* Compiler and standard error outputs, each one with its title */
   & figure {
     margin: 0;
