@@ -39,7 +39,8 @@ The owner controls every frontend and backend in production and updates them tog
 ## Shared model
 
 - The `vyg` package in `common/vyg/` holds the data model shared by frontend and backend
-  (`Problem`, `TestCase`, `Status`, `ExecutionResult`...). `make deps` installs it in editable mode
+  (`Problem`, `TestCase`, `Status`, `ExecutionResult`...), and `TsvLog`, the writer of their logs
+  (the activity log of the frontend and the run log of the backend). `make deps` installs it in editable mode
   (`pip install -e ../common`) into the `.venv` of each layer, so a change affects both layers
   without reinstalling. Keep it free of Flask-specific code, file loading, and rendering (the
   frontend loads problems from disk in `frontend/src/problem_loader.py`), and declare its own

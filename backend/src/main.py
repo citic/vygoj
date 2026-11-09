@@ -1,9 +1,11 @@
 """ Start backend execution """
 import json
 import logging
+import time
 import flask
 
 import execution
+from run_log import log_run, log_submission, parse_context
 
 # Maximum size of a /run request body. Larger requests are rejected with 413
 MAX_REQUEST_BYTES = 16 * 1024 * 1024
@@ -48,23 +50,34 @@ def status():
 @app.post('/run')
 def run_solution():
     """ Compile and run a solution against the test cases of a problem. Return the
-    ExecutionResult as JSON """
+    ExecutionResult as JSON. The optional context of the submission (who sent it, see run_log.py)
+    is only logged. Every submission is logged, also the rejected ones """
     if flask.request.mimetype != 'application/json':
         flask.abort(415, 'Error: content-type must be application/json\n')
     submission = parse_submission(flask.request.get_data(cache=False))
     if not submission:
-        flask.abort(400, 'Error: expected a JSON object with problem and solution objects\n')
+        reject_submission({}, 'expected a JSON object with problem and solution objects')
+    context = parse_context(submission.get('context'))
+    if context is None:
+        reject_submission({}, 'context must be an object of up to 32 short texts or numbers')
     try:
         job = execution.Execution(submission['problem'], submission['solution'])
     except execution.InvalidSubmission as error:
         # The message of InvalidSubmission is written by the backend and does not reveal details
-        flask.abort(400, f'Error: {error}\n')
+        reject_submission(context, str(error))
     Backend.job_count += 1
+    start = time.monotonic()
     try:
         result = job.execute()
     finally:
         Backend.job_count -= 1
+    log_run(context, job.language, job.solution.code, result, time.monotonic() - start)
     return flask.Response(result, mimetype='application/json')
+
+def reject_submission(context:dict, reason:str):
+    """ Log the invalid submission with the reason, and answer it with HTTP 400 """
+    log_submission('run_invalid', context, { 'reason': reason })
+    flask.abort(400, f'Error: {reason}\n')
 
 def parse_submission(body:bytes):
     """ Return the submission dictionary with problem and solution dictionaries, or None if body

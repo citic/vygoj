@@ -142,7 +142,7 @@ Each month has its own file, so no file grows forever. Rows have a few fixed col
 |===
 | Column | Meaning
 | `time` | Date and time in UTC, ISO 8601 with milliseconds, e.g. `2026-11-08T14:03:12.345+00:00`
-| `id` | Random identifier of the event, that joins the tables of the log archive
+| `id` | Random identifier of the event, that joins the tables of the log archive. The `id` of a run is also in the run log of the backend, which joins both logs
 | `user`, `role` | Logged user and their role. For `login_failed` and `login_blocked`, the typed username
 | `address` | Network address of the client (see `TRUSTED_PROXIES` in <<reverse_proxy>>)
 | `event` | One of the events of the next table
@@ -321,7 +321,7 @@ Only logged users may run code (see <<input_limits>>). Their runs are stored in 
 
 The checks and the new run are stored while the row of the user is locked (`SELECT ... FOR UPDATE`), so two requests sent at the same time cannot both pass. Only the result of the last run of each problem is kept, if it is smaller than 1 MiB, and runs older than one day are deleted. Runs are logged as `run`, `run_repeated`, `run_rejected`, or `run_failed` (<<activity_log>>).
 
-The frontend sends the backend a compact JSON object (`run_solution()` in `src/problems.py`) with only two parts: the solution, and the fields of the problem that judge it (`BACKEND_FIELDS`: the test cases, the languages, the limits, and other fields that change verdicts), not the statement or the initial code. It answers the browser the JSON of the backend as it came, parsed only to store the grade. Texts travel as JSON strings, so code and output in any language arrive intact.
+The frontend sends the backend a compact JSON object (`run_solution()` in `src/problems.py`) with three parts: the solution; the fields of the problem that judge it (`BACKEND_FIELDS`: the test cases, the languages, the limits, and other fields that change verdicts), not the statement or the initial code; and a context for the run log of the backend (`run_context()`: the `id` of the run event in the activity log, the user, their role and address, the material, and the commit of the course repo; see `backend/readme.adoc`). It answers the browser the JSON of the backend as it came, parsed only to store the grade. Texts travel as JSON strings, so code and output in any language arrive intact.
 
 The administrator sets the limits of the runs in `config.py` (their defaults and explanation are in `config/defaults.py`). Each limit has an absolute range (`ABS_MIN_*`, `ABS_MAX_*`) and a default (`DEF_*`), which may be a number or a dictionary with a number for each language. Professors may choose a value in `vygoj.json`, for the problem or for a test case; values out of the range are clamped, and a missing value or 0 means the default. `src/limits.py` computes the effective values and sends them in the problem. The frontend does not start with invalid limits.
 

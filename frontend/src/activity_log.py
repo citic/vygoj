@@ -31,11 +31,8 @@ the course repo of the run, to run the submissions again:
 
 See "Activity log" in readme.adoc """
 import datetime
-import glob
-import json
 import os
 import re
-import secrets
 import shutil
 import subprocess
 import tarfile
@@ -50,8 +47,6 @@ from problem_loader import MAX_FILE_SIZE, ProblemLoader
 
 # Folder inside DATA_FOLDER where the activity log is written
 LOG_FOLDER = 'log'
-# Subfolder of LOG_FOLDER with the code of the runs
-CODE_FOLDER = 'code'
 
 # Columns of the events files, in order. Empty cells are values that do not apply to the event:
 #   time: date and time in UTC, ISO 8601 with milliseconds, e.g. 2026-11-08T14:03:12.345+00:00
@@ -72,14 +67,8 @@ EVENTS = ('visit', 'login', 'login_failed', 'login_blocked', 'logout', 'preferen
     'user_create', 'user_admin', 'run', 'run_repeated', 'run_rejected', 'run_failed',
     'log_download')
 
-# Text cells longer than this are truncated, so a client cannot write large rows (e.g. a long URL)
-MAX_CELL_LENGTH = 256
-# The data of an event is made by the server, but a problem with many test cases makes it long. A
-# longer data is replaced by an error, so a row is always written with a single system call
-MAX_DATA_LENGTH = 2**16
-# Spreadsheets run the cells that start with these characters as formulas. A username typed in the
-# login could be a formula, so these cells start with an apostrophe, as spreadsheets expect
-FORMULA_STARTS = ('=', '+', '-', '@')
+# Fields of each test case of a run that the log keeps
+TEST_FIELDS = ('status', 'wallTime')
 # Seconds to wait for git to tell the commit of a course repo, and to write the files of a problem
 # in a commit for the submissions archive
 GIT_TIMEOUT = 5
@@ -93,14 +82,11 @@ def log_event(event: str, data: dict = None, **cells):
     is logged in the error log, it never stops the request """
     if event not in EVENTS or not set(cells) <= set(COLUMNS):
         raise ValueError(f'invalid event {event} or columns {list(cells)}')
-    row = request_cells()
-    row.update(cells, event=event, id=secrets.token_hex(6), data=format_data(data),
-        time=datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='milliseconds'))
-    line = '\t'.join(format_cell(row.get(column), column) for column in COLUMNS) + '\n'
-    try:
-        append_line(events_path(), line)
-    except OSError:
-        app.logger.exception('could not write the %s event in the activity log', event)
+    event_log().write({ **request_cells(), **cells, 'event': event, 'data': data })
+
+def event_log(folder: str = None) -> vyg.TsvLog:
+    """ Return the activity log in the given folder, by default the one of DATA_FOLDER """
+    return vyg.TsvLog(folder or log_folder(), COLUMNS)
 
 def request_cells() -> dict:
     """ Return the cells of the current request: logged user, role, address, and path. The command
@@ -118,76 +104,12 @@ def request_cells() -> dict:
 def log_run(event: str, run_data: dict, result_json: str = None, **cells):
     """ Log a run event with its data (language, code...) and the verdicts of its ExecutionResult
     in JSON, if any """
-    log_event(event, {**run_data, **summarize_result(result_json)}, **cells)
-
-def summarize_result(result_json: str) -> dict:
-    """ Return the fields of the ExecutionResult in JSON that the log keeps: status, passed test
-    cases, and the status and wall time of each test case. Outputs are not kept. Empty if there is
-    no result or it is not valid """
-    try:
-        result = json.loads(result_json) if result_json else None
-    except ValueError:
-        return {}
-    if not isinstance(result, dict) or not isinstance(result.get('results', []), list):
-        return {}
-    passed = vyg.Status.PASSED.value
-    return {
-        'status': result.get('status', passed),
-        'passed': result.get('passedTestCount', 0),
-        'tests': [{ 'status': test.get('status', passed), 'wallTime': test.get('wallTime', 0) }
-            for test in result.get('results', []) if isinstance(test, dict)],
-    }
-
-def format_data(data: dict) -> str:
-    """ Return the data of an event as compact JSON, or None if there is no data. JSON escapes tabs
-    and new lines, so the data fits in a cell """
-    if not data:
-        return None
-    text = json.dumps(data, ensure_ascii=False, separators=(',', ':'))
-    if len(text) > MAX_DATA_LENGTH:
-        app.logger.warning('data of an event too long for the activity log: %d', len(text))
-        return json.dumps({ 'error': 'data too long' })
-    return text
-
-def format_cell(value, column: str = '') -> str:
-    """ Return the value as a TSV cell: tabs, new lines, and other control characters become
-    spaces, so each event is one row even if a client sent them, and long texts are truncated,
-    except the data column, which is JSON made by format_data() """
-    if value is None:
-        return ''
-    if isinstance(value, (int, float)) and not isinstance(value, bool):
-        return str(value)
-    text = ''.join(' ' if ord(char) < 32 or ord(char) == 127 else char for char in str(value))
-    if column != 'data':
-        text = text[:MAX_CELL_LENGTH]
-    return "'" + text if text.startswith(FORMULA_STARTS) else text
-
-def parse_cell(cell: str) -> str:
-    """ Return the text of a cell written by format_cell(), without the apostrophe that protects
-    formulas """
-    return cell[1:] if cell.startswith("'") and cell[1:].startswith(FORMULA_STARTS) else cell
+    log_event(event, { **run_data, **vyg.summarize_result(result_json, TEST_FIELDS) }, **cells)
 
 def save_code(code_hash: str, language: str, code: str):
-    """ Save the code of a run in the file named by its hash in the code folder, unless it was saved
-    before (the same submission). A failure to write is logged, it never stops the run """
-    path = code_path(log_folder(), code_hash, language)
-    try:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        # O_EXCL fails if the file exists: two users may send the same code at the same time. Only
-        # the user of the frontend may read it, as the events files (made by mkstemp)
-        descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-        with os.fdopen(descriptor, 'w', encoding='utf-8') as file:
-            file.write(code)
-    except FileExistsError:
-        pass
-    except OSError:
-        app.logger.exception('could not save the code %s in the activity log', code_hash)
-
-def code_path(folder: str, code_hash: str, language: str) -> str:
-    """ Return the path of the file with the code of the given hash in the log folder. The hash is
-    hexadecimal, made by the server, so it is a safe file name """
-    extension = vyg.EXTENSION_LANGUAGES.get(language, 'txt')
-    return os.path.join(folder, CODE_FOLDER, f'{code_hash}.{extension}')
+    """ Save the code of a run in the file named by its hash in the code folder of the log, unless
+    it was saved before (the same submission) """
+    event_log().save_code(code_hash, language, code)
 
 def repo_commit(folder: str):
     """ Return the commit of the git repo that has the folder (e.g. a course), or None if it is not
@@ -200,41 +122,6 @@ def repo_commit(folder: str):
 def log_folder() -> str:
     """ Return the folder of the activity log in DATA_FOLDER """
     return os.path.join(app.config['DATA_FOLDER'], LOG_FOLDER)
-
-def events_path() -> str:
-    """ Return the events file of the current month, created with the row of columns if it does
-    not exist. Each month has its own file, so no file grows forever, and analyses may load only
-    the months they need """
-    month = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m')
-    path = os.path.join(log_folder(), f'events-{month}.tsv')
-    if not os.path.exists(path):
-        create_file(path, '\t'.join(COLUMNS) + '\n')
-    return path
-
-def create_file(path: str, header: str):
-    """ Create the file with the header, unless it exists. The gunicorn workers may create it at
-    the same time, so the header is written in a temporary file and linked to the path, which
-    fails if another worker linked it first. The file never has two headers or rows before it """
-    folder = os.path.dirname(path)
-    os.makedirs(folder, exist_ok=True)
-    descriptor, temporary_path = tempfile.mkstemp(dir=folder, prefix='.events-')
-    try:
-        with os.fdopen(descriptor, 'w', encoding='utf-8') as file:
-            file.write(header)
-        os.link(temporary_path, path)
-    except FileExistsError:
-        pass
-    finally:
-        os.remove(temporary_path)
-
-def append_line(path: str, line: str):
-    """ Append the line to the file in a single system call. The file is opened in append mode,
-    so the lines of the gunicorn workers do not overwrite or split each other """
-    descriptor = os.open(path, os.O_WRONLY | os.O_APPEND)
-    try:
-        os.write(descriptor, line.encode('utf-8'))
-    finally:
-        os.close(descriptor)
 
 # Columns of the tables of the analysis folder. Runs and tests are joined by the id of the run
 EVENT_COLUMNS = tuple(column for column in COLUMNS if column != 'data')
@@ -266,25 +153,8 @@ UNSAFE_NAME_CHARACTERS = re.compile(r'[^\w.@-]')
 
 def read_events(folder: str):
     """ Yield each event of the log folder as a dictionary of its cells, in order of time, with
-    its data parsed. Rows that do not have the columns of the log are skipped """
-    for path in sorted(glob.glob(os.path.join(folder, 'events-*.tsv'))):
-        with open(path, encoding='utf-8') as file:
-            next(file, None)
-            for line in file:
-                cells = line.rstrip('\n').split('\t')
-                if len(cells) != len(COLUMNS):
-                    continue
-                event = dict(zip(COLUMNS, map(parse_cell, cells)))
-                event['data'] = parse_data(event['data'])
-                yield event
-
-def parse_data(cell: str) -> dict:
-    """ Return the JSON object of a data cell, or an empty one if it is empty or not valid """
-    try:
-        data = json.loads(cell) if cell else {}
-    except ValueError:
-        return {}
-    return data if isinstance(data, dict) else {}
+    its data parsed """
+    yield from event_log(folder).read()
 
 def run_tests(data: dict) -> list:
     """ Return the test cases of the data of a run that are objects """
@@ -364,7 +234,7 @@ def write_log_archive(zip_file: zipfile.ZipFile, folder: str, load_courses):
 
 def log_files(folder: str):
     """ Yield the paths of the regular files of the log folder. Symbolic links, which could point
-    out of the log, and the temporary files of create_file() are skipped """
+    out of the log, and the temporary files of vyg.TsvLog (they start with a dot) are skipped """
     for parent, _, filenames in os.walk(folder):
         for filename in sorted(filenames):
             path = os.path.join(parent, filename)
@@ -376,7 +246,7 @@ def write_table(zip_file: zipfile.ZipFile, name: str, columns: tuple, rows):
     with zip_file.open(zip_info(name), 'w') as file:
         file.write(('\t'.join(columns) + '\n').encode('utf-8'))
         for row in rows:
-            line = '\t'.join(format_cell(row.get(column)) for column in columns) + '\n'
+            line = '\t'.join(vyg.TsvLog.format_cell(row.get(column)) for column in columns) + '\n'
             file.write(line.encode('utf-8'))
 
 def zip_info(name: str) -> zipfile.ZipInfo:
@@ -415,7 +285,7 @@ def write_submissions_archive(zip_file: zipfile.ZipFile, folder: str, load_cours
 def write_submission(zip_file: zipfile.ZipFile, folder: str, submission: str, data: dict):
     """ Write the code of the submission (its run data) and the verdict of each test case in its
     folder of the archive. The extension of the code is the one of its language """
-    code_file = code_path(folder, data['code'], data.get('language'))
+    code_file = event_log(folder).code_path(data['code'], data.get('language'))
     if os.path.isfile(code_file) and not os.path.islink(code_file):
         zip_file.write(code_file, f'{submission}/solution{os.path.splitext(code_file)[1]}')
     tests = [{ 'test': number, 'status': test.get('status'), 'wall_time': test.get('wallTime') }

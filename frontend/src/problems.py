@@ -232,19 +232,24 @@ class ProblemController:
         # The commit of the course repo recovers the statement and test cases that judged the run.
         # Only accepted runs ask git for it, which are limited per user
         run_data['commit'] = repo_commit(problem.get_course().get_path())
+        # The id of the run event joins it with the log of the backend, which gets it in the
+        # context of the submission
+        run_id = vyg.TsvLog.new_id()
+        context = ProblemController.run_context(run_id, log_cells, run_data['commit'])
         result_json = None
         try:
             # Run the test cases and wait for the array of results. The JSON of the backend is
             # answered as it came, it is parsed only to grade it. It is stored for repeated runs
             # only after it was graded, so an invalid answer is not reused
-            backend_json = ProblemController.run_solution(problem_dict, message)
+            backend_json = ProblemController.run_solution(problem_dict, message, context)
             Progress.store(course_name, problem.name, ProblemController.grade(backend_json))
             result_json = backend_json
             return ProblemController.json_response(result_json)
         finally:
             # Also when the run failed (without result), so the user can run again
             run.finish(result_json)
-            log_run('run' if result_json else 'run_failed', run_data, result_json, **log_cells)
+            log_run('run' if result_json else 'run_failed', run_data, result_json, id=run_id,
+                **log_cells)
 
     @staticmethod
     def grade(result_json: str) -> int:
@@ -275,12 +280,23 @@ class ProblemController:
         return problem_dict
 
     @staticmethod
-    def run_solution(problem_dict: dict, solution: vyg.Message) -> str:
+    def run_context(run_id: str, log_cells: dict, commit) -> dict:
+        """ Return the context of a run for the log of the backend: the id of the run event in the
+        log of the frontend, the logged user, their role and address, the material, and the commit
+        of its course repo. The backend does not use it to judge """
+        user = flask.session['user']
+        return { 'run': run_id, 'user': user.get('email'), 'role': user.get('role'),
+            'address': flask.request.remote_addr, **log_cells, 'commit': commit }
+
+    @staticmethod
+    def run_solution(problem_dict: dict, solution: vyg.Message, context: dict) -> str:
         """ Compile solution and run it against all test cases of the problem returned by
-        backend_problem(). Return the ExecutionResult in JSON, as the backend answered it """
+        backend_problem(). The context goes to the log of the backend (see run_context()). Return
+        the ExecutionResult in JSON, as the backend answered it """
         # The backend truncates the output of visible test cases to maxOutputSize, and does not
         # send the output of hidden ones, so large outputs do not travel to the browser
-        submission = vyg.to_json({ 'problem': problem_dict, 'solution': solution })
+        submission = vyg.to_json({ 'problem': problem_dict, 'solution': solution,
+            'context': context })
         uri = f'{ProblemController.select_random_backend()}/run'
         # The submission is already JSON text. json= would encode it again as a JSON string. The
         # backend stops the run after maxTotalDuration, so this timeout is not reached
