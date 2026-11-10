@@ -9,6 +9,7 @@ RUN apt-get update && \
     checkstyle \
     clang \
     cpplint \
+    default-jdk-headless \
     doxygen \
     gdb \
     linux-perf \

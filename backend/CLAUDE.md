@@ -13,7 +13,8 @@ JSON. It must assume that every submitted program is malicious.
   `maxOutputSize`); the backend clamps them to its own ranges in `execution.py`.
 - `src/execution.py`: `Execution` class that drives one submission: static checks, container
   creation, file copy, compilation, test case runs, extra proofs (thread count, sanitizers,
-  linting), and container removal. `LANGUAGE_DEFAULTS` holds compiler and lint flags per language.
+  linting), and container removal. `LANGUAGE_DEFAULTS` holds the source file, compiler, run
+  command, and lint flags of each language (C, C++, Java).
   `FailedSolution` stops the run as soon as a verdict is known.
 - `src/run_log.py`: log of every submission received and its verdict (`data/log/runs-*.tsv`, a
   `vyg.TsvLog`), with the context the frontend sends (user, course, material, id of its run).
