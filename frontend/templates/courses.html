@@ -26,9 +26,10 @@
             <a href="/course/admin" class="button confirm small">{{ _('Add Course') }}</a>
 {%- endif %}
           </header>
+          <p class="course_columns" aria-hidden="true"><span class="name">Course</span><span class="description">Description</span><span class="instructors">Author</span><span class="statistics">Statistics</span></p>
           <ul class="course_list">
 {%- for course in it.my_courses %}
-            <li>{{ macros.course_entry(course) }}</li>
+            <li>{{ macros.course_entry(course, it.progress[course.name]) }}</li>
 {%- endfor %}
           </ul>
         </article>
