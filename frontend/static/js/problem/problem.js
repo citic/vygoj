@@ -19,6 +19,10 @@ const UNREACHABLE_STATUSES = [502, 503, 504];
 // (ld), "solution.c:5:  Missing space after ,  [whitespace/comma] [3]" (cpplint), or
 // "Solution.java:7: error: ';' expected" (javac)
 const DIAGNOSTIC = /^(?:\S*\/)?[Ss]olution\.\w+:(\d+):(?:(\d+):|(\(\.[^)]*\)):)?\s*(?:(?:fatal )?(error|warning|note):)?\s*(.*)$/;
+// A line of Python about a line of the solution, e.g. '  File "solution.py", line 3' of a syntax
+// error. Its message is in a later line that names the error, e.g. "SyntaxError: invalid syntax"
+const PYTHON_DIAGNOSTIC = /^\s*File "(?:\S*\/)?solution\.py", line (\d+)/;
+const PYTHON_ERROR = /^\w*(?:Error|Exception|Warning)\b/;
 
 // An error that means that the server or the judge could not be reached, not that the request was
 // wrong. The connection is checked again after it
@@ -539,31 +543,52 @@ class ProblemManager {
   // that line, and the code editor underlines them
   static showDiagnostics(text) {
     const diagnostics = [];
-    const nodes = text.split('\n').flatMap((line) => {
-      const match = line.match(DIAGNOSTIC);
+    const lines = text.split('\n');
+    const nodes = lines.flatMap((line, index) => {
+      const diagnostic = ProblemManager.parseDiagnostic(line, lines.slice(index + 1));
       // Line 0 of cpplint is about the whole file, e.g. a missing copyright
-      if (!match || Number(match[1]) < 1) {
+      if (!diagnostic || diagnostic.line < 1) {
         return [line, '\n'];
       }
-      const [, row, column, section, severity, message] = match;
       const button = document.createElement('button');
       button.type = 'button';
       button.dataset.index = diagnostics.length;
       button.textContent = line;
-      // Without a severity, a line of the linker is an error, one of gcc with a column gives the
-      // context of another, e.g. "required from here", and one of cpplint is a warning of style
-      diagnostics.push({
-        line: Number(row),
-        column: Number(column) || 0,
-        severity: severity || (section && 'error') || (column && 'note') || 'warning',
-        message,
-      });
+      diagnostics.push(diagnostic);
       return [button, '\n'];
     });
     // The last line break is not needed
     nodes.pop();
     document.getElementById('diagnostics').replaceChildren(...nodes);
     document.getElementById('code_editor').showDiagnostics(diagnostics);
+  }
+
+  // Return the diagnostic {line, column, severity, message} of a line of the compiler, the
+  // linker, the linter, or Python about a line of the solution, or null. The following lines
+  // carry the message of Python
+  static parseDiagnostic(line, nextLines) {
+    const match = line.match(DIAGNOSTIC);
+    if (match) {
+      const [, row, column, section, severity, message] = match;
+      // Without a severity, a line of the linker is an error, one of gcc with a column gives the
+      // context of another, e.g. "required from here", and one of cpplint is a warning of style
+      return {
+        line: Number(row),
+        column: Number(column) || 0,
+        severity: severity || (section && 'error') || (column && 'note') || 'warning',
+        message,
+      };
+    }
+    const python = line.match(PYTHON_DIAGNOSTIC);
+    if (python) {
+      return {
+        line: Number(python[1]),
+        column: 0,
+        severity: 'error',
+        message: nextLines.find((next) => PYTHON_ERROR.test(next)) || line.trim(),
+      };
+    }
+    return null;
   }
 
   // Shows standard error output for the selected test case

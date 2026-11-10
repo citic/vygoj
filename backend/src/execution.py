@@ -89,7 +89,8 @@ class LanguageDefault:
     id: int
     # Fixed name of the source file in WORKDIR. A public Java class must be in a file of its name
     source_file: str
-    # Compiler command and its options, before the source file
+    # Compiler command and its options, before the source file. Interpreted languages only check
+    # the syntax, so students get their syntax errors as compiler errors
     compiler: str
     # Arguments after the source file. The linker resolves symbols in order, so libraries must
     # follow the source files
@@ -100,9 +101,11 @@ class LanguageDefault:
     run_command: str
     # Filter of cpplint, or '' if the language has no linter
     linting_options: str
-    # True if the solution is a native executable, where the sanitizers, valgrind, and gdb (thread
-    # count) work. They do not apply to programs run by a virtual machine, such as the JVM
+    # True if the solution is a native executable, where the sanitizers and valgrind work. They do
+    # not apply to programs run by an interpreter or a virtual machine
     native: bool = True
+    # True if gdb counts the threads created by the solution. The JVM creates threads of its own
+    count_threads: bool = True
 
 COMMON_LINT = '-build/header_guard,-build/include_subdir,-runtime/int'
 # TODO(jhc): override default compiler options with problem.compilerOptionsFor[lang]
@@ -119,7 +122,12 @@ LANGUAGE_DEFAULTS = {
     # TODO(jhc): lint Java solutions with checkstyle, and count their threads
     'Java': LanguageDefault(62, 'Solution.java',
         'javac -g -encoding UTF-8 -Xlint:all -d .', '', JAVA_COMPILE_TIMEOUT,
-        'java -ea -cp . Solution', '', native=False),
+        'java -ea -cp . Solution', '', native=False, count_threads=False),
+    # py_compile reports syntax errors before running the test cases. The threads of Python are
+    # threads of the operating system, so gdb counts them on the interpreter
+    # TODO(jhc): lint Python solutions, e.g. with pylint or pycodestyle
+    'Python': LanguageDefault(71, 'solution.py',
+        'python3 -m py_compile', '', COMPILE_TIMEOUT, 'python3 solution.py', '', native=False),
 }
 
 # Compiler options and run prefixes of the tools that a problem may ask for. Only these tools are
@@ -229,7 +237,7 @@ class Execution:
         self.flags = LANGUAGE_DEFAULTS[self.language]
         # The filename of the student's solution, e.: 'solution.c'
         self.source_file = self.flags.source_file
-        # Sanitizers, valgrind, and gdb only work on native executables
+        # Sanitizers and valgrind only work on native executables
         if not self.flags.native:
             self.tools = [tool for tool in self.tools
                     if tool not in COMPILE_TOOLS and tool not in RUN_TOOLS]
@@ -529,7 +537,8 @@ class Execution:
             logger.exception('Could not kill student processes')
 
     def _compile(self):
-        """ Compile the solution if its language is compiled, e.g: C, C++, Java... """
+        """ Compile the solution if its language is compiled, e.g: C, C++, Java, or check its
+            syntax if it is interpreted, e.g: Python """
         # Prepare compilation command. Options are defined by the backend, never by users
         cmd = (self._build_compiler_options() + [self.source_file]
                 + self.flags.compiler_suffix.split())
@@ -601,9 +610,9 @@ class Execution:
         self._check_time_range(test_case, test_result)
         # If there further proofs, execute them. Each test case is checked on its own, so later
         # test cases also report their threads after a failed one
-        # TODO(jhc): count the threads of programs that are not native, e.g. with jstack for Java
+        # TODO(jhc): count the threads of Java solutions, e.g. with jstack
         if (test_result.status == vyg.Status.PASSED and self.problem.has_proofs()
-                and self.flags.native):
+                and self.flags.count_threads):
             self._run_thread_count_proof(index0, input_file, test_result)
         # Store the result in the array to be returned to the client, without outputs that are too
         # large or hidden
@@ -726,13 +735,14 @@ class Execution:
         assert 0 <= index < len(self.problem.tests)
         test = self.problem.tests[index]
         # To get the number of created threads, we use GDB: -q quiet, -batch exits after running
-        # the -ex commands. stdin is a fixed file name, not user data. We count output lines that
-        # report New Thread events
-        cmd = (['gdb', '-q', '-batch', f'-ex=run < {stdin}', '--args']
-                + self.flags.run_command.split() + self._build_args(test))
+        # the -ex commands. We count output lines that report New Thread events. The solution
+        # inherits the stdin of gdb, a fixed file name, not user data. `run < file` would replace
+        # the arguments given with --args, e.g. the script of Python and those of the test case
+        cmd = (['gdb', '-q', '-batch', '-ex=run', '--args'] + self.flags.run_command.split()
+                + self._build_args(test))
         # gdb runs the solution slower than the test case
         proof_limit = self._time_left(self._wall_time_limit(test) + THREAD_PROOF_EXTRA)
-        stdout, _, _ = self._run_in_container(cmd, proof_limit)
+        stdout, _, _ = self._run_in_container(cmd, proof_limit, stdin)
         self._kill_student_processes()
         test_result.threadCount = sum('New Thread' in line for line in stdout.splitlines())
         # Get the accepted range, min may be the first number in stdin

@@ -79,7 +79,7 @@ The contents of courses, such as problem statements, are shown as their authors 
 [[default_code]]
 === Default code
 
-When a problem has no initial code for one of its languages (in its `initial/` or `given/` folder), students start from the default code of the language, a file in `static/initial/` named as the backend names the source file (`solution.c`, `solution.cpp`, `Solution.java`). The files are static, so browsers may also get them (e.g. `/initial/Solution.java`), but the server reads that folder once per process (`ProblemLoader.default_code()`) and sends the default codes in the `initialCodeFor` of the problem (`to_client_json()` in `src/problems.py`). To support a new language, add its file there with the extension of the language (`LANGUAGE_EXTENSIONS` in `common/vyg/constants.py`). Java solutions must keep `Solution` as the name of their public class.
+When a problem has no initial code for one of its languages (in its `initial/` or `given/` folder), students start from the default code of the language, a file in `static/initial/` named as the backend names the source file (`solution.c`, `solution.cpp`, `Solution.java`, and an empty `solution.py`). The files are static, so browsers may also get them (e.g. `/initial/Solution.java`), but the server reads that folder once per process (`ProblemLoader.default_code()`) and sends the default codes in the `initialCodeFor` of the problem (`to_client_json()` in `src/problems.py`). To support a new language, add its file there with the extension of the language (`LANGUAGE_EXTENSIONS` in `common/vyg/constants.py`). Java solutions must keep `Solution` as the name of their public class.
 
 
 [[reverse_proxy]]

@@ -55,7 +55,7 @@ $ make clean
 [[languages]]
 == Programming languages
 
-The backend runs solutions in C, C++, and Java (`LANGUAGE_DEFAULTS` in `src/execution.py`). Each language has a fixed source file name, its compiler command and compile time limit, and the command that runs the solution:
+The backend runs solutions in C, C++, Java, and Python (`LANGUAGE_DEFAULTS` in `src/execution.py`). Each language has a fixed source file name, its compiler command and compile time limit, and the command that runs the solution. Python is interpreted, so its "compiler" only checks the syntax, and students get their syntax errors as compiler errors before any test case runs:
 
 [cols="1,2,3,1,2"]
 |===
@@ -64,9 +64,10 @@ The backend runs solutions in C, C++, and Java (`LANGUAGE_DEFAULTS` in `src/exec
 | C | `solution.c` | `gcc -g -Wall -Wextra -std=gnu17 -pthread` | 2 s | `./solution`
 | C++ | `solution.cpp` | `g++ -g -Wall -Wextra -std=gnu++20 -pthread` | 2 s | `./solution`
 | Java | `Solution.java` | `javac -g -encoding UTF-8 -Xlint:all -d .` (the default JDK of Debian trixie) | 10 s | `java -ea -cp . Solution`
+| Python | `solution.py` | `python3 -m py_compile` (Python 3 of Debian trixie) | 2 s | `python3 solution.py`
 |===
 
-Java requires a public class to be in a file of its name, so the main class of a Java solution must be the public class `Solution`, as in the default code of the frontend. Java solutions run with assertions enabled (`-ea`). The sanitizers (`asan`, `tsan`, `ubsan`), valgrind (`memcheck`, `helgrind`), and the thread count with `gdb` work only on native executables, so they are ignored for Java, as is `lint`, which runs `cpplint` on C and C++ only.
+Java requires a public class to be in a file of its name, so the main class of a Java solution must be the public class `Solution`, as in the default code of the frontend. Java solutions run with assertions enabled (`-ea`). The sanitizers (`asan`, `tsan`, `ubsan`) and valgrind (`memcheck`, `helgrind`) work only on native executables, so they are ignored for Java and Python, as is `lint`, which runs `cpplint` on C and C++ only. `gdb` counts the threads of C, C++, and Python solutions (the threads of Python are threads of the operating system), but not of Java, whose virtual machine creates threads of its own.
 
 
 The backend runs code written by untrusted users, so each submission runs in a disposable container created with restrictions (see `_create_container()` in `src/execution.py`):
@@ -77,7 +78,7 @@ The backend runs code written by untrusted users, so each submission runs in a d
 * Every command has a time limit, its output is truncated to 1 MiB per stream, and student processes left in background are killed after each test case. The whole submission is killed after 100 seconds.
 * Command line arguments of test cases are split as a shell would, but they are never interpreted by a shell.
 
-`/run` answers an `ExecutionResult` in compact JSON. Each test case reports its wall time, its CPU time (all threads added up), its maximum memory, measured with `/usr/bin/time -v`, and, when the problem asks for a minimum of threads, the secondary threads it created, counted with `gdb`. The time limits and the thread counts are checked for each test case on its own. Outputs are compared complete, but the answer carries only the first `maxOutputSize` bytes of the problem (at most 1 MiB) of the standard output and error of each visible test case, and of the compiler output, followed by `(truncated)`. Hidden test cases carry no output.
+`/run` answers an `ExecutionResult` in compact JSON. Each test case reports its wall time, its CPU time (all threads added up), its maximum memory, measured with `/usr/bin/time -v`, and, when the problem asks for a minimum of threads, the secondary threads it created, counted with `gdb` in another run with the same arguments and input. The time limits and the thread counts are checked for each test case on its own. Outputs are compared complete, but the answer carries only the first `maxOutputSize` bytes of the problem (at most 1 MiB) of the standard output and error of each visible test case, and of the compiler output, followed by `(truncated)`. Hidden test cases carry no output.
 
 The frontend sends the effective limits in the problem; the backend only clamps them to its own ranges (`MAX_DURATION`, 30 seconds per test case, and `MAX_TOTAL_DURATION`, 120 seconds per submission, in `src/execution.py`), which must contain the ranges of its frontends. Each test case runs at most its `maxDuration` (2 seconds if missing), enforced by `timeout` with a resolution of nanoseconds. A `minDuration` of 0 or missing means no minimum. `/usr/bin/time -v` measures the wall time in hundredths of a second, so a run shorter than 10 ms is reported as 0 seconds, and a `minDuration` below 0.01 seconds only rejects the runs measured as 0. Wall time varies some milliseconds between runs of the same program (scheduling, load of other submissions), so minimums of a few tenths of a second give stable verdicts. Test cases do not start after the `maxTotalDuration` of the submission (30 seconds if missing): the run ends with a `timeout` status and says how many test cases were not run. The running test case is cut at that time, and the container is killed if the submission lasts 20 seconds more (`DEADLINE_GRACE`).
 
