@@ -286,7 +286,7 @@ The session cookie is also `Secure`, `HttpOnly`, and `SameSite=Lax`.
 
 Problem statements come from course repositories and are shown as HTML. Talisman (the `flask-talisman` package) sends a `Content-Security-Policy` header (`cdn` in `src/main.py`) where scripts may only come from files of this site and from the CDNs the pages use (jsDelivr, cdnjs, esm.sh). Inline scripts, event handler attributes (`onclick`), and `javascript:` URLs do not run, so templates must not have them: put behavior in `static/js/`. Styles allow `'unsafe-inline'` because Monaco and MathJax inject `<style>` elements. The policy also forbids plugins (`object-src`), foreign `<base>` elements, forms that post to other sites, and being embedded by other sites.
 
-Talisman also redirects HTTP to HTTPS (except in debug mode) and sends `Strict-Transport-Security`, `Referrer-Policy: strict-origin` (other sites only see that links came from VygOJ, not from which page), and `Permissions-Policy`, which disables the camera, the microphone, the geolocation, and the Topics API of advertising. `set_headers()` in `src/main.py` adds the `Cross-Origin-*` headers that Talisman does not send. Configure in Talisman the headers it sends, because it sets them after `set_headers()` and would replace them.
+Talisman also redirects HTTP to HTTPS (except in debug mode) and sends `Strict-Transport-Security`, `Referrer-Policy: strict-origin` (other sites only see that links came from VygOJ, not from which page), and `Permissions-Policy`, which disables the camera, the microphone, and the geolocation. `set_headers()` in `src/main.py` adds the `Cross-Origin-*` headers that Talisman does not send. Configure in Talisman the headers it sends, because it sets them after `set_headers()` and would replace them.
 
 [[course_repos]]
 === Course repositories
@@ -312,7 +312,7 @@ Formulas (`stem`) are kept as text, and MathJax typesets them in the browser. To
 [[videos]]
 === Videos
 
-Statements may play video files of their folder with `video::media/demo.mp4[]` (a `<video>` element), with subtitles in `vtt` files if wanted. Videos of video sites (`video::id[youtube]`, `video::id[vimeo]`, or any `<iframe>`) and video files of other sites are removed for now, and the CSP of the pages forbids frames (`frame-src 'none'`) and media of other sites (`media-src 'self'`). Supporting them requires an allow list of sites and a sandbox for their players, and pages that embed them cannot send `Cross-Origin-Embedder-Policy: require-corp`, because video sites do not opt in to it.
+Statements may play video files of their folder with `video::media/demo.mp4[]` (a `<video>` element), with subtitles in `vtt` files if wanted. Videos of video sites (`video::id[youtube]`, `video::id[vimeo]`, or any `<iframe>`) and video files of other sites are removed for now, and the CSP of the pages forbids frames (`frame-src 'none'`) and media of other sites (`media-src 'self'`). Supporting them requires an allow list of sites and a sandbox for their players, and pages that embed them cannot send `Cross-Origin-Embedder-Policy`, because video sites do not opt in to it.
 
 The sanitizer sets `controls` and `preload="metadata"` on every video, and removes `autoplay`. Posters (`poster=`) must be images of the folder too.
 
