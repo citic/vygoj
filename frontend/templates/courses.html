@@ -8,12 +8,12 @@
 {%- if it.user and it.user.role == 'admin' %}
         <article id="admin_article">
           <header>
-            <h3>Administration</h3>
+            <h3>{{ _('Administration') }}</h3>
           </header>
           <div id="admin_panel" class="panel">
             <a class="icon_control" href="/users/admin">
-              <img src="/icon/user-detail.svg" alt="Admin Users">
-              <span class="caption">Users</span>
+              <img src="/icon/user-detail.svg" alt="{{ _('Admin Users') }}">
+              <span class="caption">{{ _('Users') }}</span>
             </a>
           </div>
         </article>
@@ -21,9 +21,9 @@
 {%- if it.my_courses|length > 0 %}
         <article id="my_courses">
           <header>
-            <h3>My courses</h3>
+            <h3>{{ _('My courses') }}</h3>
 {%- if it.user and it.user.role == 'professor' %}
-            <a href="/course/admin" class="button confirm small">Add Course</a>
+            <a href="/course/admin" class="button confirm small">{{ _('Add Course') }}</a>
 {%- endif %}
           </header>
           <ul class="course_list">
@@ -33,12 +33,12 @@
           </ul>
         </article>
 {%- else %}
-        <p>Please login to see your courses.</p>
+        <p>{{ _('Please login to see your courses.') }}</p>
 {%- endif %}
 {%- if it.available_courses|length > 0 %}
         <article id="available_courses">
           <header>
-            <h3>Available courses</h3>
+            <h3>{{ _('Available courses') }}</h3>
           </header>
           <ul class="course_list">
 {%- for _, course in it.available_courses.items() %}

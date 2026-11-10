@@ -96,7 +96,8 @@ def add_new_columns():
     db.session.execute(db.text("ALTER TABLE users"
         " ADD COLUMN IF NOT EXISTS role VARCHAR(16) NOT NULL DEFAULT 'student',"
         " ADD COLUMN IF NOT EXISTS color_scheme VARCHAR(8) NOT NULL DEFAULT 'default',"
-        " ADD COLUMN IF NOT EXISTS font VARCHAR(16) NOT NULL DEFAULT 'anaheim'"))
+        " ADD COLUMN IF NOT EXISTS font VARCHAR(16) NOT NULL DEFAULT 'anaheim',"
+        " ADD COLUMN IF NOT EXISTS language VARCHAR(8) NOT NULL DEFAULT 'default'"))
     db.session.commit()
 
 # Main --------------------------------------------------------------------------------------------

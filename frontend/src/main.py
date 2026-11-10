@@ -5,6 +5,7 @@ import time
 from logging.handlers import RotatingFileHandler
 import flask
 import requests
+from flask_babel import Babel, get_locale, gettext
 from flask_squeeze import Squeeze
 from flask_wtf.csrf import CSRFError, CSRFProtect
 from flask_talisman import Talisman
@@ -14,7 +15,8 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from courses import CourseController
 from limits import BACKEND_CONNECT_TIMEOUT, Limits
 from problems import BACKEND_STATUS_TIMEOUT, ProblemController
-from users import DEFAULT_FONT, FONTS, User, UserForm, font_url, log_out
+from users import (DEFAULT_FONT, FONTS, TRANSLATIONS_FOLDER, User, UserForm, client_translations,
+    font_url, log_out, select_language)
 from db import db
 from vyg_log import vyg_log
 
@@ -31,6 +33,13 @@ app = flask.Flask(__name__, template_folder=template_path,
 
 # Every page uses the font chosen by the user, base.html loads it with these names
 app.jinja_env.globals.update(FONTS=FONTS, DEFAULT_FONT=DEFAULT_FONT, font_url=font_url)
+
+# Texts of the interface marked with _() are shown in the language chosen by the user or by the
+# browser. Their translations are in translations/ (see "Translations" in readme.adoc), and
+# base.html writes the language in <html lang>, which static/js/i18n.js reads
+babel = Babel(app, locale_selector=select_language,
+    default_translation_directories=TRANSLATIONS_FOLDER)
+app.jinja_env.globals.update(get_locale=get_locale)
 
 # Compress responses (bzip) and minify static files
 squeeze = Squeeze(app)
@@ -224,6 +233,11 @@ def get_status():
         app.logger.exception('could not get the status of the backend')
         return flask.jsonify({ 'status': 'offline', 'error': 'backend not available' }), 504
 
+@app.route('/translations/<language>.json')
+def get_translations(language):
+    """ Client JavaScript asked for the translations of its texts to the language of the page """
+    return flask.jsonify(client_translations(language))
+
 @app.route('/help')
 def get_help():
     """ Used in experiment to provide reference about the concepts to solve the tasks """
@@ -244,7 +258,8 @@ def handle_csrf_error(error):
     expired. JavaScript clients get a JSON error, and form users go back with a message """
     app.logger.warning('CSRF rejected %s %s: %s', flask.request.method, flask.request.path,
         error.description)
-    message = 'Your session expired or the request was not valid. Reload the page and try again.'
+    message = gettext('Your session expired or the request was not valid. Reload the page and '
+        'try again.')
     if flask.request.is_json:
         return flask.jsonify({ 'error': message }), 400
     flask.flash(message, 'error')

@@ -51,6 +51,30 @@ npx stylelint --fix 'static/css/**/*.css'
 
 `npm run lint` and `npm run stylelint` run the first and third commands. ESLint needs the folder to check: `npx eslint` without arguments checks no files and reports no problems.
 
+[[translations]]
+=== Translations
+
+The interface is written in English and translated with https://python-babel.github.io/flask-babel/[Flask-Babel] (GNU gettext). Users choose its language in their preferences (`/user`): _Default_ takes the language that the browser prefers among the available ones, or English. Visitors that are not logged in get the default too. The chosen language is stored in the `language` column of the users table.
+
+Texts of the interface are marked to be translated: `{{ _('My courses') }}` in templates, `gettext()` in Python, `lazy_gettext()` for texts defined when the module loads, such as the labels of forms, and `_()` of `static/js/i18n.js` in JavaScript. JavaScript gets the translations of the language of the page from `/translations/<language>.json`, which the server reads from the same catalogs. Values go in named placeholders, so translators can move them: `_('Test case %(number)d', number=loop.index)`. Each language has a catalog in `translations/<language>/LC_MESSAGES/messages.po`, with the English texts (`msgid`) and their translations (`msgstr`). The servers read the catalogs compiled to `.mo` files, which `make` compiles before starting (`make translations`) and git ignores.
+
+After adding or changing texts of the interface, update the catalogs and translate the texts that have an empty `msgstr`; texts that no longer exist are commented out at the end:
+
+[source,sh]
+----
+make update-translations
+----
+
+To add a language, create its catalog, translate it, and add its code and its name in its own language to `LANGUAGES` in `src/users.py`:
+
+[source,sh]
+----
+make update-translations
+.venv/bin/pybabel init -i translations/messages.pot -d translations -l fr
+----
+
+The contents of courses, such as problem statements, are shown as their authors wrote them.
+
 
 [[reverse_proxy]]
 == Reverse proxy configuration
