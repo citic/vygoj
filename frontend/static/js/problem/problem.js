@@ -16,32 +16,13 @@ const UNREACHABLE_STATUSES = [502, 503, 504];
 // A line of the compiler, the linker, or the linter about a line of the solution, with its line,
 // its column or section of the linker, its severity, and its message. E.g. "solution.c:4:18:
 // error: 'y' undeclared" (gcc), "/tmp/solution.c:3:(.text+0x5): undefined reference to `foo'"
-// (ld), or "solution.c:5:  Missing space after ,  [whitespace/comma] [3]" (cpplint)
-const DIAGNOSTIC = /^(?:\S*\/)?solution\.\w+:(\d+):(?:(\d+):|(\(\.[^)]*\)):)?\s*(?:(?:fatal )?(error|warning|note):)?\s*(.*)$/;
+// (ld), "solution.c:5:  Missing space after ,  [whitespace/comma] [3]" (cpplint), or
+// "Solution.java:7: error: ';' expected" (javac)
+const DIAGNOSTIC = /^(?:\S*\/)?[Ss]olution\.\w+:(\d+):(?:(\d+):|(\(\.[^)]*\)):)?\s*(?:(?:fatal )?(error|warning|note):)?\s*(.*)$/;
 
 // An error that means that the server or the judge could not be reached, not that the request was
 // wrong. The connection is checked again after it
 class ConnectionError extends Error {}
-
-// Default given code for each supported programming language
-// It may be a Map<string, string>
-// TODO(jhc): Remove, it must come from frontend
-const defaultCodeFor = {
-  C: `#include <stdio.h>
-
-int main(void) {
-  printf("Hello world!\\n");
-  return 0;
-}
-`,
-  'C++': `#include <iostream>
-  
-int main() {
-  std::cout << "Hello world!" << std::endl;
-  return 0;
-}
-`,
-};
 
 // Monaco name of each programming language of VygOJ. vygoj.json may write a language by its
 // name or by its extension (LANGUAGE_EXTENSIONS in vyg.py), so keys are in lowercase.
@@ -394,9 +375,10 @@ class ProblemManager {
     }
   }
 
-  // The problem's initial code for the language, or else the default code of the language
+  // The initial code of the problem for the language. The server fills it with the default code
+  // of the language when the problem has none
   initialCodeFor(language) {
-    return this.problem.initialCodeFor?.[language] || defaultCodeFor[language] || '';
+    return this.problem.initialCodeFor?.[language] || '';
   }
 
   loadUserCode() {

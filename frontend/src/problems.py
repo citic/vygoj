@@ -179,8 +179,16 @@ class ProblemController:
     @staticmethod
     def to_client_json(problem: vyg.Problem):
         """ Answer the JSON of the problem for the client. The input and expected output of the
-        hidden test cases stay in the server, so students cannot see them """
+        hidden test cases stay in the server, so students cannot see them. Enabled languages
+        without initial code get their default code """
         client_dict = vyg.to_dict(problem)
+        default_code = ProblemLoader.default_code()
+        initial_code = { language: default_code[language] for language in problem.languages
+            if language in default_code }
+        initial_code.update({ language: code for language, code in problem.initialCodeFor.items()
+            if code })
+        if initial_code:
+            client_dict['initialCodeFor'] = initial_code
         if 'tests' in client_dict:
             client_dict['tests'] = [{ 'hidden': True, 'points': test.points } if test.hidden
                 else test for test in problem.tests]

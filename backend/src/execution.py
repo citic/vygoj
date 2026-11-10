@@ -33,6 +33,7 @@ DEFAULT_DURATION = 2 # seconds
 DEFAULT_TOTAL_DURATION = 30 # seconds
 # Time limits for compiling, linting, and reading statistics in the container
 COMPILE_TIMEOUT = 2 # seconds
+JAVA_COMPILE_TIMEOUT = 10 # seconds
 LINT_TIMEOUT = 2 # seconds
 STATS_TIMEOUT = 2 # seconds
 # Seconds that the gdb run that counts the threads may last beyond the limit of the test case
@@ -83,25 +84,42 @@ docker_client = docker.from_env(timeout=DOCKER_TIMEOUT)
 
 @dataclasses.dataclass(frozen=True)
 class LanguageDefault:
-    """ Default language options """
+    """ How the backend compiles, runs, and lints the solutions in a programming language """
+    # Language id of the old Judge0 API
     id: int
-    file_extension: str
+    # Fixed name of the source file in WORKDIR. A public Java class must be in a file of its name
+    source_file: str
+    # Compiler command and its options, before the source file
     compiler: str
-    compiler_options: str
-    # The linker resolves symbols in order, so libraries must follow the source files
-    libraries: str
+    # Arguments after the source file. The linker resolves symbols in order, so libraries must
+    # follow the source files
+    compiler_suffix: str
+    # Seconds to compile. The Java compiler runs in a JVM, which starts slower than gcc
+    compile_timeout: float
+    # Command that runs the compiled solution, before the arguments of the test case
+    run_command: str
+    # Filter of cpplint, or '' if the language has no linter
     linting_options: str
+    # True if the solution is a native executable, where the sanitizers, valgrind, and gdb (thread
+    # count) work. They do not apply to programs run by a virtual machine, such as the JVM
+    native: bool = True
 
 COMMON_LINT = '-build/header_guard,-build/include_subdir,-runtime/int'
 # TODO(jhc): override default compiler options with problem.compilerOptionsFor[lang]
 # -fno-diagnostics-color
 LANGUAGE_DEFAULTS = {
-    'C': LanguageDefault(50, 'c', 'gcc',
-        '-g -Wall -Wextra -std=gnu17 -pthread', '-lm',
-        f'{COMMON_LINT},-readability/casting'),
-    'C++': LanguageDefault(54, 'cpp', 'g++',
-        '-g -Wall -Wextra -std=gnu++20 -pthread', '-lm',
-        f'{COMMON_LINT},-build/c++11,-runtime/references'),
+    'C': LanguageDefault(50, 'solution.c',
+        'gcc -g -Wall -Wextra -std=gnu17 -pthread', '-o solution -lm', COMPILE_TIMEOUT,
+        './solution', f'{COMMON_LINT},-readability/casting'),
+    'C++': LanguageDefault(54, 'solution.cpp',
+        'g++ -g -Wall -Wextra -std=gnu++20 -pthread', '-o solution -lm', COMPILE_TIMEOUT,
+        './solution', f'{COMMON_LINT},-build/c++11,-runtime/references'),
+    # The main class of the solution must be the public class Solution (the default code of the
+    # frontend). -ea enables assertions, as they are in C without NDEBUG
+    # TODO(jhc): lint Java solutions with checkstyle, and count their threads
+    'Java': LanguageDefault(62, 'Solution.java',
+        'javac -g -encoding UTF-8 -Xlint:all -d .', '', JAVA_COMPILE_TIMEOUT,
+        'java -ea -cp . Solution', '', native=False),
 }
 
 # Compiler options and run prefixes of the tools that a problem may ask for. Only these tools are
@@ -207,10 +225,14 @@ class Execution:
         # Extra tools asked by the problem, e.g: ['asan', 'lint']
         self.tools = self.problem.tools.split() if isinstance(self.problem.tools, str) else []
         self._validate()
+        # How to compile, run, and lint the solution
+        self.flags = LANGUAGE_DEFAULTS[self.language]
         # The filename of the student's solution, e.: 'solution.c'
-        self.source_file = f'solution.{LANGUAGE_DEFAULTS[self.language].file_extension}'
-        # Executable file name, relative to WORKDIR
-        self.executable = 'solution'
+        self.source_file = self.flags.source_file
+        # Sanitizers, valgrind, and gdb only work on native executables
+        if not self.flags.native:
+            self.tools = [tool for tool in self.tools
+                    if tool not in COMPILE_TOOLS and tool not in RUN_TOOLS]
         # Docker container to compiler and run test cases
         self.container:docker.models.containers.Container = None
         # Kills the container when the submission lasts DEADLINE_GRACE seconds after its deadline
@@ -508,12 +530,11 @@ class Execution:
 
     def _compile(self):
         """ Compile the solution if its language is compiled, e.g: C, C++, Java... """
-        flags = LANGUAGE_DEFAULTS[self.language]
         # Prepare compilation command. Options are defined by the backend, never by users
-        cmd = ([flags.compiler] + self._build_compiler_options(flags)
-                + [self.source_file, '-o', self.executable] + flags.libraries.split())
+        cmd = (self._build_compiler_options() + [self.source_file]
+                + self.flags.compiler_suffix.split())
         # Run the compilation command, if it fails, report to frontend
-        stdout, stderr, exit_code = self._run_in_container(cmd, COMPILE_TIMEOUT)
+        stdout, stderr, exit_code = self._run_in_container(cmd, self.flags.compile_timeout)
         self.result.compileOutput = truncate_output(stdout + stderr, self.output_limit)
         if exit_code != 0:
             # Student code produced compiling errors. They are in compileOutput, the client shows
@@ -525,9 +546,9 @@ class Execution:
         # could be measured
         # self.container.commit(repository='vyg', tag='after_compile', message='')
 
-    def _build_compiler_options(self, flags:LanguageDefault) -> list:
-        """ Build the compiler options for the language used by student """
-        compiler_options = flags.compiler_options.split()
+    def _build_compiler_options(self) -> list:
+        """ Build the compiler command and its options for the language used by student """
+        compiler_options = self.flags.compiler.split()
         # Get the compiler options from the problem object, if not defined, use the default ones
         # compiler_options = self.problem.compilerOptionsFor.get(self.language,
         #         flags.compiler_options)
@@ -547,7 +568,8 @@ class Execution:
         # The last test case before the deadline may have less time than its limit
         run_limit = self._time_left(wall_time_limit)
         # Prepare run command: /usr/bin/time -v -o vyg_time.txt timeout 2 ./solution < input.txt
-        cmd = self._build_run_prefix() + [f'./{self.executable}'] + self._build_args(test_case)
+        cmd = (self._build_run_prefix() + self.flags.run_command.split()
+                + self._build_args(test_case))
         time_prefix = ['/usr/bin/time', '-v', '-o', TIME_FILE]
         test_result = vyg.TestCaseResult({})
         test_result.stdout, test_result.stderr, test_result.exitCode = (
@@ -579,7 +601,9 @@ class Execution:
         self._check_time_range(test_case, test_result)
         # If there further proofs, execute them. Each test case is checked on its own, so later
         # test cases also report their threads after a failed one
-        if test_result.status == vyg.Status.PASSED and self.problem.has_proofs():
+        # TODO(jhc): count the threads of programs that are not native, e.g. with jstack for Java
+        if (test_result.status == vyg.Status.PASSED and self.problem.has_proofs()
+                and self.flags.native):
             self._run_thread_count_proof(index0, input_file, test_result)
         # Store the result in the array to be returned to the client, without outputs that are too
         # large or hidden
@@ -704,8 +728,8 @@ class Execution:
         # To get the number of created threads, we use GDB: -q quiet, -batch exits after running
         # the -ex commands. stdin is a fixed file name, not user data. We count output lines that
         # report New Thread events
-        cmd = (['gdb', '-q', '-batch', f'-ex=run < {stdin}', '--args', f'./{self.executable}']
-                + self._build_args(test))
+        cmd = (['gdb', '-q', '-batch', f'-ex=run < {stdin}', '--args']
+                + self.flags.run_command.split() + self._build_args(test))
         # gdb runs the solution slower than the test case
         proof_limit = self._time_left(self._wall_time_limit(test) + THREAD_PROOF_EXTRA)
         stdout, _, _ = self._run_in_container(cmd, proof_limit)
@@ -732,10 +756,10 @@ class Execution:
 
     def _after_run_proofs(self):
         """ Run after test case proofs, e.g: linting """
-        if 'lint' in self.tools:
-            flags = LANGUAGE_DEFAULTS[self.language]
+        # Languages without a linting filter have no linter yet
+        if 'lint' in self.tools and self.flags.linting_options:
             # Run the linter, e.g: cpplint.py
-            cmd = ['cpplint', f'--filter={flags.linting_options}', self.source_file]
+            cmd = ['cpplint', f'--filter={self.flags.linting_options}', self.source_file]
             stdout, stderr, exit_code = self._run_in_container(cmd, LINT_TIMEOUT)
             if exit_code != 0:
                 # Linter found errors, report them

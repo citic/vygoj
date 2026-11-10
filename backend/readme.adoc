@@ -52,8 +52,22 @@ You can remove the virtual environment when it is no longer needed:
 $ make clean
 ----
 
-[security]
-== Security
+[[languages]]
+== Programming languages
+
+The backend runs solutions in C, C++, and Java (`LANGUAGE_DEFAULTS` in `src/execution.py`). Each language has a fixed source file name, its compiler command and compile time limit, and the command that runs the solution:
+
+[cols="1,2,3,1,2"]
+|===
+| Language | Source file | Compiler | Compile limit | Run
+
+| C | `solution.c` | `gcc -g -Wall -Wextra -std=gnu17 -pthread` | 2 s | `./solution`
+| C++ | `solution.cpp` | `g++ -g -Wall -Wextra -std=gnu++20 -pthread` | 2 s | `./solution`
+| Java | `Solution.java` | `javac -g -encoding UTF-8 -Xlint:all -d .` (the default JDK of Debian trixie) | 10 s | `java -ea -cp . Solution`
+|===
+
+Java requires a public class to be in a file of its name, so the main class of a Java solution must be the public class `Solution`, as in the default code of the frontend. Java solutions run with assertions enabled (`-ea`). The sanitizers (`asan`, `tsan`, `ubsan`), valgrind (`memcheck`, `helgrind`), and the thread count with `gdb` work only on native executables, so they are ignored for Java, as is `lint`, which runs `cpplint` on C and C++ only.
+
 
 The backend runs code written by untrusted users, so each submission runs in a disposable container created with restrictions (see `_create_container()` in `src/execution.py`):
 
