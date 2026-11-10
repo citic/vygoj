@@ -143,6 +143,8 @@ Create a new Apache configuration file, for example, `/etc/apache2/sites-availab
 </VirtualHost>
 ----
 
+Set `SITE_URL = 'https://vygoj.citic.ucr.ac.cr'` in `config/config.py` if users log in with single sign-on (<<sso>>): the frontend receives `http://` requests from Apache, but the callback URLs registered in the providers are `https://`.
+
 Apache sends the address of each client in the `X-Forwarded-For` header. Set `TRUSTED_PROXIES = 1` in `config/config.py`, so the frontend uses that address for the login limits (<<login_limits>>) and the logs. Otherwise, every request seems to come from `127.0.0.1`, and the failed logins of all the users count as the ones of a single address. Keep it `0` if clients connect to the frontend directly, because they could fake that header.
 
 Enable the new configuration, test it, and restart Apache:
@@ -153,6 +155,49 @@ sudo a2ensite vygoj
 sudo apachectl configtest
 sudo systemctl restart apache2
 ----
+
+
+[[sso]]
+== Single sign-on (SSO)
+
+Users may log in with the account of an institution instead of a password of VygOJ, through an OpenID Connect (OIDC) provider, such as the Keycloak of the Universidad de Costa Rica. Any provider that publishes an OIDC discovery document works the same way. `src/sso.py` uses https://docs.authlib.org/[Authlib] for the protocol: discovery, the Authorization Code Flow with PKCE, `state` and `nonce`, and the validation of the ID token (signature with the keys of the provider, issuer, audience, and expiration).
+
+Administrators manage the providers in the users page (`/admin/users`, the _Users_ link of the home page): the _+ Add_ button opens the form of a new provider, and each provider of the list has _Edit_ and _Delete_ buttons. The form asks:
+
+[cols="1,3",options="header"]
+|===
+| Field | Meaning
+| Key | Short name for URLs and for `SSO_CLIENT_SECRETS`, e.g. `ucr`. It cannot change, because it is part of the callback URL registered in the provider
+| Name | Text of the login button, e.g. _Universidad de Costa Rica_
+| Status | _Disabled_: nobody can log in with it. _Testing_: it is not shown in the login page, but its login URL (`/login/sso/<key>`) works, for a controlled test in production. _Active_: the login page shows its button above the password form
+| Discovery URL or issuer | e.g. `https://sso.ucr.ac.cr/realms/UCR`; `/.well-known/openid-configuration` is added if missing. Only `https://`, or `http://` for a provider in the same computer
+| Client ID | Given by the team of the provider
+| Scopes | `openid profile email` by default
+| Email claim | Claim with the email of the user, `email` by default (some providers send `mail`)
+| Trust emails | Accept the emails of the provider even if the ID token does not have `email_verified: true`, e.g. an institution that assigns the emails itself
+| Create accounts | Users without an account in VygOJ get one at their first login. Otherwise only existing users may log in with the provider
+| Professor claim and values | Optional rule for the role of new users: if the claim (e.g. `groups`, or `realm_access.roles` for nested claims) has one of the values (separated by commas), the user is a professor, otherwise a student
+|===
+
+To connect a provider:
+
+. Add it with status _Disabled_ and save it. The form shows the redirect URI (callback) to register in the provider: `<SITE_URL>/login/sso/<key>/callback`. Set `SITE_URL` in `config.py` to the public address of the site (e.g. `https://vygoj.ucr.ac.cr`), because behind a reverse proxy the frontend sees `http://` addresses, and the redirect URI must match exactly.
+. Ask the team of the provider for a client, with that redirect URI, the scopes and claims needed (the email, the name, and the claim of the professor rule if any), and no Web Origins: tokens are exchanged in the server. Logout only ends the session of VygOJ, so no post logout redirect URI is needed. Ask for separate clients for tests and production.
+. Write the client secret in `config.py`, by the key of the provider, and restart the frontend. Secrets are credentials, so they are never stored in the database nor shown in the web forms. The form only tells whether the secret is configured. A provider without secret is used as a public client, protected by PKCE only:
++
+[source,python]
+----
+SSO_CLIENT_SECRETS = {'ucr': 'the secret given by the SSO team'}
+----
+. Fill the Client ID, set the status to _Testing_, and log in from the login URL that the form shows. When it works, set it to _Active_.
+
+At each login, the user is found by the issuer and subject (`sub`) of the ID token, which OpenID Connect guarantees unique and stable, unlike emails. They are stored in the `user_identities` table. At the first login with a provider:
+
+* If a user of VygOJ has the email of the token as username or email, the identity is linked to that user, who may log in with the password or with the provider from then on.
+* Otherwise, if the provider creates accounts, a user is created with the email as username, the name of the token as full name, no password, and the role of the professor rule. These users only log in with the provider, and their preferences do not show the password fields.
+* Otherwise, the login is rejected, and the user is asked to contact their professor.
+
+The username of users created by a provider is their email, so usernames have up to 128 characters. `make users` (`manage.py import`) widens the column of older databases and makes passwords optional; `make` runs it before starting.
 
 
 [[activity_log]]
@@ -173,7 +218,7 @@ Each month has its own file, so no file grows forever. Rows have a few fixed col
 | Column | Meaning
 | `time` | Date and time in UTC, ISO 8601 with milliseconds, e.g. `2026-11-08T14:03:12.345+00:00`
 | `id` | Random identifier of the event, that joins the tables of the log archive. The `id` of a run is also in the run log of the backend, which joins both logs
-| `user`, `role` | Logged user and their role. For `login_failed` and `login_blocked`, the typed username
+| `user`, `role` | Logged user and their role. For `login_failed` and `login_blocked`, the typed username (empty for single sign-on)
 | `address` | Network address of the client (see `TRUSTED_PROXIES` in <<reverse_proxy>>)
 | `event` | One of the events of the next table
 | `path` | Page of the request, e.g. `/problem/CI0112/hello`. Empty for the command line
@@ -185,15 +230,16 @@ Each month has its own file, so no file grows forever. Rows have a few fixed col
 |===
 | Event | Logged when | Data
 | `visit` | A user (or an anonymous visitor) opens a page: home, course, problem, user, or help |
-| `login`, `logout` | A user logs in or out |
-| `login_failed`, `login_blocked` | A login has a wrong user or password, or it is rejected by the limits (<<login_limits>>) |
+| `login`, `logout` | A user logs in or out | `provider`: key of the single sign-on provider (<<sso>>), if the user logged in with one
+| `login_failed`, `login_blocked` | A login has a wrong user or password, or it is rejected by the limits (<<login_limits>>), or a login with a single sign-on provider fails | For single sign-on, `provider` and `reason`: `provider not available`, `invalid answer` (e.g. an invalid ID token), `cancelled`, `no email`, `email not verified`, `administrator`, `not registered`, or `concurrent login`
 | `preferences` | A user saves their preferences | `color_scheme`, `font`
-| `user_create`, `user_admin` | `manage.py` adds a user, or makes an existing user administrator | `source`: `import` or `make admin`
+| `user_create`, `user_admin` | `manage.py` or a single sign-on login adds a user, or `manage.py` makes an existing user administrator | `source`: `import`, `make admin`, or `sso` with its `provider`
 | `run` | The judge ran a submission | `language`; `code`: SHA-256 hash of the submission (`Run.hash_code()`, see <<run_limits>>); `commit`: of the course repo; `status` and `passed` (test cases) of the result; `tests`: the `status` and `wallTime` of each test case
 | `run_repeated` | The same submission was answered with the result of the last run, without running it (<<run_limits>>) | As `run`, without `commit`
 | `run_rejected` | A limit of runs rejected the submission | `language`, `code`, and `reason`: the message shown to the user
 | `run_failed` | The judge did not answer a valid result, e.g. no backend was available | `language`, `code`, `commit`
 | `log_download` | An administrator downloaded an archive of the log | `archive`: `log` or `submissions`
+| `sso_provider` | An administrator added, changed, or deleted a single sign-on provider | `action`: `add`, `update`, or `delete`; `provider`: its key; `status`
 |===
 
 The log does not store problem statements, test cases, or program outputs, so it stays small: the `commit` of a run recovers the statement and test cases that judged it from the course repo (`git checkout`). Each code file is saved once, by the first run of that submission, and only accepted runs save code or ask git for the commit, so a robot cannot fill the disk or start processes with rejected or repeated runs (runs are limited per user). Passwords are never logged.
@@ -370,7 +416,18 @@ The browser never waits forever, and it always gets an answer before giving up. 
 [[administrators]]
 === Administrators
 
-Administrators are created in the server with `make admin` (`src/manage.py admin`), never from the web application, so only who can log in the server can create them. The command asks the username and a password of at least 12 characters. If the user exists, it resets its password, makes it administrator, and forgets its failed logins, so it also recovers a forgotten password. While the users table is empty, the frontend writes a warning in its log that suggests `make admin`.
+Administrators are created in the server with `make admin` (`src/manage.py admin`), never from the web application, so only who can log in the server can create them. Single sign-on never creates administrators nor links an account of a provider to an administrator, even with the same email: administrators log in with their password. The command asks the username and a password of at least 12 characters. If the user exists, it resets its password, makes it administrator, and forgets its failed logins, so it also recovers a forgotten password. While the users table is empty, the frontend writes a warning in its log that suggests `make admin`.
+
+[[sso_security]]
+=== Single sign-on
+
+* Logins with a provider (<<sso>>) use the Authorization Code Flow with PKCE, and Authlib checks the `state` (against login CSRF), the `nonce`, the signature of the ID token with the keys published by the provider, its issuer, audience (the client ID), and expiration. Discovery URLs must be `https://`, because the provider sends the keys that validate tokens.
+* Client secrets are written in `config.py`, never in the database, the forms, or the logs.
+* Users are identified by the issuer and subject of the ID token, not by their email, which may change. An email links an existing account or creates a new one only if the provider verified it (`email_verified`) or the administrator trusts the emails of that provider; otherwise anybody who registers the email of a student in a provider could take their account. Accounts of administrators are never linked, and single sign-on never gives the administrator role.
+* Login buttons are links (GET), not forms: the provider answers a redirect, which the `form-action 'self'` rule of the CSP would block after a POST. The `state` protects these requests instead of the CSRF token. Authlib keeps the `state`, `nonce`, and PKCE verifier in the session cookie; only the last pending login is kept, so repeated clicks do not make the cookie grow.
+* The `next` page after the login is checked with `safe_next_url()` before and after the provider.
+* Requests to the providers time out after 5 seconds to connect and 10 to answer. Their errors are logged, and users get a generic message.
+* The pages of providers and users (`/admin/users`, `/admin/sso/...`) answer HTTP 403 to users who are not administrators, and deleting a provider is a POST with the CSRF token.
 
 [[input_limits]]
 === Requests and errors

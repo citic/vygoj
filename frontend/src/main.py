@@ -11,6 +11,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from courses import CourseController
 from limits import BACKEND_CONNECT_TIMEOUT, Limits
 from problems import BACKEND_STATUS_TIMEOUT, ProblemController
+from sso import SsoAdminController, SsoController, SsoProvider
 from users import (DEFAULT_FONT, FONTS, TRANSLATIONS_FOLDER, User, UserForm, client_translations,
     font_url, log_out, select_language)
 from db import db
@@ -135,6 +136,12 @@ if (not isinstance(backends, list) or not backends
         or not all(isinstance(uri, str) for uri in backends)):
     raise RuntimeError(f'BACKENDS in {config_file} must be a list of at least one URI')
 
+# Single sign-on providers send users back to callback URLs of SITE_URL, and use their secrets
+if not isinstance(app.config['SITE_URL'], str):
+    raise RuntimeError(f'SITE_URL in {config_file} must be a string')
+if not isinstance(app.config['SSO_CLIENT_SECRETS'], dict):
+    raise RuntimeError(f'SSO_CLIENT_SECRETS in {config_file} must be a dictionary')
+
 # Database ----------------------------------------------------------------------------------------
 
 # Disable watching object changes to reduce resource consumption
@@ -157,7 +164,7 @@ app.config.setdefault('WTF_CSRF_TIME_LIMIT', None)
 csrf = CSRFProtect(app)
 # The database object maps Python objects to DB's tuples (ORM, object-relational mapping)
 db.init_app(app)
-# Create the users and progress tables, if they do not exist yet
+# Create the tables of the users, their progress, and single sign-on, if they do not exist yet
 with app.app_context():
     db.create_all()
     # Nobody can log in without users. The administrator is created in the server, not in the web
@@ -207,14 +214,45 @@ def post_problem(course_name, problem_name):
 def user():
     """ Get/post the login or preferences dialog """
     log_event('visit')
-    return UserForm.show_form()
+    return UserForm.show_form(SsoProvider.listed())
 
 @app.route('/logout', methods=['POST'])
 def logout():
     """ User wants to logout. Only POST with the CSRF token, so other sites cannot log users out """
     return log_out()
 
+@app.route('/login/sso/<key>')
+def sso_login(key):
+    """ User chose to log in with a single sign-on provider: go to its login page """
+    return SsoController.start(key)
+
+@app.route('/login/sso/<key>/callback')
+def sso_callback(key):
+    """ The single sign-on provider sent the user back after logging in """
+    return SsoController.callback(key)
+
 # Administration ----------------------------------------------------------------------------------
+
+@app.route('/admin/users')
+def get_users_admin():
+    """ Administrator asked for the page of users: login methods and the list of users """
+    log_event('visit')
+    return SsoAdminController.get_users()
+
+@app.route('/admin/sso/new', methods=['GET', 'POST'])
+def add_sso_provider():
+    """ Administrator asked for the form of a new single sign-on provider, or sent it """
+    return SsoAdminController.edit_provider()
+
+@app.route('/admin/sso/<key>', methods=['GET', 'POST'])
+def edit_sso_provider(key):
+    """ Administrator asked for the form of a single sign-on provider, or sent it """
+    return SsoAdminController.edit_provider(key)
+
+@app.route('/admin/sso/<key>/delete', methods=['POST'])
+def delete_sso_provider(key):
+    """ Administrator removes a single sign-on provider """
+    return SsoAdminController.delete_provider(key)
 
 @app.route('/admin/log')
 def get_log():

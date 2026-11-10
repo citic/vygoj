@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: VygOJ \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-10 00:31-0600\n"
+"POT-Creation-Date: 2026-11-10 09:58-0600\n"
 "PO-Revision-Date: 2026-11-09 15:19-0600\n"
 "Last-Translator: \n"
 "Language: es\n"
@@ -25,6 +25,10 @@ msgid "%(passed)s test cases passed (%(points)s points)"
 msgstr "%(passed)s casos de prueba aprobados (%(points)s puntos)"
 
 #, python-format
+msgid "%(provider)s did not send your email. Ask the administrator."
+msgstr "%(provider)s no envió su correo. Consulte al administrador."
+
+#, python-format
 msgid ", %(count)s secondary threads"
 msgstr ", %(count)s hilos secundarios"
 
@@ -40,11 +44,23 @@ msgstr " y terminó con el código %(code)s"
 msgid ". It took %(seconds)s s"
 msgstr ". Tardó %(seconds)s s"
 
+msgid "Accounts"
+msgstr "Cuentas"
+
+msgid "Active"
+msgstr "Activo"
+
 msgid "Activity log"
 msgstr "Bitácora"
 
+msgid "Add"
+msgstr "Agregar"
+
 msgid "Add Course"
 msgstr "Agregar curso"
+
+msgid "Add SSO provider"
+msgstr "Agregar proveedor de SSO"
 
 msgid "Admin Users"
 msgstr "Administrar usuarios"
@@ -52,12 +68,18 @@ msgstr "Administrar usuarios"
 msgid "Administration"
 msgstr "Administración"
 
+msgid "Administrators log in with their password."
+msgstr "Los administradores ingresan con su contraseña."
+
 msgid ""
 "An educative online judge for teaching and learning computing programming"
 " with emphasis in concurrent programming paradigm"
 msgstr ""
 "Un juez en línea educativo para enseñar y aprender programación de "
 "computadoras con énfasis en el paradigma de programación concurrente"
+
+msgid "Another provider has this key"
+msgstr "Otro proveedor tiene esta clave"
 
 msgid "Available courses"
 msgstr "Cursos disponibles"
@@ -69,11 +91,27 @@ msgstr ""
 "Al presionar el botón de abajo, acepta el uso de cookies en este sitio "
 "para mantener su sesión activa."
 
+msgid "Cancel"
+msgstr "Cancelar"
+
 msgid "Change password"
 msgstr "Cambiar contraseña"
 
+msgid ""
+"Claim with the email of the user, which is their username in VygOJ, e.g. "
+"email or mail"
+msgstr ""
+"Claim con el correo del usuario, que es su nombre de usuario en VygOJ, p."
+" ej. email o mail"
+
 msgid "Clear all"
 msgstr "Borrar todo"
+
+msgid "Client ID"
+msgstr "Client ID"
+
+msgid "Client secret"
+msgstr "Client secret"
 
 msgid "Close"
 msgstr "Cerrar"
@@ -84,6 +122,9 @@ msgstr "Código"
 msgid "Color scheme"
 msgstr "Esquema de colores"
 
+msgid "Configured in config.py"
+msgstr "Configurado en config.py"
+
 msgid "Confirm new password"
 msgstr "Confirmar la nueva contraseña"
 
@@ -93,6 +134,9 @@ msgstr "Conectado"
 msgid "Connected to backend"
 msgstr "Conectado al backend"
 
+msgid "Connection"
+msgstr "Conexión"
+
 msgid "Contents"
 msgstr "Contenido"
 
@@ -100,8 +144,23 @@ msgid "Copy"
 msgstr "Copiar"
 
 #, python-format
+msgid "Could not connect with %(provider)s. Try again later."
+msgstr "No se pudo conectar con %(provider)s. Intente más tarde."
+
+#, python-format
+msgid "Could not log in with %(provider)s. Try again later."
+msgstr "No se pudo ingresar con %(provider)s. Intente más tarde."
+
+#, python-format
+msgid "Could not log in with %(provider)s. Try again."
+msgstr "No se pudo ingresar con %(provider)s. Intente de nuevo."
+
+#, python-format
 msgid "Could not run the solution: %(error)s"
 msgstr "No se pudo ejecutar la solución: %(error)s"
+
+msgid "Create an account for users who are not registered in VygOJ"
+msgstr "Crear una cuenta a los usuarios que no están registrados en VygOJ"
 
 msgid "Current password"
 msgstr "Contraseña actual"
@@ -118,11 +177,25 @@ msgstr "Fecha límite"
 msgid "Default"
 msgstr "Predeterminado"
 
+msgid "Delete"
+msgstr "Eliminar"
+
 msgid "Delete account"
 msgstr "Eliminar cuenta"
 
+#, python-format
+msgid ""
+"Delete the provider %(provider)s? Its users will not be able to log in "
+"with it."
+msgstr ""
+"¿Eliminar el proveedor %(provider)s? Sus usuarios no podrán ingresar con "
+"él."
+
 msgid "Diagnostics"
 msgstr "Diagnósticos"
+
+msgid "Disabled"
+msgstr "Desactivado"
 
 msgid "Disconnected"
 msgstr "Desconectado"
@@ -131,11 +204,23 @@ msgstr "Desconectado"
 msgid "Disconnected: %(error)s"
 msgstr "Desconectado: %(error)s"
 
+msgid "Discovery URL or issuer"
+msgstr "URL de descubrimiento o issuer"
+
 msgid "Do you want to clear all the code?"
 msgstr "¿Desea borrar todo el código?"
 
 msgid "Do you want to revert to the initial code?"
 msgstr "¿Desea volver al código inicial?"
+
+msgid "Edit"
+msgstr "Editar"
+
+msgid "Email"
+msgstr "Correo"
+
+msgid "Email claim"
+msgstr "Claim del correo"
 
 msgid "Exit fullscreen"
 msgstr "Salir de pantalla completa"
@@ -155,6 +240,9 @@ msgstr "Nombre completo"
 msgid "Fullscreen"
 msgstr "Pantalla completa"
 
+msgid "Given by the team of the provider"
+msgstr "Lo entrega el equipo del proveedor"
+
 msgid "Help"
 msgstr "Ayuda"
 
@@ -170,6 +258,9 @@ msgstr "Instructores"
 msgid "Invalid user or password"
 msgstr "Usuario o contraseña inválidos"
 
+msgid "Key"
+msgstr "Clave"
+
 msgid "Language"
 msgstr "Idioma"
 
@@ -182,11 +273,20 @@ msgstr "Modo claro"
 msgid "Log in to run"
 msgstr "Inicie sesión para ejecutar"
 
+msgid "Log in with"
+msgstr "Ingresar con"
+
 msgid "Logged in successfully."
 msgstr "Sesión iniciada con éxito."
 
 msgid "Login"
 msgstr "Iniciar sesión"
+
+msgid "Login URL"
+msgstr "URL de ingreso"
+
+msgid "Login cancelled."
+msgstr "Ingreso cancelado."
 
 msgid "Logout"
 msgstr "Cerrar sesión"
@@ -194,17 +294,37 @@ msgstr "Cerrar sesión"
 msgid "My courses"
 msgstr "Mis cursos"
 
+msgid "Name"
+msgstr "Nombre"
+
+msgid "New SSO provider"
+msgstr "Nuevo proveedor de SSO"
+
 msgid "No errors"
 msgstr "Sin errores"
 
 msgid "No network connection"
 msgstr "Sin conexión a la red"
 
+msgid ""
+"Not configured: public client with PKCE only. Add it to "
+"SSO_CLIENT_SECRETS in config.py."
+msgstr ""
+"No configurado: cliente público, solo con PKCE. Agréguelo a "
+"SSO_CLIENT_SECRETS en config.py."
+
 msgid "Not connected to backend"
 msgstr "Sin conexión con el backend"
 
 msgid "Not found"
 msgstr "No encontrado"
+
+msgid ""
+"Optional. Claim that tells professors from students, e.g. groups or "
+"realm_access.roles"
+msgstr ""
+"Opcional. Claim que distingue a los profesores de los estudiantes, p. ej."
+" groups o realm_access.roles"
 
 msgid "Password"
 msgstr "Contraseña"
@@ -225,11 +345,31 @@ msgstr "Preferencias del usuario %(role)s %(email)s"
 msgid "Preferences updated successfully."
 msgstr "Preferencias actualizadas con éxito."
 
+msgid "Professor claim"
+msgstr "Claim de profesor"
+
+msgid "Professor values"
+msgstr "Valores de profesor"
+
 msgid "Programming language"
 msgstr "Lenguaje de programación"
 
 msgid "Progress"
 msgstr "Progreso"
+
+msgid "Provider"
+msgstr "Proveedor"
+
+#, python-format
+msgid "Provider %(provider)s deleted."
+msgstr "Proveedor %(provider)s eliminado."
+
+#, python-format
+msgid "Provider %(provider)s saved."
+msgstr "Proveedor %(provider)s guardado."
+
+msgid "Redirect URI (callback) to register in the provider"
+msgstr "Redirect URI (callback) que se registra en el proveedor"
 
 msgid "Redo"
 msgstr "Rehacer"
@@ -240,6 +380,9 @@ msgstr "Volver al curso"
 msgid "Revert to initial code"
 msgstr "Volver al código inicial"
 
+msgid "Role"
+msgstr "Rol"
+
 msgid "Run"
 msgstr "Ejecutar"
 
@@ -249,8 +392,35 @@ msgstr "Ejecutar mi solución con los casos de prueba"
 msgid "Running"
 msgstr "Ejecutando"
 
+msgid "SSO"
+msgstr "SSO"
+
+msgid "SSO providers"
+msgstr "Proveedores de SSO"
+
 msgid "Save"
 msgstr "Guardar"
+
+msgid "Save the provider to get the redirect URI to register in the provider."
+msgstr ""
+"Guarde el proveedor para obtener la redirect URI que se registra en el "
+"proveedor."
+
+msgid "Scopes"
+msgstr "Scopes"
+
+msgid "Separated by spaces, e.g. openid profile email"
+msgstr "Separados por espacios, p. ej. openid profile email"
+
+msgid ""
+"Short name for URLs and for SSO_CLIENT_SECRETS in config.py, e.g. ucr. It"
+" cannot be changed later."
+msgstr ""
+"Nombre corto para los URL y para SSO_CLIENT_SECRETS en config.py, p. ej. "
+"ucr. No se puede cambiar después."
+
+msgid "Shown in the login button, e.g. Universidad de Costa Rica"
+msgstr "Se muestra en el botón de ingreso, p. ej. Universidad de Costa Rica"
 
 msgid "Site logo"
 msgstr "Logo del sitio"
@@ -267,6 +437,9 @@ msgstr "Enunciado a la derecha"
 msgid "Statement on top"
 msgstr "Enunciado arriba"
 
+msgid "Status"
+msgstr "Estado"
+
 msgid "Submissions"
 msgstr "Envíos"
 
@@ -277,6 +450,16 @@ msgstr "Caso de prueba %(number)d"
 #, python-format
 msgid "Test case %(number)s verdict: %(status)s"
 msgstr "Veredicto del caso de prueba %(number)s: %(status)s"
+
+msgid "Testing"
+msgstr "Prueba"
+
+msgid ""
+"Testing providers are not shown in the login page, but anyone who knows "
+"their login URL can use them."
+msgstr ""
+"Los proveedores en prueba no aparecen en la página de ingreso, pero "
+"cualquiera que conozca su URL de ingreso puede usarlos."
 
 msgid "The browser blocked the clipboard. Use Ctrl+X, Ctrl+C or Ctrl+V."
 msgstr "El navegador bloqueó el portapapeles. Use Ctrl+X, Ctrl+C o Ctrl+V."
@@ -291,14 +474,25 @@ msgstr ""
 msgid "The requested resource was not found in this site."
 msgstr "El recurso solicitado no se encontró en este sitio."
 
+msgid "There are no SSO providers. Users log in with their password."
+msgstr "No hay proveedores de SSO. Los usuarios ingresan con su contraseña."
+
 #, python-format
 msgid "Too many failed logins. Wait %(minutes)d minutes and try again."
 msgstr ""
 "Demasiados intentos fallidos de inicio de sesión. Espere %(minutes)d "
 "minutos e intente de nuevo."
 
+msgid "Trust the emails of this provider even if they are not marked as verified"
+msgstr ""
+"Confiar en los correos de este proveedor aunque no estén marcados como "
+"verificados"
+
 msgid "Undo"
 msgstr "Deshacer"
+
+msgid "Use up to 32 lowercase letters, digits, and hyphens"
+msgstr "Use hasta 32 letras minúsculas, dígitos y guiones"
 
 msgid "User control"
 msgstr "Control de usuario"
@@ -318,14 +512,49 @@ msgstr "Inicio de sesión"
 msgid "User preferences"
 msgstr "Preferencias del usuario"
 
+msgid "Username"
+msgstr "Usuario"
+
 msgid "Username/Email"
 msgstr "Usuario/correo"
 
 msgid "Users"
 msgstr "Usuarios"
 
+#, python-format
+msgid "Users (%(count)d)"
+msgstr "Usuarios (%(count)d)"
+
+msgid ""
+"Values of that claim that mean professor, separated by commas. Other new "
+"users are students."
+msgstr ""
+"Valores de ese claim que indican profesor, separados por comas. Los demás"
+" usuarios nuevos son estudiantes."
+
 msgid "Vygotsky Online Judge"
 msgstr "Juez en línea Vygotsky"
+
+msgid "Write a claim name, or names separated by dots"
+msgstr "Escriba el nombre de un claim, o nombres separados por puntos"
+
+msgid "Write an https:// URL"
+msgstr "Escriba un URL https://"
+
+msgid "Write scopes separated by spaces, including openid"
+msgstr "Escriba scopes separados por espacios, incluido openid"
+
+#, python-format
+msgid ""
+"Your account of %(provider)s is not registered in VygOJ. Ask your "
+"professor."
+msgstr ""
+"Su cuenta de %(provider)s no está registrada en VygOJ. Consulte a su "
+"profesor."
+
+#, python-format
+msgid "Your email is not verified by %(provider)s."
+msgstr "Su correo no está verificado por %(provider)s."
 
 msgid "Your output"
 msgstr "Su salida"
@@ -343,6 +572,16 @@ msgstr "Su solución"
 #, python-format
 msgid "could not connect to the server (%(message)s)"
 msgstr "no se pudo conectar con el servidor (%(message)s)"
+
+msgid ""
+"e.g. https://sso.ucr.ac.cr/realms/UCR or its /.well-known/openid-"
+"configuration URL"
+msgstr ""
+"p. ej. https://sso.ucr.ac.cr/realms/UCR o su URL /.well-known/openid-"
+"configuration"
+
+msgid "or with your VygOJ password"
+msgstr "o con su contraseña de VygOJ"
 
 #, python-format
 msgid "the server answered %(status)s %(text)s"

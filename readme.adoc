@@ -132,6 +132,8 @@ cd vygoj/frontend
 make admin
 ----
 
+Optionally, let users log in with the account of their institution (single sign-on with OpenID Connect, e.g. the SSO of the Universidad de Costa Rica). Administrators add the providers in the users page of the web application, and the client secrets go in `SSO_CLIENT_SECRETS` of `config.py` (see the single sign-on section of `frontend/readme.adoc`).
+
 Fourth, run the frontend as a production server:
 
 [source,console]

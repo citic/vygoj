@@ -11,7 +11,7 @@
             <h3>{{ _('Administration') }}</h3>
           </header>
           <div id="admin_panel" class="panel">
-            <a class="icon_control" href="/users/admin">
+            <a class="icon_control" href="{{ url_for('get_users_admin') }}">
               <img src="/icon/user-detail.svg" alt="{{ _('Admin Users') }}">
               <span class="caption">{{ _('Users') }}</span>
             </a>
