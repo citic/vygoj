@@ -76,6 +76,33 @@ Containers have the label `vygoj=engine`. If a backend process is killed during 
 $ docker rm -f $(docker ps -aq --filter label=vygoj=engine)
 ----
 
+[[run_log]]
+== Run log
+
+The backend logs every submission it receives in `/run`, with its verdict (`src/run_log.py`), in the same format as the activity log of the frontend (see `frontend/readme.adoc`), which statistical software reads as a table. It is written in `data/log/`, next to the logs of gunicorn:
+
+----
+data/log/
+  runs-2026-11.tsv      # one row per submission of November 2026 (UTC); the first row names the columns
+  code/<hash>.c         # code of each judged submission, named by the SHA-256 of its language and code
+----
+
+The frontend sends a `context` object with each submission, besides the `problem` and the `solution`: the id of the run in its activity log, the user, their role and address, the course, the material and its type, and the commit of the course repo. The backend does not use it to judge, it only logs it; a submission without context is judged and logged with empty cells. A context that is not an object of up to 32 fields with names of up to 64 characters, and values that are texts of up to 256 characters, numbers, booleans, or null, is rejected with HTTP 400.
+
+[cols="1,4",options="header"]
+|===
+| Column | Meaning
+| `time` | Date and time in UTC, ISO 8601 with milliseconds, e.g. `2026-11-08T14:03:12.345+00:00`
+| `id` | The `run` of the context: the `id` of the run event in the activity log of the frontend, which joins both logs. A random id if the frontend did not send it
+| `frontend` | Network address of the frontend that sent the submission
+| `event` | `run` if the submission was judged, or `run_invalid` if it was rejected with HTTP 400
+| `user`, `role`, `address`, `course`, `material`, `type` | Fields of the context
+| `data` | JSON object. For `run`: `language`; `code`, the hash of its file; `duration`, seconds the submission took; `status` and `passed` (test cases) of the result; and `tests`, with the `status`, `wallTime`, `cpuTime`, `memory` (bytes), `threadCount`, and `exitCode` of each test case, omitted when they are 0. For `run_invalid`: `reason`. Other fields of the context (e.g. `commit`) go in `context`
+|===
+
+The log keeps no test cases or outputs. Cells never contain tabs or new lines, texts are truncated to 256 characters, and the files are readable only by the user that runs the backend. Several gunicorn workers write the same log safely (see `vyg.TsvLog` in `common/vyg/tsv_log.py`, shared with the frontend).
+
+
 [[development]]
 == Development
 

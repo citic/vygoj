@@ -9,7 +9,7 @@ from werkzeug.exceptions import HTTPException
 from werkzeug.security import safe_join
 
 import vyg
-from vyg_log import vyg_log
+from activity_log import log_event, log_run, repo_commit, save_code
 from courses import CourseController
 from limits import CONSTRAINED_FIELDS, Limits
 from problem_loader import ProblemLoader
@@ -150,7 +150,6 @@ class ProblemController:
         # Only the languages enabled for the problem may be sent to the judge
         if message.language not in problem.languages:
             return ProblemController.error_response('language not enabled', 400)
-        vyg_log('run', f'{course_name}/{problem_name}')
         return ProblemController.judge_solution(problem, message)
 
     @staticmethod
@@ -210,32 +209,47 @@ class ProblemController:
         course_name = problem.get_course().name
         problem_dict = ProblemController.backend_problem(problem, message.language)
         code_hash = Run.hash_code(problem_dict, message.language, message.code)
+        # Cells and data of the activity log of this run. The code hash names the file of its code
+        log_cells = { 'course': course_name, 'material': problem.name, 'type': problem.type }
+        run_data = { 'language': message.language, 'code': code_hash }
         # The same code as the last run of this problem gives the same result: answer it without
         # running it, e.g. when the student reloads the page and presses Run again. The hash
         # includes the problem sent to the backend, so the result is not reused if the professor
         # changed its test cases or the administrator changed the limits
         repeated = Run.find_repeated(user_id, course_name, problem.name, code_hash)
         if repeated:
-            vyg_log('run_repeated', f'{course_name}/{problem.name}')
+            log_run('run_repeated', run_data, repeated, **log_cells)
             return ProblemController.json_response(repeated)
         try:
             run = Run.start(user_id, course_name, problem.name, code_hash)
         except RunRejected as rejection:
-            vyg_log('run_rejected', f'{course_name}/{problem.name}')
+            log_event('run_rejected', { **run_data, 'reason': str(rejection) }, **log_cells)
             return ProblemController.error_response(str(rejection), 429,
                 { 'Retry-After': str(rejection.retry_after) })
+        # Only the code of accepted runs is saved, which are limited per user, so a robot cannot
+        # fill the disk with rejected or repeated runs. A repeated run has the file of its first run
+        save_code(code_hash, message.language, message.code)
+        # The commit of the course repo recovers the statement and test cases that judged the run.
+        # Only accepted runs ask git for it, which are limited per user
+        run_data['commit'] = repo_commit(problem.get_course().get_path())
+        # The id of the run event joins it with the log of the backend, which gets it in the
+        # context of the submission
+        run_id = vyg.TsvLog.new_id()
+        context = ProblemController.run_context(run_id, log_cells, run_data['commit'])
         result_json = None
         try:
             # Run the test cases and wait for the array of results. The JSON of the backend is
             # answered as it came, it is parsed only to grade it. It is stored for repeated runs
             # only after it was graded, so an invalid answer is not reused
-            backend_json = ProblemController.run_solution(problem_dict, message)
+            backend_json = ProblemController.run_solution(problem_dict, message, context)
             Progress.store(course_name, problem.name, ProblemController.grade(backend_json))
             result_json = backend_json
             return ProblemController.json_response(result_json)
         finally:
             # Also when the run failed (without result), so the user can run again
             run.finish(result_json)
+            log_run('run' if result_json else 'run_failed', run_data, result_json, id=run_id,
+                **log_cells)
 
     @staticmethod
     def grade(result_json: str) -> int:
@@ -266,13 +280,23 @@ class ProblemController:
         return problem_dict
 
     @staticmethod
-    def run_solution(problem_dict: dict, solution: vyg.Message) -> str:
+    def run_context(run_id: str, log_cells: dict, commit) -> dict:
+        """ Return the context of a run for the log of the backend: the id of the run event in the
+        log of the frontend, the logged user, their role and address, the material, and the commit
+        of its course repo. The backend does not use it to judge """
+        user = flask.session['user']
+        return { 'run': run_id, 'user': user.get('email'), 'role': user.get('role'),
+            'address': flask.request.remote_addr, **log_cells, 'commit': commit }
+
+    @staticmethod
+    def run_solution(problem_dict: dict, solution: vyg.Message, context: dict) -> str:
         """ Compile solution and run it against all test cases of the problem returned by
-        backend_problem(). Return the ExecutionResult in JSON, as the backend answered it """
+        backend_problem(). The context goes to the log of the backend (see run_context()). Return
+        the ExecutionResult in JSON, as the backend answered it """
         # The backend truncates the output of visible test cases to maxOutputSize, and does not
         # send the output of hidden ones, so large outputs do not travel to the browser
-        submission = vyg.to_json({ 'problem': problem_dict, 'solution': solution })
-        vyg_log('run_submission', submission)
+        submission = vyg.to_json({ 'problem': problem_dict, 'solution': solution,
+            'context': context })
         uri = f'{ProblemController.select_random_backend()}/run'
         # The submission is already JSON text. json= would encode it again as a JSON string. The
         # backend stops the run after maxTotalDuration, so this timeout is not reached
@@ -282,7 +306,6 @@ class ProblemController:
         response.raise_for_status()
         # The backend writes UTF-8 JSON. requests would guess the encoding of .text otherwise
         response.encoding = 'utf-8'
-        vyg_log('run_result', response.text)
         # The user program is executed once for each test case
         # TODO(jhc): Run in parallel
         return response.text

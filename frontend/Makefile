@@ -24,12 +24,12 @@ TRANSLATIONS=translations
 
 .PHONY: admin lint-static translations update-translations users
 users: install
-	$(ACT) && cd $(SRC) && python manage_users.py import
+	$(ACT) && cd $(SRC) && python manage.py import
 
 # Create an administrator, or reset the password of a user and make it administrator. Optional
 # username: make admin ADMIN=name (not USER, which make takes from the environment)
 admin: install
-	$(ACT) && cd $(SRC) && python manage_users.py admin $(ADMIN)
+	$(ACT) && cd $(SRC) && python manage.py admin $(ADMIN)
 
 # Compile the translations (.po files) to the .mo files that the servers read
 translations: install

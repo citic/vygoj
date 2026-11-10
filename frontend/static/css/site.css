@@ -170,9 +170,12 @@ a:hover {
   }
 }
 
+/* Box of controls, e.g. the links of the administration, apart from each other. They wrap to the
+   next line on narrow screens */
 .panel {
   display: flex;
-  flex-direction: row;
+  flex-flow: row wrap;
+  gap: 1rem 2rem;
   border: 1px solid gray;
   border-radius: 0.5rem;
   padding: 1rem;

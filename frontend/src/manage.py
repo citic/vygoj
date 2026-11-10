@@ -1,12 +1,15 @@
-""" Manage the users of the database from the command line of the server:
+""" Manage the frontend from the command line of the server:
 
-    python manage_users.py admin [username]   # make admin
-    python manage_users.py import [users.tsv] # make users
+    python manage.py admin [username]          # make admin
+    python manage.py import [users.tsv]        # make users
+    python manage.py log output.zip            # the activity log and its analysis tables
+    python manage.py submissions output.zip    # the code of the runs, a folder per submission
 
 admin creates an administrator, or resets the password of a user and makes it administrator. It
 runs in the server, so only who can log in the server can create administrators, never the
 visitors of the web application. import adds the users of a TSV file that are not in the database
-yet. The logic of both lives in users.py, so the web application may reuse it """
+yet. log and submissions write the archives that administrators download from the web application.
+Their logic lives in users.py and activity_log.py, so the web application may reuse it """
 import csv
 import getpass
 import os
@@ -15,10 +18,13 @@ import sys
 from werkzeug.security import generate_password_hash
 
 from db import db
+from activity_log import write_archive, log_event
+from courses import CourseController
 from main import app
 from users import MAX_PASSWORD_LENGTH, LoginAttempt, User
 
-USAGE = 'Usage: python manage_users.py admin [username] | import [users.tsv]'
+USAGE = ('Usage: python manage.py admin [username] | import [users.tsv] | log output.zip'
+    ' | submissions output.zip')
 
 # Administrators can do everything, so their passwords must not be easy to guess
 MIN_PASSWORD_LENGTH = 12
@@ -52,6 +58,7 @@ def manage_admin(username: str = None) -> int:
         print('The username must have between 1 and 64 characters', file=sys.stderr)
         return 1
     user = db.session.scalar(db.select(User).filter_by(username=username))
+    event = 'user_admin' if user else 'user_create'
     if user:
         print(f'User {username} exists with role {user.role}: its password will be reset, '
             'and its role will be admin')
@@ -64,6 +71,7 @@ def manage_admin(username: str = None) -> int:
     # A forgotten password may have blocked the logins of the administrator
     db.session.execute(db.delete(LoginAttempt).filter(LoginAttempt.username == username))
     db.session.commit()
+    log_event(event, { 'source': 'make admin' }, user=username, role='admin')
     print(f'Administrator {username} is ready, log in at /user')
     return 0
 
@@ -79,11 +87,11 @@ def import_users(users_file: str = None) -> int:
             app.config['USERS_FILE'])
     # A missing file is not an error, because make runs this script before every start
     if not os.path.isfile(users_file):
-        print(f'manage_users: no users file {users_file}, skipped')
+        print(f'manage: no users file {users_file}, skipped')
         return 0
     with open(users_file, encoding='utf-8', newline='') as file:
         added = User.add_new(csv.DictReader(file, delimiter='\t'))
-    print(f'manage_users: {added} new users added from {users_file}')
+    print(f'manage: {added} new users added from {users_file}')
     return 0
 
 def add_new_columns():
@@ -100,12 +108,27 @@ def add_new_columns():
         " ADD COLUMN IF NOT EXISTS language VARCHAR(8) NOT NULL DEFAULT 'default'"))
     db.session.commit()
 
+# Activity log -----------------------------------------------------------------------------------
+
+def export_archive(kind: str, output: str = None) -> int:
+    """ Write the archive of the activity log of the given kind (log or submissions) to the output
+    file. Return the exit status """
+    if output is None:
+        print(USAGE, file=sys.stderr)
+        return 2
+    with open(output, 'wb') as file:
+        write_archive(kind, file, CourseController.cache_courses)
+    print(f'manage: {kind} archive written to {output}')
+    return 0
+
 # Main --------------------------------------------------------------------------------------------
 
 # Subcommands and the functions that run them with an optional argument
 COMMANDS = {
     'admin': manage_admin,
     'import': import_users,
+    'log': lambda output=None: export_archive('log', output),
+    'submissions': lambda output=None: export_archive('submissions', output),
 }
 
 def main() -> int:

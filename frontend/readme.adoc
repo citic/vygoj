@@ -149,6 +149,103 @@ sudo systemctl restart apache2
 ----
 
 
+[[activity_log]]
+== Activity log
+
+The frontend logs the activity of the users (`src/activity_log.py`) to know how the judge is used, follow the progress of students, recover their submissions, and do research. It is written in the `log/` folder of `DATA_FOLDER`:
+
+----
+log/
+  events-2026-11.tsv    # one row per event of November 2026 (UTC); the first row names the columns
+  code/<hash>.cpp       # code of each run, named by the code field of its data
+----
+
+Each month has its own file, so no file grows forever. Rows have a few fixed columns, and a `data` column with the fields of each kind of event as a JSON object, so new kinds of materials add fields, not columns. Cells that do not apply to an event are empty:
+
+[cols="1,4",options="header"]
+|===
+| Column | Meaning
+| `time` | Date and time in UTC, ISO 8601 with milliseconds, e.g. `2026-11-08T14:03:12.345+00:00`
+| `id` | Random identifier of the event, that joins the tables of the log archive. The `id` of a run is also in the run log of the backend, which joins both logs
+| `user`, `role` | Logged user and their role. For `login_failed` and `login_blocked`, the typed username
+| `address` | Network address of the client (see `TRUSTED_PROXIES` in <<reverse_proxy>>)
+| `event` | One of the events of the next table
+| `path` | Page of the request, e.g. `/problem/CI0112/hello`. Empty for the command line
+| `course`, `material`, `type` | The material of the event: its name, unique in the course, and its type (`course`, `problem`...). Its place in the course is in the materials table of the log archive
+| `data` | JSON object with the fields of the event, see the next table
+|===
+
+[cols="1,2,3",options="header"]
+|===
+| Event | Logged when | Data
+| `visit` | A user (or an anonymous visitor) opens a page: home, course, problem, user, or help |
+| `login`, `logout` | A user logs in or out |
+| `login_failed`, `login_blocked` | A login has a wrong user or password, or it is rejected by the limits (<<login_limits>>) |
+| `preferences` | A user saves their preferences | `color_scheme`, `font`
+| `user_create`, `user_admin` | `manage.py` adds a user, or makes an existing user administrator | `source`: `import` or `make admin`
+| `run` | The judge ran a submission | `language`; `code`: SHA-256 hash of the submission (`Run.hash_code()`, see <<run_limits>>); `commit`: of the course repo; `status` and `passed` (test cases) of the result; `tests`: the `status` and `wallTime` of each test case
+| `run_repeated` | The same submission was answered with the result of the last run, without running it (<<run_limits>>) | As `run`, without `commit`
+| `run_rejected` | A limit of runs rejected the submission | `language`, `code`, and `reason`: the message shown to the user
+| `run_failed` | The judge did not answer a valid result, e.g. no backend was available | `language`, `code`, `commit`
+| `log_download` | An administrator downloaded an archive of the log | `archive`: `log` or `submissions`
+|===
+
+The log does not store problem statements, test cases, or program outputs, so it stays small: the `commit` of a run recovers the statement and test cases that judged it from the course repo (`git checkout`). Each code file is saved once, by the first run of that submission, and only accepted runs save code or ask git for the commit, so a robot cannot fill the disk or start processes with rejected or repeated runs (runs are limited per user). Passwords are never logged.
+
+[[log_archives]]
+=== Exporting the log
+
+Administrators download two zip files from the Administration panel in the home page; other users get HTTP 403. They are made on demand from the log (`LogController` in `src/activity_log.py`), in a temporary file that is deleted after sending it, so they take no space in the server, but the temporary disk must fit them while they are sent:
+
+* *Activity log* (`/admin/log`): the files of the log in `log/`, and tables to analyze it in `analysis/`. Their columns never change when new kinds of events or materials appear, they get new tables instead:
+** `events.tsv`: every event, without its data.
+** `runs.tsv`: a row per run event (`id`, `time`, `user`, `course`, `material`, `event`, `language`, `code`, `commit`, `status`, `passed`, `tests`, `wall_time`, and `reason`). `tests` is the count of test cases, and `wall_time` the seconds they took, added up.
+** `tests.tsv`: a row per test case of each run (`run`, `test` number from 1, `status`, `wall_time`). `run` is the `id` of the run.
+** `materials.tsv`: every material of the courses as they are now in their repos (`course`, `material`, `type`, `parent`, `depth` from the course, and `title`), to group events by section.
+* *Submissions* (`/admin/submissions`): what each user sent to each problem, with the problem as it was in the `commit` of the course repo of the run, to run the submissions again in the context where they were solved, as the extraction command of the old log did (tag `log_v0` of git). It has a folder per run that judged or failed, with its code and the verdict of each test case. Submission folders sort in time order, so the last one is the latest. Names of users and materials keep only letters, digits, and `.@-_`:
++
+----
+submissions.tsv                                 # index: a row per submission, with its folder and
+                                                # the folder with the files of its problem
+submissions/<user>/<course>/<material>/
+    problem.es.adoc                             # statement (.adoc, .md, or .html files)
+    initial/, given/                            # initial code
+    tests/input001.txt, tests/output001.txt...  # test cases, also the hidden ones
+    <YYYYMMDD_HHMMSS>/solution.cpp              # code, with the extension of its language
+                     /result.tsv                # verdict and wall time of each test case
+----
++
+The files of the problem are taken from the course repo with `git archive` (stopped after 60 seconds), once per problem and commit. Only the statement, initial code, and test cases are taken, not other files of the problem folder, such as the solutions of the professors; files larger than 16 MiB are skipped. The folder of the user and problem has the files of the commit of their first submission; a later submission judged by another commit has its own copy in its folder, so every submission keeps the problem that judged it. The folder of a problem is found in the course as it is now, so the `problem` column of the index is empty if the problem was removed or moved after the run, if its folder did not exist in that commit, or if the run has no commit (its course is not a git repo). This archive may be much larger than the log.
+
+The same archives are written in the command line of the server:
+
+[source,sh]
+----
+cd src
+../.venv/bin/python manage.py log vygoj-log.zip
+../.venv/bin/python manage.py submissions vygoj-submissions.zip
+----
+
+For example, to load the tables in R or Python and join the runs with their test cases:
+
+[source,r]
+----
+runs <- read.delim("analysis/runs.tsv", quote = "", colClasses = "character")
+tests <- read.delim("analysis/tests.tsv", quote = "", colClasses = "character")
+verdicts <- merge(runs, tests, by.x = "id", by.y = "run")
+----
+
+[source,python]
+----
+import pandas
+runs = pandas.read_csv('analysis/runs.tsv', sep='\t', quoting=3, dtype=str)
+tests = pandas.read_csv('analysis/tests.tsv', sep='\t', quoting=3, dtype=str)
+verdicts = runs.merge(tests, left_on='id', right_on='run')
+----
+
+Cells never contain tabs or new lines: control characters sent by clients become spaces (JSON escapes them in `data`), and texts longer than 256 characters are truncated. Cells that start with `=`, `+`, `-`, or `@` get a leading apostrophe, so spreadsheets do not run a username typed in the login as a formula; the archives remove it when they parse the log. The gunicorn workers append each event in one system call, so their rows do not mix, and the file of a new month is created with its row of columns atomically. The files are readable only by the user that runs the frontend, because they have personal data. The HTTP requests are logged by gunicorn in `data/access.log` (`make server`).
+
+
 [[security]]
 == Security
 
@@ -231,7 +328,7 @@ Failed logins are stored in the `login_attempts` table (`LoginAttempt` in `src/u
 * 5 failed logins of a user from the same address (`MAX_FAILURES_PER_USER`), which stops a student from guessing the password of a classmate.
 * 30 failed logins from the same address for any users (`MAX_FAILURES_PER_ADDRESS`), which stops robots that try many users. It is larger because a whole laboratory may share a public address.
 
-Then, logins from that address are rejected, without checking the password, until the oldest failures are older than 15 minutes. Usernames that do not exist count too, so the limits do not reveal which users exist. A successful login forgets the failures of that user from that address. There is no limit per username alone, otherwise anybody could lock the account of a classmate by typing wrong passwords before an exam. Failed and rejected logins are logged as `login_failed` and `login_blocked`.
+Then, logins from that address are rejected, without checking the password, until the oldest failures are older than 15 minutes. Usernames that do not exist count too, so the limits do not reveal which users exist. A successful login forgets the failures of that user from that address. There is no limit per username alone, otherwise anybody could lock the account of a classmate by typing wrong passwords before an exam. Failed and rejected logins are logged as `login_failed` and `login_blocked` (<<activity_log>>).
 
 The limits depend on the address of the client, so set `TRUSTED_PROXIES` behind a reverse proxy (<<reverse_proxy>>).
 
@@ -246,9 +343,9 @@ Only logged users may run code (see <<input_limits>>). Their runs are stored in 
 ** the previous run started less than 5 seconds ago (`MIN_RUN_INTERVAL`).
 ** the user started 120 runs in the last hour (`MAX_RUNS_PER_WINDOW`). A student who runs the code every 30 seconds stays below it.
 
-The checks and the new run are stored while the row of the user is locked (`SELECT ... FOR UPDATE`), so two requests sent at the same time cannot both pass. Only the result of the last run of each problem is kept, if it is smaller than 1 MiB, and runs older than one day are deleted. Repeated and rejected runs are logged as `run_repeated` and `run_rejected`.
+The checks and the new run are stored while the row of the user is locked (`SELECT ... FOR UPDATE`), so two requests sent at the same time cannot both pass. Only the result of the last run of each problem is kept, if it is smaller than 1 MiB, and runs older than one day are deleted. Runs are logged as `run`, `run_repeated`, `run_rejected`, or `run_failed` (<<activity_log>>).
 
-The frontend sends the backend a compact JSON object (`run_solution()` in `src/problems.py`) with only two parts: the solution, and the fields of the problem that judge it (`BACKEND_FIELDS`: the test cases, the languages, the limits, and other fields that change verdicts), not the statement or the initial code. It answers the browser the JSON of the backend as it came, parsed only to store the grade. Texts travel as JSON strings, so code and output in any language arrive intact.
+The frontend sends the backend a compact JSON object (`run_solution()` in `src/problems.py`) with three parts: the solution; the fields of the problem that judge it (`BACKEND_FIELDS`: the test cases, the languages, the limits, and other fields that change verdicts), not the statement or the initial code; and a context for the run log of the backend (`run_context()`: the `id` of the run event in the activity log, the user, their role and address, the material, and the commit of the course repo; see `backend/readme.adoc`). It answers the browser the JSON of the backend as it came, parsed only to store the grade. Texts travel as JSON strings, so code and output in any language arrive intact.
 
 The administrator sets the limits of the runs in `config.py` (their defaults and explanation are in `config/defaults.py`). Each limit has an absolute range (`ABS_MIN_*`, `ABS_MAX_*`) and a default (`DEF_*`), which may be a number or a dictionary with a number for each language. Professors may choose a value in `vygoj.json`, for the problem or for a test case; values out of the range are clamped, and a missing value or 0 means the default. `src/limits.py` computes the effective values and sends them in the problem. The frontend does not start with invalid limits.
 
@@ -267,7 +364,7 @@ The browser never waits forever, and it always gets an answer before giving up. 
 [[administrators]]
 === Administrators
 
-Administrators are created in the server with `make admin` (`src/manage_users.py admin`), never from the web application, so only who can log in the server can create them. The command asks the username and a password of at least 12 characters. If the user exists, it resets its password, makes it administrator, and forgets its failed logins, so it also recovers a forgotten password. While the users table is empty, the frontend writes a warning in its log that suggests `make admin`.
+Administrators are created in the server with `make admin` (`src/manage.py admin`), never from the web application, so only who can log in the server can create them. The command asks the username and a password of at least 12 characters. If the user exists, it resets its password, makes it administrator, and forgets its failed logins, so it also recovers a forgotten password. While the users table is empty, the frontend writes a warning in its log that suggests `make admin`.
 
 [[input_limits]]
 === Requests and errors
@@ -276,6 +373,6 @@ Administrators are created in the server with `make admin` (`src/manage_users.py
 * Problem actions are validated: only `fetch_problem` and `run`, and only the languages enabled for the problem.
 * Only logged users may run code. Anonymous visitors may read problems and their test cases, but the problem page shows them a "Log in to run" link instead of the Run button, and the server answers their `run` requests with HTTP 401, also when a robot or a command sends them.
 * Errors are answered with generic messages such as `{"error": "the judge is not available"}`; their details (backend addresses, host paths) go to the server log only.
-* The request log (`data/vygoj.tsv`) stores the body of JSON requests only, never the bodies of forms, which carry passwords.
+* The activity log (<<activity_log>>) stores the code of runs, never request bodies of forms, which carry passwords, and it escapes the cells that clients write, so they cannot add fake rows.
 * Login takes the same time whether the user exists or not, and starts a new session.
 * After logging in, users go to the page in the `next` parameter of the login page (e.g. `/user?next=/problem/CI0112/hello`, used by the "Log in to run" link). `safe_next_url()` in `src/users.py` accepts only paths of this site, otherwise anybody could write a link to the login of VygOJ that takes students to a fake site after logging in (open redirect).

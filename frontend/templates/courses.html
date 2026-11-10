@@ -15,6 +15,16 @@
               <img src="/icon/user-detail.svg" alt="{{ _('Admin Users') }}">
               <span class="caption">{{ _('Users') }}</span>
             </a>
+            {#- Zip files made from the activity log: the log with tables to analyze it, and the code
+                of the runs in a folder per user, course, material, and submission #}
+            <a class="icon_control" href="{{ url_for('get_log') }}" download>
+              <img src="/icon/archive.svg" alt="">
+              <span class="caption">{{ _('Activity log') }}</span>
+            </a>
+            <a class="icon_control" href="{{ url_for('get_submissions') }}" download>
+              <img src="/icon/archive.svg" alt="">
+              <span class="caption">{{ _('Submissions') }}</span>
+            </a>
           </div>
         </article>
 {%- endif %}
