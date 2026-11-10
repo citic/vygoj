@@ -101,20 +101,37 @@ class CourseController:
         if not problems:
             return 0
         # Problems without a grade count as 0. Rounded half up, as Math.round() in course.js
-        average = sum(grades.get(problem, 0) for problem in problems) / len(problems)
+        average = sum(grades.get(problem.name, 0) for _, problem in problems) / len(problems)
         return math.floor(average + 0.5)
 
     @staticmethod
-    def list_problems(contents) -> list:
-        ''' Return the names of the problems in the contents, without the disabled ones (their
-        type starts with '_'), which the course page does not list '''
-        names = []
-        for item in contents:
+    def list_problems(contents, prefix='') -> list:
+        ''' Return the problems in the contents as (number, problem), numbered as on the course page
+        (e.g. '3.7.4'), without the disabled ones (their type starts with '_'), which the course
+        page does not list '''
+        problems = []
+        enabled = [item for item in contents if not item.type.startswith('_')]
+        for index, item in enumerate(enabled, 1):
+            number = f'{prefix}{index}'
             if item.type == 'problem':
-                names.append(item.name)
+                problems.append((number, item))
             elif item.type == 'section':
-                names += CourseController.list_problems(item.contents)
-        return names
+                problems += CourseController.list_problems(item.contents, f'{number}.')
+        return problems
+
+    @staticmethod
+    def neighbors(problem) -> tuple:
+        ''' Return the problems before and after the given one in its course, as (number, problem)
+        in the order of the course page, or None at the ends of the course '''
+        course = CourseController.customize_for(problem.get_course(), flask.session.get('user'))
+        problems = CourseController.list_problems(course.contents)
+        names = [item.name for _, item in problems]
+        if problem.name not in names:
+            return None, None
+        index = names.index(problem.name)
+        previous = problems[index - 1] if index > 0 else None
+        following = problems[index + 1] if index + 1 < len(problems) else None
+        return previous, following
 
     @staticmethod
     def get_course(course_id):

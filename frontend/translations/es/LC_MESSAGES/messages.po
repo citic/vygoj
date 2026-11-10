@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: VygOJ \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-10 00:31-0600\n"
+"POT-Creation-Date: 2026-11-10 15:35-0600\n"
 "PO-Revision-Date: 2026-11-09 15:19-0600\n"
 "Last-Translator: \n"
 "Language: es\n"
@@ -143,9 +143,6 @@ msgstr "Salir de pantalla completa"
 msgid "Expected output"
 msgstr "Salida esperada"
 
-msgid "Finish"
-msgstr "Terminar"
-
 msgid "Font"
 msgstr "Fuente"
 
@@ -194,6 +191,9 @@ msgstr "Cerrar sesión"
 msgid "My courses"
 msgstr "Mis cursos"
 
+msgid "Next"
+msgstr "Siguiente"
+
 msgid "No errors"
 msgstr "Sin errores"
 
@@ -224,6 +224,15 @@ msgstr "Preferencias del usuario %(role)s %(email)s"
 
 msgid "Preferences updated successfully."
 msgstr "Preferencias actualizadas con éxito."
+
+msgid "Press Run to check your solution"
+msgstr "Presione Ejecutar para validar su solución"
+
+msgid "Previous"
+msgstr "Anterior"
+
+msgid "Problems of the course"
+msgstr "Problemas del curso"
 
 msgid "Programming language"
 msgstr "Lenguaje de programación"

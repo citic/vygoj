@@ -2,8 +2,18 @@
 {%- block styles %}
     <link rel="stylesheet" href="/css/problems.css">
     <link rel="stylesheet" href="https://esm.sh/monaco-editor/min/vs/editor/editor.main.css" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&amp;icon_names=backspace,content_copy,content_cut,content_paste,fullscreen,fullscreen_exit,redo,restart_alt,space_dashboard,splitscreen_left,splitscreen_right,splitscreen_top,undo">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&amp;icon_names=arrow_back,arrow_forward,backspace,content_copy,content_cut,content_paste,fullscreen,fullscreen_exit,redo,restart_alt,space_dashboard,splitscreen_left,splitscreen_right,splitscreen_top,undo">
 {%- endblock %}
+
+{#- Link to the problem before or after this one, with its number and title as on the course page #}
+{%- macro neighbor_link(neighbor, rel, text, icon) %}
+  {%- if neighbor %}
+    {%- set number, problem = neighbor %}
+    {%- set label = number ~ ' ' ~ (problem.title or problem.folder) %}
+            <a href="{{ problem.build_url() }}" rel="{{ rel }}" title="{{ label }}"><span class="material-symbols-outlined" aria-hidden="true">{{ icon }}</span><small>{{ text }}</small><span class="name">{{ label }}</span></a>
+  {%- endif %}
+{%- endmacro %}
+
 {%- block main %}
       <main id="problem" class="problem" data-name="{{ it.problem.name }}" data-csrf-token="{{ csrf_token() }}" data-run-timeout="{{ it.run_timeout }}">
         <article class="description">
@@ -33,17 +43,16 @@
         </details>
         <section class="evaluation">
           <header>
-            <p class="actions">
 {%- if it.user %}
-              <button id="run_button" class="button action" disabled="disabled" title="{{ _('Run my solution against the test cases') }}">{{ _('Run') }}</button>
+            <button id="run_button" class="button action" disabled="disabled" title="{{ _('Run my solution against the test cases') }}">{{ _('Run') }}</button>
+            {#- problem.js shows the score instead after the first run #}
+            <p id="run_hint">{{ _('Press Run to check your solution') }}</p>
 {%- else %}
-              {#- Only registered users may run code. After logging in, they come back to this problem #}
-              <a href="{{ url_for('user', next=request.path) }}" id="login_to_run" class="button action">{{ _('Log in to run') }}</a>
+            {#- Only registered users may run code. After logging in, they come back to this problem #}
+            <a href="{{ url_for('user', next=request.path) }}" id="login_to_run" class="button action">{{ _('Log in to run') }}</a>
 {%- endif %}
-              <a href="{{ it.problem.get_course().build_url() }}" id="finish_button" class="button confirm" title="{{ _('Return to the course') }}">{{ _('Finish') }}</a>
-            </p>
-            <p id="score">
-              {%- set passed %}<span id="passed_test_count">0</span>/<span id="total_test_count">{{ it.problem.tests.length }}</span>{% endset %}
+            <p id="score" hidden>
+              {%- set passed %}<span id="passed_test_count">0</span>/<span id="total_test_count">{{ it.problem.tests|length }}</span>{% endset %}
               {%- set points %}<span id="user_points">0</span>/<span id="total_points">{{ it.problem.calculate_total_points() }}</span>{% endset %}
               {{ _('%(passed)s test cases passed (%(points)s points)', passed=passed, points=points) }}
             </p>
@@ -82,6 +91,14 @@
             <pre id="stderr"></pre>
           </figure>
           <output id="test_verdict"></output>
+          {%- set course = it.problem.get_course() %}
+          {%- set section = it.problem.get_parent() %}
+          <nav class="materials" aria-label="{{ _('Problems of the course') }}">
+{{- neighbor_link(it.previous, 'prev', _('Previous'), 'arrow_back') }}
+            <a href="{{ course.build_url() }}" title="{{ _('Return to the course') }}"><small>{{ course.title or course.name }}</small>
+              {%- if section is not sameas course %}<span class="section">{{ section.title or section.folder }}</span>{% endif %}</a>
+{{- neighbor_link(it.next, 'next', _('Next'), 'arrow_forward') }}
+          </nav>
         </section>
       </main>
 {%- endblock %}

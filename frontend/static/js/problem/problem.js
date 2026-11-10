@@ -523,6 +523,9 @@ class ProblemManager {
     const totalPointsElement = document.getElementById('user_points');
     console.assert(totalPointsElement);
     totalPointsElement.textContent = String(this.result.points);
+    // The score takes the place of the hint to press Run
+    document.getElementById('score').hidden = false;
+    document.getElementById('run_hint').hidden = true;
   }
 
   // Shows the diagnostics of the judge and the compiler (warnings or errors), if any

@@ -78,6 +78,7 @@ class ProblemController:
     def get_problem(course_name, problem_name):
         """Get the contents page for a course"""
         problem = ProblemController.fetch_problem(course_name, problem_name)
+        previous, following = CourseController.neighbors(problem)
         return flask.render_template('problem.html', it={
             'stylesheet': 'problems',
             'title': problem.title,
@@ -88,6 +89,9 @@ class ProblemController:
                 { 'href': problem.build_url(), 'text': problem.name },
             ],
             'problem': problem,
+            # (number, problem) of the problems before and after this one in the course, or None
+            'previous': previous,
+            'next': following,
             # The browser waits for the answer of a run longer than the frontend waits a backend
             'run_timeout': Limits.client_run_timeout(),
             'scripts': [
