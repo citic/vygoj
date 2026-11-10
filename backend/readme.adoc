@@ -55,7 +55,7 @@ $ make clean
 [[languages]]
 == Programming languages
 
-The backend runs solutions in C, C++, Java, and Python (`LANGUAGE_DEFAULTS` in `src/execution.py`). Each language has a fixed source file name, its compiler command and compile time limit, and the command that runs the solution. Python is interpreted, so its "compiler" only checks the syntax, and students get their syntax errors as compiler errors before any test case runs:
+The backend runs solutions in C, C++, Java, Python, and Alecci (`LANGUAGE_DEFAULTS` in `src/execution.py`). Each language has a fixed source file name, its compiler command and compile time limit, and the command that runs the solution. Python is interpreted, so its "compiler" only checks the syntax, and students get their syntax errors as compiler errors before any test case runs:
 
 [cols="1,2,3,1,2"]
 |===
@@ -65,9 +65,12 @@ The backend runs solutions in C, C++, Java, and Python (`LANGUAGE_DEFAULTS` in `
 | C++ | `solution.cpp` | `g++ -g -Wall -Wextra -std=gnu++20 -pthread` | 2 s | `./solution`
 | Java | `Solution.java` | `javac -g -encoding UTF-8 -Xlint:all -d .` (the default JDK of Debian trixie) | 10 s | `java -ea -cp . Solution`
 | Python | `solution.py` | `python3 -m py_compile` (Python 3 of Debian trixie) | 2 s | `python3 solution.py`
+| Alecci | `solution.ale` | `alecci --no-tsan` (https://pypi.org/project/alecci/[alecci] 1.x, which links with clang) | 5 s | `./solution`
 |===
 
 Java requires a public class to be in a file of its name, so the main class of a Java solution must be the public class `Solution`, as in the default code of the frontend. Java solutions run with assertions enabled (`-ea`). The sanitizers (`asan`, `tsan`, `ubsan`) and valgrind (`memcheck`, `helgrind`) work only on native executables, so they are ignored for Java and Python, as is `lint`, which runs `cpplint` on C and C++ only. `gdb` counts the threads of C, C++, and Python solutions (the threads of Python are threads of the operating system), but not of Java, whose virtual machine creates threads of its own.
+
+Alecci is a pseudo-language for teaching concurrent programming. Its compiler translates the solution to LLVM IR and links it with clang into a native executable, so `gdb` counts its threads, and valgrind works on it. The compiler enables ThreadSanitizer by default, but TSan creates a thread of its own, which `gdb` would count, so the backend passes `--no-tsan` unless the problem asks for `tsan`; `asan` becomes `--use-asan`, and `ubsan` and `lint` are ignored. The compiler writes status lines on every compilation (`Compiling with thread sanitizer support`, `Compilation successful! ...`), which the backend removes from the compiler output, and it exits with status 0 even when clang fails, so the backend checks that the executable exists after compiling (for every language that creates a file). The engine installs it from PyPI in a virtual environment (`/opt/alecci`), with its major version fixed (`alecci~=1.8`); rebuild the image to get its fixes.
 
 
 The backend runs code written by untrusted users, so each submission runs in a disposable container created with restrictions (see `_create_container()` in `src/execution.py`):

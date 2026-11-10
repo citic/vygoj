@@ -16,13 +16,17 @@ const UNREACHABLE_STATUSES = [502, 503, 504];
 // A line of the compiler, the linker, or the linter about a line of the solution, with its line,
 // its column or section of the linker, its severity, and its message. E.g. "solution.c:4:18:
 // error: 'y' undeclared" (gcc), "/tmp/solution.c:3:(.text+0x5): undefined reference to `foo'"
-// (ld), "solution.c:5:  Missing space after ,  [whitespace/comma] [3]" (cpplint), or
-// "Solution.java:7: error: ';' expected" (javac)
-const DIAGNOSTIC = /^(?:\S*\/)?[Ss]olution\.\w+:(\d+):(?:(\d+):|(\(\.[^)]*\)):)?\s*(?:(?:fatal )?(error|warning|note):)?\s*(.*)$/;
+// (ld), "solution.c:5:  Missing space after ,  [whitespace/comma] [3]" (cpplint),
+// "Solution.java:7: error: ';' expected" (javac), or "solution.ale:3:1: syntax error: unexpected
+// token 'end'" (alecci)
+const DIAGNOSTIC = /^(?:\S*\/)?[Ss]olution\.\w+:(\d+):(?:(\d+):|(\(\.[^)]*\)):)?\s*(?:(?:fatal |syntax )?(error|warning|note):)?\s*(.*)$/;
 // A line of Python about a line of the solution, e.g. '  File "solution.py", line 3' of a syntax
 // error. Its message is in a later line that names the error, e.g. "SyntaxError: invalid syntax"
 const PYTHON_DIAGNOSTIC = /^\s*File "(?:\S*\/)?solution\.py", line (\d+)/;
 const PYTHON_ERROR = /^\w*(?:Error|Exception|Warning)\b/;
+// An error of alecci with its line at the end, e.g. "solution.ale: error: undefined variable 'y'
+// (line 2)"
+const ALECCI_DIAGNOSTIC = /^(?:\S*\/)?solution\.ale: (error|warning): (.*) \(line (\d+)\)$/;
 
 // An error that means that the server or the judge could not be reached, not that the request was
 // wrong. The connection is checked again after it
@@ -33,6 +37,8 @@ class ConnectionError extends Error {}
 // TODO: Java and Kotlin are missing because esm.sh fails to serve their highlighting (error 520)
 
 const monacoLanguageFor = {
+  ale: 'alecci',
+  alecci: 'alecci',
   c: 'c',
   'c++': 'cpp',
   cpp: 'cpp',
@@ -564,8 +570,8 @@ class ProblemManager {
   }
 
   // Return the diagnostic {line, column, severity, message} of a line of the compiler, the
-  // linker, the linter, or Python about a line of the solution, or null. The following lines
-  // carry the message of Python
+  // linker, the linter, Python, or alecci about a line of the solution, or null. The following
+  // lines carry the message of Python
   static parseDiagnostic(line, nextLines) {
     const match = line.match(DIAGNOSTIC);
     if (match) {
@@ -586,6 +592,16 @@ class ProblemManager {
         column: 0,
         severity: 'error',
         message: nextLines.find((next) => PYTHON_ERROR.test(next)) || line.trim(),
+      };
+    }
+    const alecci = line.match(ALECCI_DIAGNOSTIC);
+    if (alecci) {
+      const [, severity, message, row] = alecci;
+      return {
+        line: Number(row),
+        column: 0,
+        severity,
+        message,
       };
     }
     return null;

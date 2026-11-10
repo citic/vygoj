@@ -34,6 +34,8 @@ DEFAULT_TOTAL_DURATION = 30 # seconds
 # Time limits for compiling, linting, and reading statistics in the container
 COMPILE_TIMEOUT = 2 # seconds
 JAVA_COMPILE_TIMEOUT = 10 # seconds
+# alecci starts Python and LLVM, and then links with clang
+ALECCI_COMPILE_TIMEOUT = 5 # seconds
 LINT_TIMEOUT = 2 # seconds
 STATS_TIMEOUT = 2 # seconds
 # Seconds that the gdb run that counts the threads may last beyond the limit of the test case
@@ -82,11 +84,28 @@ CONTAINER_LABELS = {'vygoj': 'engine'}
 # Doc: https://docker-py.readthedocs.io/en/stable/client.html
 docker_client = docker.from_env(timeout=DOCKER_TIMEOUT)
 
+# Compiler options of the sanitizers that a problem may ask for in gcc, g++, and clang. Only these
+# tools are accepted, any other word in problem.tools is ignored
+COMPILE_TOOLS = {
+    'asan': ['-fsanitize=address', '-fmessage-length=80'],
+    'tsan': ['-fsanitize=thread', '-fmessage-length=80'],
+    'ubsan': ['-fsanitize=undefined', '-fmessage-length=80'],
+}
+# The alecci compiler enables ThreadSanitizer unless it gets --no-tsan or --use-asan. TSan creates a
+# thread of its own, which gdb would count, so it is enabled only when the problem asks for it
+ALECCI_TOOLS = {
+    'asan': ['--use-asan'],
+    'tsan': [],
+}
+# Status lines that alecci writes on every compilation. Without them, a successful compilation has
+# no output, as with the other compilers, and the frontend does not show an empty diagnostic
+# TODO(jhc): remove when alecci has a quiet mode (citic/alecci#2)
+ALECCI_STATUS = re.compile(r'^(?:Compiling with [\w ]+ support|'
+        r'Compilation successful! Executable created: \S+)(?:\n|$)', re.MULTILINE)
+
 @dataclasses.dataclass(frozen=True)
 class LanguageDefault:
     """ How the backend compiles, runs, and lints the solutions in a programming language """
-    # Language id of the old Judge0 API
-    id: int
     # Fixed name of the source file in WORKDIR. A public Java class must be in a file of its name
     source_file: str
     # Compiler command and its options, before the source file. Interpreted languages only check
@@ -97,6 +116,9 @@ class LanguageDefault:
     compiler_suffix: str
     # Seconds to compile. The Java compiler runs in a JVM, which starts slower than gcc
     compile_timeout: float
+    # File that the compiler must create in WORKDIR, or '' if it creates none. alecci exits with
+    # status 0 even when clang fails to link, so the missing file tells the failure
+    compiled_file: str
     # Command that runs the compiled solution, before the arguments of the test case
     run_command: str
     # Filter of cpplint, or '' if the language has no linter
@@ -106,37 +128,43 @@ class LanguageDefault:
     native: bool = True
     # True if gdb counts the threads created by the solution. The JVM creates threads of its own
     count_threads: bool = True
+    # Compiler options of each sanitizer that the problem may ask for (COMPILE_TOOLS)
+    compile_tools: dict = dataclasses.field(default_factory=lambda: COMPILE_TOOLS)
+    # Compiler options when the problem asks for none of compile_tools, e.g. to disable a sanitizer
+    # that the compiler enables by default
+    no_tools_options: str = ''
+    # Lines that the compiler writes even when it succeeds, removed from its output, or None
+    status_lines: re.Pattern = None
 
 COMMON_LINT = '-build/header_guard,-build/include_subdir,-runtime/int'
 # TODO(jhc): override default compiler options with problem.compilerOptionsFor[lang]
 # -fno-diagnostics-color
 LANGUAGE_DEFAULTS = {
-    'C': LanguageDefault(50, 'solution.c',
+    'C': LanguageDefault('solution.c',
         'gcc -g -Wall -Wextra -std=gnu17 -pthread', '-o solution -lm', COMPILE_TIMEOUT,
-        './solution', f'{COMMON_LINT},-readability/casting'),
-    'C++': LanguageDefault(54, 'solution.cpp',
+        'solution', './solution', f'{COMMON_LINT},-readability/casting'),
+    'C++': LanguageDefault('solution.cpp',
         'g++ -g -Wall -Wextra -std=gnu++20 -pthread', '-o solution -lm', COMPILE_TIMEOUT,
-        './solution', f'{COMMON_LINT},-build/c++11,-runtime/references'),
+        'solution', './solution', f'{COMMON_LINT},-build/c++11,-runtime/references'),
     # The main class of the solution must be the public class Solution (the default code of the
     # frontend). -ea enables assertions, as they are in C without NDEBUG
     # TODO(jhc): lint Java solutions with checkstyle, and count their threads
-    'Java': LanguageDefault(62, 'Solution.java',
-        'javac -g -encoding UTF-8 -Xlint:all -d .', '', JAVA_COMPILE_TIMEOUT,
+    'Java': LanguageDefault('Solution.java',
+        'javac -g -encoding UTF-8 -Xlint:all -d .', '', JAVA_COMPILE_TIMEOUT, 'Solution.class',
         'java -ea -cp . Solution', '', native=False, count_threads=False),
     # py_compile reports syntax errors before running the test cases. The threads of Python are
     # threads of the operating system, so gdb counts them on the interpreter
     # TODO(jhc): lint Python solutions, e.g. with pylint or pycodestyle
-    'Python': LanguageDefault(71, 'solution.py',
-        'python3 -m py_compile', '', COMPILE_TIMEOUT, 'python3 solution.py', '', native=False),
+    'Python': LanguageDefault('solution.py',
+        'python3 -m py_compile', '', COMPILE_TIMEOUT, '', 'python3 solution.py', '',
+        native=False),
+    # alecci translates the solution to LLVM IR and links it with clang into a native executable
+    'Alecci': LanguageDefault('solution.ale',
+        'alecci', '-o solution', ALECCI_COMPILE_TIMEOUT, 'solution', './solution', '',
+        compile_tools=ALECCI_TOOLS, no_tools_options='--no-tsan', status_lines=ALECCI_STATUS),
 }
 
-# Compiler options and run prefixes of the tools that a problem may ask for. Only these tools are
-# accepted, any other word in problem.tools is ignored
-COMPILE_TOOLS = {
-    'asan': ['-fsanitize=address', '-fmessage-length=80'],
-    'tsan': ['-fsanitize=thread', '-fmessage-length=80'],
-    'ubsan': ['-fsanitize=undefined', '-fmessage-length=80'],
-}
+# Run prefixes of the tools that a problem may ask for. Only these tools are accepted
 RUN_TOOLS = {
     'memcheck': ['valgrind', '-q', '-s', '--sigill-diagnostics=yes', '--leak-check=full'],
     'helgrind': ['valgrind', '-q', '-s', '--sigill-diagnostics=yes', '--tool=helgrind'],
@@ -544,16 +572,27 @@ class Execution:
                 + self.flags.compiler_suffix.split())
         # Run the compilation command, if it fails, report to frontend
         stdout, stderr, exit_code = self._run_in_container(cmd, self.flags.compile_timeout)
-        self.result.compileOutput = truncate_output(stdout + stderr, self.output_limit)
-        if exit_code != 0:
+        output = stdout + stderr
+        if self.flags.status_lines:
+            output = self.flags.status_lines.sub('', output)
+        self.result.compileOutput = truncate_output(output, self.output_limit)
+        if exit_code != 0 or not self._compiled_file_exists():
             # Student code produced compiling errors. They are in compileOutput, the client shows
             # it after the message
             raise FailedSolution(self.result, vyg.Status.COMPILER_ERROR, 'Compilation failed')
-        # TODO(jhc): Check if the executable is created
         # TODO(jhc): Create a snapshot (commit/image) of the container in order to restore it
         # after running the student solution against each test case. Disabled until efficiency
         # could be measured
         # self.container.commit(repository='vyg', tag='after_compile', message='')
+
+    def _compiled_file_exists(self) -> bool:
+        """ True if the compiler created the file of the language, or if it creates none """
+        if not self.flags.compiled_file:
+            return True
+        # The file name is fixed by the backend, not by users
+        _, _, exit_code = self._run_in_container(['test', '-f', self.flags.compiled_file],
+                STATS_TIMEOUT)
+        return exit_code == 0
 
     def _build_compiler_options(self) -> list:
         """ Build the compiler command and its options for the language used by student """
@@ -561,9 +600,13 @@ class Execution:
         # Get the compiler options from the problem object, if not defined, use the default ones
         # compiler_options = self.problem.compilerOptionsFor.get(self.language,
         #         flags.compiler_options)
-        # If professor asked to use some extra tools, add them to the compiler options
-        for tool in self.tools:
-            compiler_options += COMPILE_TOOLS.get(tool, [])
+        # If professor asked to use some extra tools, add them to the compiler options. Tools that
+        # the compiler does not support are ignored, e.g. ubsan in alecci
+        tools = [tool for tool in self.tools if tool in self.flags.compile_tools]
+        for tool in tools:
+            compiler_options += self.flags.compile_tools[tool]
+        if not tools:
+            compiler_options += self.flags.no_tools_options.split()
         return compiler_options
 
     def _run_test_case(self, index0:int, test_case:vyg.TestCase):

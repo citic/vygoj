@@ -15,7 +15,9 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
   it (`ProblemLoader.default_code()`) and sends it in the `initialCodeFor` of problems without
   initial code for an enabled language.
 - The code editor and diff view use Monaco through the `<monaco-editor>` element in
-  `js/components/monaco-editor.js`, which imports Monaco from the esm.sh CDN.
+  `js/components/monaco-editor.js`, which imports Monaco from the esm.sh CDN. Monaco does not
+  know Alecci: `js/components/alecci-language.js` registers its highlighting (a Monarch port of
+  the grammar of its VS Code extension).
 - Formulas in problem statements (Asciidoctor `stem`) are typeset by MathJax from the jsDelivr
   CDN, configured in `js/problem/mathjax-config.js`.
 - The `<editor-toolbar for="code_editor">` element in `js/components/editor-toolbar.js` adds the

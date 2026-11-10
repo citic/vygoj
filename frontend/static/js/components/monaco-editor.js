@@ -1,9 +1,13 @@
 // Monaco editor as an element: <monaco-editor language="cpp" readonly diff></monaco-editor>
 import * as monaco from 'https://esm.sh/monaco-editor';
 import EditorWorker from 'https://esm.sh/monaco-editor/editor/editor.worker?worker';
+import registerAlecci from './alecci-language.js';
 
 // Monaco computes some things, like diffs, in a worker
 window.MonacoEnvironment = { getWorker: () => new EditorWorker() };
+
+// Languages of VygOJ that Monaco does not know
+registerAlecci(monaco);
 
 // Monaco has one theme for all editors: dark when the page is dark, by user choice or by the OS
 const prefersDark = matchMedia('(prefers-color-scheme: dark)');
