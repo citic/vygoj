@@ -217,15 +217,15 @@ def logout():
     """ User wants to logout. Only POST with the CSRF token, so other sites cannot log users out """
     return log_out()
 
-@app.route('/login/sso/<key>')
-def sso_login(key):
+@app.route('/login/sso/<alias>')
+def sso_login(alias):
     """ User chose to log in with a single sign-on provider: go to its login page """
-    return SsoController.start(key)
+    return SsoController.start(alias)
 
-@app.route('/login/sso/<key>/callback')
-def sso_callback(key):
+@app.route('/login/sso/<alias>/callback')
+def sso_callback(alias):
     """ The single sign-on provider sent the user back after logging in """
-    return SsoController.callback(key)
+    return SsoController.callback(alias)
 
 # Administration ----------------------------------------------------------------------------------
 
@@ -240,15 +240,15 @@ def add_sso_provider():
     """ Administrator asked for the form of a new single sign-on provider, or sent it """
     return SsoAdminController.edit_provider()
 
-@app.route('/admin/sso/<key>', methods=['GET', 'POST'])
-def edit_sso_provider(key):
+@app.route('/admin/sso/<alias>', methods=['GET', 'POST'])
+def edit_sso_provider(alias):
     """ Administrator asked for the form of a single sign-on provider, or sent it """
-    return SsoAdminController.edit_provider(key)
+    return SsoAdminController.edit_provider(alias)
 
-@app.route('/admin/sso/<key>/delete', methods=['POST'])
-def delete_sso_provider(key):
+@app.route('/admin/sso/<alias>/delete', methods=['POST'])
+def delete_sso_provider(alias):
     """ Administrator removes a single sign-on provider """
-    return SsoAdminController.delete_provider(key)
+    return SsoAdminController.delete_provider(alias)
 
 @app.route('/admin/log')
 def get_log():

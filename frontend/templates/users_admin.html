@@ -11,20 +11,33 @@
             <a class="button confirm small" href="{{ url_for('add_sso_provider') }}" aria-label="{{ _('Add SSO provider') }}">+ {{ _('Add') }}</a>
           </header>
 {%- if it.providers %}
-          <ul class="provider_list">
+          <table class="data_table">
+            <thead>
+              <tr>
+                <th scope="col">{{ _('Name') }}</th>
+                <th scope="col">{{ _('Alias') }}</th>
+                <th scope="col">{{ _('Status') }}</th>
+                <th scope="col">{{ _('Actions') }}</th>
+              </tr>
+            </thead>
+            <tbody>
 {%-   for provider in it.providers %}
-            <li class="provider" data-status="{{ provider.status }}">
-              <p class="name">{{ provider.name }} <code>{{ provider.key }}</code></p>
-              <p class="status">{{ it.statuses[provider.status] }}</p>
-              <a class="button small" href="{{ url_for('edit_sso_provider', key=provider.key) }}">{{ _('Edit') }}</a>
-              {#- Deleting changes data, so it is a POST with the CSRF token, confirmed by admin.js #}
-              <form method="post" action="{{ url_for('delete_sso_provider', key=provider.key) }}" data-confirm="{{ _('Delete the provider %(provider)s? Its users will not be able to log in with it.', provider=provider.name) }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="button danger small">{{ _('Delete') }}</button>
-              </form>
-            </li>
+              <tr class="provider" data-status="{{ provider.status }}">
+                <th scope="row" class="name">{{ provider.name }}</th>
+                <td class="alias"><code>{{ provider.alias }}</code></td>
+                <td class="status">{{ it.statuses[provider.status] }}</td>
+                <td class="actions">
+                  <a class="button small" href="{{ url_for('edit_sso_provider', alias=provider.alias) }}">{{ _('Edit') }}</a>
+                  {#- Deleting changes data, so it is a POST with the CSRF token, confirmed by admin.js #}
+                  <form method="post" action="{{ url_for('delete_sso_provider', alias=provider.alias) }}" data-confirm="{{ _('Delete the provider %(provider)s? Its users will not be able to log in with it.', provider=provider.name) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="button danger small">{{ _('Delete') }}</button>
+                  </form>
+                </td>
+              </tr>
 {%-   endfor %}
-          </ul>
+            </tbody>
+          </table>
 {%- else %}
           <p class="empty">{{ _('There are no SSO providers. Users log in with their password.') }}</p>
 {%- endif %}
@@ -34,7 +47,7 @@
             <h3>{{ _('Users (%(count)d)', count=it.users|length) }}</h3>
           </header>
           {#- Read only for now: the users table with the providers that each user logged in with #}
-          <table class="user_table">
+          <table class="data_table">
             <thead>
               <tr>
                 <th scope="col">{{ _('Username') }}</th>
@@ -46,8 +59,8 @@
             </thead>
             <tbody>
 {%- for user in it.users %}
-              <tr>
-                <td class="username">{{ user.username }}</td>
+              <tr class="user">
+                <th scope="row" class="username">{{ user.username }}</th>
                 <td class="fullname">{{ user.fullname }}</td>
                 <td class="email">{{ user.email or '' }}</td>
                 <td class="role">{{ user.role }}</td>

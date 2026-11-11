@@ -10,8 +10,8 @@
           {{ it.form.hidden_tag() }}
           <fieldset class="identification">
             <legend>{{ _('Provider') }}</legend>
-            {#- The key is in the callback URL registered in the provider, so it is fixed once saved #}
-            {{ macros.form_field(it.form.key, _('Short name for URLs and for SSO_CLIENT_SECRETS in config.py, e.g. ucr. It cannot be changed later.'), readonly=it.key is not none) }}
+            {#- The alias is in the callback URL registered in the provider, so it is fixed once saved #}
+            {{ macros.form_field(it.form.alias, _('Short name chosen in VygOJ for URLs and for SSO_CLIENT_SECRETS in config.py, e.g. ucr. It is not the client ID. It cannot be changed later.'), readonly=it.alias is not none) }}
             {{ macros.form_field(it.form.name, _('Shown in the login button, e.g. Universidad de Costa Rica')) }}
             {{ it.form.status.label }}
             {{ it.form.status(**{'aria-describedby': 'status_hint'}) }}
@@ -19,7 +19,7 @@
           </fieldset>
           <fieldset class="connection">
             <legend>{{ _('Connection') }}</legend>
-{%- if it.key %}
+{%- if it.alias %}
             <dl class="registration">
               <dt>{{ _('Redirect URI (callback) to register in the provider') }}</dt>
               <dd><code>{{ it.callback_url }}</code></dd>

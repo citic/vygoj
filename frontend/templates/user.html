@@ -52,7 +52,7 @@
           <h2>{{ _('Log in with') }}</h2>
           <ul>
           {%- for provider in it.providers %}
-            <li><a class="button confirm" href="{{ url_for('sso_login', key=provider.key, next=it.next_url) }}">{{ provider.name }}</a></li>
+            <li><a class="button confirm" href="{{ url_for('sso_login', alias=provider.alias, next=it.next_url) }}">{{ provider.name }}</a></li>
           {%- endfor %}
           </ul>
           <p class="separator">{{ _('or with your VygOJ password') }}</p>

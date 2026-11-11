@@ -55,7 +55,7 @@ TRUSTED_PROXIES = 0
 # ones registered in the provider exactly. Empty takes the address of each request, which is enough
 # for development, but behind a reverse proxy it may be http:// instead of https://
 SITE_URL = ''
-# Client secrets of the SSO providers, by the key of each provider (the key is chosen when an
+# Client secrets of the SSO providers, by the alias of each provider (the alias is chosen when an
 # administrator adds the provider in /admin/users), e.g. {'ucr': 'the secret given by the SSO
 # team'}. Secrets are credentials, so they are written here in the server, never in the database
 # or in the web forms. A provider without secret is used as a public client, with PKCE only

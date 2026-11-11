@@ -26,6 +26,7 @@ Monospace:
   --button-shadow: light-dark(#dadada, black);
   --border: light-dark(black, gray);
   --label-color: light-dark(var(--bg-color), rgb(120 190 182));
+  --row-alt: color-mix(in srgb, var(--bg-color) 10%, transparent);
   --toolbar-bg: light-dark(#f8fafc, #1e293b);
   --toolbar-border: light-dark(#e2e6ee, #334155);
   --toolbar-icon: light-dark(#64748b, #94a3b8);
@@ -179,6 +180,45 @@ a:hover {
   border: 1px solid gray;
   border-radius: 0.5rem;
   padding: 1rem;
+}
+
+/* Tables of data of the pages (format below): on narrow screens their cells wrap their text and
+   grow downward instead of widening the page, and their headers start at the same edge as their
+   data. Cells of long words without spaces (emails, codes) need overflow-wrap: anywhere */
+.data_table {
+  max-width: 100%;
+
+  & th {
+    text-align: start;
+  }
+}
+
+/* Tables of data of every page: headers of columns with the color of the site, headers of rows on
+   a gray surface, and data rows that alternate their background, so the eye can follow a row.
+   Pages mark their tables with the data_table class; tables of problem statements, written by
+   course authors, have no such class, so they are selected inside the statement, except the ones
+   that Asciidoctor uses to lay out admonitions (NOTE, TIP...) and blocks (grid=none) */
+:is(.data_table, .statement table:not(.admonitionblock *, .grid-none)) {
+  border-collapse: collapse;
+
+  & :is(th, td) {
+    border: 1px solid gray;
+    padding: 0.25em 0.5em;
+  }
+
+  & tbody > tr:nth-child(even) {
+    background-color: var(--row-alt);
+  }
+
+  & th {
+    background-color: var(--surface-alt);
+    color: var(--label-color);
+  }
+
+  & thead th {
+    background-color: var(--bg-color);
+    color: white;
+  }
 }
 
 .page_content {

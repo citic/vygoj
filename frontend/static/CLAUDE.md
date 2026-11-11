@@ -10,6 +10,9 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
 - `js/site.js`: behavior common to all pages (loaded from `base.html`).
 - `js/<page>/<page>.js`: one module per page (`problem/`, `course/`, `user/`).
 - `css/site.css`: global layout and variables; `css/<page>.css` for page-specific styles.
+  Tables of data take the `data_table` class of `site.css` (headers of columns with the color
+  of the site, headers of rows marked with `<th scope="row">`, rows of alternate background),
+  which problem statements share for the tables of their authors.
 - `img/`, `icon/`: images and SVG icons. `json/`: static data.
 - `initial/`: default code of each language (`solution.c`, `Solution.java`...). The server reads
   it (`ProblemLoader.default_code()`) and sends it in the `initialCodeFor` of problems without
