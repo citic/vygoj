@@ -52,6 +52,100 @@ summary {
   }
 }
 
+/* Buttons that show or hide the parts of the selected test case, and turn the diff and the word
+   wrap on or off, in groups as the parts below. The groups are boxes with their names on the
+   border, and their buttons are joined and equally wide, as the parts that they compare. The
+   buttons have only text, as segmented controls should; a pressed one is tinted, darker, and
+   has a check, so its state does not depend on the color only. The sizes follow the labels of the
+   editors and a scale of 0.5rem */
+.test_toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem 1rem;
+  margin-block: 2rem 1.5rem;
+
+  & > div {
+    position: relative;
+    display: grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+    padding: 1rem 0.5rem 0.5rem;
+    border: 1px solid var(--toolbar-border);
+    border-radius: 0.5rem;
+  }
+
+  & .name {
+    position: absolute;
+    top: -0.625rem;
+    left: 0.625rem;
+    padding-inline: 0.375rem;
+    background: Canvas; /* The color of the page, so the border does not cross the name */
+    color: var(--label-color);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    font-style: italic;
+    line-height: 1.25rem;
+    white-space: nowrap;
+  }
+
+  & button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.375rem;
+    min-width: 7.5rem;
+    height: 2.25rem;
+    margin-left: -1px; /* Joined buttons share their border */
+    padding: 0 1rem;
+    border: 1px solid var(--toolbar-border);
+    border-radius: 0;
+    box-shadow: none;
+    background: var(--surface);
+    color: var(--toolbar-icon);
+    font-size: 1rem;
+    white-space: nowrap;
+  }
+
+  & .name + button {
+    margin-left: 0;
+    border-start-start-radius: 0.375rem;
+    border-end-start-radius: 0.375rem;
+  }
+
+  & button:last-child {
+    border-start-end-radius: 0.375rem;
+    border-end-end-radius: 0.375rem;
+  }
+
+  & button:hover {
+    font-weight: normal;
+    filter: none;
+    color: var(--label-color);
+    background: color-mix(in srgb, var(--label-color) 8%, var(--surface));
+  }
+
+  & button:focus-visible {
+    position: relative;
+    z-index: 1;
+    outline: 2px solid var(--label-color);
+    outline-offset: 1px;
+  }
+
+  & button[aria-pressed="true"] {
+    font-weight: 600;
+    color: var(--label-color);
+    background: color-mix(in srgb, var(--label-color) 18%, var(--surface));
+  }
+
+  & .material-symbols-outlined {
+    font-size: 1.25rem;
+  }
+
+  & button:not([aria-pressed="true"]) > .material-symbols-outlined {
+    display: none;
+  }
+}
+
 /* Toolbar of the code editor: a row of small icon buttons */
 editor-toolbar {
   display: flex;
@@ -146,9 +240,9 @@ editor-toolbar {
   }
 }
 
-/* Evaluation of the solution: run buttons and score, compiler output, test cases, outputs of the
-   selected test case, and its verdict. A narrow evaluation puts its parts one below the other,
-   as on small screens */
+/* Evaluation of the solution: run buttons and score, compiler output, verdict of the selected
+   test case, test cases, and the parts of the selected one. A narrow evaluation puts its parts one
+   below the other, as on small screens */
 .evaluation {
   container-type: inline-size;
 
@@ -238,31 +332,46 @@ editor-toolbar {
   }
 }
 
-/* Input, expected output, and user output of the selected test case, side by side. With a wrong
-   output, a diff takes the place of the two outputs */
+/* Parts of the selected test case in three groups: its input, its outputs, and its errors. In
+   each group, the expected part on the left and the one of the user on the right, or one below
+   the other when narrow. A diff takes the place of both */
 .test_editors {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  & fieldset {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    gap: 0.5rem;
+    margin-block: 0 0.5rem;
+    padding: 0.25rem 0.5rem 0.5rem;
 
-  & > div {
-    width: 100%;
-    min-width: 0; /* Lets the editors shrink when the page gets narrower, e.g. with zoom */
-    margin-right: 1px;
+    /* The display above would show a group that the toolbar hides */
+    &[hidden] {
+      display: none;
+    }
+
+    & > div {
+      min-width: 0; /* Lets the editors shrink when the page gets narrower, e.g. with zoom */
+    }
+
+    & > div:has([diff]) {
+      grid-column: 1 / -1;
+    }
   }
 
-  /* The diff replaces the expected and user outputs, so it shrinks half as much to take their
-     two thirds and the input keeps its width */
-  & > div:has([diff]) {
-    flex-shrink: 0.5;
+  & legend {
+    font-weight: 600;
   }
 
-  /* Each label of the diff is as wide as its side, so they stay where the output labels were */
+  /* Each label of a diff is as wide as its side. The second one does not get the space between
+     the fields of a form (form.css) */
   & header {
     display: flex;
 
     & > * {
       flex: 1;
+    }
+
+    & > label:not(:first-of-type) {
+      margin-top: 0;
     }
   }
 
@@ -270,8 +379,8 @@ editor-toolbar {
     height: 6.25rem;
   }
 
-  /* The diff is one box, so a double line in its middle draws the borders of the two output
-     boxes that it replaces */
+  /* A diff is one box, so a double line in its middle draws the borders of the two boxes that it
+     replaces */
   & monaco-editor[diff] {
     position: relative;
   }
@@ -316,15 +425,13 @@ editor-toolbar {
 }
 
 @media (width <= 640px) {
-  .evaluation > header,
-  .test_editors {
+  .evaluation > header {
     flex-direction: column;
   }
 }
 
 @container (width < 30rem) {
-  .evaluation > header,
-  .test_editors {
+  .evaluation > header {
     flex-direction: column;
     align-items: stretch;
   }
