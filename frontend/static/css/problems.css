@@ -51,12 +51,12 @@ summary {
     display: none;
   }
 
-  /* Tables of data. Asciidoctor also uses tables to lay out admonitions (NOTE, TIP...) and the
-     tables without grid (grid=none) to place blocks side by side, so those keep no format. A
-     table fits its content, unless Asciidoctor marks it with stretch to fill the statement */
+  /* Tables of data, with the colors of the tables of the site (site.css). Asciidoctor also uses
+     tables to lay out admonitions (NOTE, TIP...) and the tables without grid (grid=none) to place
+     blocks side by side, so those keep no format. A table fits its content, unless Asciidoctor
+     marks it with stretch to fill the statement */
   & table:not(.admonitionblock *, .grid-none) {
     margin-bottom: 1em;
-    border-collapse: collapse;
 
     &.stretch {
       width: 100%;
@@ -65,11 +65,6 @@ summary {
     /* Without frame (frame=none), the borders of the outer cells are hidden */
     &.frame-none {
       border-style: hidden;
-    }
-
-    & :is(th, td) {
-      border: 1px solid gray;
-      padding: 0.25em 0.5em;
     }
 
     /* Asciidoctor puts the text of each cell in a paragraph, whose margins make rows too tall */
@@ -101,23 +96,6 @@ summary {
 
     & .valign-bottom {
       vertical-align: bottom;
-    }
-
-    /* Data rows alternate their background, so the eye can follow a row */
-    & tbody > tr:nth-child(even) {
-      background-color: color-mix(in srgb, var(--bg-color) 10%, transparent);
-    }
-
-    /* Headers of rows (Asciidoctor cells of style h) */
-    & th {
-      background-color: var(--surface-alt);
-      color: var(--label-color);
-    }
-
-    /* Headers of columns, with the color of the site */
-    & thead th {
-      background-color: var(--bg-color);
-      color: white;
     }
   }
 }

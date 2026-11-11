@@ -13,26 +13,15 @@
   }
 }
 
-/* SSO providers: a row for each one with its name, status, and buttons. The status gets the color
-   of its data-status */
-.provider_list {
-  padding: 0;
-  list-style: none;
-
-  & .provider {
-    display: grid;
-    grid-template-columns: 1fr auto auto auto;
-    align-items: center;
-    gap: 1rem;
-    border-bottom: 1px solid var(--surface-alt);
-    padding: 0.5rem 0;
+/* SSO providers and users in tables of data (site.css). The status of each provider gets the
+   color of its data-status, and its buttons stay in a row */
+.users_admin {
+  & .provider .actions {
+    white-space: nowrap;
   }
 
-  & p {
-    margin: 0;
-  }
-
-  & form {
+  & .provider form {
+    display: inline;
     margin: 0;
   }
 
@@ -46,19 +35,6 @@
 
   & .provider[data-status="disabled"] .status {
     color: gray;
-  }
-}
-
-/* List of users: scrolls sideways on narrow screens instead of widening the page */
-.user_table {
-  display: block;
-  overflow-x: auto;
-  border-collapse: collapse;
-
-  & :is(th, td) {
-    padding: 0.25rem 1rem 0.25rem 0;
-    text-align: start;
-    border-bottom: 1px solid var(--surface-alt);
   }
 }
 
