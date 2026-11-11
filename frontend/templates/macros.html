@@ -3,7 +3,7 @@
 {%- if course.banner %}
               <img class="banner" src="{{ course.file_url(course.banner) }}" alt="">
 {%- endif %}
-              <img src="{{ course.file_url(course.image) }}" alt="{{ course.title }}" width="64" height="60">
+              <img src="{{ course.file_url(course.image) }}" data-fallback="/img/logo2.svg" alt="{{ course.title }}" width="64" height="60">
               <h4>
                 <a href="/course/{{ course.name }}"><span class="code">{{ course.name }}</span> {{ course.title }}</a>
               </h4>

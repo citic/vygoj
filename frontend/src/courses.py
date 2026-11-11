@@ -103,6 +103,7 @@ class CourseController:
             'course': course,
             'scripts': [
                 '<script src="/js/course/course.js" type="module" async="async"></script>',
+                '<script src="/js/site.js" type="module" async="async"></script>',
             ],
             'progress': Progress.load(course.name),
         }

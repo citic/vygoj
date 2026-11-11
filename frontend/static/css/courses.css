@@ -58,7 +58,7 @@
 /* Banner of a course behind its card in the lists and behind its summary in the course page. It
    covers them, cropped to their size, under a layer of the surface color. A halo of that color
    around the letters keeps them readable over any banner, in the light and dark schemes */
-:is(.course_item, .course .summary):has(> .banner) {
+:is(.course_item, .course .summary):has(> .banner:not([hidden])) {
   position: relative;
   isolation: isolate;
   overflow: hidden;
@@ -148,7 +148,7 @@
   }
 
   /* The total progress over a banner needs a color with contrast in the dark scheme too */
-  &:has(> .banner) .total {
+  &:has(> .banner:not([hidden])) .total {
     color: var(--label-color);
   }
 }
