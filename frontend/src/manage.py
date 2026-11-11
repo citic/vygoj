@@ -7,9 +7,11 @@
 
 admin creates an administrator, or resets the password of a user and makes it administrator. It
 runs in the server, so only who can log in the server can create administrators, never the
-visitors of the web application. import adds the users of a TSV file that are not in the database
-yet. log and submissions write the archives that administrators download from the web application.
-Their logic lives in users.py and activity_log.py, so the web application may reuse it """
+visitors of the web application. import creates and updates the tables of the database, and adds
+the users of a TSV file that are not in the database yet; make runs it before starting the
+servers. log and submissions write the archives that administrators download from the web
+application. Their logic lives in users.py and activity_log.py, so the web application may
+reuse it """
 import csv
 import getpass
 import os
@@ -21,7 +23,7 @@ from db import db
 from activity_log import write_archive, log_event
 from courses import CourseController
 from main import app
-from users import MAX_PASSWORD_LENGTH, LoginAttempt, User
+from users import MAX_PASSWORD_LENGTH, MAX_USERNAME_LENGTH, LoginAttempt, User
 
 USAGE = ('Usage: python manage.py admin [username] | import [users.tsv] | log output.zip'
     ' | submissions output.zip')
@@ -53,9 +55,13 @@ def ask_password() -> str:
 
 def manage_admin(username: str = None) -> int:
     """ Ask the data of the administrator and store it. Return the exit status """
-    username = username.strip() if username is not None else ask_text('Username: ', 64)
-    if not 0 < len(username) <= 64:
-        print('The username must have between 1 and 64 characters', file=sys.stderr)
+    # The administrator may be the first command run on a new database
+    update_database()
+    username = (username.strip() if username is not None
+        else ask_text('Username: ', MAX_USERNAME_LENGTH))
+    if not 0 < len(username) <= MAX_USERNAME_LENGTH:
+        print(f'The username must have between 1 and {MAX_USERNAME_LENGTH} characters',
+            file=sys.stderr)
         return 1
     user = db.session.scalar(db.select(User).filter_by(username=username))
     event = 'user_admin' if user else 'user_create'
@@ -78,9 +84,12 @@ def manage_admin(username: str = None) -> int:
 # Import ------------------------------------------------------------------------------------------
 
 def import_users(users_file: str = None) -> int:
-    """ Update the users table and add the users of the given TSV file (username and password
+    """ Update the database and add the users of the given TSV file (username and password
     columns), or of USERS_FILE in DATA_FOLDER. Return the exit status """
-    add_new_columns()
+    update_database()
+    # Nobody can log in without users. The administrator is created in the server, not in the web
+    if not db.session.scalar(db.select(User.id).limit(1)):
+        print('manage: there are no users yet. Create the administrator with: make admin')
     if users_file is None:
         # The file has plain passwords, so it is kept out of git in the data folder
         users_file = os.path.join(app.config['DATA_FOLDER'],
@@ -94,8 +103,16 @@ def import_users(users_file: str = None) -> int:
     print(f'manage: {added} new users added from {users_file}')
     return 0
 
-def add_new_columns():
-    """ Add the columns that older users tables lack, existing rows get their default value """
+def update_database():
+    """ Create the tables that do not exist yet (users, their progress, single sign-on...) and
+    update the users table of older databases. It runs in a single process, before the servers
+    start, because the gunicorn workers would create the same tables at the same time """
+    db.create_all()
+    update_users_table()
+
+def update_users_table():
+    """ Add the columns that older users tables lack (existing rows get their default value),
+    widen the usernames, and make passwords optional, for the users of single sign-on """
     columns = {column['name'] for column in db.inspect(db.engine).get_columns('users')}
     # The color scheme column was first named interface_mode, rename it to keep its values
     if 'interface_mode' in columns and 'color_scheme' not in columns:
@@ -105,7 +122,9 @@ def add_new_columns():
         " ADD COLUMN IF NOT EXISTS role VARCHAR(16) NOT NULL DEFAULT 'student',"
         " ADD COLUMN IF NOT EXISTS color_scheme VARCHAR(8) NOT NULL DEFAULT 'default',"
         " ADD COLUMN IF NOT EXISTS font VARCHAR(16) NOT NULL DEFAULT 'anaheim',"
-        " ADD COLUMN IF NOT EXISTS language VARCHAR(8) NOT NULL DEFAULT 'default'"))
+        " ADD COLUMN IF NOT EXISTS language VARCHAR(8) NOT NULL DEFAULT 'default',"
+        f" ALTER COLUMN username TYPE VARCHAR({MAX_USERNAME_LENGTH}),"
+        " ALTER COLUMN password DROP NOT NULL"))
     db.session.commit()
 
 # Activity log -----------------------------------------------------------------------------------

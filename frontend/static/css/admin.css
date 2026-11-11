@@ -1,0 +1,92 @@
+@import url('site.css');
+@import url('form.css');
+
+/* Sections of the page of users: a title bar with its actions at the right */
+.users_admin > section > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin: 2rem 0 1rem;
+
+  & h3 {
+    margin: 0;
+  }
+}
+
+/* SSO providers: a row for each one with its name, status, and buttons. The status gets the color
+   of its data-status */
+.provider_list {
+  padding: 0;
+  list-style: none;
+
+  & .provider {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto;
+    align-items: center;
+    gap: 1rem;
+    border-bottom: 1px solid var(--surface-alt);
+    padding: 0.5rem 0;
+  }
+
+  & p {
+    margin: 0;
+  }
+
+  & form {
+    margin: 0;
+  }
+
+  & .provider[data-status="active"] .status {
+    color: var(--success);
+  }
+
+  & .provider[data-status="testing"] .status {
+    color: var(--warning);
+  }
+
+  & .provider[data-status="disabled"] .status {
+    color: gray;
+  }
+}
+
+/* List of users: scrolls sideways on narrow screens instead of widening the page */
+.user_table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+
+  & :is(th, td) {
+    padding: 0.25rem 1rem 0.25rem 0;
+    text-align: start;
+    border-bottom: 1px solid var(--surface-alt);
+  }
+}
+
+/* Form of an SSO provider: hints and errors below their fields */
+.sso_provider {
+  & .hint {
+    color: gray;
+  }
+
+  & .field_error {
+    color: var(--error);
+  }
+
+  & fieldset ul {
+    padding: 0;
+    list-style: none;
+  }
+
+  & .checkbox {
+    margin: 1rem 0 0;
+  }
+
+  & .registration dd {
+    margin: 0 0 0.5rem;
+    overflow-wrap: anywhere;
+  }
+
+  & input[readonly] {
+    color: gray;
+  }
+}

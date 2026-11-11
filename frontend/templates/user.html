@@ -10,12 +10,15 @@
             {{ it.form.fullname.label }} {{ it.form.fullname() }}
             {{ it.form.email.label }} {{ it.form.email() }}
           </fieldset>
+          {#- Users who logged in with single sign-on change their password in their provider #}
+          {%- if not it.user.sso %}
           <fieldset class="password">
             <legend>{{ _('Change password') }}</legend>
             {{ it.form.password.label }} {{ it.form.password() }}
             {{ it.form.new_password.label }} {{ it.form.new_password() }}
             {{ it.form.confirm_password.label }} {{ it.form.confirm_password() }}
           </fieldset>
+          {%- endif %}
           <fieldset class="color_scheme">
             {{ it.form.color_scheme.label }} {{ it.form.color_scheme() }}
           </fieldset>
@@ -42,6 +45,19 @@
       </main>
     {%- else %}
       <main class="login">
+      {%- if it.providers %}
+        {#- Links, not forms: the providers answer a redirect, which the form-action rule of the CSP
+            would block after a POST. The state parameter of the protocol protects the login #}
+        <section class="sso_login">
+          <h2>{{ _('Log in with') }}</h2>
+          <ul>
+          {%- for provider in it.providers %}
+            <li><a class="button confirm" href="{{ url_for('sso_login', key=provider.key, next=it.next_url) }}">{{ provider.name }}</a></li>
+          {%- endfor %}
+          </ul>
+          <p class="separator">{{ _('or with your VygOJ password') }}</p>
+        </section>
+      {%- endif %}
         <form method="post">
           {{ it.form.hidden_tag() }}
           <fieldset class="credentials">

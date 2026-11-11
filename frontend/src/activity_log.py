@@ -65,7 +65,7 @@ COLUMNS = ('time', 'id', 'user', 'role', 'address', 'event', 'path', 'course', '
 # event column are always known by the analysis scripts
 EVENTS = ('visit', 'login', 'login_failed', 'login_blocked', 'logout', 'preferences',
     'user_create', 'user_admin', 'run', 'run_repeated', 'run_rejected', 'run_failed',
-    'log_download')
+    'log_download', 'sso_provider')
 
 # Fields of each test case of a run that the log keeps
 TEST_FIELDS = ('status', 'wallTime')

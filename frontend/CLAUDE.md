@@ -19,6 +19,11 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
 - `src/limits.py`: limits of the runs (time, output size). `config.py` sets an absolute range and
   a default per limit (per language if a dictionary), professors choose values in the problem,
   and `Limits` computes the effective values sent to the backend and the timeouts that follow.
+- `src/sso.py`: single sign-on with OpenID Connect providers (Authlib). `SsoProvider` model
+  (`sso_providers` table, configured by administrators in `/admin/users`; client secrets are in
+  `SSO_CLIENT_SECRETS` of `config.py`, never in the database), `UserIdentity` (`user_identities`:
+  issuer and subject of the ID tokens of each user), `SsoController` (login and callback, which
+  finds, links, or creates the user), and `SsoAdminController` (users page and provider forms).
 - `src/runs.py`: `Run` model (`runs` table) that limits the code runs of each user: one at a
   time, 5 seconds between them, 120 per hour, and the same submission answered with the stored
   result of the last run.
@@ -34,9 +39,11 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
   `config/config.py`).
 - `src/manage.py`: command line to manage the frontend in the server. `admin [username]` creates
   an administrator, or resets the password of a user and makes it administrator (`make admin`);
-  the web never creates administrators. `import [users.tsv]` updates the users table and adds the
-  users of a git-ignored TSV file with plain passwords, `USERS_FILE` in `DATA_FOLDER` (both in
-  `config/config.py`); `make` runs it. `log output.zip` and `submissions output.zip` write the
+  the web never creates administrators. `import [users.tsv]` creates the missing tables (`db.create_all()`), updates the
+  users table, and adds the users of a git-ignored TSV file with plain passwords, `USERS_FILE` in
+  `DATA_FOLDER` (both in `config/config.py`); `make`, `make release`, and `make server` run it
+  before starting, because gunicorn workers creating tables at the same time fail. `main.py`
+  never changes the schema. `log output.zip` and `submissions output.zip` write the
   archives of the activity log. Their logic is in `users.py` (e.g. `User.add_new()`) and
   `activity_log.py`, so the web application can reuse it.
 - `templates/`: Jinja2 templates. `base.html` is the layout; pages extend it and fill blocks.

@@ -15,3 +15,17 @@
               <a class="enter" href="/course/{{ course.name }}">Enter ›</a>
             </article>
 {%- endmacro %}
+
+{#- A field of a form with its label, an optional hint below it, and its validation errors. The
+    hint and errors are linked to the control with aria-describedby, so screen readers read them #}
+{%- macro form_field(field, hint=none) %}
+            {{ field.label }}
+{%- set attributes = dict(kwargs, **{'aria-describedby': field.id ~ '_hint' if hint else false, 'aria-invalid': 'true' if field.errors else false}) %}
+            {{ field(**attributes) }}
+{%- if hint %}
+            <small class="hint" id="{{ field.id }}_hint">{{ hint }}</small>
+{%- endif %}
+{%- for error in field.errors %}
+            <small class="field_error">{{ error }}</small>
+{%- endfor %}
+{%- endmacro %}

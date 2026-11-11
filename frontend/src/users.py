@@ -58,11 +58,19 @@ def client_translations(language: str) -> dict:
         return {message.id: message.string for message in read_mo(file)
             if message.id and message.string}
 
+def is_admin() -> bool:
+    """ True if the logged user is an administrator """
+    user = flask.session.get('user')
+    return bool(user) and user.get('role') == 'admin'
+
 def font_url(font: str) -> str | None:
     """ Return the URL of the Google Fonts stylesheet that loads the given font, or None if the
     font comes with the system. Unknown fonts get the default one """
     query = FONTS.get(font, FONTS[DEFAULT_FONT])[1]
     return f'https://fonts.googleapis.com/css2?family={query}&display=swap' if query else None
+
+# Longest username, the size of its column. Emails of single sign-on users are usernames too
+MAX_USERNAME_LENGTH = 128
 
 class User(db.Model):
     """ Users are database models with personal data, credentials, and course progress """
@@ -70,10 +78,11 @@ class User(db.Model):
     __tablename__ = 'users'
     # Users are identified using incremental integer numbers
     id = db.Column(db.Integer, primary_key=True)
-    # Username must be unique
-    username = db.Column(db.String(64), unique=True, nullable=False)
-    # Password hash as first authentication method, never the plain password
-    password = db.Column(db.String(256), nullable=False)
+    # Username must be unique. Users created by single sign-on (sso.py) get their email
+    username = db.Column(db.String(MAX_USERNAME_LENGTH), unique=True, nullable=False)
+    # Password hash as first authentication method, never the plain password. None for users who
+    # only log in with single sign-on, so their password logins always fail
+    password = db.Column(db.String(256))
     # Email must be valid, and a number sent to it is second authentication method
     email = db.Column(db.String(128), unique=True)
     # Full name including last name(s)
@@ -294,8 +303,9 @@ class UserForm(flask_wtf.FlaskForm):
         name='action')
 
     @staticmethod
-    def show_form():
-        """ Show the login or preferences form to the user """
+    def show_form(providers: list = ()):
+        """ Show the login or preferences form to the user. The login form offers the given
+        single sign-on providers too """
         user = flask.session.get('user')
         # Page to go after logging in, e.g. the problem where the student wanted to run code. The
         # login form has no action, so it posts to this URL and keeps the next parameter
@@ -323,6 +333,8 @@ class UserForm(flask_wtf.FlaskForm):
             'title': gettext('User preferences') if user else gettext('User login'),
             'form': form,
             'user': user,
+            'providers': providers,
+            'next_url': next_url,
         })
 
     @staticmethod
@@ -357,26 +369,35 @@ class UserForm(flask_wtf.FlaskForm):
             return flask.redirect(flask.url_for('user', next=next_url))
         # Find the user in the database and compare the typed password with its hash
         db_user = db.session.scalar(db.select(User).filter_by(username=name))
-        password_hash = db_user.password if db_user else _MISSING_USER_HASH
+        password_hash = (db_user.password if db_user and db_user.password
+            else _MISSING_USER_HASH)
         password_ok = check_password_hash(password_hash, form.password.data or '')
         if not db_user or not password_ok:
             LoginAttempt.record_failure(name, address)
             log_event('login_failed', user=name, role=None)
             flask.flash(gettext('Invalid user or password'), 'error')
             return flask.redirect(flask.url_for('user', next=next_url))
-        # A new session for the logged user, so nothing stored before the login (such as a CSRF
-        # token that an attacker could have planted) is kept
-        flask.session.clear()
-        flask.session['user'] = {
-            'email': name,
-            'fullname': db_user.fullname,
-            'role': db_user.role,
-            'color_scheme': db_user.color_scheme,
-            'font': db_user.font,
-            'language': db_user.language,
-        }
         LoginAttempt.clear(name, address)
-        logged_users.add(name)
-        flask.flash(gettext('Logged in successfully.'), 'success')
-        log_event('login')
-        return flask.redirect(next_url or flask.url_for('get_index'))
+        return start_session(db_user, next_url)
+
+def start_session(db_user: User, next_url: str | None, provider: str = None):
+    """ Log in the given user, authenticated by password or by the single sign-on provider of
+    the given key, and go to next_url """
+    # A new session for the logged user, so nothing stored before the login (such as a CSRF
+    # token that an attacker could have planted) is kept
+    flask.session.clear()
+    flask.session['user'] = {
+        'email': db_user.username,
+        'fullname': db_user.fullname,
+        'role': db_user.role,
+        'color_scheme': db_user.color_scheme,
+        'font': db_user.font,
+        'language': db_user.language,
+    }
+    if provider:
+        # The preferences hide the password of users who logged in with single sign-on
+        flask.session['user']['sso'] = provider
+    logged_users.add(db_user.username)
+    flask.flash(gettext('Logged in successfully.'), 'success')
+    log_event('login', { 'provider': provider } if provider else None)
+    return flask.redirect(next_url or flask.url_for('get_index'))

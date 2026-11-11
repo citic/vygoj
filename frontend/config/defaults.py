@@ -50,3 +50,13 @@ SECRET_KEY = ''
 # limits and logs use the address of the client, which proxies send in X-Forwarded-For. Use 0 if
 # clients connect directly, otherwise they could fake that header to avoid the limits
 TRUSTED_PROXIES = 0
+# Public address of this site, as users type it, e.g. 'https://vygoj.ucr.ac.cr', without a final
+# slash. Single sign-on (SSO) providers send users back to its callback URLs, which must match the
+# ones registered in the provider exactly. Empty takes the address of each request, which is enough
+# for development, but behind a reverse proxy it may be http:// instead of https://
+SITE_URL = ''
+# Client secrets of the SSO providers, by the key of each provider (the key is chosen when an
+# administrator adds the provider in /admin/users), e.g. {'ucr': 'the secret given by the SSO
+# team'}. Secrets are credentials, so they are written here in the server, never in the database
+# or in the web forms. A provider without secret is used as a public client, with PKCE only
+SSO_CLIENT_SECRETS = {}
