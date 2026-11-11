@@ -91,6 +91,11 @@ class Material(abstract):
         Course overrides this method to return itself """
         return self._parent.get_course() if self._parent else None
 
+    def get_parent(self) -> 'Material':
+        """ Returns the material that contains this one, e.g. its section, or None if it is the
+        course """
+        return self._parent
+
     def get_path(self) -> str:
         """ Returns the path where this material is stored, e.g:
         data/u13/pexercises/1.1_io/hello/ """
