@@ -344,7 +344,7 @@ A test case has the keys `args` (command line arguments, split as a shell would)
 [[statements]]
 === Problem statements
 
-Statements are converted to HTML on the server (Asciidoctor resolves `include::` directives there) and then sanitized with https://pypi.org/project/nh3/[nh3] by `sanitize_html()` in `src/sanitize.py`, once per problem load. The same function is meant for other HTML written by course authors, such as the content pages of the future. The sanitizer keeps an allow list of tags, attributes, and CSS properties, which covers what Asciidoctor, Markdown, and hand-written HTML produce. It removes:
+The statement of a problem is the first file of its folder with the extension `.html`, `.adoc`, or `.md`, in that order (files of the same extension in alphabetical order); the other ones are ignored, so a folder may keep the Asciidoc source next to the HTML generated from it. Statements are converted to HTML on the server (Asciidoctor resolves `include::` directives there) and then sanitized with https://pypi.org/project/nh3/[nh3] by `sanitize_html()` in `src/sanitize.py`, once per problem load. The same function is meant for other HTML written by course authors, such as the content pages of the future. The sanitizer keeps an allow list of tags, attributes, and CSS properties, which covers what Asciidoctor, Markdown, and hand-written HTML produce. It removes:
 
 * Scripts, styles, forms, plugins, inline SVG and MathML (with their contents), event handler attributes (`onclick`...), and the `<head>` and `<title>` of statements written as whole HTML documents.
 * Frames and videos of other sites (see <<videos>>).
