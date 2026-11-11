@@ -30,6 +30,7 @@ Monospace:
   --toolbar-bg: light-dark(#f8fafc, #1e293b);
   --toolbar-border: light-dark(#e2e6ee, #334155);
   --toolbar-icon: light-dark(#64748b, #94a3b8);
+  --muted-text: light-dark(rgb(100 100 100), rgb(170 170 170));
 }
 
 /* Font chosen by the user in the preferences (FONTS in src/users.py), on the page or on a sample
@@ -133,8 +134,32 @@ a:hover {
     padding-inline: clamp(1rem, 6vw, 8rem);
   }
 
+  /* Name of the site in the color of the site, and its motto below it, smaller, in spaced
+     capitals. The motto is spaced more on wide screens */
+  & hgroup {
+    text-align: center;
+  }
+
   & h1 {
-    text-shadow: 0 5px 5px gray;
+    margin: 0;
+    font-size: 2.25rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: var(--label-color);
+    text-shadow: 0 3px 4px rgb(128 128 128 / 50%);
+  }
+
+  & .motto {
+    margin: 0.25rem 0 0;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted-text);
+
+    @media (width >= 640px) {
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+    }
   }
 }
 
