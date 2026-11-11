@@ -13,11 +13,12 @@
   }
 }
 
-/* SSO providers and users in tables of data (site.css). The status of each provider gets the
-   color of its data-status, and its buttons stay in a row */
+/* SSO providers and users in tables of data (site.css). Aliases, usernames, and emails have no
+   spaces, so they break anywhere to fit narrow screens. The status of each provider gets the
+   color of its data-status */
 .users_admin {
-  & .provider .actions {
-    white-space: nowrap;
+  & :is(.provider .alias, .user .username, .user .email) {
+    overflow-wrap: anywhere;
   }
 
   & .provider form {

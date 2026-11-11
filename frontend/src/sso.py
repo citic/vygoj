@@ -24,8 +24,8 @@ from db import db
 from activity_log import log_event
 from users import MAX_USERNAME_LENGTH, User, is_admin, safe_next_url, start_session
 
-# Keys of providers name them in URLs (/login/sso/ucr) and in SSO_CLIENT_SECRETS
-KEY_PATTERN = re.compile(r'[a-z0-9][a-z0-9-]{0,31}')
+# Aliases of providers name them in URLs (/login/sso/ucr) and in SSO_CLIENT_SECRETS
+ALIAS_PATTERN = re.compile(r'[a-z0-9][a-z0-9-]{0,31}')
 # Names of claims, or paths to claims nested in objects, e.g. realm_access.roles of Keycloak
 CLAIM_PATTERN = re.compile(r'[A-Za-z_][\w-]{0,63}(\.[A-Za-z_][\w-]{0,63}){0,3}')
 # Scopes requested to providers, separated by spaces. openid is required by OIDC
@@ -63,7 +63,7 @@ class SsoProvider(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     # Short name for URLs and SSO_CLIENT_SECRETS, e.g. 'ucr'. It cannot change, because it is in
     # the callback URL registered in the provider
-    key = db.Column(db.String(32), unique=True, nullable=False)
+    alias = db.Column(db.String(32), unique=True, nullable=False)
     # Name shown in the login button, e.g. 'Universidad de Costa Rica'
     name = db.Column(db.String(64), nullable=False)
     # One of STATUSES
@@ -89,14 +89,14 @@ class SsoProvider(db.Model):
 
     def __repr__(self):
         """ Readable string representation for debugging/testing """
-        return f'<SsoProvider {self.key}>'
+        return f'<SsoProvider {self.alias}>'
 
     @staticmethod
-    def find(key: str, usable: bool = False) -> 'SsoProvider | None':
-        """ Return the provider of the given key, or None. If usable, disabled ones are None """
-        if not isinstance(key, str) or not KEY_PATTERN.fullmatch(key):
+    def find(alias: str, usable: bool = False) -> 'SsoProvider | None':
+        """ Return the provider of the given alias, or None. If usable, disabled ones are None """
+        if not isinstance(alias, str) or not ALIAS_PATTERN.fullmatch(alias):
             return None
-        provider = db.session.scalar(db.select(SsoProvider).filter_by(key=key))
+        provider = db.session.scalar(db.select(SsoProvider).filter_by(alias=alias))
         return None if usable and provider and provider.status == 'disabled' else provider
 
     @staticmethod
@@ -107,7 +107,7 @@ class SsoProvider(db.Model):
 
     def secret(self) -> str | None:
         """ Return the client secret of this provider in config.py, or None """
-        secret = app.config['SSO_CLIENT_SECRETS'].get(self.key)
+        secret = app.config['SSO_CLIENT_SECRETS'].get(self.alias)
         return secret if isinstance(secret, str) and secret else None
 
     def infer_role(self, claims: dict) -> str:
@@ -131,7 +131,7 @@ class UserIdentity(db.Model):
     # The user of VygOJ of this identity. Deleting the user deletes their identities
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'),
         nullable=False, index=True)
-    # Key of the provider that linked the identity, shown to administrators
+    # Alias of the provider that linked the identity, shown to administrators
     provider = db.Column(db.String(32), nullable=False)
     # Issuer (iss) and subject (sub) of the ID tokens of the user
     issuer = db.Column(db.String(512), nullable=False)
@@ -151,7 +151,7 @@ def claim(claims: dict, path: str):
 # OpenID Connect client ---------------------------------------------------------------------------
 
 # Clients of the providers, reused while their configuration does not change, so the discovery
-# document and keys are downloaded once in a while: {key: (configuration, time, client)}. Each
+# document and keys are downloaded once in a while: {alias: (configuration, time, client)}. Each
 # gunicorn worker has its own copy
 _clients = {}
 
@@ -159,7 +159,7 @@ def oidc_client(provider: SsoProvider) -> FlaskOAuth2App:
     """ Return the Authlib client of the given provider """
     secret = provider.secret()
     configuration = (provider.discovery_url, provider.client_id, secret, provider.scopes)
-    cached = _clients.get(provider.key)
+    cached = _clients.get(provider.alias)
     if cached and cached[0] == configuration and time.monotonic() - cached[1] < METADATA_TTL:
         return cached[2]
     client_kwargs = {
@@ -170,11 +170,11 @@ def oidc_client(provider: SsoProvider) -> FlaskOAuth2App:
     # Public clients have no secret, PKCE alone proves that the code is theirs
     if not secret:
         client_kwargs['token_endpoint_auth_method'] = 'none'
-    name = CLIENT_PREFIX + provider.key
+    name = CLIENT_PREFIX + provider.alias
     client = FlaskOAuth2App(FlaskIntegration(name), name=name, client_id=provider.client_id,
         client_secret=secret, server_metadata_url=provider.discovery_url,
         client_kwargs=client_kwargs)
-    _clients[provider.key] = (configuration, time.monotonic(), client)
+    _clients[provider.alias] = (configuration, time.monotonic(), client)
     return client
 
 def site_url_for(endpoint: str, **values) -> str:
@@ -199,10 +199,10 @@ class SsoController:
     """ Logs users in with single sign-on providers """
 
     @staticmethod
-    def start(key: str):
+    def start(alias: str):
         """ Send the user to the login page of the provider, to come back to the callback. Only
         GET: a redirect after a form POST would break the form-action rule of the CSP """
-        provider = SsoProvider.find(key, usable=True)
+        provider = SsoProvider.find(alias, usable=True)
         if not provider:
             flask.abort(404)
         next_url = safe_next_url(flask.request.args.get('next'))
@@ -212,18 +212,18 @@ class SsoController:
             flask.session.pop(name)
         try:
             response = oidc_client(provider).authorize_redirect(
-                site_url_for('sso_callback', key=provider.key))
+                site_url_for('sso_callback', alias=provider.alias))
         except LOGIN_ERRORS:
-            app.logger.exception('could not start the login with provider %s', provider.key)
+            app.logger.exception('could not start the login with provider %s', provider.alias)
             return SsoController.fail(provider, 'provider not available', gettext(
                 'Could not connect with %(provider)s. Try again later.', provider=provider.name))
         flask.session['sso_next'] = next_url
         return response
 
     @staticmethod
-    def callback(key: str):
+    def callback(alias: str):
         """ The provider sent the user back: get the ID token and log in its user """
-        provider = SsoProvider.find(key, usable=True)
+        provider = SsoProvider.find(alias, usable=True)
         if not provider:
             flask.abort(404)
         next_url = safe_next_url(flask.session.pop('sso_next', None))
@@ -239,15 +239,15 @@ class SsoController:
             # The user pressed cancel in the login page of the provider
             if isinstance(error, AuthlibBaseError) and error.error == 'access_denied':
                 return SsoController.fail(provider, 'cancelled', gettext('Login cancelled.'))
-            app.logger.exception('could not log in with provider %s', provider.key)
+            app.logger.exception('could not log in with provider %s', provider.alias)
             return SsoController.fail(provider, 'invalid answer', gettext(
                 'Could not log in with %(provider)s. Try again later.', provider=provider.name))
-        return start_session(db_user, next_url, provider.key)
+        return start_session(db_user, next_url, provider.alias)
 
     @staticmethod
     def fail(provider: SsoProvider, reason: str, message: str):
         """ Log the failed login, and go back to the login page with the given message """
-        log_event('login_failed', { 'provider': provider.key, 'reason': reason }, role=None)
+        log_event('login_failed', { 'provider': provider.alias, 'reason': reason }, role=None)
         flask.flash(message, 'error')
         return flask.redirect(flask.url_for('user'))
 
@@ -280,7 +280,7 @@ class SsoController:
             db_user = User(username=email, email=email, fullname=full_name(claims, email),
                 role=provider.infer_role(claims))
             db.session.add(db_user)
-        db.session.add(UserIdentity(user=db_user, provider=provider.key, issuer=issuer,
+        db.session.add(UserIdentity(user=db_user, provider=provider.alias, issuer=issuer,
             subject=subject))
         try:
             db.session.commit()
@@ -290,7 +290,7 @@ class SsoController:
             raise SsoLoginError(gettext('Could not log in with %(provider)s. Try again.',
                 provider=provider.name), 'concurrent login') from error
         if created:
-            log_event('user_create', { 'source': 'sso', 'provider': provider.key },
+            log_event('user_create', { 'source': 'sso', 'provider': provider.alias },
                 user=db_user.username, role=db_user.role)
         return db_user
 
@@ -347,8 +347,8 @@ def check_claim(_form, field):
 
 class SsoProviderForm(flask_wtf.FlaskForm):
     """ Lets administrators add or change a provider. Sizes are the ones of the columns """
-    key = wtforms.StringField(lazy_gettext('Key'), validators=[validators.DataRequired(),
-        validators.Regexp(KEY_PATTERN.pattern + '$', message=lazy_gettext(
+    alias = wtforms.StringField(lazy_gettext('Alias'), validators=[validators.DataRequired(),
+        validators.Regexp(ALIAS_PATTERN.pattern + '$', message=lazy_gettext(
             'Use up to 32 lowercase letters, digits, and hyphens'))])
     name = wtforms.StringField(lazy_gettext('Name'), validators=[validators.DataRequired(),
         validators.Length(max=64)])
@@ -397,36 +397,36 @@ class SsoAdminController:
         })
 
     @staticmethod
-    def edit_provider(key: str = None):
-        """ Show the form of a new provider, or of the provider of the given key, and save it """
+    def edit_provider(alias: str = None):
+        """ Show the form of a new provider, or of the provider of the given alias, and save it """
         SsoAdminController.require_admin()
-        provider = SsoProvider.find(key) if key else SsoProvider()
+        provider = SsoProvider.find(alias) if alias else SsoProvider()
         if not provider:
             flask.abort(404)
         form = SsoProviderForm(obj=provider)
-        if key:
-            # The key is in the callback URL registered in the provider, so it cannot change
-            form.key.data = key
+        if alias:
+            # The alias is in the callback URL registered in the provider, so it cannot change
+            form.alias.data = alias
         if form.validate_on_submit():
-            if not key and SsoProvider.find(form.key.data):
-                form.key.errors.append(gettext('Another provider has this key'))
+            if not alias and SsoProvider.find(form.alias.data):
+                form.alias.errors.append(gettext('Another provider has this alias'))
             else:
-                return SsoAdminController.save_provider(form, provider, key)
+                return SsoAdminController.save_provider(form, provider, alias)
         return flask.render_template('sso_provider.html', it={
-            'title': provider.name if key else gettext('New SSO provider'),
+            'title': provider.name if alias else gettext('New SSO provider'),
             'user': flask.session.get('user'),
             'form': form,
-            'key': key,
-            'callback_url': site_url_for('sso_callback', key=key) if key else None,
-            'login_url': site_url_for('sso_login', key=key) if key else None,
-            'has_secret': bool(key and provider.secret()),
+            'alias': alias,
+            'callback_url': site_url_for('sso_callback', alias=alias) if alias else None,
+            'login_url': site_url_for('sso_login', alias=alias) if alias else None,
+            'has_secret': bool(alias and provider.secret()),
             'breadcrumbs': [{ 'href': flask.url_for('get_users_admin'), 'text': gettext('Users') }],
         })
 
     @staticmethod
-    def save_provider(form: SsoProviderForm, provider: SsoProvider, key: str | None):
+    def save_provider(form: SsoProviderForm, provider: SsoProvider, alias: str | None):
         """ Store the provider with the data of the valid form """
-        provider.key = key or form.key.data
+        provider.alias = alias or form.alias.data
         provider.name = form.name.data.strip()
         provider.status = form.status.data
         provider.discovery_url = discovery_url(form.discovery_url.data)
@@ -438,26 +438,26 @@ class SsoAdminController:
         provider.professor_claim = form.professor_claim.data or ''
         provider.professor_values = ', '.join(value.strip() for value
             in (form.professor_values.data or '').split(',') if value.strip())
-        if not key:
+        if not alias:
             db.session.add(provider)
         db.session.commit()
-        log_event('sso_provider', { 'action': 'update' if key else 'add',
-            'provider': provider.key, 'status': provider.status })
+        log_event('sso_provider', { 'action': 'update' if alias else 'add',
+            'provider': provider.alias, 'status': provider.status })
         flask.flash(gettext('Provider %(provider)s saved.', provider=provider.name), 'success')
         # A new provider shows its callback URL, to send it to the team of the provider
-        return flask.redirect(flask.url_for('edit_sso_provider', key=provider.key))
+        return flask.redirect(flask.url_for('edit_sso_provider', alias=provider.alias))
 
     @staticmethod
-    def delete_provider(key: str):
-        """ Remove the provider of the given key. The identities of its users are kept, so they
+    def delete_provider(alias: str):
+        """ Remove the provider of the given alias. The identities of its users are kept, so they
         are linked again if the provider is added back with the same issuer """
         SsoAdminController.require_admin()
-        provider = SsoProvider.find(key)
+        provider = SsoProvider.find(alias)
         if not provider:
             flask.abort(404)
         db.session.delete(provider)
         db.session.commit()
-        _clients.pop(key, None)
-        log_event('sso_provider', { 'action': 'delete', 'provider': key })
+        _clients.pop(alias, None)
+        log_event('sso_provider', { 'action': 'delete', 'provider': alias })
         flask.flash(gettext('Provider %(provider)s deleted.', provider=provider.name), 'warning')
         return flask.redirect(flask.url_for('get_users_admin'))

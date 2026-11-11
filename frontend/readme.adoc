@@ -167,9 +167,9 @@ Administrators manage the providers in the users page (`/admin/users`, the _User
 [cols="1,3",options="header"]
 |===
 | Field | Meaning
-| Key | Short name for URLs and for `SSO_CLIENT_SECRETS`, e.g. `ucr`. It cannot change, because it is part of the callback URL registered in the provider
+| Alias | Short name chosen in VygOJ (not the client ID) for URLs and for `SSO_CLIENT_SECRETS`, e.g. `ucr`. It cannot change, because it is part of the callback URL registered in the provider
 | Name | Text of the login button, e.g. _Universidad de Costa Rica_
-| Status | _Disabled_: nobody can log in with it. _Testing_: it is not shown in the login page, but its login URL (`/login/sso/<key>`) works, for a controlled test in production. _Active_: the login page shows its button above the password form
+| Status | _Disabled_: nobody can log in with it. _Testing_: it is not shown in the login page, but its login URL (`/login/sso/<alias>`) works, for a controlled test in production. _Active_: the login page shows its button above the password form
 | Discovery URL or issuer | e.g. `https://sso.ucr.ac.cr/realms/UCR`; `/.well-known/openid-configuration` is added if missing. Only `https://`, or `http://` for a provider in the same computer
 | Client ID | Given by the team of the provider
 | Scopes | `openid profile email` by default
@@ -181,9 +181,9 @@ Administrators manage the providers in the users page (`/admin/users`, the _User
 
 To connect a provider:
 
-. Add it with status _Disabled_ and save it. The form shows the redirect URI (callback) to register in the provider: `<SITE_URL>/login/sso/<key>/callback`. Set `SITE_URL` in `config.py` to the public address of the site (e.g. `https://vygoj.ucr.ac.cr`), because behind a reverse proxy the frontend sees `http://` addresses, and the redirect URI must match exactly.
+. Add it with status _Disabled_ and save it. The form shows the redirect URI (callback) to register in the provider: `<SITE_URL>/login/sso/<alias>/callback`. Set `SITE_URL` in `config.py` to the public address of the site (e.g. `https://vygoj.ucr.ac.cr`), because behind a reverse proxy the frontend sees `http://` addresses, and the redirect URI must match exactly.
 . Ask the team of the provider for a client, with that redirect URI, the scopes and claims needed (the email, the name, and the claim of the professor rule if any), and no Web Origins: tokens are exchanged in the server. Logout only ends the session of VygOJ, so no post logout redirect URI is needed. Ask for separate clients for tests and production.
-. Write the client secret in `config.py`, by the key of the provider, and restart the frontend. Secrets are credentials, so they are never stored in the database nor shown in the web forms. The form only tells whether the secret is configured. A provider without secret is used as a public client, protected by PKCE only:
+. Write the client secret in `config.py`, by the alias of the provider, and restart the frontend. Secrets are credentials, so they are never stored in the database nor shown in the web forms. The form only tells whether the secret is configured. A provider without secret is used as a public client, protected by PKCE only:
 +
 [source,python]
 ----
@@ -230,7 +230,7 @@ Each month has its own file, so no file grows forever. Rows have a few fixed col
 |===
 | Event | Logged when | Data
 | `visit` | A user (or an anonymous visitor) opens a page: home, course, problem, user, or help |
-| `login`, `logout` | A user logs in or out | `provider`: key of the single sign-on provider (<<sso>>), if the user logged in with one
+| `login`, `logout` | A user logs in or out | `provider`: alias of the single sign-on provider (<<sso>>), if the user logged in with one
 | `login_failed`, `login_blocked` | A login has a wrong user or password, or it is rejected by the limits (<<login_limits>>), or a login with a single sign-on provider fails | For single sign-on, `provider` and `reason`: `provider not available`, `invalid answer` (e.g. an invalid ID token), `cancelled`, `no email`, `email not verified`, `administrator`, `not registered`, or `concurrent login`
 | `preferences` | A user saves their preferences | `color_scheme`, `font`
 | `user_create`, `user_admin` | `manage.py` or a single sign-on login adds a user, or `manage.py` makes an existing user administrator | `source`: `import`, `make admin`, or `sso` with its `provider`
@@ -239,7 +239,7 @@ Each month has its own file, so no file grows forever. Rows have a few fixed col
 | `run_rejected` | A limit of runs rejected the submission | `language`, `code`, and `reason`: the message shown to the user
 | `run_failed` | The judge did not answer a valid result, e.g. no backend was available | `language`, `code`, `commit`
 | `log_download` | An administrator downloaded an archive of the log | `archive`: `log` or `submissions`
-| `sso_provider` | An administrator added, changed, or deleted a single sign-on provider | `action`: `add`, `update`, or `delete`; `provider`: its key; `status`
+| `sso_provider` | An administrator added, changed, or deleted a single sign-on provider | `action`: `add`, `update`, or `delete`; `provider`: its alias; `status`
 |===
 
 The log does not store problem statements, test cases, or program outputs, so it stays small: the `commit` of a run recovers the statement and test cases that judged it from the course repo (`git checkout`). Each code file is saved once, by the first run of that submission, and only accepted runs save code or ask git for the commit, so a robot cannot fill the disk or start processes with rejected or repeated runs (runs are limited per user). Passwords are never logged.

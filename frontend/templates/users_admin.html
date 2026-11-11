@@ -15,7 +15,7 @@
             <thead>
               <tr>
                 <th scope="col">{{ _('Name') }}</th>
-                <th scope="col">{{ _('Key') }}</th>
+                <th scope="col">{{ _('Alias') }}</th>
                 <th scope="col">{{ _('Status') }}</th>
                 <th scope="col">{{ _('Actions') }}</th>
               </tr>
@@ -24,12 +24,12 @@
 {%-   for provider in it.providers %}
               <tr class="provider" data-status="{{ provider.status }}">
                 <th scope="row" class="name">{{ provider.name }}</th>
-                <td class="key"><code>{{ provider.key }}</code></td>
+                <td class="alias"><code>{{ provider.alias }}</code></td>
                 <td class="status">{{ it.statuses[provider.status] }}</td>
                 <td class="actions">
-                  <a class="button small" href="{{ url_for('edit_sso_provider', key=provider.key) }}">{{ _('Edit') }}</a>
+                  <a class="button small" href="{{ url_for('edit_sso_provider', alias=provider.alias) }}">{{ _('Edit') }}</a>
                   {#- Deleting changes data, so it is a POST with the CSRF token, confirmed by admin.js #}
-                  <form method="post" action="{{ url_for('delete_sso_provider', key=provider.key) }}" data-confirm="{{ _('Delete the provider %(provider)s? Its users will not be able to log in with it.', provider=provider.name) }}">
+                  <form method="post" action="{{ url_for('delete_sso_provider', alias=provider.alias) }}" data-confirm="{{ _('Delete the provider %(provider)s? Its users will not be able to log in with it.', provider=provider.name) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="button danger small">{{ _('Delete') }}</button>
                   </form>

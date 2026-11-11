@@ -182,12 +182,11 @@ a:hover {
   padding: 1rem;
 }
 
-/* Tables of data of the pages (format below): they scroll sideways on narrow screens instead of
-   widening the page, and their headers start at the same edge as their data */
+/* Tables of data of the pages (format below): on narrow screens their cells wrap their text and
+   grow downward instead of widening the page, and their headers start at the same edge as their
+   data. Cells of long words without spaces (emails, codes) need overflow-wrap: anywhere */
 .data_table {
-  display: block;
-  max-width: max-content;
-  overflow-x: auto;
+  max-width: 100%;
 
   & th {
     text-align: start;
