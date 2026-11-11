@@ -39,9 +39,11 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
   `config/config.py`).
 - `src/manage.py`: command line to manage the frontend in the server. `admin [username]` creates
   an administrator, or resets the password of a user and makes it administrator (`make admin`);
-  the web never creates administrators. `import [users.tsv]` updates the users table and adds the
-  users of a git-ignored TSV file with plain passwords, `USERS_FILE` in `DATA_FOLDER` (both in
-  `config/config.py`); `make` runs it. `log output.zip` and `submissions output.zip` write the
+  the web never creates administrators. `import [users.tsv]` creates the missing tables (`db.create_all()`), updates the
+  users table, and adds the users of a git-ignored TSV file with plain passwords, `USERS_FILE` in
+  `DATA_FOLDER` (both in `config/config.py`); `make`, `make release`, and `make server` run it
+  before starting, because gunicorn workers creating tables at the same time fail. `main.py`
+  never changes the schema. `log output.zip` and `submissions output.zip` write the
   archives of the activity log. Their logic is in `users.py` (e.g. `User.add_new()`) and
   `activity_log.py`, so the web application can reuse it.
 - `templates/`: Jinja2 templates. `base.html` is the layout; pages extend it and fill blocks.

@@ -197,7 +197,7 @@ At each login, the user is found by the issuer and subject (`sub`) of the ID tok
 * Otherwise, if the provider creates accounts, a user is created with the email as username, the name of the token as full name, no password, and the role of the professor rule. These users only log in with the provider, and their preferences do not show the password fields.
 * Otherwise, the login is rejected, and the user is asked to contact their professor.
 
-The username of users created by a provider is their email, so usernames have up to 128 characters. `make users` (`manage.py import`) widens the column of older databases and makes passwords optional; `make` runs it before starting.
+The username of users created by a provider is their email, so usernames have up to 128 characters. `make users` (`manage.py import`) widens the column of older databases and makes passwords optional; `make`, `make release`, and `make server` run it before starting.
 
 
 [[activity_log]]

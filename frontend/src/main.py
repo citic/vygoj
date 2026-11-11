@@ -12,7 +12,7 @@ from courses import CourseController
 from limits import BACKEND_CONNECT_TIMEOUT, Limits
 from problems import BACKEND_STATUS_TIMEOUT, ProblemController
 from sso import SsoAdminController, SsoController, SsoProvider
-from users import (DEFAULT_FONT, FONTS, TRANSLATIONS_FOLDER, User, UserForm, client_translations,
+from users import (DEFAULT_FONT, FONTS, TRANSLATIONS_FOLDER, UserForm, client_translations,
     font_url, log_out, select_language)
 from db import db
 from activity_log import LogController, log_event
@@ -162,15 +162,11 @@ app.config.setdefault('MAX_CONTENT_LENGTH', 2**20)
 # as long as the session instead of expiring after one hour
 app.config.setdefault('WTF_CSRF_TIME_LIMIT', None)
 csrf = CSRFProtect(app)
-# The database object maps Python objects to DB's tuples (ORM, object-relational mapping)
+# The database object maps Python objects to DB's tuples (ORM, object-relational mapping). The
+# tables are created and updated by manage.py (make users), which make runs once before starting
+# the servers: the gunicorn workers import this module at the same time, and creating the same
+# tables in parallel fails in all of them but one, so the server would not start
 db.init_app(app)
-# Create the tables of the users, their progress, and single sign-on, if they do not exist yet
-with app.app_context():
-    db.create_all()
-    # Nobody can log in without users. The administrator is created in the server, not in the web
-    if not db.session.scalar(db.select(User.id).limit(1)):
-        app.logger.warning('There are no users yet. Create the administrator in command line with: '
-                'make admin')
 
 # Courses -----------------------------------------------------------------------------------------
 

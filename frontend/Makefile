@@ -12,9 +12,10 @@ THREADS=16# Number of threads per gunicorn worker
 DEPS+=authlib~=1.0 flask-babel~=4.0 flask-squeeze~=5.0 flask-sqlalchemy~=3.0 flask-talisman~=1.0 \
     flask-wtf~=1.0 markdown~=3.0 nh3~=0.3.0 psycopg~=3.0 psycopg-binary~=3.0 requests~=2.0
 
-# Add the new users of the TSV file set in config.py, if it exists, to the database before running
-# the web app
-run: users
+# Create and update the tables of the database, and add the new users of the TSV file set in
+# config.py, if it exists, before running the web app. It runs once, before gunicorn starts its
+# workers, which would otherwise create the same tables at the same time and fail
+run release server: users
 
 # The servers show the interface in the languages of translations/, compiled from their .po files
 run release server: translations

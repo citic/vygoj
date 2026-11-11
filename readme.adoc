@@ -122,7 +122,7 @@ cd vygoj/frontend/src
 ../.venv/bin/python manage.py import
 ----
 
-The script only adds users that are not in the database yet. `make` and `make users` run it automatically. An optional argument loads a different file: `manage.py import /path/to/users.tsv`.
+The script creates the tables of the database that do not exist yet, updates the ones of older versions, and only adds users that are not in the database yet. `make`, `make release`, and `make server` run it before starting the frontend, in a single process: the gunicorn workers do not create tables, because they start at the same time. An optional argument loads a different file: `manage.py import /path/to/users.tsv`.
 
 Create the administrator in the server. The command asks the username, the full name, and the password (at least 12 characters, not shown while typed). Run it again to reset the password of an administrator who forgot it; the username can be given as `make admin ADMIN=name`:
 
