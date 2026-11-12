@@ -82,9 +82,8 @@ cdn = {
 talisman = Talisman(app, content_security_policy=cdn,
     # Do not serve information about who linked to this page, only the site
     referrer_policy='strict-origin',
-    # Disable browser features that we do not use, also for third parties (Topics API)
-    permissions_policy={'browsing-topics': '()', 'camera': '()', 'geolocation': '()',
-        'microphone': '()'},
+    # Disable browser features that we do not use, also for third parties
+    permissions_policy={'camera': '()', 'geolocation': '()', 'microphone': '()'},
     # Browsers may only use HTTPS for this site, and its subdomains, as before this package
     strict_transport_security_preload=True)
 
@@ -343,8 +342,9 @@ def set_headers(response):
     after this function, so the ones it sets (e.g. Referrer-Policy) are configured in Talisman """
     # Avoid other websites to embed our resources
     response.headers['Cross-Origin-Resource-Policy'] = 'same-site'
-    # Allow only embeds resources that explicitly grant permission to be loaded
-    response.headers['Cross-Origin-Embedder-Policy'] = 'require-corp'
+    # Load resources of other sites without credentials (cookies), unless they allow them with
+    # CORS, so the files of CDNs that do not send Cross-Origin-Resource-Policy still load
+    response.headers['Cross-Origin-Embedder-Policy'] = 'credentialless'
     # Avoid an attacker open our site in a new window
     response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
     return response
