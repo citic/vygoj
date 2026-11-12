@@ -2,6 +2,9 @@
 {%- block styles %}
     <link rel="stylesheet" href="/css/admin.css">
 {%- endblock %}
+{%- block fonts %}
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&amp;icon_names=close,edit,pause,play_arrow">
+{%- endblock %}
 {%- block main %}
       <main class="users_admin">
         <h2>{{ _('Users') }}</h2>
@@ -46,25 +49,52 @@
           <header>
             <h3>{{ _('Users (%(count)d)', count=it.users|length) }}</h3>
           </header>
-          {#- Read only for now: the users table with the providers that each user logged in with #}
+          {#- The users with the providers that each user logged in with. Suspending, activating, and
+              deleting change data, so they are POSTs with the CSRF token, confirmed by admin.js.
+              Administrators do not suspend nor delete themselves #}
           <table class="data_table">
             <thead>
               <tr>
+                <th scope="col"><abbr title="{{ _('User identifier') }}">#</abbr></th>
                 <th scope="col">{{ _('Username') }}</th>
                 <th scope="col">{{ _('Full name') }}</th>
                 <th scope="col">{{ _('Email') }}</th>
                 <th scope="col">{{ _('Role') }}</th>
                 <th scope="col">{{ _('SSO') }}</th>
+                <th scope="col">{{ _('Status') }}</th>
+                <th scope="col">{{ _('Actions') }}</th>
               </tr>
             </thead>
             <tbody>
 {%- for user in it.users %}
-              <tr class="user">
-                <th scope="row" class="username">{{ user.username }}</th>
+              <tr class="user" data-status="{{ user.status }}">
+                <th scope="row" class="id">{{ user.id }}</th>
+                <td class="username">{{ user.username }}</td>
                 <td class="fullname">{{ user.fullname }}</td>
                 <td class="email">{{ user.email or '' }}</td>
-                <td class="role">{{ user.role }}</td>
+                <td class="role">{{ it.roles.get(user.role, user.role) }}</td>
                 <td class="providers">{{ user.identities|map(attribute='provider')|unique|join(', ') }}</td>
+                <td class="status">{{ it.user_statuses.get(user.status, user.status) }}</td>
+                <td class="actions">
+                  <a class="button small confirm material-symbols-outlined" href="{{ url_for('edit_user', user_id=user.id) }}" title="{{ _('Edit') }}" aria-label="{{ _('Edit %(username)s', username=user.username) }}">edit</a>
+{%-   if user.username != it.user.email %}
+{%-     if user.status == 'suspended' %}
+                  <form method="post" action="{{ url_for('activate_user', user_id=user.id) }}" data-confirm="{{ _('Activate the user %(username)s? They will be able to log in again.', username=user.username) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="small action material-symbols-outlined" title="{{ _('Activate') }}" aria-label="{{ _('Activate %(username)s', username=user.username) }}">play_arrow</button>
+                  </form>
+{%-     else %}
+                  <form method="post" action="{{ url_for('suspend_user', user_id=user.id) }}" data-confirm="{{ _('Suspend the user %(username)s? They will not be able to log in until activated, and their data will be kept.', username=user.username) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="small reject material-symbols-outlined" title="{{ _('Suspend') }}" aria-label="{{ _('Suspend %(username)s', username=user.username) }}">pause</button>
+                  </form>
+{%-     endif %}
+                  <form method="post" action="{{ url_for('delete_user', user_id=user.id) }}" data-confirm="{{ _('Delete the user %(username)s and their data, such as their preferences and progress? Their activity stays in the log. This cannot be undone.', username=user.username) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="small danger material-symbols-outlined" title="{{ _('Delete') }}" aria-label="{{ _('Delete %(username)s', username=user.username) }}">close</button>
+                  </form>
+{%-   endif %}
+                </td>
               </tr>
 {%- endfor %}
             </tbody>

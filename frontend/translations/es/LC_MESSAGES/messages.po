@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: VygOJ \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-11 14:10-0600\n"
+"POT-Creation-Date: 2026-11-11 18:33-0600\n"
 "PO-Revision-Date: 2026-11-09 15:19-0600\n"
 "Last-Translator: \n"
 "Language: es\n"
@@ -44,11 +44,25 @@ msgstr " y terminó con el código %(code)s"
 msgid ". It took %(seconds)s s"
 msgstr ". Tardó %(seconds)s s"
 
+msgid "Account"
+msgstr "Cuenta"
+
 msgid "Accounts"
 msgstr "Cuentas"
 
 msgid "Actions"
 msgstr "Acciones"
+
+msgid "Activate"
+msgstr "Activar"
+
+#, python-format
+msgid "Activate %(username)s"
+msgstr "Activar a %(username)s"
+
+#, python-format
+msgid "Activate the user %(username)s? They will be able to log in again."
+msgstr "¿Activar al usuario %(username)s? Podrá iniciar sesión de nuevo."
 
 msgid "Active"
 msgstr "Activo"
@@ -71,6 +85,9 @@ msgstr "Administrar usuarios"
 msgid "Administration"
 msgstr "Administración"
 
+msgid "Administrator"
+msgstr "Administrador"
+
 msgid "Administrators log in with their password."
 msgstr "Los administradores ingresan con su contraseña."
 
@@ -86,6 +103,12 @@ msgstr ""
 
 msgid "Another provider has this alias"
 msgstr "Otro proveedor tiene este alias"
+
+msgid "Another user has this email"
+msgstr "Otro usuario tiene este correo"
+
+msgid "Assistant"
+msgstr "Asistente"
 
 msgid "Available courses"
 msgstr "Cursos disponibles"
@@ -186,6 +209,10 @@ msgstr "Predeterminado"
 msgid "Delete"
 msgstr "Eliminar"
 
+#, python-format
+msgid "Delete %(username)s"
+msgstr "Eliminar a %(username)s"
+
 msgid "Delete account"
 msgstr "Eliminar cuenta"
 
@@ -196,6 +223,18 @@ msgid ""
 msgstr ""
 "¿Eliminar el proveedor %(provider)s? Sus usuarios no podrán ingresar con "
 "él."
+
+#, python-format
+msgid ""
+"Delete the user %(username)s and their data, such as their preferences "
+"and progress? Their activity stays in the log. This cannot be undone."
+msgstr ""
+"¿Eliminar al usuario %(username)s y sus datos, como sus preferencias y "
+"progreso? Su actividad se mantiene en la bitácora. Esto no se puede "
+"deshacer."
+
+msgid "Deleted"
+msgstr "Eliminado"
 
 msgid "Diagnostics"
 msgstr "Diagnósticos"
@@ -222,6 +261,10 @@ msgstr "¿Desea volver al código inicial?"
 msgid "Edit"
 msgstr "Editar"
 
+#, python-format
+msgid "Edit %(username)s"
+msgstr "Editar a %(username)s"
+
 msgid "Email"
 msgstr "Correo"
 
@@ -238,7 +281,7 @@ msgid "Finish"
 msgstr "Terminar"
 
 msgid "Font"
-msgstr "Fuente"
+msgstr "Tipografía"
 
 msgid "Full name"
 msgstr "Nombre completo"
@@ -329,6 +372,13 @@ msgstr ""
 "Opcional. Claim que distingue a los profesores de los estudiantes, p. ej."
 " groups o realm_access.roles"
 
+msgid ""
+"Optional. Single sign-on links the accounts of providers with this email "
+"to this user."
+msgstr ""
+"Opcional. El inicio de sesión único vincula a este usuario las cuentas de"
+" proveedores con este correo."
+
 msgid "Password"
 msgstr "Contraseña"
 
@@ -347,6 +397,9 @@ msgstr "Preferencias del usuario %(role)s %(email)s"
 
 msgid "Preferences updated successfully."
 msgstr "Preferencias actualizadas con éxito."
+
+msgid "Professor"
+msgstr "Profesor"
 
 msgid "Professor claim"
 msgstr "Claim de profesor"
@@ -443,8 +496,29 @@ msgstr "Enunciado arriba"
 msgid "Status"
 msgstr "Estado"
 
+msgid "Student"
+msgstr "Estudiante"
+
 msgid "Submissions"
 msgstr "Envíos"
+
+msgid "Suspend"
+msgstr "Suspender"
+
+#, python-format
+msgid "Suspend %(username)s"
+msgstr "Suspender a %(username)s"
+
+#, python-format
+msgid ""
+"Suspend the user %(username)s? They will not be able to log in until "
+"activated, and their data will be kept."
+msgstr ""
+"¿Suspender al usuario %(username)s? No podrá iniciar sesión hasta que se "
+"active, y sus datos se mantendrán."
+
+msgid "Suspended"
+msgstr "Suspendido"
 
 #, python-format
 msgid "Test case %(number)d"
@@ -497,11 +571,34 @@ msgstr "Deshacer"
 msgid "Use up to 32 lowercase letters, digits, and hyphens"
 msgstr "Use hasta 32 letras minúsculas, dígitos y guiones"
 
+#, python-format
+msgid "User %(id)d: %(username)s"
+msgstr "Usuario %(id)d: %(username)s"
+
+#, python-format
+msgid "User %(username)s activated."
+msgstr "Usuario %(username)s activado."
+
+#, python-format
+msgid "User %(username)s deleted."
+msgstr "Usuario %(username)s eliminado."
+
+#, python-format
+msgid "User %(username)s saved."
+msgstr "Usuario %(username)s guardado."
+
+#, python-format
+msgid "User %(username)s suspended."
+msgstr "Usuario %(username)s suspendido."
+
 msgid "User control"
 msgstr "Control de usuario"
 
 msgid "User credentials"
 msgstr "Credenciales del usuario"
+
+msgid "User identifier"
+msgstr "Identificador de usuario"
 
 msgid "User information"
 msgstr "Información del usuario"
@@ -541,11 +638,23 @@ msgstr "Juez en línea Vygotsky"
 msgid "Write a claim name, or names separated by dots"
 msgstr "Escriba el nombre de un claim, o nombres separados por puntos"
 
+msgid "Write a valid email, or leave it empty"
+msgstr "Escriba un correo válido, o déjelo vacío"
+
 msgid "Write an https:// URL"
 msgstr "Escriba un URL https://"
 
 msgid "Write scopes separated by spaces, including openid"
 msgstr "Escriba scopes separados por espacios, incluido openid"
+
+msgid "You cannot change your own role."
+msgstr "No puede cambiar su propio rol."
+
+msgid "You cannot suspend nor delete yourself."
+msgstr "No puede suspenderse ni eliminarse a sí mismo."
+
+msgid "Your account is suspended. Ask the administrator."
+msgstr "Su cuenta está suspendida. Consulte al administrador."
 
 #, python-format
 msgid ""
@@ -554,6 +663,9 @@ msgid ""
 msgstr ""
 "Su cuenta de %(provider)s no está registrada en VygOJ. Consulte a su "
 "profesor."
+
+msgid "Your account was deleted."
+msgstr "Su cuenta fue eliminada."
 
 #, python-format
 msgid "Your email is not verified by %(provider)s."
@@ -593,4 +705,38 @@ msgstr "el servidor respondió %(status)s %(text)s"
 #, python-format
 msgid "the server did not answer in %(seconds)s seconds"
 msgstr "el servidor no respondió en %(seconds)s segundos"
+
+#~ msgid "Administrators are created and recovered in the server with make admin."
+#~ msgstr "Los administradores se crean y recuperan en el servidor con make admin."
+
+#~ msgid "Administrators log in with their password, never with single sign-on."
+#~ msgstr ""
+#~ "Los administradores inician sesión con "
+#~ "su contraseña, nunca con inicio de "
+#~ "sesión único."
+
+#~ msgid ""
+#~ "Optional. The ID of the student in"
+#~ " their institution, e.g. the carné of"
+#~ " the UCR. Several IDs are separated"
+#~ " by commas."
+#~ msgstr ""
+#~ "Opcional. La identificación del estudiante "
+#~ "en su institución, p. ej. el carné"
+#~ " de la UCR. Varias identificaciones "
+#~ "se separan con comas."
+
+#~ msgid "Student ID"
+#~ msgstr "Identificación de estudiante"
+
+#~ msgid ""
+#~ "This user has no password, and "
+#~ "administrators log in with their "
+#~ "password. Give them one in the "
+#~ "server with make admin."
+#~ msgstr ""
+#~ "Este usuario no tiene contraseña, y "
+#~ "los administradores inician sesión con "
+#~ "su contraseña. Asígnele una en el "
+#~ "servidor con make admin."
 

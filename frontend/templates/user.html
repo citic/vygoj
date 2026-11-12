@@ -3,7 +3,7 @@
   {%- if it.user %}
       <main class="user_preferences">
         <h2>{{ _('Preferences for %(role)s user %(email)s', role=it.user.role, email=it.user.email) }}</h2>
-        <form method="post">
+        <form method="post" class="fieldset_columns">
           {{ it.form.hidden_tag() }}
           <fieldset class="user_information">
             <legend>{{ _('User information') }}</legend>
@@ -20,13 +20,15 @@
           </fieldset>
           {%- endif %}
           <fieldset class="color_scheme">
-            {{ it.form.color_scheme.label }} {{ it.form.color_scheme() }}
+            <legend>{{ it.form.color_scheme.label.text }}</legend>
+            {{ it.form.color_scheme() }}
           </fieldset>
           <fieldset class="language">
-            {{ it.form.language.label }} {{ it.form.language() }}
+            <legend>{{ it.form.language.label.text }}</legend>
+            {{ it.form.language() }}
           </fieldset>
           <fieldset class="font">
-            {{ it.form.font.label }}
+            <legend>{{ it.form.font.label.text }}</legend>
             {#- Each option is written in its font, so the user sees it before choosing #}
             <ul id="{{ it.form.font.id }}">
             {%- for option in it.form.font %}

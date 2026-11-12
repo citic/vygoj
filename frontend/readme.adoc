@@ -157,6 +157,27 @@ sudo systemctl restart apache2
 ----
 
 
+[[users_admin]]
+== Users
+
+Administrators manage the users in the users page (`/admin/users`, the _Users_ link of the home page, `src/admin.py`). Users have two identifiers, both unique:
+
+* The user identifier (`id`, the _#_ column): a number assigned by the database, read only. The sequence of PostgreSQL never gives the number of a deleted user again.
+* The username: the name to log in, which for users of single sign-on is their federated name (their email in the institution), unique by nature. It is the `user` column of the activity log, so it does not change.
+ Each user of the table shows their status (_Active_ or _Suspended_) and has these actions:
+
+[cols="1,4",options="header"]
+|===
+| Action | Effect
+| Edit (pencil) | Opens the form of the user (`/admin/users/<id>`): full name, email, role, and status. Emails are unique, and single sign-on links the accounts of providers with that email to the user (<<sso>>). Choosing _Suspended_, _Active_, or _Deleted_ as status and saving has the same effect as the buttons of the table
+| Suspend (pause) | The user cannot log in, with their password or with single sign-on, and if they are logged in, their session ends at their next request. Their data is kept. Suspended users are shown in gray, with an Activate (play) button that lets them log in again
+| Delete (red X) | Removes the user and their data from the database: preferences, progress, single sign-on identities, and runs. Their activity stays in the log (<<activity_log>>). It cannot be undone
+|===
+
+Suspending, activating, and deleting ask for confirmation. Administrators give and take the administrator role of other users, e.g. one who retires, and may suspend or delete other administrators, but they cannot change their own role nor status, so there is always an administrator and nobody locks themselves out. A common setup: the local administrator who installed VygOJ (<<administrators>>) connects it to the single sign-on of the organization, and once some staff members have logged in with it, makes some of them administrators. They keep logging in with single sign-on. Changes of the role and full name of a logged user take effect at their next request.
+
+Tables with data of users declare their foreign key to `users` with `ON DELETE CASCADE`, so the database deletes that data with the user. `make users` (`manage.py import`) adds the `status` column to older users tables and makes their existing foreign keys delete in cascade.
+
 [[sso]]
 == Single sign-on (SSO)
 
@@ -230,10 +251,12 @@ Each month has its own file, so no file grows forever. Rows have a few fixed col
 |===
 | Event | Logged when | Data
 | `visit` | A user (or an anonymous visitor) opens a page: home, course, problem, user, or help |
-| `login`, `logout` | A user logs in or out | `provider`: alias of the single sign-on provider (<<sso>>), if the user logged in with one
-| `login_failed`, `login_blocked` | A login has a wrong user or password, or it is rejected by the limits (<<login_limits>>), or a login with a single sign-on provider fails | For single sign-on, `provider` and `reason`: `provider not available`, `invalid answer` (e.g. an invalid ID token), `cancelled`, `no email`, `email not verified`, `administrator`, `not registered`, or `concurrent login`
+| `login`, `logout` | A user logs in or out, or their session ends because an administrator suspended or deleted them | `provider`: alias of the single sign-on provider (<<sso>>), if the user logged in with one. For a session ended by an administrator, `reason`: `suspended` or `deleted`
+| `login_failed`, `login_blocked` | A login has a wrong user or password, or it is rejected by the limits (<<login_limits>>), or a login with a single sign-on provider fails | For single sign-on, `provider` and `reason`: `provider not available`, `invalid answer` (e.g. an invalid ID token), `cancelled`, `no email`, `email not verified`, `administrator`, `not registered`, `concurrent login`, or `suspended`. For a password login of a suspended user, `reason`: `suspended`
 | `preferences` | A user saves their preferences | `color_scheme`, `font`
 | `user_create`, `user_admin` | `manage.py` or a single sign-on login adds a user, or `manage.py` makes an existing user administrator | `source`: `import`, `make admin`, or `sso` with its `provider`
+| `user_update` | An administrator changed the data or role of a user (<<users_admin>>) | `username`; `changes`: the value before and after of each changed field (`fullname`, `email`, `role`), e.g. `{"role": ["admin", "professor"]}`
+| `user_suspend`, `user_activate`, `user_delete` | An administrator suspended, activated, or deleted a user | `username`
 | `run` | The judge ran a submission | `language`; `code`: SHA-256 hash of the submission (`Run.hash_code()`, see <<run_limits>>); `commit`: of the course repo; `status` and `passed` (test cases) of the result; `tests`: the `status` and `wallTime` of each test case
 | `run_repeated` | The same submission was answered with the result of the last run, without running it (<<run_limits>>) | As `run`, without `commit`
 | `run_rejected` | A limit of runs rejected the submission | `language`, `code`, and `reason`: the message shown to the user
@@ -416,18 +439,22 @@ The browser never waits forever, and it always gets an answer before giving up. 
 [[administrators]]
 === Administrators
 
-Administrators are created in the server with `make admin` (`src/manage.py admin`), never from the web application, so only who can log in the server can create them. Single sign-on never creates administrators nor links an account of a provider to an administrator, even with the same email: administrators log in with their password. The command asks the username and a password of at least 12 characters. If the user exists, it resets its password, makes it administrator, and forgets its failed logins, so it also recovers a forgotten password. While the users table is empty, the frontend writes a warning in its log that suggests `make admin`.
+The first administrator is created in the server with `make admin` (`src/manage.py admin`), so only who can log in the server can create it. Single sign-on never creates administrators nor links an account of a provider to an administrator by its email, even if they are the same: an administrator account not linked yet logs in with its password. The command asks the username and a password of at least 12 characters. If the user exists, it resets its password, makes it administrator, activates it if it was suspended, and forgets its failed logins, so it also recovers a forgotten password. While the users table is empty, the frontend writes a warning in its log that suggests `make admin`.
+
+Then, administrators give and take the administrator role of other users in the users page (<<users_admin>>), but never their own role nor status, so there is always an administrator. Users of single sign-on made administrators there keep logging in with their provider, through the identity linked at their first login.
+
+Sessions are signed cookies, which the server cannot revoke. Every request of a logged user, except for static files, checks the user in the database (`refresh_session()` in `src/users.py`): if an administrator suspended or deleted them, the session ends; if their role changed, the session takes it, so a role taken away is not kept until the next login.
 
 [[sso_security]]
 === Single sign-on
 
 * Logins with a provider (<<sso>>) use the Authorization Code Flow with PKCE, and Authlib checks the `state` (against login CSRF), the `nonce`, the signature of the ID token with the keys published by the provider, its issuer, audience (the client ID), and expiration. Discovery URLs must be `https://`, because the provider sends the keys that validate tokens.
 * Client secrets are written in `config.py`, never in the database, the forms, or the logs.
-* Users are identified by the issuer and subject of the ID token, not by their email, which may change. An email links an existing account or creates a new one only if the provider verified it (`email_verified`) or the administrator trusts the emails of that provider; otherwise anybody who registers the email of a student in a provider could take their account. Accounts of administrators are never linked, and single sign-on never gives the administrator role.
+* Users are identified by the issuer and subject of the ID token, not by their email, which may change. An email links an existing account or creates a new one only if the provider verified it (`email_verified`) or the administrator trusts the emails of that provider; otherwise anybody who registers the email of a student in a provider could take their account. Accounts of administrators are never linked by email, and single sign-on never gives the administrator role: only an administrator gives it, in the users page.
 * Login buttons are links (GET), not forms: the provider answers a redirect, which the `form-action 'self'` rule of the CSP would block after a POST. The `state` protects these requests instead of the CSRF token. Authlib keeps the `state`, `nonce`, and PKCE verifier in the session cookie; only the last pending login is kept, so repeated clicks do not make the cookie grow.
 * The `next` page after the login is checked with `safe_next_url()` before and after the provider.
 * Requests to the providers time out after 5 seconds to connect and 10 to answer. Their errors are logged, and users get a generic message.
-* The pages of providers and users (`/admin/users`, `/admin/sso/...`) answer HTTP 403 to users who are not administrators, and deleting a provider is a POST with the CSRF token.
+* The pages of providers and users (`/admin/users`, `/admin/users/<id>`, `/admin/sso/...`) answer HTTP 403 to users who are not administrators. Deleting a provider, and suspending, activating, or deleting a user are POSTs with the CSRF token.
 
 [[input_limits]]
 === Requests and errors
