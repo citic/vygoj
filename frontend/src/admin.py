@@ -2,6 +2,9 @@
 role, and suspend, activate, or delete them. Administrators cannot change their own role nor
 status, so there is always an administrator, and nobody locks themselves out. The first
 administrator, and one who lost their password, are created in the server (manage.py admin) """
+import os
+import shutil
+
 import flask
 import flask_wtf
 from flask_babel import gettext, lazy_gettext
@@ -11,6 +14,8 @@ from sqlalchemy.orm import selectinload
 
 from db import db
 from activity_log import log_event
+from courses import COURSES_REPO
+from git_repo import user_folder
 from sso import STATUSES, SsoProvider
 from users import ROLES, USER_STATUSES, User, require_admin
 
@@ -147,11 +152,26 @@ class UserAdminController:
     @staticmethod
     def delete(db_user: User):
         """ Remove the given user and their data from the database: identities of single sign-on,
-        progress, and runs, which the database deletes in cascade. The activity log keeps what
-        they did. The number of the user is never given again """
-        username = db_user.username
+        progress, and runs, which the database deletes in cascade, and their folder in DATA_FOLDER
+        with their personal repo. The activity log keeps what they did. The number of the user is
+        never given again """
+        username, folder = db_user.username, user_folder(db_user.id)
+        # The folder of a user may hold the course repo that lists the courses (e.g. u13/pexercises)
+        # until courses are in the database. Deleting it would remove every course
+        courses_repo = os.path.join(flask.current_app.config['DATA_FOLDER'], COURSES_REPO)
+        if os.path.commonpath([folder, courses_repo]) == folder:
+            flask.flash(gettext('User %(username)s has the courses in their folder and cannot be '
+                'deleted.', username=username), 'error')
+            return flask.redirect(flask.url_for('get_users_admin'))
         db.session.delete(db_user)
         db.session.commit()
+        # After the commit, so the folder is kept if the database did not delete the user. Only
+        # backups recover it
+        if os.path.isdir(folder):
+            try:
+                shutil.rmtree(folder)
+            except OSError:
+                flask.current_app.logger.exception('could not delete the folder of %s', username)
         log_event('user_delete', { 'username': username })
         flask.flash(gettext('User %(username)s deleted.', username=username), 'warning')
         return flask.redirect(flask.url_for('get_users_admin'))
