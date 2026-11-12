@@ -46,8 +46,8 @@ class Run(db.Model):
     )
     # Runs are identified using incremental integer numbers
     id = db.Column(db.Integer, primary_key=True)
-    # The user who ran the code
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    # The user who ran the code. Deleting the user deletes their runs
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     # Names of the course and the problem, as in vygoj.json, e.g. 'CI0112' and 'hello'
     course = db.Column(db.String(64), nullable=False)
     problem = db.Column(db.String(64), nullable=False)

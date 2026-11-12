@@ -8,12 +8,13 @@ from flask_wtf.csrf import CSRFError, CSRFProtect
 from flask_talisman import Talisman
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+from admin import UserAdminController
 from courses import CourseController
 from limits import BACKEND_CONNECT_TIMEOUT, Limits
 from problems import BACKEND_STATUS_TIMEOUT, ProblemController
 from sso import SsoAdminController, SsoController, SsoProvider
 from users import (DEFAULT_FONT, FONTS, TRANSLATIONS_FOLDER, UserForm, client_translations,
-    font_url, log_out, select_language)
+    font_url, log_out, refresh_session, select_language)
 from db import db
 from activity_log import LogController, log_event
 
@@ -168,6 +169,11 @@ csrf = CSRFProtect(app)
 # tables in parallel fails in all of them but one, so the server would not start
 db.init_app(app)
 
+@app.before_request
+def check_session():
+    """ Log out users that an administrator suspended or deleted after they logged in """
+    refresh_session()
+
 # Courses -----------------------------------------------------------------------------------------
 
 @app.route('/')
@@ -233,7 +239,27 @@ def sso_callback(alias):
 def get_users_admin():
     """ Administrator asked for the page of users: login methods and the list of users """
     log_event('visit')
-    return SsoAdminController.get_users()
+    return UserAdminController.get_users()
+
+@app.route('/admin/users/<int:user_id>', methods=['GET', 'POST'])
+def edit_user(user_id):
+    """ Administrator asked for the form of a user, or sent it """
+    return UserAdminController.edit_user(user_id)
+
+@app.route('/admin/users/<int:user_id>/suspend', methods=['POST'])
+def suspend_user(user_id):
+    """ Administrator suspends a user, who cannot log in until activated again """
+    return UserAdminController.set_status(user_id, 'suspended')
+
+@app.route('/admin/users/<int:user_id>/activate', methods=['POST'])
+def activate_user(user_id):
+    """ Administrator activates a suspended user again """
+    return UserAdminController.set_status(user_id, 'active')
+
+@app.route('/admin/users/<int:user_id>/delete', methods=['POST'])
+def delete_user(user_id):
+    """ Administrator removes a user and their data, but not their activity in the log """
+    return UserAdminController.delete_user(user_id)
 
 @app.route('/admin/sso/new', methods=['GET', 'POST'])
 def add_sso_provider():

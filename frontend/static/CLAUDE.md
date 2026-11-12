@@ -12,7 +12,9 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
 - `css/site.css`: global layout and variables; `css/<page>.css` for page-specific styles.
   Tables of data take the `data_table` class of `site.css` (headers of columns with the color
   of the site, headers of rows marked with `<th scope="row">`, rows of alternate background),
-  which problem statements share for the tables of their authors.
+  which problem statements share for the tables of their authors. Forms take the
+  `fieldset_columns` class of `form.css` to place their fieldsets of radio buttons side by side
+  when the window has space for them (the preferences and the form of a user for administrators).
 - `img/`, `icon/`: images and SVG icons. `json/`: static data.
 - `initial/`: default code of each language (`solution.c`, `Solution.java`...). The server reads
   it (`ProblemLoader.default_code()`) and sends it in the `initialCodeFor` of problems without
@@ -113,8 +115,10 @@ errors and the layout at phone and desktop widths.
   - States are standard or `data-*`/`aria-*` attributes, not classes: `hidden`, `disabled`,
     `open`, `aria-expanded`, `aria-current="true"`, `data-status="passed"`,
     `data-category="error"`.
-  - The shared variants of buttons are the only extra classes: `button` (a link that looks like a
-    button), `small`, and the colors `confirm`, `reject`, `danger`, and `action` (`form.css`).
+  - The shared variants of buttons and the shared layouts `data_table` (`site.css`) and
+    `fieldset_columns` (`form.css`) are the only extra classes. Variants of buttons: `button` (a
+    link that looks like a button), `small`, and the colors `confirm`, `reject`, `danger`, and
+    `action` (`form.css`).
   - Kebab-case only for classes of external libraries (`material-symbols-outlined`).
   - Avoid styling by `id` and avoid `!important`.
 - Stylelint (`no-descending-specificity`) asks for the less specific selectors first. When it

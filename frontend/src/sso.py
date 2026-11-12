@@ -15,14 +15,14 @@ import wtforms
 from wtforms import validators
 import requests
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import selectinload
 from authlib.common.errors import AuthlibBaseError
 from authlib.integrations.flask_client import FlaskIntegration, FlaskOAuth2App
 from joserfc.errors import JoseError
 
 from db import db
 from activity_log import log_event
-from users import MAX_USERNAME_LENGTH, User, is_admin, safe_next_url, start_session
+from users import (MAX_USERNAME_LENGTH, User, require_admin, safe_next_url, start_session,
+    suspended_message)
 
 # Aliases of providers name them in URLs (/login/sso/ucr) and in SSO_CLIENT_SECRETS
 ALIAS_PATTERN = re.compile(r'[a-z0-9][a-z0-9-]{0,31}')
@@ -242,6 +242,8 @@ class SsoController:
             app.logger.exception('could not log in with provider %s', provider.alias)
             return SsoController.fail(provider, 'invalid answer', gettext(
                 'Could not log in with %(provider)s. Try again later.', provider=provider.name))
+        if db_user.status != 'active':
+            return SsoController.fail(provider, 'suspended', suspended_message())
         return start_session(db_user, next_url, provider.alias)
 
     @staticmethod
@@ -373,33 +375,12 @@ class SsoProviderForm(flask_wtf.FlaskForm):
     save = wtforms.SubmitField(lazy_gettext('Save'))
 
 class SsoAdminController:
-    """ Lets administrators manage the providers and see the users """
-
-    @staticmethod
-    def require_admin():
-        """ Stop the request if the logged user is not an administrator """
-        if not is_admin():
-            flask.abort(403)
-
-    @staticmethod
-    def get_users():
-        """ Show the page of users: the providers and the list of users """
-        SsoAdminController.require_admin()
-        providers = db.session.scalars(db.select(SsoProvider).order_by(SsoProvider.name)).all()
-        users = db.session.scalars(db.select(User).order_by(User.username)
-            .options(selectinload(User.identities))).all()
-        return flask.render_template('users_admin.html', it={
-            'title': gettext('Users'),
-            'user': flask.session.get('user'),
-            'providers': providers,
-            'statuses': STATUSES,
-            'users': users,
-        })
+    """ Lets administrators manage the providers. The users page that lists them is in admin.py """
 
     @staticmethod
     def edit_provider(alias: str = None):
         """ Show the form of a new provider, or of the provider of the given alias, and save it """
-        SsoAdminController.require_admin()
+        require_admin()
         provider = SsoProvider.find(alias) if alias else SsoProvider()
         if not provider:
             flask.abort(404)
@@ -451,7 +432,7 @@ class SsoAdminController:
     def delete_provider(alias: str):
         """ Remove the provider of the given alias. The identities of its users are kept, so they
         are linked again if the provider is added back with the same issuer """
-        SsoAdminController.require_admin()
+        require_admin()
         provider = SsoProvider.find(alias)
         if not provider:
             flask.abort(404)

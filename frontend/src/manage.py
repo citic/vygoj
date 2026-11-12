@@ -6,12 +6,12 @@
     python manage.py submissions output.zip    # the code of the runs, a folder per submission
 
 admin creates an administrator, or resets the password of a user and makes it administrator. It
-runs in the server, so only who can log in the server can create administrators, never the
-visitors of the web application. import creates and updates the tables of the database, and adds
-the users of a TSV file that are not in the database yet; make runs it before starting the
-servers. log and submissions write the archives that administrators download from the web
-application. Their logic lives in users.py and activity_log.py, so the web application may
-reuse it """
+runs in the server, so the first administrator, and one who lost their password, never depend on
+the web application, where administrators give and take the role of the others. import creates
+and updates the tables of the database, and adds the users of a TSV file that are not in the
+database yet; make runs it before starting the servers. log and submissions write the archives
+that administrators download from the web application. Their logic lives in users.py and
+activity_log.py, so the web application may reuse it """
 import csv
 import getpass
 import os
@@ -74,6 +74,8 @@ def manage_admin(username: str = None) -> int:
         db.session.add(user)
     user.password = generate_password_hash(ask_password())
     user.role = 'admin'
+    # A suspended user made administrator must be able to log in
+    user.status = 'active'
     # A forgotten password may have blocked the logins of the administrator
     db.session.execute(db.delete(LoginAttempt).filter(LoginAttempt.username == username))
     db.session.commit()
@@ -87,7 +89,7 @@ def import_users(users_file: str = None) -> int:
     """ Update the database and add the users of the given TSV file (username and password
     columns), or of USERS_FILE in DATA_FOLDER. Return the exit status """
     update_database()
-    # Nobody can log in without users. The administrator is created in the server, not in the web
+    # Nobody can log in without users. The first administrator is created in the server
     if not db.session.scalar(db.select(User.id).limit(1)):
         print('manage: there are no users yet. Create the administrator with: make admin')
     if users_file is None:
@@ -109,6 +111,7 @@ def update_database():
     start, because the gunicorn workers would create the same tables at the same time """
     db.create_all()
     update_users_table()
+    cascade_user_deletes()
 
 def update_users_table():
     """ Add the columns that older users tables lack (existing rows get their default value),
@@ -123,8 +126,32 @@ def update_users_table():
         " ADD COLUMN IF NOT EXISTS color_scheme VARCHAR(8) NOT NULL DEFAULT 'default',"
         " ADD COLUMN IF NOT EXISTS font VARCHAR(16) NOT NULL DEFAULT 'anaheim',"
         " ADD COLUMN IF NOT EXISTS language VARCHAR(8) NOT NULL DEFAULT 'default',"
+        " ADD COLUMN IF NOT EXISTS status VARCHAR(16) NOT NULL DEFAULT 'active',"
         f" ALTER COLUMN username TYPE VARCHAR({MAX_USERNAME_LENGTH}),"
         " ALTER COLUMN password DROP NOT NULL"))
+    db.session.commit()
+
+def cascade_user_deletes():
+    """ Make the foreign keys to the users table that the models declare with ON DELETE CASCADE
+    (progress, runs...) delete in cascade in older databases too, whose tables were created
+    without it, so deleting a user deletes all their data. db.create_all() does not change the
+    tables that exist. Names come from the models and the database, never from users """
+    inspector = db.inspect(db.engine)
+    for table in db.metadata.sorted_tables:
+        cascades = {key.parent.name for key in table.foreign_keys
+            if key.column.table.name == 'users' and key.ondelete == 'CASCADE'}
+        for key in inspector.get_foreign_keys(table.name):
+            columns = key['constrained_columns']
+            column = columns[0] if len(columns) == 1 else None
+            if (key['referred_table'] != 'users' or column not in cascades
+                    or key['options'].get('ondelete', '').upper() == 'CASCADE'):
+                continue
+            # Dropped and added in one statement, so the table is never without the constraint
+            db.session.execute(db.text(f'ALTER TABLE "{table.name}"'
+                f' DROP CONSTRAINT "{key["name"]}",'
+                f' ADD CONSTRAINT "{key["name"]}" FOREIGN KEY ("{column}")'
+                ' REFERENCES users (id) ON DELETE CASCADE'))
+            print(f'manage: {table.name}.{column} now deletes in cascade with its user')
     db.session.commit()
 
 # Activity log -----------------------------------------------------------------------------------

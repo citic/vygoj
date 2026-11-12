@@ -15,15 +15,39 @@
 
 /* SSO providers and users in tables of data (site.css). Aliases, usernames, and emails have no
    spaces, so they break anywhere to fit narrow screens. The status of each provider gets the
-   color of its data-status */
+   color of its data-status, and suspended users are grayed out. The actions of users are icons of
+   the Material Symbols font */
 .users_admin {
   & :is(.provider .alias, .user .username, .user .email) {
     overflow-wrap: anywhere;
   }
 
-  & .provider form {
+  & :is(.provider, .user) form {
     display: inline;
     margin: 0;
+  }
+
+  & .user .actions {
+    white-space: nowrap;
+
+    /* a.button of form.css inherits the font of the page, the icons need theirs */
+    & .material-symbols-outlined {
+      display: inline-block;
+      min-width: auto;
+      padding: 2px 4px;
+      font-family: "Material Symbols Outlined", sans-serif;
+      font-size: 1.5rem;
+      line-height: 1;
+      vertical-align: middle;
+    }
+  }
+
+  & .user[data-status="suspended"] :is(th, td:not(.actions)) {
+    color: gray;
+  }
+
+  & .user[data-status="suspended"] .status {
+    font-style: italic;
   }
 
   & .provider[data-status="active"] .status {
@@ -39,8 +63,8 @@
   }
 }
 
-/* Form of an SSO provider: hints and errors below their fields */
-.sso_provider {
+/* Forms of an SSO provider and of a user: hints and errors below their fields */
+:is(.sso_provider, .user_admin) {
   & .hint {
     color: gray;
   }
@@ -61,6 +85,14 @@
   & .registration dd {
     margin: 0 0 0.5rem;
     overflow-wrap: anywhere;
+  }
+
+  & .status li[data-status="suspended"] label {
+    color: var(--warning);
+  }
+
+  & .status li[data-status="deleted"] label {
+    color: var(--error);
   }
 
   & input[readonly] {
