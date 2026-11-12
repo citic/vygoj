@@ -8,6 +8,8 @@
 //   failed: number;
 // }
 
+import _ from './i18n.js';
+
 // Milliseconds between status checks while connected, and while disconnected. Disconnected pages
 // check more often, so they notice soon that the connection is back
 const STATUS_INTERVAL_ONLINE = 60000;
@@ -61,7 +63,7 @@ class Site {
     // Update the backend status indicator now and then periodically
     this.checkBackendStatus();
     // The browser knows at once when the network goes down or up
-    window.addEventListener('offline', () => this.setOnline(false, 'No network connection', false));
+    window.addEventListener('offline', () => this.setOnline(false, _('No network connection'), false));
     window.addEventListener('online', () => this.checkBackendStatus());
     window.addEventListener(CHECK_EVENT, () => this.checkBackendStatus());
     // Register event handlers for flash messages' close buttons
@@ -93,7 +95,7 @@ class Site {
       const response = await fetch('/status', { signal: AbortSignal.timeout(STATUS_TIMEOUT) });
       this.updateBackendStatus(await response.json());
     } catch (error) {
-      this.setOnline(false, `Disconnected: ${error.message}`, true);
+      this.setOnline(false, _('Disconnected: %(error)s', { error: error.message }), true);
     }
     const interval = this.online ? STATUS_INTERVAL_ONLINE : STATUS_INTERVAL_OFFLINE;
     this.statusTimer = window.setTimeout(() => this.checkBackendStatus(), interval);
@@ -106,9 +108,9 @@ class Site {
       this.showBackendDetails();
     }
     if (json?.status === 'online') {
-      this.setOnline(true, 'Connected', false);
+      this.setOnline(true, _('Connected'), false);
     } else {
-      this.setOnline(false, 'Disconnected', false);
+      this.setOnline(false, _('Disconnected'), false);
     }
   }
 

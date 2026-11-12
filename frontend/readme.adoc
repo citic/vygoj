@@ -51,6 +51,36 @@ npx stylelint --fix 'static/css/**/*.css'
 
 `npm run lint` and `npm run stylelint` run the first and third commands. ESLint needs the folder to check: `npx eslint` without arguments checks no files and reports no problems.
 
+[[translations]]
+=== Translations
+
+The interface is written in English and translated with https://python-babel.github.io/flask-babel/[Flask-Babel] (GNU gettext). Users choose its language in their preferences (`/user`): _Default_ takes the language that the browser prefers among the available ones, or English. Visitors that are not logged in get the default too. The chosen language is stored in the `language` column of the users table.
+
+Texts of the interface are marked to be translated: `{{ _('My courses') }}` in templates, `gettext()` in Python, `lazy_gettext()` for texts defined when the module loads, such as the labels of forms, and `_()` of `static/js/i18n.js` in JavaScript. JavaScript gets the translations of the language of the page from `/translations/<language>.json`, which the server reads from the same catalogs. Values go in named placeholders, so translators can move them: `_('Test case %(number)d', number=loop.index)`. Each language has a catalog in `translations/<language>/LC_MESSAGES/messages.po`, with the English texts (`msgid`) and their translations (`msgstr`). The servers read the catalogs compiled to `.mo` files, which `make` compiles before starting (`make translations`) and git ignores.
+
+After adding or changing texts of the interface, update the catalogs and translate the texts that have an empty `msgstr`; texts that no longer exist are commented out at the end:
+
+[source,sh]
+----
+make update-translations
+----
+
+To add a language, create its catalog, translate it, and add its code and its name in its own language to `LANGUAGES` in `src/users.py`:
+
+[source,sh]
+----
+make update-translations
+.venv/bin/pybabel init -i translations/messages.pot -d translations -l fr
+----
+
+The contents of courses, such as problem statements, are shown as their authors wrote them.
+
+
+[[default_code]]
+=== Default code
+
+When a problem has no initial code for one of its languages (in its `initial/` or `given/` folder), students start from the default code of the language, a file in `static/initial/` named as the backend names the source file (`solution.c`, `solution.cpp`, `Solution.java`, `solution.ale`, and an empty `solution.py`). The files are static, so browsers may also get them (e.g. `/initial/Solution.java`), but the server reads that folder once per process (`ProblemLoader.default_code()`) and sends the default codes in the `initialCodeFor` of the problem (`to_client_json()` in `src/problems.py`). To support a new language, add its file there with the extension of the language (`LANGUAGE_EXTENSIONS` in `common/vyg/constants.py`). Java solutions must keep `Solution` as the name of their public class.
+
 
 [[reverse_proxy]]
 == Reverse proxy configuration
@@ -113,6 +143,8 @@ Create a new Apache configuration file, for example, `/etc/apache2/sites-availab
 </VirtualHost>
 ----
 
+Set `SITE_URL = 'https://vygoj.citic.ucr.ac.cr'` in `config/config.py` if users log in with single sign-on (<<sso>>): the frontend receives `http://` requests from Apache, but the callback URLs registered in the providers are `https://`.
+
 Apache sends the address of each client in the `X-Forwarded-For` header. Set `TRUSTED_PROXIES = 1` in `config/config.py`, so the frontend uses that address for the login limits (<<login_limits>>) and the logs. Otherwise, every request seems to come from `127.0.0.1`, and the failed logins of all the users count as the ones of a single address. Keep it `0` if clients connect to the frontend directly, because they could fake that header.
 
 Enable the new configuration, test it, and restart Apache:
@@ -123,6 +155,170 @@ sudo a2ensite vygoj
 sudo apachectl configtest
 sudo systemctl restart apache2
 ----
+
+
+[[users_admin]]
+== Users
+
+Administrators manage the users in the users page (`/admin/users`, the _Users_ link of the home page, `src/admin.py`). Users have two identifiers, both unique:
+
+* The user identifier (`id`, the _#_ column): a number assigned by the database, read only. The sequence of PostgreSQL never gives the number of a deleted user again.
+* The username: the name to log in, which for users of single sign-on is their federated name (their email in the institution), unique by nature. It is the `user` column of the activity log, so it does not change.
+ Each user of the table shows their status (_Active_ or _Suspended_) and has these actions:
+
+[cols="1,4",options="header"]
+|===
+| Action | Effect
+| Edit (pencil) | Opens the form of the user (`/admin/users/<id>`): full name, email, role, and status. Emails are unique, and single sign-on links the accounts of providers with that email to the user (<<sso>>). Choosing _Suspended_, _Active_, or _Deleted_ as status and saving has the same effect as the buttons of the table
+| Suspend (pause) | The user cannot log in, with their password or with single sign-on, and if they are logged in, their session ends at their next request. Their data is kept. Suspended users are shown in gray, with an Activate (play) button that lets them log in again
+| Delete (red X) | Removes the user and their data from the database: preferences, progress, single sign-on identities, and runs. Their activity stays in the log (<<activity_log>>). It cannot be undone
+|===
+
+Suspending, activating, and deleting ask for confirmation. Administrators give and take the administrator role of other users, e.g. one who retires, and may suspend or delete other administrators, but they cannot change their own role nor status, so there is always an administrator and nobody locks themselves out. A common setup: the local administrator who installed VygOJ (<<administrators>>) connects it to the single sign-on of the organization, and once some staff members have logged in with it, makes some of them administrators. They keep logging in with single sign-on. Changes of the role and full name of a logged user take effect at their next request.
+
+Tables with data of users declare their foreign key to `users` with `ON DELETE CASCADE`, so the database deletes that data with the user. `make users` (`manage.py import`) adds the `status` column to older users tables and makes their existing foreign keys delete in cascade.
+
+[[sso]]
+== Single sign-on (SSO)
+
+Users may log in with the account of an institution instead of a password of VygOJ, through an OpenID Connect (OIDC) provider, such as the Keycloak of the Universidad de Costa Rica. Any provider that publishes an OIDC discovery document works the same way. `src/sso.py` uses https://docs.authlib.org/[Authlib] for the protocol: discovery, the Authorization Code Flow with PKCE, `state` and `nonce`, and the validation of the ID token (signature with the keys of the provider, issuer, audience, and expiration).
+
+Administrators manage the providers in the users page (`/admin/users`, the _Users_ link of the home page): the _+ Add_ button opens the form of a new provider, and each provider of the table has _Edit_ and _Delete_ buttons. The form asks:
+
+[cols="1,3",options="header"]
+|===
+| Field | Meaning
+| Alias | Short name chosen in VygOJ (not the client ID) for URLs and for `SSO_CLIENT_SECRETS`, e.g. `ucr`. It cannot change, because it is part of the callback URL registered in the provider
+| Name | Text of the login button, e.g. _Universidad de Costa Rica_
+| Status | _Disabled_: nobody can log in with it. _Testing_: it is not shown in the login page, but its login URL (`/login/sso/<alias>`) works, for a controlled test in production. _Active_: the login page shows its button above the password form
+| Discovery URL or issuer | e.g. `https://sso.ucr.ac.cr/realms/UCR`; `/.well-known/openid-configuration` is added if missing. Only `https://`, or `http://` for a provider in the same computer
+| Client ID | Given by the team of the provider
+| Scopes | `openid profile email` by default
+| Email claim | Claim with the email of the user, `email` by default (some providers send `mail`)
+| Trust emails | Accept the emails of the provider even if the ID token does not have `email_verified: true`, e.g. an institution that assigns the emails itself
+| Create accounts | Users without an account in VygOJ get one at their first login. Otherwise only existing users may log in with the provider
+| Professor claim and values | Optional rule for the role of new users: if the claim (e.g. `groups`, or `realm_access.roles` for nested claims) has one of the values (separated by commas), the user is a professor, otherwise a student
+|===
+
+To connect a provider:
+
+. Add it with status _Disabled_ and save it. The form shows the redirect URI (callback) to register in the provider: `<SITE_URL>/login/sso/<alias>/callback`. Set `SITE_URL` in `config.py` to the public address of the site (e.g. `https://vygoj.ucr.ac.cr`), because behind a reverse proxy the frontend sees `http://` addresses, and the redirect URI must match exactly.
+. Ask the team of the provider for a client, with that redirect URI, the scopes and claims needed (the email, the name, and the claim of the professor rule if any), and no Web Origins: tokens are exchanged in the server. Logout only ends the session of VygOJ, so no post logout redirect URI is needed. Ask for separate clients for tests and production.
+. Write the client secret in `config.py`, by the alias of the provider, and restart the frontend. Secrets are credentials, so they are never stored in the database nor shown in the web forms. The form only tells whether the secret is configured. A provider without secret is used as a public client, protected by PKCE only:
++
+[source,python]
+----
+SSO_CLIENT_SECRETS = {'ucr': 'the secret given by the SSO team'}
+----
+. Fill the Client ID, set the status to _Testing_, and log in from the login URL that the form shows. When it works, set it to _Active_.
+
+At each login, the user is found by the issuer and subject (`sub`) of the ID token, which OpenID Connect guarantees unique and stable, unlike emails. They are stored in the `user_identities` table. At the first login with a provider:
+
+* If a user of VygOJ has the email of the token as username or email, the identity is linked to that user, who may log in with the password or with the provider from then on.
+* Otherwise, if the provider creates accounts, a user is created with the email as username, the name of the token as full name, no password, and the role of the professor rule. These users only log in with the provider, and their preferences do not show the password fields.
+* Otherwise, the login is rejected, and the user is asked to contact their professor.
+
+The username of users created by a provider is their email, so usernames have up to 128 characters. `make users` (`manage.py import`) widens the column of older databases and makes passwords optional; `make`, `make release`, and `make server` run it before starting.
+
+
+[[activity_log]]
+== Activity log
+
+The frontend logs the activity of the users (`src/activity_log.py`) to know how the judge is used, follow the progress of students, recover their submissions, and do research. It is written in the `log/` folder of `DATA_FOLDER`:
+
+----
+log/
+  events-2026-11.tsv    # one row per event of November 2026 (UTC); the first row names the columns
+  code/<hash>.cpp       # code of each run, named by the code field of its data
+----
+
+Each month has its own file, so no file grows forever. Rows have a few fixed columns, and a `data` column with the fields of each kind of event as a JSON object, so new kinds of materials add fields, not columns. Cells that do not apply to an event are empty:
+
+[cols="1,4",options="header"]
+|===
+| Column | Meaning
+| `time` | Date and time in UTC, ISO 8601 with milliseconds, e.g. `2026-11-08T14:03:12.345+00:00`
+| `id` | Random identifier of the event, that joins the tables of the log archive. The `id` of a run is also in the run log of the backend, which joins both logs
+| `user`, `role` | Logged user and their role. For `login_failed` and `login_blocked`, the typed username (empty for single sign-on)
+| `address` | Network address of the client (see `TRUSTED_PROXIES` in <<reverse_proxy>>)
+| `event` | One of the events of the next table
+| `path` | Page of the request, e.g. `/problem/CI0112/hello`. Empty for the command line
+| `course`, `material`, `type` | The material of the event: its name, unique in the course, and its type (`course`, `problem`...). Its place in the course is in the materials table of the log archive
+| `data` | JSON object with the fields of the event, see the next table
+|===
+
+[cols="1,2,3",options="header"]
+|===
+| Event | Logged when | Data
+| `visit` | A user (or an anonymous visitor) opens a page: home, course, problem, user, or help |
+| `login`, `logout` | A user logs in or out, or their session ends because an administrator suspended or deleted them | `provider`: alias of the single sign-on provider (<<sso>>), if the user logged in with one. For a session ended by an administrator, `reason`: `suspended` or `deleted`
+| `login_failed`, `login_blocked` | A login has a wrong user or password, or it is rejected by the limits (<<login_limits>>), or a login with a single sign-on provider fails | For single sign-on, `provider` and `reason`: `provider not available`, `invalid answer` (e.g. an invalid ID token), `cancelled`, `no email`, `email not verified`, `administrator`, `not registered`, `concurrent login`, or `suspended`. For a password login of a suspended user, `reason`: `suspended`
+| `preferences` | A user saves their preferences | `color_scheme`, `font`
+| `user_create`, `user_admin` | `manage.py` or a single sign-on login adds a user, or `manage.py` makes an existing user administrator | `source`: `import`, `make admin`, or `sso` with its `provider`
+| `user_update` | An administrator changed the data or role of a user (<<users_admin>>) | `username`; `changes`: the value before and after of each changed field (`fullname`, `email`, `role`), e.g. `{"role": ["admin", "professor"]}`
+| `user_suspend`, `user_activate`, `user_delete` | An administrator suspended, activated, or deleted a user | `username`
+| `run` | The judge ran a submission | `language`; `code`: SHA-256 hash of the submission (`Run.hash_code()`, see <<run_limits>>); `commit`: of the course repo; `status` and `passed` (test cases) of the result; `tests`: the `status` and `wallTime` of each test case
+| `run_repeated` | The same submission was answered with the result of the last run, without running it (<<run_limits>>) | As `run`, without `commit`
+| `run_rejected` | A limit of runs rejected the submission | `language`, `code`, and `reason`: the message shown to the user
+| `run_failed` | The judge did not answer a valid result, e.g. no backend was available | `language`, `code`, `commit`
+| `log_download` | An administrator downloaded an archive of the log | `archive`: `log` or `submissions`
+| `sso_provider` | An administrator added, changed, or deleted a single sign-on provider | `action`: `add`, `update`, or `delete`; `provider`: its alias; `status`
+|===
+
+The log does not store problem statements, test cases, or program outputs, so it stays small: the `commit` of a run recovers the statement and test cases that judged it from the course repo (`git checkout`). Each code file is saved once, by the first run of that submission, and only accepted runs save code or ask git for the commit, so a robot cannot fill the disk or start processes with rejected or repeated runs (runs are limited per user). Passwords are never logged.
+
+[[log_archives]]
+=== Exporting the log
+
+Administrators download two zip files from the Administration panel in the home page; other users get HTTP 403. They are made on demand from the log (`LogController` in `src/activity_log.py`), in a temporary file that is deleted after sending it, so they take no space in the server, but the temporary disk must fit them while they are sent:
+
+* *Activity log* (`/admin/log`): the files of the log in `log/`, and tables to analyze it in `analysis/`. Their columns never change when new kinds of events or materials appear, they get new tables instead:
+** `events.tsv`: every event, without its data.
+** `runs.tsv`: a row per run event (`id`, `time`, `user`, `course`, `material`, `event`, `language`, `code`, `commit`, `status`, `passed`, `tests`, `wall_time`, and `reason`). `tests` is the count of test cases, and `wall_time` the seconds they took, added up.
+** `tests.tsv`: a row per test case of each run (`run`, `test` number from 1, `status`, `wall_time`). `run` is the `id` of the run.
+** `materials.tsv`: every material of the courses as they are now in their repos (`course`, `material`, `type`, `parent`, `depth` from the course, and `title`), to group events by section.
+* *Submissions* (`/admin/submissions`): what each user sent to each problem, with the problem as it was in the `commit` of the course repo of the run, to run the submissions again in the context where they were solved, as the extraction command of the old log did (tag `log_v0` of git). It has a folder per run that judged or failed, with its code and the verdict of each test case. Submission folders sort in time order, so the last one is the latest. Names of users and materials keep only letters, digits, and `.@-_`:
++
+----
+submissions.tsv                                 # index: a row per submission, with its folder and
+                                                # the folder with the files of its problem
+submissions/<user>/<course>/<material>/
+    problem.es.adoc                             # statement (.adoc, .md, or .html files)
+    initial/, given/                            # initial code
+    tests/input001.txt, tests/output001.txt...  # test cases, also the hidden ones
+    <YYYYMMDD_HHMMSS>/solution.cpp              # code, with the extension of its language
+                     /result.tsv                # verdict and wall time of each test case
+----
++
+The files of the problem are taken from the course repo with `git archive` (stopped after 60 seconds), once per problem and commit. Only the statement, initial code, and test cases are taken, not other files of the problem folder, such as the solutions of the professors; files larger than 16 MiB are skipped. The folder of the user and problem has the files of the commit of their first submission; a later submission judged by another commit has its own copy in its folder, so every submission keeps the problem that judged it. The folder of a problem is found in the course as it is now, so the `problem` column of the index is empty if the problem was removed or moved after the run, if its folder did not exist in that commit, or if the run has no commit (its course is not a git repo). This archive may be much larger than the log.
+
+The same archives are written in the command line of the server:
+
+[source,sh]
+----
+cd src
+../.venv/bin/python manage.py log vygoj-log.zip
+../.venv/bin/python manage.py submissions vygoj-submissions.zip
+----
+
+For example, to load the tables in R or Python and join the runs with their test cases:
+
+[source,r]
+----
+runs <- read.delim("analysis/runs.tsv", quote = "", colClasses = "character")
+tests <- read.delim("analysis/tests.tsv", quote = "", colClasses = "character")
+verdicts <- merge(runs, tests, by.x = "id", by.y = "run")
+----
+
+[source,python]
+----
+import pandas
+runs = pandas.read_csv('analysis/runs.tsv', sep='\t', quoting=3, dtype=str)
+tests = pandas.read_csv('analysis/tests.tsv', sep='\t', quoting=3, dtype=str)
+verdicts = runs.merge(tests, left_on='id', right_on='run')
+----
+
+Cells never contain tabs or new lines: control characters sent by clients become spaces (JSON escapes them in `data`), and texts longer than 256 characters are truncated. Cells that start with `=`, `+`, `-`, or `@` get a leading apostrophe, so spreadsheets do not run a username typed in the login as a formula; the archives remove it when they parse the log. The gunicorn workers append each event in one system call, so their rows do not mix, and the file of a new month is created with its row of columns atomically. The files are readable only by the user that runs the frontend, because they have personal data. The HTTP requests are logged by gunicorn in `data/access.log` (`make server`).
 
 
 [[security]]
@@ -159,7 +355,7 @@ The session cookie is also `Secure`, `HttpOnly`, and `SameSite=Lax`.
 
 Problem statements come from course repositories and are shown as HTML. Talisman (the `flask-talisman` package) sends a `Content-Security-Policy` header (`cdn` in `src/main.py`) where scripts may only come from files of this site and from the CDNs the pages use (jsDelivr, cdnjs, esm.sh). Inline scripts, event handler attributes (`onclick`), and `javascript:` URLs do not run, so templates must not have them: put behavior in `static/js/`. Styles allow `'unsafe-inline'` because Monaco and MathJax inject `<style>` elements. The policy also forbids plugins (`object-src`), foreign `<base>` elements, forms that post to other sites, and being embedded by other sites.
 
-Talisman also redirects HTTP to HTTPS (except in debug mode) and sends `Strict-Transport-Security`, `Referrer-Policy: strict-origin` (other sites only see that links came from VygOJ, not from which page), and `Permissions-Policy`, which disables the camera, the microphone, the geolocation, and the Topics API of advertising. `set_headers()` in `src/main.py` adds the `Cross-Origin-*` headers that Talisman does not send. Configure in Talisman the headers it sends, because it sets them after `set_headers()` and would replace them.
+Talisman also redirects HTTP to HTTPS (except in debug mode) and sends `Strict-Transport-Security`, `Referrer-Policy: strict-origin` (other sites only see that links came from VygOJ, not from which page), and `Permissions-Policy`, which disables the camera, the microphone, and the geolocation. `set_headers()` in `src/main.py` adds the `Cross-Origin-*` headers that Talisman does not send. Configure in Talisman the headers it sends, because it sets them after `set_headers()` and would replace them.
 
 [[course_repos]]
 === Course repositories
@@ -171,7 +367,7 @@ A test case has the keys `args` (command line arguments, split as a shell would)
 [[statements]]
 === Problem statements
 
-Statements are converted to HTML on the server (Asciidoctor resolves `include::` directives there) and then sanitized with https://pypi.org/project/nh3/[nh3] by `sanitize_html()` in `src/sanitize.py`, once per problem load. The same function is meant for other HTML written by course authors, such as the content pages of the future. The sanitizer keeps an allow list of tags, attributes, and CSS properties, which covers what Asciidoctor, Markdown, and hand-written HTML produce. It removes:
+The statement of a problem is the first file of its folder with the extension `.html`, `.adoc`, or `.md`, in that order (files of the same extension in alphabetical order); the other ones are ignored, so a folder may keep the Asciidoc source next to the HTML generated from it. Statements are converted to HTML on the server (Asciidoctor resolves `include::` directives there) and then sanitized with https://pypi.org/project/nh3/[nh3] by `sanitize_html()` in `src/sanitize.py`, once per problem load. The same function is meant for other HTML written by course authors, such as the content pages of the future. The sanitizer keeps an allow list of tags, attributes, and CSS properties, which covers what Asciidoctor, Markdown, and hand-written HTML produce. It removes:
 
 * Scripts, styles, forms, plugins, inline SVG and MathML (with their contents), event handler attributes (`onclick`...), and the `<head>` and `<title>` of statements written as whole HTML documents.
 * Frames and videos of other sites (see <<videos>>).
@@ -185,7 +381,7 @@ Formulas (`stem`) are kept as text, and MathJax typesets them in the browser. To
 [[videos]]
 === Videos
 
-Statements may play video files of their folder with `video::media/demo.mp4[]` (a `<video>` element), with subtitles in `vtt` files if wanted. Videos of video sites (`video::id[youtube]`, `video::id[vimeo]`, or any `<iframe>`) and video files of other sites are removed for now, and the CSP of the pages forbids frames (`frame-src 'none'`) and media of other sites (`media-src 'self'`). Supporting them requires an allow list of sites and a sandbox for their players, and pages that embed them cannot send `Cross-Origin-Embedder-Policy: require-corp`, because video sites do not opt in to it.
+Statements may play video files of their folder with `video::media/demo.mp4[]` (a `<video>` element), with subtitles in `vtt` files if wanted. Videos of video sites (`video::id[youtube]`, `video::id[vimeo]`, or any `<iframe>`) and video files of other sites are removed for now, and the CSP of the pages forbids frames (`frame-src 'none'`) and media of other sites (`media-src 'self'`). Supporting them requires an allow list of sites and a sandbox for their players, and pages that embed them cannot send `Cross-Origin-Embedder-Policy`, because video sites do not opt in to it.
 
 The sanitizer sets `controls` and `preload="metadata"` on every video, and removes `autoplay`. Posters (`poster=`) must be images of the folder too.
 
@@ -219,7 +415,7 @@ Failed logins are stored in the `login_attempts` table (`LoginAttempt` in `src/u
 * 5 failed logins of a user from the same address (`MAX_FAILURES_PER_USER`), which stops a student from guessing the password of a classmate.
 * 30 failed logins from the same address for any users (`MAX_FAILURES_PER_ADDRESS`), which stops robots that try many users. It is larger because a whole laboratory may share a public address.
 
-Then, logins from that address are rejected, without checking the password, until the oldest failures are older than 15 minutes. Usernames that do not exist count too, so the limits do not reveal which users exist. A successful login forgets the failures of that user from that address. There is no limit per username alone, otherwise anybody could lock the account of a classmate by typing wrong passwords before an exam. Failed and rejected logins are logged as `login_failed` and `login_blocked`.
+Then, logins from that address are rejected, without checking the password, until the oldest failures are older than 15 minutes. Usernames that do not exist count too, so the limits do not reveal which users exist. A successful login forgets the failures of that user from that address. There is no limit per username alone, otherwise anybody could lock the account of a classmate by typing wrong passwords before an exam. Failed and rejected logins are logged as `login_failed` and `login_blocked` (<<activity_log>>).
 
 The limits depend on the address of the client, so set `TRUSTED_PROXIES` behind a reverse proxy (<<reverse_proxy>>).
 
@@ -234,9 +430,9 @@ Only logged users may run code (see <<input_limits>>). Their runs are stored in 
 ** the previous run started less than 5 seconds ago (`MIN_RUN_INTERVAL`).
 ** the user started 120 runs in the last hour (`MAX_RUNS_PER_WINDOW`). A student who runs the code every 30 seconds stays below it.
 
-The checks and the new run are stored while the row of the user is locked (`SELECT ... FOR UPDATE`), so two requests sent at the same time cannot both pass. Only the result of the last run of each problem is kept, if it is smaller than 1 MiB, and runs older than one day are deleted. Repeated and rejected runs are logged as `run_repeated` and `run_rejected`.
+The checks and the new run are stored while the row of the user is locked (`SELECT ... FOR UPDATE`), so two requests sent at the same time cannot both pass. Only the result of the last run of each problem is kept, if it is smaller than 1 MiB, and runs older than one day are deleted. Runs are logged as `run`, `run_repeated`, `run_rejected`, or `run_failed` (<<activity_log>>).
 
-The frontend sends the backend a compact JSON object (`run_solution()` in `src/problems.py`) with only two parts: the solution, and the fields of the problem that judge it (`BACKEND_FIELDS`: the test cases, the languages, the limits, and other fields that change verdicts), not the statement or the initial code. It answers the browser the JSON of the backend as it came, parsed only to store the grade. Texts travel as JSON strings, so code and output in any language arrive intact.
+The frontend sends the backend a compact JSON object (`run_solution()` in `src/problems.py`) with three parts: the solution; the fields of the problem that judge it (`BACKEND_FIELDS`: the test cases, the languages, the limits, and other fields that change verdicts), not the statement or the initial code; and a context for the run log of the backend (`run_context()`: the `id` of the run event in the activity log, the user, their role and address, the material, and the commit of the course repo; see `backend/readme.adoc`). It answers the browser the JSON of the backend as it came, parsed only to store the grade. Texts travel as JSON strings, so code and output in any language arrive intact.
 
 The administrator sets the limits of the runs in `config.py` (their defaults and explanation are in `config/defaults.py`). Each limit has an absolute range (`ABS_MIN_*`, `ABS_MAX_*`) and a default (`DEF_*`), which may be a number or a dictionary with a number for each language. Professors may choose a value in `vygoj.json`, for the problem or for a test case; values out of the range are clamped, and a missing value or 0 means the default. `src/limits.py` computes the effective values and sends them in the problem. The frontend does not start with invalid limits.
 
@@ -255,7 +451,22 @@ The browser never waits forever, and it always gets an answer before giving up. 
 [[administrators]]
 === Administrators
 
-Administrators are created in the server with `make admin` (`src/manage_users.py admin`), never from the web application, so only who can log in the server can create them. The command asks the username and a password of at least 12 characters. If the user exists, it resets its password, makes it administrator, and forgets its failed logins, so it also recovers a forgotten password. While the users table is empty, the frontend writes a warning in its log that suggests `make admin`.
+The first administrator is created in the server with `make admin` (`src/manage.py admin`), so only who can log in the server can create it. Single sign-on never creates administrators nor links an account of a provider to an administrator by its email, even if they are the same: an administrator account not linked yet logs in with its password. The command asks the username and a password of at least 12 characters. If the user exists, it resets its password, makes it administrator, activates it if it was suspended, and forgets its failed logins, so it also recovers a forgotten password. While the users table is empty, the frontend writes a warning in its log that suggests `make admin`.
+
+Then, administrators give and take the administrator role of other users in the users page (<<users_admin>>), but never their own role nor status, so there is always an administrator. Users of single sign-on made administrators there keep logging in with their provider, through the identity linked at their first login.
+
+Sessions are signed cookies, which the server cannot revoke. Every request of a logged user, except for static files, checks the user in the database (`refresh_session()` in `src/users.py`): if an administrator suspended or deleted them, the session ends; if their role changed, the session takes it, so a role taken away is not kept until the next login.
+
+[[sso_security]]
+=== Single sign-on
+
+* Logins with a provider (<<sso>>) use the Authorization Code Flow with PKCE, and Authlib checks the `state` (against login CSRF), the `nonce`, the signature of the ID token with the keys published by the provider, its issuer, audience (the client ID), and expiration. Discovery URLs must be `https://`, because the provider sends the keys that validate tokens.
+* Client secrets are written in `config.py`, never in the database, the forms, or the logs.
+* Users are identified by the issuer and subject of the ID token, not by their email, which may change. An email links an existing account or creates a new one only if the provider verified it (`email_verified`) or the administrator trusts the emails of that provider; otherwise anybody who registers the email of a student in a provider could take their account. Accounts of administrators are never linked by email, and single sign-on never gives the administrator role: only an administrator gives it, in the users page.
+* Login buttons are links (GET), not forms: the provider answers a redirect, which the `form-action 'self'` rule of the CSP would block after a POST. The `state` protects these requests instead of the CSRF token. Authlib keeps the `state`, `nonce`, and PKCE verifier in the session cookie; only the last pending login is kept, so repeated clicks do not make the cookie grow.
+* The `next` page after the login is checked with `safe_next_url()` before and after the provider.
+* Requests to the providers time out after 5 seconds to connect and 10 to answer. Their errors are logged, and users get a generic message.
+* The pages of providers and users (`/admin/users`, `/admin/users/<id>`, `/admin/sso/...`) answer HTTP 403 to users who are not administrators. Deleting a provider, and suspending, activating, or deleting a user are POSTs with the CSRF token.
 
 [[input_limits]]
 === Requests and errors
@@ -264,6 +475,6 @@ Administrators are created in the server with `make admin` (`src/manage_users.py
 * Problem actions are validated: only `fetch_problem` and `run`, and only the languages enabled for the problem.
 * Only logged users may run code. Anonymous visitors may read problems and their test cases, but the problem page shows them a "Log in to run" link instead of the Run button, and the server answers their `run` requests with HTTP 401, also when a robot or a command sends them.
 * Errors are answered with generic messages such as `{"error": "the judge is not available"}`; their details (backend addresses, host paths) go to the server log only.
-* The request log (`data/vygoj.tsv`) stores the body of JSON requests only, never the bodies of forms, which carry passwords.
+* The activity log (<<activity_log>>) stores the code of runs, never request bodies of forms, which carry passwords, and it escapes the cells that clients write, so they cannot add fake rows.
 * Login takes the same time whether the user exists or not, and starts a new session.
 * After logging in, users go to the page in the `next` parameter of the login page (e.g. `/user?next=/problem/CI0112/hello`, used by the "Log in to run" link). `safe_next_url()` in `src/users.py` accepts only paths of this site, otherwise anybody could write a link to the login of VygOJ that takes students to a fake site after logging in (open redirect).

@@ -1,4 +1,5 @@
 """ Loads programming problems from the folders of course repositories """
+import functools
 import glob
 import json
 import logging
@@ -19,6 +20,12 @@ ASCIIDOCTOR_TIMEOUT = 30
 # Largest file of a problem folder that is loaded, in bytes. Statements, initial codes, and test
 # cases are kept in memory and sent to clients and backends, so huge files are skipped
 MAX_FILE_SIZE = 16 * 2**20
+
+# Folder with the default code of each language, shown when a problem has no initial code for it.
+# Each file is named after the source file of the backend, e.g. solution.c, Solution.java. It is in
+# static/, so browsers may also get the files, e.g. /initial/Solution.java
+DEFAULT_CODE_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    'static', 'initial')
 
 logger = logging.getLogger(__name__)
 
@@ -111,20 +118,22 @@ class ProblemLoader:
 
     @staticmethod
     def load_problem_statement(problem: vyg.Problem, path: str):
-        """ Load the problem statement from Asciidoc, Markdown, or HTML file """
-        if not problem.statement:
-            extensions = ['html', 'adoc', 'md']
-            for extension in extensions:
-                files = glob.glob(os.path.join(path, f'*.{extension}'))
-                for filename in files:
-                    if extension == 'html':
-                        problem.statement += ProblemLoader.read_file(problem, filename)
-                    elif extension == 'adoc':
-                        if ProblemLoader.is_loadable(problem, filename):
-                            problem.statement += ProblemLoader.convert_asciidoc(filename)
-                    elif extension == 'md':
-                        problem.statement += markdown.markdown(
-                            ProblemLoader.read_file(problem, filename))
+        """ Load the problem statement from the first loadable HTML, Asciidoc, or Markdown file,
+        in that order. A folder may have the statement in several formats (e.g. the Asciidoc
+        source and the HTML generated from it), so only one file is shown, not all of them """
+        if problem.statement:
+            return
+        converters = {
+            'html': lambda filename: ProblemLoader.read_file(problem, filename),
+            'adoc': ProblemLoader.convert_asciidoc,
+            'md': lambda filename: markdown.markdown(ProblemLoader.read_file(problem, filename)),
+        }
+        for extension, convert in converters.items():
+            # Sorted, so the chosen file does not depend on the order of the file system
+            for filename in sorted(glob.glob(os.path.join(path, f'*.{extension}'))):
+                if ProblemLoader.is_loadable(problem, filename):
+                    problem.statement = convert(filename)
+                    return
 
     @staticmethod
     def convert_asciidoc(filename: str) -> str:
@@ -160,6 +169,19 @@ class ProblemLoader:
             # If initial code remains empty, enable at least one language
             if enable_language and len(problem.languages) == 0:
                 problem.languages.append('C')
+
+    @staticmethod
+    @functools.cache
+    def default_code() -> dict:
+        """ Return the default code of each language as {language: code}, read from
+        DEFAULT_CODE_FOLDER once per process. Its files are part of the frontend, not of courses """
+        codes = {}
+        for filename in sorted(os.listdir(DEFAULT_CODE_FOLDER)):
+            language = vyg.LANGUAGE_EXTENSIONS.get(os.path.splitext(filename)[1][1:])
+            if language:
+                with open(os.path.join(DEFAULT_CODE_FOLDER, filename), encoding='utf-8') as file:
+                    codes[language] = file.read()
+        return codes
 
     @staticmethod
     def load_test_cases(problem: vyg.Problem, path: str):

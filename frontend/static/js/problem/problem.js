@@ -2,6 +2,7 @@ import {
   ExecutionResult, Problem, Status,
 } from '../vyg.js';
 import { CHECK_EVENT, STATUS_EVENT } from '../site.js';
+import _ from '../i18n.js';
 import '../components/monaco-editor.js';
 import '../components/editor-toolbar.js';
 
@@ -12,36 +13,32 @@ const FETCH_TIMEOUT = 30000;
 const DEFAULT_RUN_TIMEOUT = 120000;
 // HTTP statuses of the frontend or a proxy when the judge cannot be reached
 const UNREACHABLE_STATUSES = [502, 503, 504];
+// A line of the compiler, the linker, or the linter about a line of the solution, with its line,
+// its column or section of the linker, its severity, and its message. E.g. "solution.c:4:18:
+// error: 'y' undeclared" (gcc), "/tmp/solution.c:3:(.text+0x5): undefined reference to `foo'"
+// (ld), "solution.c:5:  Missing space after ,  [whitespace/comma] [3]" (cpplint),
+// "Solution.java:7: error: ';' expected" (javac), or "solution.ale:3:1: syntax error: unexpected
+// token 'end'" (alecci)
+const DIAGNOSTIC = /^(?:\S*\/)?[Ss]olution\.\w+:(\d+):(?:(\d+):|(\(\.[^)]*\)):)?\s*(?:(?:fatal |syntax )?(error|warning|note):)?\s*(.*)$/;
+// A line of Python about a line of the solution, e.g. '  File "solution.py", line 3' of a syntax
+// error. Its message is in a later line that names the error, e.g. "SyntaxError: invalid syntax"
+const PYTHON_DIAGNOSTIC = /^\s*File "(?:\S*\/)?solution\.py", line (\d+)/;
+const PYTHON_ERROR = /^\w*(?:Error|Exception|Warning)\b/;
+// An error of alecci with its line at the end, e.g. "solution.ale: error: undefined variable 'y'
+// (line 2)"
+const ALECCI_DIAGNOSTIC = /^(?:\S*\/)?solution\.ale: (error|warning): (.*) \(line (\d+)\)$/;
 
 // An error that means that the server or the judge could not be reached, not that the request was
 // wrong. The connection is checked again after it
 class ConnectionError extends Error {}
-
-// Default given code for each supported programming language
-// It may be a Map<string, string>
-// TODO(jhc): Remove, it must come from frontend
-const defaultCodeFor = {
-  C: `#include <stdio.h>
-
-int main(void) {
-  printf("Hello world!\\n");
-  return 0;
-}
-`,
-  'C++': `#include <iostream>
-  
-int main() {
-  std::cout << "Hello world!" << std::endl;
-  return 0;
-}
-`,
-};
 
 // Monaco name of each programming language of VygOJ. vygoj.json may write a language by its
 // name or by its extension (LANGUAGE_EXTENSIONS in vyg.py), so keys are in lowercase.
 // TODO: Java and Kotlin are missing because esm.sh fails to serve their highlighting (error 520)
 
 const monacoLanguageFor = {
+  ale: 'alecci',
+  alecci: 'alecci',
   c: 'c',
   'c++': 'cpp',
   cpp: 'cpp',
@@ -218,6 +215,13 @@ class ProblemManager {
         });
       }
     });
+    // Clicking a line of the diagnostics about a line of the code goes to its code
+    document.getElementById('diagnostics').addEventListener('click', ({ target }) => {
+      const index = target.closest('button')?.dataset.index;
+      if (index) {
+        codeEditor.goToDiagnostic(Number(index));
+      }
+    });
   }
 
   // Run the given function, that shows code already stored in the code editor, without saving it
@@ -280,13 +284,16 @@ class ProblemManager {
       json = await response.json().catch(() => null);
     } catch (error) {
       if (error.name === 'TimeoutError') {
-        throw new ConnectionError(`the server did not answer in ${timeout / 1000} seconds`);
+        const seconds = timeout / 1000;
+        throw new ConnectionError(_('the server did not answer in %(seconds)s seconds', { seconds }));
       }
       // fetch() rejects with a TypeError when the network or the server is down
-      throw new ConnectionError(`could not connect to the server (${error.message})`);
+      const { message } = error;
+      throw new ConnectionError(_('could not connect to the server (%(message)s)', { message }));
     }
     if (!response.ok || !json || json.error) {
-      const message = json?.error || `the server answered ${response.status} ${response.statusText}`;
+      const { status, statusText: text } = response;
+      const message = json?.error || _('the server answered %(status)s %(text)s', { status, text });
       throw UNREACHABLE_STATUSES.includes(response.status)
         ? new ConnectionError(message) : new Error(message);
     }
@@ -378,9 +385,10 @@ class ProblemManager {
     }
   }
 
-  // The problem's initial code for the language, or else the default code of the language
+  // The initial code of the problem for the language. The server fills it with the default code
+  // of the language when the problem has none
   initialCodeFor(language) {
-    return this.problem.initialCodeFor?.[language] || defaultCodeFor[language] || '';
+    return this.problem.initialCodeFor?.[language] || '';
   }
 
   loadUserCode() {
@@ -413,7 +421,7 @@ class ProblemManager {
     document.getElementById('revert_button').addEventListener('click', () => {
       // The native dialogs of the browser are enough for a simple confirmation
       // eslint-disable-next-line no-alert
-      if (window.confirm('Do you want to revert to the initial code?')) {
+      if (window.confirm(_('Do you want to revert to the initial code?'))) {
         // An edit instead of setValue(), so Undo can bring back the code that was replaced
         const editor = this.editors[0];
         const text = this.initialCodeFor(languageList.value);
@@ -452,7 +460,7 @@ class ProblemManager {
     }
     const hasCode = this.editors[0].getValue().trim().length > 0;
     this.runButton.disabled = this.running || !this.online || !hasCode;
-    this.runButton.textContent = this.running ? 'Running' : 'Run';
+    this.runButton.textContent = this.running ? _('Running') : _('Run');
   }
 
   async runSolution() {
@@ -473,7 +481,7 @@ class ProblemManager {
     } catch (error) {
       // E.g. the network or the judge failed, or the session expired: show it as a diagnostic
       console.error(error);
-      this.updateCompileOutput(`Could not run the solution: ${error.message}`);
+      this.updateCompileOutput(_('Could not run the solution: %(error)s', { error: error.message }));
       // site.js checks the connection now, and disables Run until it is restored if it is lost
       if (error instanceof ConnectionError) {
         window.dispatchEvent(new Event(CHECK_EVENT));
@@ -519,9 +527,6 @@ class ProblemManager {
 
   // Shows the diagnostics of the judge and the compiler (warnings or errors), if any
   updateCompileOutput(message = null) {
-    // The DOM element where the output will be shown
-    const diagnosticsElement = document.getElementById('diagnostics');
-    console.assert(diagnosticsElement);
     // The compiler output text
     let compileOutput = message;
     // If no message was provided, get the message of the judge for the whole run (e.g. a missing
@@ -530,13 +535,76 @@ class ProblemManager {
       compileOutput = [this.result.message, this.result.compileOutput]
         .filter((text) => text).join('\n\n');
     }
+    // Without diagnostics, the code editor underlines nothing
+    ProblemManager.showDiagnostics(compileOutput || '');
     // If there is a diagnostic, show it
     if (compileOutput && compileOutput.length > 0) {
-      diagnosticsElement.textContent = compileOutput;
       showElement('diagnostics_wrapper');
     } else {
       hideElement('diagnostics_wrapper');
     }
+  }
+
+  // Shows the text of the diagnostics. Its lines about a line of the code are buttons that go to
+  // that line, and the code editor underlines them
+  static showDiagnostics(text) {
+    const diagnostics = [];
+    const lines = text.split('\n');
+    const nodes = lines.flatMap((line, index) => {
+      const diagnostic = ProblemManager.parseDiagnostic(line, lines.slice(index + 1));
+      // Line 0 of cpplint is about the whole file, e.g. a missing copyright
+      if (!diagnostic || diagnostic.line < 1) {
+        return [line, '\n'];
+      }
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.index = diagnostics.length;
+      button.textContent = line;
+      diagnostics.push(diagnostic);
+      return [button, '\n'];
+    });
+    // The last line break is not needed
+    nodes.pop();
+    document.getElementById('diagnostics').replaceChildren(...nodes);
+    document.getElementById('code_editor').showDiagnostics(diagnostics);
+  }
+
+  // Return the diagnostic {line, column, severity, message} of a line of the compiler, the
+  // linker, the linter, Python, or alecci about a line of the solution, or null. The following
+  // lines carry the message of Python
+  static parseDiagnostic(line, nextLines) {
+    const match = line.match(DIAGNOSTIC);
+    if (match) {
+      const [, row, column, section, severity, message] = match;
+      // Without a severity, a line of the linker is an error, one of gcc with a column gives the
+      // context of another, e.g. "required from here", and one of cpplint is a warning of style
+      return {
+        line: Number(row),
+        column: Number(column) || 0,
+        severity: severity || (section && 'error') || (column && 'note') || 'warning',
+        message,
+      };
+    }
+    const python = line.match(PYTHON_DIAGNOSTIC);
+    if (python) {
+      return {
+        line: Number(python[1]),
+        column: 0,
+        severity: 'error',
+        message: nextLines.find((next) => PYTHON_ERROR.test(next)) || line.trim(),
+      };
+    }
+    const alecci = line.match(ALECCI_DIAGNOSTIC);
+    if (alecci) {
+      const [, severity, message, row] = alecci;
+      return {
+        line: Number(row),
+        column: 0,
+        severity,
+        message,
+      };
+    }
+    return null;
   }
 
   // Shows standard error output for the selected test case
@@ -625,23 +693,24 @@ class ProblemManager {
     if (this.result && index < this.result.results.length) {
       const test = this.result.results[index];
       // console.dir(test);
-      verdict = `Test case ${index + 1} verdict: ${test.status}`;
+      const { status } = test;
+      verdict = _('Test case %(number)s verdict: %(status)s', { number: index + 1, status });
       if (test.message) {
         verdict += `: ${test.message}`;
       }
-      verdict += `. It took ${test.wallTime.toFixed(3)} s`;
+      verdict += _('. It took %(seconds)s s', { seconds: test.wallTime.toFixed(3) });
       if (test.cpuTime) {
         // CPU time adds up all threads, so it is longer than the wall time in parallel code
-        verdict += ` (CPU ${test.cpuTime.toFixed(3)} s)`;
+        verdict += _(' (CPU %(seconds)s s)', { seconds: test.cpuTime.toFixed(3) });
       }
       if (test.memory) {
-        verdict += `, ${formatBytes(test.memory)} of memory`;
+        verdict += _(', %(memory)s of memory', { memory: formatBytes(test.memory) });
       }
       if (test.threadCount) {
-        verdict += `, ${test.threadCount} secondary threads`;
+        verdict += _(', %(count)s secondary threads', { count: test.threadCount });
       }
       if (test.exitCode) {
-        verdict += `, and exited with code ${test.exitCode}`;
+        verdict += _(', and exited with code %(code)s', { code: test.exitCode });
       }
     }
     // If there is output text, show it

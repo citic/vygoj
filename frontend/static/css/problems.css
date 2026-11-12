@@ -50,6 +50,54 @@ summary {
   & video:not([src], :has(source[src])) {
     display: none;
   }
+
+  /* Tables of data, with the colors of the tables of the site (site.css). Asciidoctor also uses
+     tables to lay out admonitions (NOTE, TIP...) and the tables without grid (grid=none) to place
+     blocks side by side, so those keep no format. A table fits its content, unless Asciidoctor
+     marks it with stretch to fill the statement */
+  & table:not(.admonitionblock *, .grid-none) {
+    margin-bottom: 1em;
+
+    &.stretch {
+      width: 100%;
+    }
+
+    /* Without frame (frame=none), the borders of the outer cells are hidden */
+    &.frame-none {
+      border-style: hidden;
+    }
+
+    /* Asciidoctor puts the text of each cell in a paragraph, whose margins make rows too tall */
+    & :is(th, td) > p {
+      margin-block: 0;
+    }
+
+    /* Alignment of the cells chosen by the author in Asciidoctor (left and top by default).
+       Cells of HTML statements keep their align attribute */
+    & .halign-left {
+      text-align: left;
+    }
+
+    & .halign-center {
+      text-align: center;
+    }
+
+    & .halign-right {
+      text-align: right;
+    }
+
+    & .valign-top {
+      vertical-align: top;
+    }
+
+    & .valign-middle {
+      vertical-align: middle;
+    }
+
+    & .valign-bottom {
+      vertical-align: bottom;
+    }
+  }
 }
 
 /* Toolbar of the code editor: a row of small icon buttons */
@@ -186,6 +234,22 @@ editor-toolbar {
     max-height: 200px;
     overflow: auto;
     background-color: var(--surface-alt);
+  }
+
+  /* Lines of the compiler about a line of the code look as the rest of the text, and clicking
+     them goes to that line in the code editor */
+  & pre button[data-index],
+  & pre button[data-index]:hover {
+    all: unset;
+    cursor: pointer;
+  }
+
+  & pre button[data-index]:hover {
+    text-decoration: underline;
+  }
+
+  & pre button[data-index]:focus-visible {
+    outline: 2px solid var(--bg-color);
   }
 }
 

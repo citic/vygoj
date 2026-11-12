@@ -1,0 +1,58 @@
+{% import 'macros.html' as macros %}
+{% extends 'base.html' %}
+{%- block styles %}
+    <link rel="stylesheet" href="/css/admin.css">
+{%- endblock %}
+{%- block main %}
+      <main class="user_admin">
+        <h2>{{ it.title }}</h2>
+        {#- Choosing another status asks for confirmation (admin.js) with the data-confirm of its
+            option, and has the same effect as the buttons of the table of users #}
+        {%- set confirmations = {
+          'active': _('Activate the user %(username)s? They will be able to log in again.', username=it.edited_user.username),
+          'suspended': _('Suspend the user %(username)s? They will not be able to log in until activated, and their data will be kept.', username=it.edited_user.username),
+          'deleted': _('Delete the user %(username)s and their data, such as their preferences and progress? Their activity stays in the log. This cannot be undone.', username=it.edited_user.username),
+        } %}
+        <form method="post" class="fieldset_columns">
+          {{ it.form.hidden_tag() }}
+          <fieldset class="account">
+            <legend>{{ _('Account') }}</legend>
+            {{ macros.form_field(it.form.fullname) }}
+            {{ macros.form_field(it.form.email, _('Optional. Single sign-on links the accounts of providers with this email to this user.')) }}
+          </fieldset>
+          <fieldset class="role">
+            <legend>{{ it.form.role.label.text }}</legend>
+            <ul>
+{%- for option in it.form.role %}
+              <li>{{ option() }} {{ option.label }}</li>
+{%- endfor %}
+            </ul>
+{%- if it.is_self %}
+            <small class="hint">{{ _('You cannot change your own role.') }}</small>
+{%- endif %}
+{%- for error in it.form.role.errors %}
+            <small class="field_error">{{ error }}</small>
+{%- endfor %}
+          </fieldset>
+          <fieldset class="status">
+            <legend>{{ it.form.status.label.text }}</legend>
+            <ul>
+{%- for option in it.form.status %}
+              <li data-status="{{ option.data }}">{{ option(**{'data-confirm': confirmations[option.data]}) }} {{ option.label }}</li>
+{%- endfor %}
+            </ul>
+{%- if it.is_self %}
+            <small class="hint">{{ _('You cannot suspend nor delete yourself.') }}</small>
+{%- endif %}
+          </fieldset>
+          <p class="actions">
+            {{ it.form.save(class="button confirm") }}
+            <a class="button" href="{{ url_for('get_users_admin') }}">{{ _('Cancel') }}</a>
+          </p>
+        </form>
+      </main>
+{%- endblock %}
+{%- block scripts %}
+  {{ super() }}
+    <script src="/js/admin/admin.js" type="module" async></script>
+{%- endblock %}

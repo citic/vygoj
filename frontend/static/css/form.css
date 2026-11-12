@@ -24,6 +24,23 @@ fieldset {
   background-color: var(--form-bg);
 }
 
+/* Forms whose fieldsets of options (radio buttons) are narrow, e.g. the preferences of a user and
+   the form of a user for administrators: those fieldsets share a row when the window has space
+   for them, and the other fieldsets and the actions take a whole row */
+.fieldset_columns {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 1rem;
+
+  & > * {
+    flex: 1 1 100%;
+  }
+
+  & > fieldset:has(input[type="radio"]) {
+    flex: 1 1 15rem;
+  }
+}
+
 button,
 input[type="submit"],
 input[type="button"],

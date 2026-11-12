@@ -14,11 +14,12 @@ from vyg.resource import Resource
 from vyg.section import Section
 from vyg.testcase import TestCase
 from vyg.testcase_result import TestCaseResult
-from vyg.utils import append, prepend, to_dict, to_json
+from vyg.tsv_log import TsvLog
+from vyg.utils import append, prepend, summarize_result, to_dict, to_json
 
 __all__ = [
     'Activity', 'Course', 'ExecutionResult', 'Material', 'Message', 'Page', 'Problem', 'Question',
-    'Resource', 'Section', 'Status', 'TestCase', 'TestCaseResult',
+    'Resource', 'Section', 'Status', 'TestCase', 'TestCaseResult', 'TsvLog',
     'EXTENSION_LANGUAGES', 'LANGUAGE_EXTENSIONS', 'LANGUAGE_NAMES', 'MAX_THREADS',
-    'append', 'prepend', 'to_dict', 'to_json',
+    'append', 'prepend', 'summarize_result', 'to_dict', 'to_json',
 ]

@@ -1,16 +1,17 @@
 // Toolbar for a Monaco editor: <editor-toolbar for="code_editor"></editor-toolbar>
 // The icons are ligatures of the Material Symbols font that the page loads
+import _ from '../i18n.js';
 
 // [action, title, icon]
 const buttons = [
-  ['cut', 'Cut', 'content_cut'],
-  ['copy', 'Copy', 'content_copy'],
-  ['paste', 'Paste', 'content_paste'],
-  ['undo', 'Undo', 'undo'],
-  ['redo', 'Redo', 'redo'],
-  ['clear', 'Clear all', 'backspace'],
-  ['revert', 'Revert to initial code', 'restart_alt'],
-  ['fullscreen', 'Fullscreen', 'fullscreen'],
+  ['cut', _('Cut'), 'content_cut'],
+  ['copy', _('Copy'), 'content_copy'],
+  ['paste', _('Paste'), 'content_paste'],
+  ['undo', _('Undo'), 'undo'],
+  ['redo', _('Redo'), 'redo'],
+  ['clear', _('Clear all'), 'backspace'],
+  ['revert', _('Revert to initial code'), 'restart_alt'],
+  ['fullscreen', _('Fullscreen'), 'fullscreen'],
 ];
 
 class EditorToolbar extends HTMLElement {
@@ -24,7 +25,7 @@ class EditorToolbar extends HTMLElement {
     document.addEventListener('fullscreenchange', () => {
       const button = this.querySelector('#fullscreen_button');
       button.textContent = document.fullscreenElement ? 'fullscreen_exit' : 'fullscreen';
-      button.title = document.fullscreenElement ? 'Exit fullscreen' : 'Fullscreen';
+      button.title = document.fullscreenElement ? _('Exit fullscreen') : _('Fullscreen');
       button.ariaLabel = button.title;
     });
   }
@@ -47,7 +48,7 @@ class EditorToolbar extends HTMLElement {
       redo: () => editor.trigger('toolbar', 'redo'),
       // The native dialogs of the browser are enough for a simple confirmation
       // eslint-disable-next-line no-alert
-      clear: () => window.confirm('Do you want to clear all the code?') && write('', model.getFullModelRange()),
+      clear: () => window.confirm(_('Do you want to clear all the code?')) && write('', model.getFullModelRange()),
       // Fullscreen for the parent, so the toolbar and the editor stay together
       fullscreen: () => (document.fullscreenElement
         ? document.exitFullscreen() : this.parentElement.requestFullscreen()),
@@ -56,7 +57,7 @@ class EditorToolbar extends HTMLElement {
       await actions[action]?.();
     } catch {
       // eslint-disable-next-line no-alert
-      window.alert('The browser blocked the clipboard. Use Ctrl+X, Ctrl+C or Ctrl+V.');
+      window.alert(_('The browser blocked the clipboard. Use Ctrl+X, Ctrl+C or Ctrl+V.'));
     }
     editor.focus();
   }

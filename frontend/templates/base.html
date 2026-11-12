@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 {#- Font chosen by the user, the default one for visitors and unknown values #}
 {%- set font = it.user.font if it.user and it.user.font in FONTS else DEFAULT_FONT %}
-<html lang="en"{% if it.user and it.user.color_scheme in ['light', 'dark'] %} data-color-scheme="{{ it.user.color_scheme }}"{% endif %} data-font="{{ font }}">
+<html lang="{{ get_locale() }}"{% if it.user and it.user.color_scheme in ['light', 'dark'] %} data-color-scheme="{{ it.user.color_scheme }}"{% endif %} data-font="{{ font }}">
   <head>
     <meta charset="utf-8">
-    <title>{%block title %}{{ it.get('title', 'Vygotsky Online Judge') }}{% endblock %} - VygOJ</title>
+    <title>{%block title %}{{ it.get('title', _('Vygotsky Online Judge')) }}{% endblock %} - VygOJ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="author" content="Jeisson Hidalgo-Céspedes">
-    <meta name="description" content="An educative online judge for teaching and learning computing programming with emphasis in concurrent programming paradigm">
+    <meta name="description" content="{{ _('An educative online judge for teaching and learning computing programming with emphasis in concurrent programming paradigm') }}">
     <link rel="preload" href="/css/site.css" as="style">
 {%- block styles %}
     <link rel="stylesheet" href="/css/site.css">
@@ -23,17 +23,20 @@
   <body>
     <header class="site_header">
       <div class="banner">
-        <a href="/"><img class="logo" src="/img/logo.svg" alt="Site logo" width="64" height="64"></a>
-        <h1>Vygotsky Online Judge</h1>
+        <a href="/"><img class="logo" src="/img/logo.svg" alt="{{ _('Site logo') }}" width="64" height="64"></a>
+        <hgroup>
+          <h1>VygOJ</h1>
+          <p class="motto">{{ _('Vygotsky Online Judge') }}</p>
+        </hgroup>
         <a class="icon_control" href="/user">
-          <img src="/icon/user.svg" alt="User control" width="44" height="44">
-          <span class="caption">{{ (it.user and it.user.email) or 'Login' }}</span>
+          <img src="/icon/user.svg" alt="{{ _('User control') }}" width="44" height="44">
+          <span class="caption">{{ (it.user and it.user.email) or _('Login') }}</span>
         </a>
       </div>
       <nav class="breadcrumbs">
         <ul>
           <li>
-            <a href="/">Home</a>
+            <a href="/">{{ _('Home') }}</a>
           </li>
 {%- if it.breadcrumbs %}
 {%-   for link in it.breadcrumbs %}
@@ -52,7 +55,7 @@
       {%- for category, message in messages %}
         <li data-category="{{ category }}">
           <p>{{ message }}</p>
-          <button type="button" aria-label="Close">&times;</button>
+          <button type="button" aria-label="{{ _('Close') }}">&times;</button>
         </li>
       {%- endfor %}
       </ul>
@@ -69,13 +72,13 @@
       </span>
       <span id="backend_status">
         <span id="backend_offline" hidden>
-          <img src="/icon/cloud_offline.svg" width="22" height="22" alt="Not connected to backend">
+          <img src="/icon/cloud_offline.svg" width="22" height="22" alt="{{ _('Not connected to backend') }}">
         </span>
         <span id="backend_online" hidden>
-          <img src="/icon/cloud_online.svg" width="22" height="22" alt="Connected to backend">
+          <img src="/icon/cloud_online.svg" width="22" height="22" alt="{{ _('Connected to backend') }}">
         </span>
       </span>
-      <span class="help"><a href="/help" target="_blank">Help</a></span>
+      <span class="help"><a href="/help" target="_blank">{{ _('Help') }}</a></span>
     </footer>
 {%- block scripts %}
 {%- if it.scripts %}

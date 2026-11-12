@@ -1,18 +1,34 @@
-{%- macro course_entry(course) %}
+{%- macro course_entry(course, progress=none) %}
             <article class="course_item">
 {%- if course.banner %}
               <img class="banner" src="{{ course.file_url(course.banner) }}" alt="">
 {%- endif %}
               <img src="{{ course.file_url(course.image) }}" data-fallback="/img/logo2.svg" alt="{{ course.title }}" width="64" height="60">
-              <h4>
-                <a href="/course/{{ course.name }}"><span class="code">{{ course.name }}</span> {{ course.title }}</a>
-              </h4>
+{%- if progress is not none %}
+              <p class="progress"><progress value="{{ progress }}" max="100" aria-hidden="true"></progress>{{ progress }}%</p>
+{%- endif %}
+              <h4><span class="code">{{ course.name }}</span> {{ course.title }}</h4>
+              <p class="description">{{ course.description }}</p>
               <ul class="instructors">
 {%- for instructor in course.authors %}
-                <li><a href="/prof/{{ instructor.id }}">{{ instructor }}</a></li>
+                <li><a href="/prof/{{ instructor }}">{{ instructor }}</a></li>
 {%- endfor %}
               </ul>
-              <p class="description">{{ course.description }}</p>
-              {# <p class="statistics">{{ course.statistics.students }} students, {{ course.statistics.sections }} sections, {{ course.statistics.problems }} problems, {{ course.statistics.questions }} questions.</p> #}
+              <p class="statistics">{# {{ course.statistics.students }} students, {{ course.statistics.sections }} sections, {{ course.statistics.problems }} problems, {{ course.statistics.questions }} questions. #}</p>
+              <a class="enter" href="/course/{{ course.name }}">Enter ›</a>
             </article>
+{%- endmacro %}
+
+{#- A field of a form with its label, an optional hint below it, and its validation errors. The
+    hint and errors are linked to the control with aria-describedby, so screen readers read them #}
+{%- macro form_field(field, hint=none) %}
+            {{ field.label }}
+{%- set attributes = dict(kwargs, **{'aria-describedby': field.id ~ '_hint' if hint else false, 'aria-invalid': 'true' if field.errors else false}) %}
+            {{ field(**attributes) }}
+{%- if hint %}
+            <small class="hint" id="{{ field.id }}_hint">{{ hint }}</small>
+{%- endif %}
+{%- for error in field.errors %}
+            <small class="field_error">{{ error }}</small>
+{%- endfor %}
 {%- endmacro %}

@@ -39,7 +39,8 @@ The owner controls every frontend and backend in production and updates them tog
 ## Shared model
 
 - The `vyg` package in `common/vyg/` holds the data model shared by frontend and backend
-  (`Problem`, `TestCase`, `Status`, `ExecutionResult`...). `make deps` installs it in editable mode
+  (`Problem`, `TestCase`, `Status`, `ExecutionResult`...), and `TsvLog`, the writer of their logs
+  (the activity log of the frontend and the run log of the backend). `make deps` installs it in editable mode
   (`pip install -e ../common`) into the `.venv` of each layer, so a change affects both layers
   without reinstalling. Keep it free of Flask-specific code, file loading, and rendering (the
   frontend loads problems from disk in `frontend/src/problem_loader.py`), and declare its own
@@ -86,6 +87,15 @@ make clean     # remove .venv
   (`cd backend/engine && make image`, Docker running), start the backend (`cd backend && make`),
   start the frontend (`cd frontend && make`), and run a problem from its page in the browser.
   Report which of these steps were actually run.
+
+## Workflow
+
+- Ask the developer before applying important design decisions to the code: changes to the
+  architecture, the HTTP/JSON protocol, the shared model, the database schema, file formats or
+  the layout of stored data, and new dependencies. Propose the options with a recommendation, and
+  wait for the answer.
+- Leave changes in the working directory, without committing them, unless the prompt asks for a
+  commit.
 
 ## Coding conventions
 

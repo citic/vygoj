@@ -8,8 +8,10 @@ afterwards. The parent `backend/CLAUDE.md` also applies here.
 ## Layout
 
 - `Dockerfile`: Debian base with compilers and analysis tools (`build-essential`, `clang`,
-  `cpplint`, `checkstyle`, `valgrind`, `linux-perf`, `time`, `python3`...), and an unprivileged
-  `student` user whose home `/home/student` is the working directory.
+  `cpplint`, `checkstyle`, `default-jdk-headless`, `valgrind`, `linux-perf`, `time`,
+  `python3`...), the Alecci compiler from PyPI in a venv (`/opt/alecci`, linked as
+  `/usr/local/bin/alecci`), and an unprivileged `student` user whose home `/home/student` is the
+  working directory.
 - `Makefile`: Docker install, image build, and cleanup rules.
 
 The image name `debian-dev:latest` is a contract between this `Makefile` (`IMAGE=debian-dev`) and

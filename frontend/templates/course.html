@@ -41,9 +41,9 @@
             <img class="picture" src="{{ it.course.file_url(it.course.image) }}" data-fallback="/img/logo2.svg" alt="" width="64" height="60">
             <h3>{{ it.course.title }}</h3>
             <dl>
-              <dt>Code</dt>
+              <dt>{{ _('Code') }}</dt>
               <dd>{{ it.course.name }}</dd>
-              <dt>Instructors</dt>
+              <dt>{{ _('Instructors') }}</dt>
               <dd>
 {%- for instructor in it.course.authors %}
                 <a href="/prof/{{ instructor }}">{{ instructor }}</a>
@@ -51,16 +51,16 @@
               </dd>
             </dl>
             <dl class="total">
-              <dt>Progress</dt>
+              <dt>{{ _('Progress') }}</dt>
               <dd id="course_progress"></dd>
             </dl>
           </header>
           <table class="contents" data-course="{{ it.course.name }}">
             <thead>
               <tr>
-                <th scope="col" class="name"><button type="button" id="toggle_all" aria-expanded="true">Contents</button></th>
-                <th scope="col" class="deadline">Deadline</th>
-                <th scope="col" class="progress">Progress</th>
+                <th scope="col" class="name"><button type="button" id="toggle_all" aria-expanded="true">{{ _('Contents') }}</button></th>
+                <th scope="col" class="deadline">{{ _('Deadline') }}</th>
+                <th scope="col" class="progress">{{ _('Progress') }}</th>
               </tr>
             </thead>
             <tbody>
