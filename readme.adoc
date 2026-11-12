@@ -142,7 +142,7 @@ cd vygoj/frontend
 make server
 ----
 
-If you need to stop the server, call `make stop`. Logs are written to `frontend/data/` and `backend/data/`. The activity of the users (logins, page visits, runs) is logged for statistical analysis in the `log/` folder of `DATA_FOLDER`, and administrators download it from the home page (see the activity log section of `frontend/readme.adoc`).
+If you need to stop the server, call `make stop`. Logs are written to `frontend/data/` and `backend/data/`. The activity of the users (logins, page visits, runs) is logged for statistical analysis in the `log/` folder of `DATA_FOLDER`, and administrators download it from the home page (see the activity log section of `frontend/readme.adoc`). The solutions of each user are kept in a git repo in their folder of `DATA_FOLDER` (see the personal repos section of `frontend/readme.adoc`).
 
 
 

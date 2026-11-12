@@ -171,7 +171,7 @@ Administrators manage the users in the users page (`/admin/users`, the _Users_ l
 | Action | Effect
 | Edit (pencil) | Opens the form of the user (`/admin/users/<id>`): full name, email, role, and status. Emails are unique, and single sign-on links the accounts of providers with that email to the user (<<sso>>). Choosing _Suspended_, _Active_, or _Deleted_ as status and saving has the same effect as the buttons of the table
 | Suspend (pause) | The user cannot log in, with their password or with single sign-on, and if they are logged in, their session ends at their next request. Their data is kept. Suspended users are shown in gray, with an Activate (play) button that lets them log in again
-| Delete (red X) | Removes the user and their data from the database: preferences, progress, single sign-on identities, and runs. Their activity stays in the log (<<activity_log>>). It cannot be undone
+| Delete (red X) | Removes the user and their data from the database: preferences, progress, single sign-on identities, and runs, and their folder in `DATA_FOLDER` (`u<id>`) with their solutions (<<personal_repos>>). Their activity stays in the log (<<activity_log>>). It cannot be undone: only backups recover them. The user whose folder holds the course repo that lists the courses (`COURSES_REPO` in `src/courses.py`, e.g. `u13/pexercises`) cannot be deleted
 |===
 
 Suspending, activating, and deleting ask for confirmation. Administrators give and take the administrator role of other users, e.g. one who retires, and may suspend or delete other administrators, but they cannot change their own role nor status, so there is always an administrator and nobody locks themselves out. A common setup: the local administrator who installed VygOJ (<<administrators>>) connects it to the single sign-on of the organization, and once some staff members have logged in with it, makes some of them administrators. They keep logging in with single sign-on. Changes of the role and full name of a logged user take effect at their next request.
@@ -220,6 +220,27 @@ At each login, the user is found by the issuer and subject (`sub`) of the ID tok
 
 The username of users created by a provider is their email, so usernames have up to 128 characters. `make users` (`manage.py import`) widens the column of older databases and makes passwords optional; `make`, `make release`, and `make server` run it before starting.
 
+
+[[personal_repos]]
+== Personal repos
+
+Each user has a bare git repo with the history of their solutions, in `DATA_FOLDER/u<id>/personal_repo`, where `<id>` is the user identifier (<<users_admin>>) and `personal_repo` is `PERSONAL_REPO_NAME` in `config.py` (`src/git_repo.py`). The frontend creates it when the user logs in, and when they run code if it does not exist yet. Each run accepted by the limits (<<run_limits>>) commits the code, unless it is the same as the last version of that problem and language. Repeated and rejected runs commit nothing, and if git fails the student still gets the result of the run, and the error is logged in the log of the server. The repo has no working tree, so its folder has no loose source files:
+
+----
+u5/personal_repo/                                 # bare repo of the user 5
+  refs/heads/problems/CI0113/2026b01/format_date  # a branch per problem, a commit per run
+----
+
+The commits of a branch have the solution in the path `<course>/<term_group>/<problem>/src/<file>`, e.g. `CI0113/2026b01/format_date/src/solution.c`, so the branches of different problems can be merged later without conflicts. The file is `solution.<extension>` of the language, or `Solution.java` in Java, so each language of a problem has its own file in the same branch. The term and group (`TERM_GROUP` in `src/git_repo.py`, e.g. `2026b01` is group 01 of the second term of 2026) is fixed until courses have offerings in the database. Commits have VygOJ as author and `Run` as message; their date is the time of the run. To see the history of a user in the server:
+
+[source,sh]
+----
+R=DATA_FOLDER/u5/personal_repo
+git -C $R log --all --format='%h %ci %s' --name-only             # versions of every problem
+git -C $R show <commit>:CI0113/2026b01/format_date/src/solution.c  # the code of a version
+----
+
+The frontend runs git with the plumbing commands (`hash-object`, `update-index` on a temporary index, `write-tree`, `commit-tree`, `update-ref`), which need no working tree, so several gunicorn workers may save at the same time. `update-ref` moves a branch only if it still points to the commit that was read, so a worker never overwrites the commit of another one: the later one fails and is logged. Every git command runs without a shell, with a timeout of 5 seconds (`GIT_TIMEOUT`), without hooks of the repo, and without asking for passwords. Names of courses and problems become parts of refs and paths, so they must match `[A-Za-z0-9_+-]{1,64}` (`NAME_PATTERN`); the run of a problem with another name is judged but not saved. Deleting a user deletes their folder (<<users_admin>>).
 
 [[activity_log]]
 == Activity log
