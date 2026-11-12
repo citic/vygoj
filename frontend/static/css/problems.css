@@ -178,11 +178,11 @@ editor-toolbar {
 
   /* Links at the end to the problem before this one, the course, and the problem after, on a thin
      line. Each one has a small text that says what it is, and below the name of where it goes:
-     the number and title of the problem, or the section of this one. The course is a tinted box
-     with slanted sides and a line below, as the place where the student is. The problems show
-     their slanted box when they are pointed or focused */
+     the number and title of the problem, or the section of this one. The three are light tinted
+     boxes, a bit darker when they are pointed or focused. The problems end in the tip of an arrow
+     toward their side */
   & > .materials {
-    --slant: 1rem; /* Horizontal size of the slanted sides */
+    --tip: 1rem; /* Length of the tips of the arrows */
 
     display: grid;
     grid-template-areas: "previous course next";
@@ -197,7 +197,8 @@ editor-toolbar {
       align-items: center;
       column-gap: 0.5rem;
       min-width: 0;
-      padding: 0.5rem calc(var(--slant) + 0.5rem);
+      padding: 0.5rem calc(var(--tip) + 0.5rem);
+      background: color-mix(in srgb, transparent, var(--label-color) 8%);
       line-height: 1.4;
       color: inherit;
       text-decoration: none;
@@ -205,19 +206,17 @@ editor-toolbar {
 
     & a:hover,
     & a:focus-visible {
-      background: color-mix(in srgb, transparent, var(--label-color) 8%);
-      box-shadow: inset 0 -2px var(--label-color);
+      background: color-mix(in srgb, transparent, var(--label-color) 16%);
     }
 
-    /* The slanted sides would cut an outline drawn outside */
+    /* The tips of the arrows would cut an outline drawn outside */
     & a:focus-visible {
-      outline: 2px solid currentcolor;
       outline-offset: -4px;
     }
 
     & a[rel="prev"] {
       grid-area: previous;
-      clip-path: polygon(0 0, 100% 0, calc(100% - var(--slant)) 100%, 0 100%);
+      clip-path: polygon(var(--tip) 0, 100% 0, 100% 100%, var(--tip) 100%, 0 50%);
     }
 
     & a:not([rel]) {
@@ -225,16 +224,13 @@ editor-toolbar {
       grid-template: "context" "name" / minmax(0, max-content);
       justify-content: center;
       text-align: center;
-      clip-path: polygon(var(--slant) 0, calc(100% - var(--slant)) 0, 100% 100%, 0 100%);
-      background: color-mix(in srgb, transparent, var(--label-color) 14%);
-      box-shadow: inset 0 -2px var(--label-color);
     }
 
     & a[rel="next"] {
       grid-area: next;
       grid-template: "context icon" "name icon" / minmax(0, 1fr) auto;
       text-align: right;
-      clip-path: polygon(0 0, 100% 0, 100% 100%, var(--slant) 100%);
+      clip-path: polygon(0 0, calc(100% - var(--tip)) 0, 100% 50%, calc(100% - var(--tip)) 100%, 0 100%);
     }
 
     & .material-symbols-outlined {
