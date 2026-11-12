@@ -24,7 +24,10 @@
     <header class="site_header">
       <div class="banner">
         <a href="/"><img class="logo" src="/img/logo.svg" alt="{{ _('Site logo') }}" width="64" height="64"></a>
-        <h1>{{ _('Vygotsky Online Judge') }}</h1>
+        <hgroup>
+          <h1>VygOJ</h1>
+          <p class="motto">{{ _('Vygotsky Online Judge') }}</p>
+        </hgroup>
         <a class="icon_control" href="/user">
           <img src="/icon/user.svg" alt="{{ _('User control') }}" width="44" height="44">
           <span class="caption">{{ (it.user and it.user.email) or _('Login') }}</span>
