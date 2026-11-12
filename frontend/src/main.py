@@ -296,9 +296,10 @@ def get_status():
         uris = app.config['BACKENDS']
         return requests.get(f'{uris[0]}/status',
             timeout=(BACKEND_CONNECT_TIMEOUT, BACKEND_STATUS_TIMEOUT)).json()
-    except (requests.exceptions.RequestException, ValueError):
-        # The error text has the internal address of the backend, so it is logged, not shown
-        app.logger.exception('could not get the status of the backend')
+    except (requests.exceptions.RequestException, ValueError) as error:
+        # A stopped backend is expected, and clients poll this route, so a line without the
+        # traceback. The error text has the internal address of the backend: logged, not shown
+        app.logger.warning('could not get the status of the backend: %s', error)
         return flask.jsonify({ 'status': 'offline', 'error': 'backend not available' }), 504
 
 @app.route('/translations/<language>.json')

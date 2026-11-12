@@ -132,8 +132,10 @@ class ProblemController:
         except HTTPException:
             # E.g. 404 when the problem does not exist, Flask answers it
             raise
-        except requests.exceptions.RequestException:
-            app.logger.exception('backend failed running %s/%s', course_name, problem_name)
+        except requests.exceptions.RequestException as error:
+            # A stopped or slow backend is expected, so a line without the traceback
+            app.logger.warning('backend failed running %s/%s: %s', course_name, problem_name,
+                error)
             return ProblemController.error_response(
                 'the judge is not available, try again later', 502)
         except Exception: # pylint: disable=broad-exception-caught
