@@ -20,7 +20,7 @@ $ make release
 [user_manual]
 == User manual
 
-NOTE: A running Docker server is needed before running the backend. Read link:engine/readme.adoc[VygOJ Engine's documentation] to install and run the Docker server before continuing.
+NOTE: A running Docker server is needed before running the backend. Read link:engine/readme.adoc[VygOJ Engine's documentation] to install and run the Docker server before continuing. Without it, the backend prints that Docker is required and stops with exit status 4; `make server` checks it before starting the gunicorn daemon.
 
 The backend is developed in Python and requires Flask. A `Makefile` is provided to ease this process on Debian-based distributions. The default rule creates a Python virtual environment, installs dependencies, and run the backend for debugging:
 
