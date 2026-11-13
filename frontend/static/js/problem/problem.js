@@ -278,7 +278,7 @@ class ProblemManager {
       });
     });
     this.showParts();
-    // The test cases and the toolbar fold away as the user leaves them, in all the problems
+    // The test cases fold away as the user leaves them, in all the problems
     const picker = document.querySelector('.test_picker');
     picker.open = window.localStorage.getItem('test_picker') !== 'false';
     picker.addEventListener('toggle', () => window.localStorage.setItem('test_picker', picker.open));

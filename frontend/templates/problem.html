@@ -55,43 +55,46 @@
             <pre id="diagnostics">{{ _('No errors') }}</pre>
           </figure>
           <output id="test_verdict"></output>
-          {#- The test cases and the toolbar of their parts. Closed, its title names the selected
-              test case, and only the parts that the user left on are shown below #}
-          <details class="test_picker" open>
-            <summary><span class="all">{{ _('Test cases') }}</span><span class="selected"></span></summary>
+          {#- The Test cases title with the toolbar of the parts below next to it, and the test
+              cases, as tabs of the box of those parts. The title folds away the tabs, which follow
+              the toolbar, so the toolbar stays; closed, it names the selected test case #}
+          <div class="test_header">
+            <details class="test_picker" open>
+              <summary><span class="all">{{ _('Test cases') }}</span><span class="selected"></span></summary>
+            </details>
+            {#- Buttons that show or hide the parts of the selected test case, and turn the diff
+                and the word wrap on or off, in groups as the parts below: (group, name, buttons),
+                and each button is (part, short text, title, pressed by default). problem.js
+                remembers them. The expected and the user parts go together, as they are compared.
+                The short texts are the names of the streams in programming, so they are not
+                translated #}
+            {%- set groups = [
+              ('input', _('Input'), [('input', 'stdin', _('Standard input'), 'true')]),
+              ('output', _('Output'), [
+                ('expected_output', 'exp out', _('Expected output'), 'true'),
+                ('user_output', 'stdout', _('Your output'), 'true')]),
+              ('error', _('Error'), [
+                ('expected_error', 'exp err', _('Expected error'), 'false'),
+                ('user_error', 'stderr', _('Your error'), 'false')]),
+              ('view', _('View'), [
+                ('diff', 'diff', _('Diff'), 'true'),
+                ('word_wrap', 'wrap', _('Word wrap'), 'false')]),
+            ] %}
+            <div class="test_toolbar" role="toolbar" aria-label="{{ _('Parts of the test case') }}">
+{%- for group, name, buttons in groups %}
+              <div class="{{ group }}" role="group" aria-label="{{ name }}">
+{%- for part, text, title, pressed in buttons %}
+                <button type="button" class="button small" data-part="{{ part }}" title="{{ title }}" aria-pressed="{{ pressed }}">{{ text }}</button>
+{%- endfor %}
+              </div>
+{%- endfor %}
+            </div>
             <div class="test_cases">
 {%- for test in it.problem.tests %}
               <button class="button small" title="{{ _('Test case %(number)d', number=loop.index) }}">{{ loop.index }}</button>
 {%- endfor %}
             </div>
-            {#- Buttons that show or hide the parts of the selected test case, and turn the diff
-                and the word wrap on or off, in groups as the parts below: (group, name, buttons),
-                and each button is (part, text, pressed by default). problem.js remembers them. The
-                expected and the user parts go together, as they are compared. A pressed button
-                shows a check #}
-            {%- set groups = [
-              ('input', _('Input'), [('input', _('Standard'), 'true')]),
-              ('output', _('Output'), [
-                ('expected_output', pgettext('output', 'Expected'), 'true'),
-                ('user_output', pgettext('output', 'Yours'), 'true')]),
-              ('error', _('Error'), [
-                ('expected_error', pgettext('error', 'Expected'), 'false'),
-                ('user_error', pgettext('error', 'Yours'), 'false')]),
-              ('view', _('View'), [
-                ('diff', _('Diff'), 'true'),
-                ('word_wrap', _('Word wrap'), 'false')]),
-            ] %}
-            <div class="test_toolbar" role="toolbar" aria-label="{{ _('Parts of the test case') }}">
-{%- for group, name, buttons in groups %}
-              <div class="{{ group }}" role="group" aria-labelledby="{{ group }}_parts">
-                <span class="name" id="{{ group }}_parts">{{ name }}</span>
-{%- for part, text, pressed in buttons %}
-                <button type="button" class="button small" data-part="{{ part }}" aria-pressed="{{ pressed }}"><span class="material-symbols-outlined" aria-hidden="true">check</span>{{ text }}</button>
-{%- endfor %}
-              </div>
-{%- endfor %}
-            </div>
-          </details>
+          </div>
           {#- The parts of the selected test case in three groups. With the diff on, after a run, a
               diff takes the place of the expected and the user outputs if any of them is on, and
               another one of the errors #}

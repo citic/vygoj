@@ -146,14 +146,6 @@ msgstr "Error"
 msgid "Exit fullscreen"
 msgstr "Salir de pantalla completa"
 
-msgctxt "error"
-msgid "Expected"
-msgstr "Esperado"
-
-msgctxt "output"
-msgid "Expected"
-msgstr "Esperada"
-
 msgid "Expected error"
 msgstr "Error esperado"
 
@@ -278,9 +270,6 @@ msgstr "Guardar"
 msgid "Site logo"
 msgstr "Logo del sitio"
 
-msgid "Standard"
-msgstr "Estándar"
-
 msgid "Standard input"
 msgstr "Entrada estándar"
 
@@ -377,14 +366,6 @@ msgstr ""
 
 msgid "Your solution"
 msgstr "Su solución"
-
-msgctxt "error"
-msgid "Yours"
-msgstr "Suyo"
-
-msgctxt "output"
-msgid "Yours"
-msgstr "Suya"
 
 #, python-format
 msgid "could not connect to the server (%(message)s)"
