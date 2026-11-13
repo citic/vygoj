@@ -463,10 +463,10 @@ def start_session(db_user: User, next_url: str | None, provider: str = None):
     # The personal repo keeps the history of the solutions of the user. Without it the user still
     # logs in, and the first run creates it
     try:
-        PersonalRepo(db_user.id).create()
-    except (GitError, OSError):
+        PersonalRepo(db_user.username).create()
+    except (GitError, OSError, ValueError):
         flask.current_app.logger.exception('could not create the personal repo of user %s',
-            db_user.id)
+            db_user.username)
     flask.flash(gettext('Logged in successfully.'), 'success')
     log_event('login', { 'provider': provider } if provider else None)
     return flask.redirect(next_url or flask.url_for('get_index'))

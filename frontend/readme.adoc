@@ -171,7 +171,7 @@ Administrators manage the users in the users page (`/admin/users`, the _Users_ l
 | Action | Effect
 | Edit (pencil) | Opens the form of the user (`/admin/users/<id>`): full name, email, role, and status. Emails are unique, and single sign-on links the accounts of providers with that email to the user (<<sso>>). Choosing _Suspended_, _Active_, or _Deleted_ as status and saving has the same effect as the buttons of the table
 | Suspend (pause) | The user cannot log in, with their password or with single sign-on, and if they are logged in, their session ends at their next request. Their data is kept. Suspended users are shown in gray, with an Activate (play) button that lets them log in again
-| Delete (red X) | Removes the user and their data from the database: preferences, progress, single sign-on identities, and runs, and their folder in `DATA_FOLDER` (`u<id>`) with their solutions (<<personal_repos>>). Their activity stays in the log (<<activity_log>>). It cannot be undone: only backups recover them. The user whose folder holds the course repo that lists the courses (`COURSES_REPO` in `src/courses.py`, e.g. `u13/pexercises`) cannot be deleted
+| Delete (red X) | Removes the user and their data from the database: preferences, progress, single sign-on identities, and runs, and their folder in `DATA_FOLDER` (`u<username>`) with their solutions (<<personal_repos>>). Their activity stays in the log (<<activity_log>>). It cannot be undone: only backups recover them. The user whose folder holds the course repo that lists the courses (`COURSES_REPO` in `src/courses.py`, e.g. `u13/pexercises`) cannot be deleted
 |===
 
 Suspending, activating, and deleting ask for confirmation. Administrators give and take the administrator role of other users, e.g. one who retires, and may suspend or delete other administrators, but they cannot change their own role nor status, so there is always an administrator and nobody locks themselves out. A common setup: the local administrator who installed VygOJ (<<administrators>>) connects it to the single sign-on of the organization, and once some staff members have logged in with it, makes some of them administrators. They keep logging in with single sign-on. Changes of the role and full name of a logged user take effect at their next request.
@@ -224,10 +224,10 @@ The username of users created by a provider is their email, so usernames have up
 [[personal_repos]]
 == Personal repos
 
-Each user has a bare git repo with the history of their solutions, in `DATA_FOLDER/u<id>/personal_repo`, where `<id>` is the user identifier (<<users_admin>>) and `personal_repo` is `PERSONAL_REPO_NAME` in `config.py` (`src/git_repo.py`). The frontend creates it when the user logs in, and when they run code if it does not exist yet. Each run accepted by the limits (<<run_limits>>) commits the code, unless it is the same as the last version of that problem and language. Repeated and rejected runs commit nothing, and if git fails the student still gets the result of the run, and the error is logged in the log of the server. The repo has no working tree, so its folder has no loose source files:
+Each user has a bare git repo with the history of their solutions, in `DATA_FOLDER/u<username>/student-repo`, where `<username>` is the username of the user (e.g. `ue14` for the user `e14`) and `student-repo` is `PERSONAL_REPO_NAME` in `config.py` (`src/git_repo.py`). Usernames may be emails of single sign-on, so characters other than letters, digits, and `@.+-_~` are encoded as in URLs (`a/b` is `ua%2Fb`): the folder stays inside `DATA_FOLDER`, and two users never share it. The frontend creates it when the user logs in, and when they run code if it does not exist yet. Each run accepted by the limits (<<run_limits>>) commits the code, unless it is the same as the last version of that problem and language. Repeated and rejected runs commit nothing, and if git fails the student still gets the result of the run, and the error is logged in the log of the server. The repo has no working tree, so its folder has no loose source files:
 
 ----
-u5/personal_repo/                                 # bare repo of the user 5
+ue14/student-repo/                                # bare repo of the user e14
   refs/heads/problems/CI0113/2026b01/format_date  # a branch per problem, a commit per run
 ----
 
@@ -235,7 +235,7 @@ The commits of a branch have the solution in the path `<course>/<term_group>/<pr
 
 [source,sh]
 ----
-R=DATA_FOLDER/u5/personal_repo
+R=DATA_FOLDER/ue14/student-repo
 git -C $R log --all --format='%h %ci %s' --name-only             # versions of every problem
 git -C $R show <commit>:CI0113/2026b01/format_date/src/solution.c  # the code of a version
 ----

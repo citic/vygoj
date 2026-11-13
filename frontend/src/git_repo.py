@@ -1,6 +1,6 @@
 """ Personal git repos of the users, with the history of their solutions.
 
-Each user has a bare repo, without working tree, in DATA_FOLDER/u<user_id>/<PERSONAL_REPO_NAME>.
+Each user has a bare repo, without working tree, in DATA_FOLDER/u<username>/<PERSONAL_REPO_NAME>.
 The solution of a problem has this logical path, which does not exist on disk:
 
     <course>/<term_group>/<problem>/src/solution.c
@@ -15,6 +15,7 @@ import os
 import re
 import subprocess
 import tempfile
+import urllib.parse
 
 from flask import current_app as app
 
@@ -50,10 +51,10 @@ class GitError(Exception):
 class PersonalRepo:
     """ The bare git repo with the solutions of a user """
 
-    def __init__(self, user_id: int):
-        """ Find the folder of the repo from the number of the user only """
-        # Path of the bare repo: DATA_FOLDER/u<user_id>/<PERSONAL_REPO_NAME>
-        self.path = os.path.join(user_folder(user_id), app.config['PERSONAL_REPO_NAME'])
+    def __init__(self, username: str):
+        """ Find the folder of the repo from the username of the user """
+        # Path of the bare repo: DATA_FOLDER/u<username>/<PERSONAL_REPO_NAME>
+        self.path = os.path.join(user_folder(username), app.config['PERSONAL_REPO_NAME'])
 
     def create(self):
         """ Create the repo if it does not exist """
@@ -122,10 +123,15 @@ class PersonalRepo:
         output = process.stdout.decode(errors='replace')
         return output.rstrip('\n') if strip else output
 
-def user_folder(user_id: int) -> str:
-    """ Return the folder of the user in DATA_FOLDER, u<user_id>. Only the number of the user
-    builds it, so it is always inside DATA_FOLDER """
-    return os.path.join(app.config['DATA_FOLDER'], f'u{int(user_id)}')
+def user_folder(username: str) -> str:
+    """ Return the folder of the user in DATA_FOLDER, u<username>, e.g. ue14 for the user e14.
+    Usernames may be emails of single sign-on, so characters other than letters, digits, and
+    @.+-_~ are encoded as in URLs (a/b is ua%2Fb): the folder has no slash, so it is always inside
+    DATA_FOLDER, and two users never share it. The u keeps the names . and .. away """
+    if not username:
+        raise ValueError('empty username')
+    folder = 'u' + urllib.parse.quote(username, safe='@.+-_~')
+    return os.path.join(app.config['DATA_FOLDER'], folder)
 
 def problem_branch(course: str, problem: str) -> str:
     """ Return the ref of the branch with the history of the solution of the problem """

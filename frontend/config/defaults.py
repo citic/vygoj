@@ -8,8 +8,8 @@
 DATA_FOLDER = "/home/user/vygdata"
 # TSV file in DATA_FOLDER with the users to add to the database (username and password columns)
 USERS_FILE = "users-passwords.tsv"
-# Name of the bare git repo with the solutions of each user, in their folder DATA_FOLDER/u<user_id>
-PERSONAL_REPO_NAME = "personal_repo"
+# Name of the bare git repo with the solutions of each user, in their folder DATA_FOLDER/u<username>
+PERSONAL_REPO_NAME = "student-repo"
 # Database URI for SQLAlchemy. Without user and password, PostgreSQL uses the system user
 SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg:///vygoj'
 # Frontend network port to listen on

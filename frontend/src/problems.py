@@ -240,7 +240,8 @@ class ProblemController:
         # Only the code of accepted runs is saved, which are limited per user, so a robot cannot
         # fill the disk with rejected or repeated runs. A repeated run has the file of its first run
         save_code(code_hash, message.language, message.code)
-        ProblemController.save_solution(user_id, course_name, problem.name, message)
+        ProblemController.save_solution(flask.session['user'].get('email'), course_name,
+            problem.name, message)
         # The commit of the course repo recovers the statement and test cases that judged the run.
         # Only accepted runs ask git for it, which are limited per user
         run_data['commit'] = repo_commit(problem.get_course().get_path())
@@ -264,11 +265,11 @@ class ProblemController:
                 **log_cells)
 
     @staticmethod
-    def save_solution(user_id: int, course_name: str, problem_name: str, message: vyg.Message):
+    def save_solution(username: str, course_name: str, problem_name: str, message: vyg.Message):
         """ Commit the code of the run to the personal repo of the user, the history of their
         solutions. A failure is logged, and the run goes on without it """
         try:
-            PersonalRepo(user_id).save(course_name, problem_name,
+            PersonalRepo(username).save(course_name, problem_name,
                 solution_filename(message.language), message.code)
         except (GitError, OSError, ValueError):
             app.logger.exception('could not save the solution of %s/%s', course_name,
