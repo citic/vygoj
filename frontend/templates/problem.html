@@ -16,10 +16,11 @@
 
 {%- block main %}
       <main id="problem" class="problem" data-name="{{ it.problem.name }}" data-csrf-token="{{ csrf_token() }}" data-run-timeout="{{ it.run_timeout }}">
-        <article class="description">
-          <h2>{{ it.problem.title }}</h2>
+        {#- The title of the problem, or the one at the start of its statement, folds the statement #}
+        <details class="description" open>
+          <summary><h2>{{ it.problem.title or it.problem.statement_title or _('Problem statement') }}</h2></summary>
           <div class="statement">{{ it.problem.statement|safe }}</div>
-        </article>
+        </details>
         <details class="solution" open>
           <summary>{{ _('Your solution') }}</summary>
           <div class="editor">

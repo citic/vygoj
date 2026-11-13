@@ -376,6 +376,8 @@ The statement of a problem is the first file of its folder with the extension `.
 
 The ids of a statement get the prefix `content_` (and its `#section` links too), so they cannot replace the elements of the page that JavaScript looks for, such as `run_button` or `language`.
 
+A `<h1>` or `<h2>` heading that starts a statement, such as `= Title` in Asciidoc or `# Title` in Markdown, is its title: the problem page shows it once, above the statement, and clicking it folds the statement. If the problem has a `title` in `vygoj.json`, that one is shown instead, and without either the page shows _Problem statement_.
+
 Formulas (`stem`) are kept as text, and MathJax typesets them in the browser. To show an SVG image, use `image::` (an `<img>` element), because inline SVG is removed.
 
 [[videos]]

@@ -404,6 +404,9 @@ msgstr "Presione Ejecutar para validar su solución"
 msgid "Previous"
 msgstr "Anterior"
 
+msgid "Problem statement"
+msgstr "Enunciado del problema"
+
 msgid "Problems of the course"
 msgstr "Problemas del curso"
 

@@ -1,6 +1,7 @@
 """ Loads programming problems from the folders of course repositories """
 import functools
 import glob
+import html
 import json
 import logging
 import os
@@ -26,6 +27,12 @@ MAX_FILE_SIZE = 16 * 2**20
 # static/, so browsers may also get the files, e.g. /initial/Solution.java
 DEFAULT_CODE_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     'static', 'initial')
+
+# The heading that starts a statement, which is its title, after the tags that open before it,
+# e.g. <h1>Formateador de fecha</h1>, or <div><h2>Enunciado</h2> in HTML statements. A heading
+# after text, such as a section, is not a title
+TITLE_PATTERN = re.compile(r'\s*(?:<[a-z][^>]*>\s*)*(<(h[12])\b[^>]*>(.*?)</\2>)',
+    re.IGNORECASE | re.DOTALL)
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +64,19 @@ class ProblemLoader:
                     # may come from vygoj.json files too
                     problem.statement = sanitize_html(problem.statement,
                         f'{ProblemLoader.page_url(problem)}/files/')
+                    ProblemLoader.take_title(problem)
                     # Mark it loaded at the end, so other threads never use a partial problem
                     problem.folder_loaded = True
+
+    @staticmethod
+    def take_title(problem: vyg.Problem):
+        """ Move the heading that starts the statement to the title of the statement, as text,
+        so the problem page shows it above the statement, and only once """
+        match = TITLE_PATTERN.match(problem.statement)
+        if match:
+            problem.statement_title = html.unescape(re.sub('<[^>]*>', '', match[3])).strip()
+            statement = problem.statement
+            problem.statement = statement[:match.start(1)] + statement[match.end(1):]
 
     @staticmethod
     def page_url(problem: vyg.Problem) -> str:
@@ -141,7 +159,9 @@ class ProblemLoader:
         # Course repos are untrusted, so the safe mode restricts include:: to the folder of the
         # statement, otherwise a statement could include any readable file of the server. A
         # timeout prevents a malformed statement from blocking the request forever
-        process = subprocess.run(['asciidoctor', '-S', 'safe', filename, '-e', '-o', '-'],
+        # showtitle keeps the title (= Title), which the embedded output (-e) leaves out
+        process = subprocess.run(['asciidoctor', '-S', 'safe', '-a', 'showtitle', filename, '-e',
+            '-o', '-'],
             capture_output=True, text=True, timeout=ASCIIDOCTOR_TIMEOUT, check=False)
         return process.stdout
 

@@ -444,6 +444,17 @@ editor-toolbar {
     overflow: auto;
     resize: vertical;
     container-type: inline-size; /* For the cqw unit of its text */
+
+    /* The title goes next to the triangle of its summary */
+    & h2 {
+      display: inline;
+    }
+
+    /* Closed, it is as high as its title, also when the corner handle gave it a height */
+    &:not([open]) {
+      max-height: max-content;
+      resize: none;
+    }
   }
 
   & > .solution monaco-editor {
