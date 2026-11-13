@@ -55,37 +55,43 @@
             <pre id="diagnostics">{{ _('No errors') }}</pre>
           </figure>
           <output id="test_verdict"></output>
-          <div class="test_cases">
+          {#- The test cases and the toolbar of their parts. Closed, its title names the selected
+              test case, and only the parts that the user left on are shown below #}
+          <details class="test_picker" open>
+            <summary><span class="all">{{ _('Test cases') }}</span><span class="selected"></span></summary>
+            <div class="test_cases">
 {%- for test in it.problem.tests %}
-            <button class="button small" title="{{ _('Test case %(number)d', number=loop.index) }}">{{ loop.index }}</button>
-{%- endfor %}
-          </div>
-          {#- Buttons that show or hide the parts of the selected test case, and turn the diff and the
-              word wrap on or off, in groups as the parts below: (group, name, buttons), and each
-              button is (part, text, pressed by default). problem.js remembers them. The expected
-              and the user parts go together, as they are compared. A pressed button shows a check #}
-          {%- set groups = [
-            ('input', _('Input'), [('input', _('Standard'), 'true')]),
-            ('output', _('Output'), [
-              ('expected_output', pgettext('output', 'Expected'), 'true'),
-              ('user_output', pgettext('output', 'Yours'), 'true')]),
-            ('error', _('Error'), [
-              ('expected_error', pgettext('error', 'Expected'), 'false'),
-              ('user_error', pgettext('error', 'Yours'), 'false')]),
-            ('view', _('View'), [
-              ('diff', _('Diff'), 'true'),
-              ('word_wrap', _('Word wrap'), 'false')]),
-          ] %}
-          <div class="test_toolbar" role="toolbar" aria-label="{{ _('Parts of the test case') }}">
-{%- for group, name, buttons in groups %}
-            <div class="{{ group }}" role="group" aria-labelledby="{{ group }}_parts">
-              <span class="name" id="{{ group }}_parts">{{ name }}</span>
-{%- for part, text, pressed in buttons %}
-              <button type="button" class="button small" data-part="{{ part }}" aria-pressed="{{ pressed }}"><span class="material-symbols-outlined" aria-hidden="true">check</span>{{ text }}</button>
+              <button class="button small" title="{{ _('Test case %(number)d', number=loop.index) }}">{{ loop.index }}</button>
 {%- endfor %}
             </div>
+            {#- Buttons that show or hide the parts of the selected test case, and turn the diff
+                and the word wrap on or off, in groups as the parts below: (group, name, buttons),
+                and each button is (part, text, pressed by default). problem.js remembers them. The
+                expected and the user parts go together, as they are compared. A pressed button
+                shows a check #}
+            {%- set groups = [
+              ('input', _('Input'), [('input', _('Standard'), 'true')]),
+              ('output', _('Output'), [
+                ('expected_output', pgettext('output', 'Expected'), 'true'),
+                ('user_output', pgettext('output', 'Yours'), 'true')]),
+              ('error', _('Error'), [
+                ('expected_error', pgettext('error', 'Expected'), 'false'),
+                ('user_error', pgettext('error', 'Yours'), 'false')]),
+              ('view', _('View'), [
+                ('diff', _('Diff'), 'true'),
+                ('word_wrap', _('Word wrap'), 'false')]),
+            ] %}
+            <div class="test_toolbar" role="toolbar" aria-label="{{ _('Parts of the test case') }}">
+{%- for group, name, buttons in groups %}
+              <div class="{{ group }}" role="group" aria-labelledby="{{ group }}_parts">
+                <span class="name" id="{{ group }}_parts">{{ name }}</span>
+{%- for part, text, pressed in buttons %}
+                <button type="button" class="button small" data-part="{{ part }}" aria-pressed="{{ pressed }}"><span class="material-symbols-outlined" aria-hidden="true">check</span>{{ text }}</button>
 {%- endfor %}
-          </div>
+              </div>
+{%- endfor %}
+            </div>
+          </details>
           {#- The parts of the selected test case in three groups. With the diff on, after a run, a
               diff takes the place of the expected and the user outputs if any of them is on, and
               another one of the errors #}

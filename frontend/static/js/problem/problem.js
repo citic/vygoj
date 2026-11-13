@@ -278,6 +278,10 @@ class ProblemManager {
       });
     });
     this.showParts();
+    // The test cases and the toolbar fold away as the user leaves them, in all the problems
+    const picker = document.querySelector('.test_picker');
+    picker.open = window.localStorage.getItem('test_picker') !== 'false';
+    picker.addEventListener('toggle', () => window.localStorage.setItem('test_picker', picker.open));
   }
 
   // Shows the parts of the test case at the index that the toolbar asks for. With the diff on,
@@ -412,6 +416,8 @@ class ProblemManager {
     console.assert(index < buttons.length);
     this.activeTestCaseIndex = index;
     buttons[index].setAttribute('aria-current', 'true');
+    // The title of the folded test cases names the selected one, as its button does
+    document.querySelector('.test_picker .selected').textContent = buttons[index].title;
     saveConfig('test', `${index}`);
   }
 
