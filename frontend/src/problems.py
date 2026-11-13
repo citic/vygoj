@@ -276,6 +276,46 @@ class ProblemController:
                 problem_name)
 
     @staticmethod
+    def get_versions(course_name: str, problem_name: str):
+        """ Answer the versions of the solution of the logged user to the problem, in the language
+        of the query, from the oldest to the newest, as [[commit, time], ...] """
+        repo, problem, filename = ProblemController.solution_of_user(course_name, problem_name)
+        try:
+            versions = repo.versions(problem.get_course().name, problem.name, filename)
+        except (GitError, OSError, ValueError):
+            app.logger.exception('could not list the versions of %s/%s', course_name, problem_name)
+            versions = []
+        # A run adds a version, so the browser asks for the list every time
+        return flask.jsonify(versions), 200, { 'Cache-Control': 'no-store' }
+
+    @staticmethod
+    def get_version(course_name: str, problem_name: str, commit: str):
+        """ Answer the code of a version of the solution of the logged user to the problem, in the
+        language of the query, as text. Other users never reach it: it is read from the repo of
+        the logged user only """
+        repo, problem, filename = ProblemController.solution_of_user(course_name, problem_name)
+        try:
+            code = repo.read(commit, problem.get_course().name, problem.name, filename)
+        except (GitError, OSError, ValueError):
+            flask.abort(404)
+        # A commit never changes, so the browser keeps its code
+        return flask.Response(code, mimetype='text/plain', headers={
+            'Cache-Control': 'private, max-age=31536000, immutable' })
+
+    @staticmethod
+    def solution_of_user(course_name: str, problem_name: str):
+        """ Return the repo of the logged user, the problem, and the file of its solution in the
+        language of the query, or abort if there is no user, problem, or enabled language """
+        user = flask.session.get('user')
+        if not user:
+            flask.abort(401)
+        problem = ProblemController.fetch_problem(course_name, problem_name)
+        language = flask.request.args.get('language', '')
+        if language not in problem.languages:
+            flask.abort(400)
+        return PersonalRepo(user['email']), problem, solution_filename(language)
+
+    @staticmethod
     def grade(result_json: str) -> int:
         """ Return the same score problem.js saves in localStorage for the ExecutionResult in JSON:
         percentage of passed test cases. Raises ValueError if it is not a JSON object """

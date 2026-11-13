@@ -33,9 +33,11 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
   in `DATA_FOLDER` is deleted after the commit, unless it holds the course repo (`COURSES_REPO`).
 - `src/git_repo.py`: `PersonalRepo`, the bare git repo of each user in
   `DATA_FOLDER/u<username>/student-repo`, created at login, with a branch per problem and a commit
-  per run with new code (`ProblemController.save_solution()`). It runs git through `subprocess` with
-  plumbing commands and a timeout, and validates names of courses, problems, files, and commits
-  before they become refs or paths (see "Personal repos" in `readme.adoc`).
+  per run with new code (`ProblemController.save_solution()`), the versions of the slider of the
+  editor, and the zip archive of the solutions (`download_solutions()` in `users.py`). It runs git
+  through `subprocess` with plumbing commands and a timeout, and validates names of courses,
+  problems, files, and commits before they become refs or paths (see "Personal repos" in
+  `readme.adoc`).
 - `src/runs.py`: `Run` model (`runs` table) that limits the code runs of each user: one at a
   time, 5 seconds between them, 120 per hour, and the same submission answered with the stored
   result of the last run.

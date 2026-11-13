@@ -1,5 +1,6 @@
 """ Manages application users, their preferences, and courses' progress """
 import datetime
+import io
 import os
 import urllib.parse
 
@@ -441,6 +442,20 @@ class UserForm(flask_wtf.FlaskForm):
             flask.flash(suspended_message(), 'error')
             return flask.redirect(flask.url_for('user', next=next_url))
         return start_session(db_user, next_url)
+
+def download_solutions():
+    """ Send the logged user a zip archive with the last version of each of their solutions, or
+    ask them to log in """
+    user = flask.session.get('user')
+    if not user:
+        return flask.redirect(flask.url_for('user', next=flask.request.path))
+    try:
+        archive = PersonalRepo(user['email']).archive()
+    except (GitError, OSError, ValueError):
+        flask.current_app.logger.exception('could not archive the solutions of %s', user['email'])
+        flask.abort(500)
+    return flask.send_file(io.BytesIO(archive), mimetype='application/zip', as_attachment=True,
+        download_name='student-repo.zip')
 
 def start_session(db_user: User, next_url: str | None, provider: str = None):
     """ Log in the given user, authenticated by password or by the single sign-on provider of

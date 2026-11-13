@@ -14,7 +14,7 @@ from limits import BACKEND_CONNECT_TIMEOUT, Limits
 from problems import BACKEND_STATUS_TIMEOUT, ProblemController
 from sso import SsoAdminController, SsoController, SsoProvider
 from users import (DEFAULT_FONT, FONTS, TRANSLATIONS_FOLDER, UserForm, client_translations,
-    font_url, log_out, refresh_session, select_language)
+    download_solutions, font_url, log_out, refresh_session, select_language)
 from db import db
 from activity_log import LogController, log_event
 
@@ -208,6 +208,16 @@ def post_problem(course_name, problem_name):
     """ Client JavaScript asked for an action: fetch problem, run code, save code... """
     return ProblemController.post_problem(course_name, problem_name)
 
+@app.route('/problem/<course_name>/<problem_name>/versions')
+def get_versions(course_name, problem_name):
+    """ Client JavaScript asked for the versions of the solution of the user, for its slider """
+    return ProblemController.get_versions(course_name, problem_name)
+
+@app.route('/problem/<course_name>/<problem_name>/versions/<commit>')
+def get_version(course_name, problem_name, commit):
+    """ Client JavaScript asked for the code of a version of the solution of the user """
+    return ProblemController.get_version(course_name, problem_name, commit)
+
 
 # Users -------------------------------------------------------------------------------------------
 
@@ -216,6 +226,11 @@ def user():
     """ Get/post the login or preferences dialog """
     log_event('visit')
     return UserForm.show_form(SsoProvider.listed())
+
+@app.route('/user/solutions.zip')
+def get_solutions():
+    """ User asked for a zip archive with the last version of each of their solutions """
+    return download_solutions()
 
 @app.route('/logout', methods=['POST'])
 def logout():

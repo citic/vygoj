@@ -21,6 +21,10 @@ msgid " (CPU %(seconds)s s)"
 msgstr " (CPU %(seconds)s s)"
 
 #, python-format
+msgid "%(number)s of %(count)s, %(time)s"
+msgstr "%(number)s de %(count)s, %(time)s"
+
+#, python-format
 msgid "%(passed)s test cases passed (%(points)s points)"
 msgstr "%(passed)s casos de prueba aprobados (%(points)s puntos)"
 
@@ -191,6 +195,9 @@ msgstr "No se pudo ejecutar la solución: %(error)s"
 msgid "Create an account for users who are not registered in VygOJ"
 msgstr "Crear una cuenta a los usuarios que no están registrados en VygOJ"
 
+msgid "Current code"
+msgstr "Código actual"
+
 msgid "Current password"
 msgstr "Contraseña actual"
 
@@ -258,6 +265,9 @@ msgstr "¿Desea borrar todo el código?"
 
 msgid "Do you want to revert to the initial code?"
 msgstr "¿Desea volver al código inicial?"
+
+msgid "Download my solutions"
+msgstr "Descargar mis soluciones"
 
 msgid "Edit"
 msgstr "Editar"
@@ -636,6 +646,9 @@ msgid ""
 msgstr ""
 "Valores de ese claim que indican profesor, separados por comas. Los demás"
 " usuarios nuevos son estudiantes."
+
+msgid "Version of your solution"
+msgstr "Versión de su solución"
 
 msgid "Vygotsky Online Judge"
 msgstr "Juez en línea Vygotsky"

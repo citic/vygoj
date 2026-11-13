@@ -101,6 +101,14 @@ class ProblemManager {
     // another tab changed it), so the change is not saved again. Saving it again made tabs of the
     // same problem send each other old versions of the code forever
     this.savesCode = true;
+    // Versions of the solution that the runs of the user saved in the chosen language, from the
+    // oldest to the newest, as [commit, time in seconds] pairs, for the slider of the toolbar
+    this.versions = []; // Array
+    // Code of the versions already fetched, by language and commit, which never change
+    this.versionCodes = new Map(); // Map
+    // Code in the editor while the slider shows a version, shown again at the end of the slider.
+    // Null while the editor shows it
+    this.currentCode = null; // string
   }
 
   static main() {
@@ -119,6 +127,7 @@ class ProblemManager {
       this.setupTestCaseEditors();
       await this.fetchProblem();
       this.loadUserCode();
+      this.setupVersions();
       this.loadTestCases();
       this.setupRunEnvironment();
     } catch (error) {
@@ -186,11 +195,12 @@ class ProblemManager {
     editor.getModel().updateOptions({ tabSize: 2 }); // Google code style
     this.editors.push(editor);
     // The editor is as tall as its code, between the min-height and max-height of the CSS, until
-    // the user gives it another height with its corner handle
+    // the user gives it another height with its corner handle. It keeps its height while the
+    // slider shows versions, so the page does not jump with each one
     let fittedHeight = '';
     editor.onDidContentSizeChange(() => {
       const { style } = editor.getContainerDomNode();
-      if (style.height === fittedHeight) {
+      if (style.height === fittedHeight && this.currentCode === null) {
         fittedHeight = `${editor.getContentHeight()}px`;
         style.height = fittedHeight;
       }
@@ -432,6 +442,128 @@ class ProblemManager {
     });
   }
 
+  // The slider of the toolbar shows the versions of the solution that the runs saved, and at its
+  // end, the code in the editor. Editing a version makes it the code in the editor, which the next
+  // run saves as a new version. Only logged users have versions
+  setupVersions() {
+    const slider = document.getElementById('version');
+    if (!slider) {
+      return;
+    }
+    slider.addEventListener('input', () => this.showVersion(Number(slider.value)));
+    document.getElementById('language').addEventListener('change', () => this.loadVersions());
+    this.editors[0].onDidChangeModelContent(() => {
+      if (this.savesCode && this.currentCode !== null) {
+        this.currentCode = null;
+        slider.value = slider.max;
+        this.updateVersionName();
+      }
+    });
+    // Without code of their own in this browser, the user gets the last version that they ran
+    const language = document.getElementById('language').value;
+    this.loadVersions(!loadConfig(`code:${language}`));
+  }
+
+  // Fetch the versions of the solution in the chosen language, and put the slider at its end. If
+  // showLast, the editor shows the last version
+  async loadVersions(showLast = false) {
+    const slider = document.getElementById('version');
+    if (!slider) {
+      return;
+    }
+    const language = document.getElementById('language').value;
+    let versions = [];
+    try {
+      const url = `${window.location.pathname}/versions?language=${encodeURIComponent(language)}`;
+      const response = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT) });
+      versions = response.ok ? await response.json() : [];
+    } catch (error) {
+      // Without versions the slider is hidden, and the rest of the page works
+      console.error(error);
+    }
+    // The user may have chosen another language while waiting
+    if (language !== document.getElementById('language').value) {
+      return;
+    }
+    this.versions = Array.isArray(versions) ? versions : [];
+    this.currentCode = null;
+    slider.max = String(this.versions.length);
+    slider.value = slider.max;
+    slider.closest('.versions').hidden = this.versions.length === 0;
+    this.updateVersionName();
+    if (showLast && this.versions.length > 0) {
+      const code = await this.fetchVersion(language, this.versions[this.versions.length - 1][0]);
+      if (code !== null && language === document.getElementById('language').value) {
+        this.showStoredCode(() => this.editors[0].setValue(code));
+      }
+    }
+  }
+
+  // Return the code of the version of the given commit, or null if it could not be fetched
+  async fetchVersion(language, commit) {
+    const key = `${language}:${commit}`;
+    if (!this.versionCodes.has(key)) {
+      try {
+        const query = `language=${encodeURIComponent(language)}`;
+        const url = `${window.location.pathname}/versions/${commit}?${query}`;
+        const response = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT) });
+        if (!response.ok) {
+          return null;
+        }
+        this.versionCodes.set(key, await response.text());
+      } catch (error) {
+        console.error(error);
+        return null;
+      }
+    }
+    return this.versionCodes.get(key);
+  }
+
+  // Show the version at the index in the editor, or the code in the editor at the end of the
+  // slider. An edit instead of setValue() keeps the Undo history, and the scroll and the cursor
+  // stay where they were
+  async showVersion(index) {
+    const editor = this.editors[0];
+    let code = this.currentCode;
+    if (index < this.versions.length) {
+      code = await this.fetchVersion(document.getElementById('language').value, this.versions[index][0]);
+      // The slider may have moved on while waiting
+      if (code === null || index !== Number(document.getElementById('version').value)) {
+        return;
+      }
+      this.currentCode ??= editor.getValue();
+    } else {
+      this.currentCode = null;
+    }
+    if (code !== null && code !== editor.getValue()) {
+      const view = editor.saveViewState();
+      this.showStoredCode(() => {
+        editor.pushUndoStop();
+        editor.executeEdits('version', [{ range: editor.getModel().getFullModelRange(), text: code }]);
+        editor.pushUndoStop();
+      });
+      editor.restoreViewState(view);
+    }
+    this.updateVersionName();
+  }
+
+  // Name the position of the slider: the number and time of a version, e.g. "2 of 5, 11/13, 04:24
+  // PM", or the code in the editor
+  updateVersionName() {
+    const index = Number(document.getElementById('version').value);
+    const name = document.getElementById('version_name');
+    if (index < this.versions.length) {
+      const date = new Date(this.versions[index][1] * 1000);
+      const time = date.toLocaleString(document.documentElement.lang, {
+        day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit',
+      });
+      const values = { number: index + 1, count: this.versions.length, time };
+      name.textContent = _('%(number)s of %(count)s, %(time)s', values);
+    } else {
+      name.textContent = _('Current code');
+    }
+  }
+
   setupRunEnvironment() {
     console.assert(this.editors.length > 0);
     // When the Run button is pressed, if the user is logged in
@@ -478,6 +610,8 @@ class ProblemManager {
       }, ProblemManager.getRunTimeout()));
       // The result has been received, update the test cases
       this.updateResult();
+      // The run saved a version if the code was new
+      this.loadVersions();
     } catch (error) {
       // E.g. the network or the judge failed, or the session expired: show it as a diagnostic
       console.error(error);

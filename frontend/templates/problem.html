@@ -22,6 +22,14 @@
                   <label><input type="radio" name="layout" value="right"><span class="material-symbols-outlined" aria-hidden="true">splitscreen_right</span> {{ _('Statement on the right') }}</label>
                 </form>
               </div>
+{%- if it.user %}
+              {#- The versions of the solution that the runs of the user saved, from the oldest to
+                  the code in the editor. problem.js shows it when there are versions #}
+              <label class="versions" hidden>
+                <input type="range" id="version" min="0" max="0" value="0" aria-label="{{ _('Version of your solution') }}">
+                <output for="version" id="version_name"></output>
+              </label>
+{%- endif %}
               <select id="language" aria-label="{{ _('Programming language') }}">
 {%- for language in it.problem.languages %}
                 <option>{{ language }}</option>

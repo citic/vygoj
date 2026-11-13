@@ -242,6 +242,10 @@ git -C $R show <commit>:CI0113/2026b01/format_date/src/solution.c  # the code of
 
 The frontend runs git with the plumbing commands (`hash-object`, `update-index` on a temporary index, `write-tree`, `commit-tree`, `update-ref`), which need no working tree, so several gunicorn workers may save at the same time. `update-ref` moves a branch only if it still points to the commit that was read, so a worker never overwrites the commit of another one: the later one fails and is logged. Every git command runs without a shell, with a timeout of 5 seconds (`GIT_TIMEOUT`), without hooks of the repo, and without asking for passwords. Names of courses and problems become parts of refs and paths, so they must match `[A-Za-z0-9_+-]{1,64}` (`NAME_PATTERN`); the run of a problem with another name is judged but not saved. Deleting a user deletes their folder (<<users_admin>>).
 
+The toolbar of the code editor has a slider with the versions of the solution in the chosen language, from the oldest to the newest, and at its end the code in the editor. Dragging it shows each version with its number and time; editing a version makes it the code in the editor, which the next run saves as a new version at the end of the branch. When the browser has no code of the user for the problem and language, the editor shows their last version instead of the initial code. The page asks for the list of versions (`GET /problem/<course>/<problem>/versions?language=<language>`, `[[commit, time], ...]`), and for the code of a version only when the slider reaches it (`GET .../versions/<commit>?language=<language>`), which the browser keeps, since a commit never changes. Both answer only the logged user, from their own repo.
+
+The preferences page has a link to download the solutions (`/user/solutions.zip`): a zip archive with the last version of the solution of every problem, in its logical path. A temporary index joins the trees of the branches of the problems, and `git archive` writes the zip, without a working tree.
+
 [[activity_log]]
 == Activity log
 

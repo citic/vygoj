@@ -105,13 +105,31 @@ class PersonalRepo:
         return self.git('cat-file', 'blob', f'{commit}:{solution_path(course, problem, filename)}',
             strip=False)
 
+    def archive(self) -> bytes:
+        """ Return a zip archive with the last version of the solution of every problem, in its
+        logical path. The trees of the branches of the problems have different paths, so a
+        temporary index joins them without conflicts, and no working tree is needed """
+        self.create()
+        branches = self.git('for-each-ref', '--format=%(refname)', 'refs/heads/problems/').split()
+        with tempfile.TemporaryDirectory() as folder:
+            index = { 'GIT_INDEX_FILE': os.path.join(folder, 'index') }
+            # ls-tree writes the files of a branch in the format that update-index reads
+            files = ''.join(self.git('ls-tree', '-r', '-z', branch, strip=False)
+                for branch in branches)
+            if files:
+                self.git('update-index', '-z', '--index-info', stdin=files, env=index)
+            tree = self.git('write-tree', env=index)
+        return self.git('archive', '--format=zip', tree, binary=True)
+
     def last_commit(self, branch: str) -> str:
         """ Return the commit at the end of the branch, or None if it does not exist """
         return self.git('for-each-ref', '--format=%(objectname)', branch) or None
 
-    def git(self, *args, stdin: str = None, env: dict = None, strip: bool = True) -> str:
-        """ Run the git command in the repo and return its output, without the final newline if
-        strip. Texts are bytes, so the code keeps its line endings. Raise GitError if it fails """
+    def git(self, *args, stdin: str = None, env: dict = None, strip: bool = True,
+            binary: bool = False) -> str | bytes:
+        """ Run the git command in the repo and return its output, as bytes if binary, or as text
+        without the final newline if strip. Texts are bytes, so the code keeps its line endings.
+        Raise GitError if it fails """
         try:
             process = subprocess.run(['git', *GIT_OPTIONS, '-C', self.path, *args],
                 input=stdin.encode() if stdin is not None else None, capture_output=True,
@@ -120,6 +138,8 @@ class PersonalRepo:
             raise GitError(f'git {args[0]} failed') from error
         if process.returncode != 0:
             raise GitError(f'git {args[0]} failed: {process.stderr.decode(errors="replace")}')
+        if binary:
+            return process.stdout
         output = process.stdout.decode(errors='replace')
         return output.rstrip('\n') if strip else output
 
