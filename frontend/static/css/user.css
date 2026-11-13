@@ -25,3 +25,19 @@
     padding-bottom: 2em;
   }
 }
+
+/* Single sign-on providers above the password login: a button for each one */
+.sso_login {
+  & ul {
+    display: flex;
+    flex-flow: row wrap;
+    gap: 1rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  & .separator {
+    margin-top: 2rem;
+    color: var(--label-color);
+  }
+}

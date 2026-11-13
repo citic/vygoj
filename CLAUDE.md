@@ -88,6 +88,15 @@ make clean     # remove .venv
   start the frontend (`cd frontend && make`), and run a problem from its page in the browser.
   Report which of these steps were actually run.
 
+## Workflow
+
+- Ask the developer before applying important design decisions to the code: changes to the
+  architecture, the HTTP/JSON protocol, the shared model, the database schema, file formats or
+  the layout of stored data, and new dependencies. Propose the options with a recommendation, and
+  wait for the answer.
+- Leave changes in the working directory, without committing them, unless the prompt asks for a
+  commit.
+
 ## Coding conventions
 
 - Apply good programming practices: small cohesive functions and classes, meaningful names, no

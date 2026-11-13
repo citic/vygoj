@@ -58,28 +58,59 @@ def client_translations(language: str) -> dict:
         return {message.id: message.string for message in read_mo(file)
             if message.id and message.string}
 
+def is_admin() -> bool:
+    """ True if the logged user is an administrator """
+    user = flask.session.get('user')
+    return bool(user) and user.get('role') == 'admin'
+
+def require_admin():
+    """ Stop the request if the logged user is not an administrator """
+    if not is_admin():
+        flask.abort(403)
+
 def font_url(font: str) -> str | None:
     """ Return the URL of the Google Fonts stylesheet that loads the given font, or None if the
     font comes with the system. Unknown fonts get the default one """
     query = FONTS.get(font, FONTS[DEFAULT_FONT])[1]
     return f'https://fonts.googleapis.com/css2?family={query}&display=swap' if query else None
 
+# Longest username, the size of its column. Emails of single sign-on users are usernames too
+MAX_USERNAME_LENGTH = 128
+
+# Roles of the users and their names in the interface
+ROLES = {
+    'student': lazy_gettext('Student'),
+    'assistant': lazy_gettext('Assistant'),
+    'professor': lazy_gettext('Professor'),
+    'admin': lazy_gettext('Administrator'),
+}
+
+# States of a user: suspended users cannot log in, but their data is kept until they are active
+USER_STATUSES = {
+    'active': lazy_gettext('Active'),
+    'suspended': lazy_gettext('Suspended'),
+}
+
 class User(db.Model):
     """ Users are database models with personal data, credentials, and course progress """
     # SQLAlchemy uses the class name for the table, we prefer overriding it to add plural
     __tablename__ = 'users'
-    # Users are identified using incremental integer numbers
+    # Users are identified using incremental integer numbers, assigned by the database sequence,
+    # which never gives the number of a deleted user again
     id = db.Column(db.Integer, primary_key=True)
-    # Username must be unique
-    username = db.Column(db.String(64), unique=True, nullable=False)
-    # Password hash as first authentication method, never the plain password
-    password = db.Column(db.String(256), nullable=False)
+    # Username must be unique. Users created by single sign-on (sso.py) get their email
+    username = db.Column(db.String(MAX_USERNAME_LENGTH), unique=True, nullable=False)
+    # Password hash as first authentication method, never the plain password. None for users who
+    # only log in with single sign-on, so their password logins always fail
+    password = db.Column(db.String(256))
     # Email must be valid, and a number sent to it is second authentication method
     email = db.Column(db.String(128), unique=True)
     # Full name including last name(s)
     fullname = db.Column(db.String(128), nullable=False)
-    # Role: 'admin', 'professor', 'assistant' or 'student'
+    # Role: one of the keys of ROLES
     role = db.Column(db.String(16), nullable=False, default='student')
+    # One of USER_STATUSES. Administrators suspend and activate users in /admin/users
+    status = db.Column(db.String(16), nullable=False, default='active')
     # Color scheme: 'default' follows the operating system, 'light' or 'dark' force one
     color_scheme = db.Column(db.String(8), nullable=False, default='default')
     # Font of the site, one of the keys of FONTS
@@ -87,12 +118,21 @@ class User(db.Model):
     # Language of the interface: 'default' follows the browser, or one of the keys of LANGUAGES
     language = db.Column(db.String(8), nullable=False, default='default')
     # Access all grades this user got in evaluations
-    # backref adds a reference to this user in the Progress model
-    progress = db.relationship('Progress', backref='role')
+    # backref adds a reference to this user in the Progress model. The database deletes the
+    # progress of a deleted user (ON DELETE CASCADE), so SQLAlchemy does not load it to delete it
+    progress = db.relationship('Progress', backref='role', passive_deletes=True)
 
     def __repr__(self):
         """ Readable string representation for debugging/testing """
         return f'<User {self.username}>'
+
+    @staticmethod
+    def find(user_id: int) -> 'User | None':
+        """ Return the user of the given id, or None. Ids out of the range of the column are None,
+        instead of an error of the database """
+        if not isinstance(user_id, int) or not 0 < user_id < 2**31:
+            return None
+        return db.session.get(User, user_id)
 
     @staticmethod
     def add_new(rows) -> int:
@@ -119,8 +159,8 @@ class Progress(db.Model):
     __tablename__ = 'progress'
     # Progress are identified using incremental integer numbers
     id = db.Column(db.Integer, primary_key=True)
-    # The user id number who made a progress (got a grade)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    # The user id number who made a progress (got a grade). Deleting the user deletes it
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'))
     # Name of the course where user got this grade, as in vygoj.json, e.g. 'CI0112'
     course = db.Column(db.String(64), nullable=False)
     # The name of the evaluation solved
@@ -246,6 +286,31 @@ def log_out():
     flask.flash(gettext('User logged out'), 'warning')
     return flask.redirect(flask.url_for('get_index'))
 
+def suspended_message() -> str:
+    """ Return the message for suspended users who try to log in, or who were logged in when an
+    administrator suspended them, in the language of the request """
+    return gettext('Your account is suspended. Ask the administrator.')
+
+def refresh_session():
+    """ Log out the logged user if an administrator suspended or deleted them after they logged in,
+    and take the changes of their full name and role. Sessions are signed cookies that the server
+    cannot revoke, so every request checks the user in the database """
+    user = flask.session.get('user')
+    # Static files do not need the user, and they are most of the requests
+    if not user or flask.request.endpoint in (None, 'static'):
+        return
+    db_user = db.session.scalar(db.select(User).filter_by(username=user.get('email')))
+    if not db_user or db_user.status != 'active':
+        log_event('logout', { 'reason': 'suspended' if db_user else 'deleted' })
+        flask.session.clear()
+        logged_users.discard(user.get('email'))
+        flask.flash(suspended_message() if db_user else gettext('Your account was deleted.'),
+            'error')
+        return
+    if (user.get('fullname'), user.get('role')) != (db_user.fullname, db_user.role):
+        user.update(fullname=db_user.fullname, role=db_user.role)
+        flask.session['user'] = user
+
 class UserForm(flask_wtf.FlaskForm):
     """ If no user is logged in, show the login form, otherwise the preferences form """
     # Email field is is the user identification. The validators list are triggered when user
@@ -294,8 +359,9 @@ class UserForm(flask_wtf.FlaskForm):
         name='action')
 
     @staticmethod
-    def show_form():
-        """ Show the login or preferences form to the user """
+    def show_form(providers: list = ()):
+        """ Show the login or preferences form to the user. The login form offers the given
+        single sign-on providers too """
         user = flask.session.get('user')
         # Page to go after logging in, e.g. the problem where the student wanted to run code. The
         # login form has no action, so it posts to this URL and keeps the next parameter
@@ -323,6 +389,8 @@ class UserForm(flask_wtf.FlaskForm):
             'title': gettext('User preferences') if user else gettext('User login'),
             'form': form,
             'user': user,
+            'providers': providers,
+            'next_url': next_url,
         })
 
     @staticmethod
@@ -357,26 +425,40 @@ class UserForm(flask_wtf.FlaskForm):
             return flask.redirect(flask.url_for('user', next=next_url))
         # Find the user in the database and compare the typed password with its hash
         db_user = db.session.scalar(db.select(User).filter_by(username=name))
-        password_hash = db_user.password if db_user else _MISSING_USER_HASH
+        password_hash = (db_user.password if db_user and db_user.password
+            else _MISSING_USER_HASH)
         password_ok = check_password_hash(password_hash, form.password.data or '')
         if not db_user or not password_ok:
             LoginAttempt.record_failure(name, address)
             log_event('login_failed', user=name, role=None)
             flask.flash(gettext('Invalid user or password'), 'error')
             return flask.redirect(flask.url_for('user', next=next_url))
-        # A new session for the logged user, so nothing stored before the login (such as a CSRF
-        # token that an attacker could have planted) is kept
-        flask.session.clear()
-        flask.session['user'] = {
-            'email': name,
-            'fullname': db_user.fullname,
-            'role': db_user.role,
-            'color_scheme': db_user.color_scheme,
-            'font': db_user.font,
-            'language': db_user.language,
-        }
         LoginAttempt.clear(name, address)
-        logged_users.add(name)
-        flask.flash(gettext('Logged in successfully.'), 'success')
-        log_event('login')
-        return flask.redirect(next_url or flask.url_for('get_index'))
+        # Checked after the password, so only the owner of the account learns that it is suspended
+        if db_user.status != 'active':
+            log_event('login_failed', { 'reason': 'suspended' }, user=name, role=db_user.role)
+            flask.flash(suspended_message(), 'error')
+            return flask.redirect(flask.url_for('user', next=next_url))
+        return start_session(db_user, next_url)
+
+def start_session(db_user: User, next_url: str | None, provider: str = None):
+    """ Log in the given user, authenticated by password or by the single sign-on provider of
+    the given key, and go to next_url """
+    # A new session for the logged user, so nothing stored before the login (such as a CSRF
+    # token that an attacker could have planted) is kept
+    flask.session.clear()
+    flask.session['user'] = {
+        'email': db_user.username,
+        'fullname': db_user.fullname,
+        'role': db_user.role,
+        'color_scheme': db_user.color_scheme,
+        'font': db_user.font,
+        'language': db_user.language,
+    }
+    if provider:
+        # The preferences hide the password of users who logged in with single sign-on
+        flask.session['user']['sso'] = provider
+    logged_users.add(db_user.username)
+    flask.flash(gettext('Logged in successfully.'), 'success')
+    log_event('login', { 'provider': provider } if provider else None)
+    return flask.redirect(next_url or flask.url_for('get_index'))

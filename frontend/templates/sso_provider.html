@@ -1,0 +1,52 @@
+{% import 'macros.html' as macros %}
+{% extends 'base.html' %}
+{%- block styles %}
+    <link rel="stylesheet" href="/css/admin.css">
+{%- endblock %}
+{%- block main %}
+      <main class="sso_provider">
+        <h2>{{ it.title }}</h2>
+        <form method="post">
+          {{ it.form.hidden_tag() }}
+          <fieldset class="identification">
+            <legend>{{ _('Provider') }}</legend>
+            {#- The alias is in the callback URL registered in the provider, so it is fixed once saved #}
+            {{ macros.form_field(it.form.alias, _('Short name chosen in VygOJ for URLs and for SSO_CLIENT_SECRETS in config.py, e.g. ucr. It is not the client ID. It cannot be changed later.'), readonly=it.alias is not none) }}
+            {{ macros.form_field(it.form.name, _('Shown in the login button, e.g. Universidad de Costa Rica')) }}
+            {{ it.form.status.label }}
+            {{ it.form.status(**{'aria-describedby': 'status_hint'}) }}
+            <small class="hint" id="status_hint">{{ _('Testing providers are not shown in the login page, but anyone who knows their login URL can use them.') }}</small>
+          </fieldset>
+          <fieldset class="connection">
+            <legend>{{ _('Connection') }}</legend>
+{%- if it.alias %}
+            <dl class="registration">
+              <dt>{{ _('Redirect URI (callback) to register in the provider') }}</dt>
+              <dd><code>{{ it.callback_url }}</code></dd>
+              <dt>{{ _('Login URL') }}</dt>
+              <dd><code>{{ it.login_url }}</code></dd>
+              <dt>{{ _('Client secret') }}</dt>
+              <dd>{{ _('Configured in config.py') if it.has_secret else _('Not configured: public client with PKCE only. Add it to SSO_CLIENT_SECRETS in config.py.') }}</dd>
+            </dl>
+{%- else %}
+            <p class="hint">{{ _('Save the provider to get the redirect URI to register in the provider.') }}</p>
+{%- endif %}
+            {{ macros.form_field(it.form.discovery_url, _('e.g. https://sso.ucr.ac.cr/realms/UCR or its /.well-known/openid-configuration URL')) }}
+            {{ macros.form_field(it.form.client_id, _('Given by the team of the provider')) }}
+            {{ macros.form_field(it.form.scopes, _('Separated by spaces, e.g. openid profile email')) }}
+          </fieldset>
+          <fieldset class="accounts">
+            <legend>{{ _('Accounts') }}</legend>
+            {{ macros.form_field(it.form.email_claim, _('Claim with the email of the user, which is their username in VygOJ, e.g. email or mail')) }}
+            <p class="checkbox">{{ it.form.trust_emails() }} {{ it.form.trust_emails.label }}</p>
+            <p class="checkbox">{{ it.form.allow_new_users() }} {{ it.form.allow_new_users.label }}</p>
+            {{ macros.form_field(it.form.professor_claim, _('Optional. Claim that tells professors from students, e.g. groups or realm_access.roles')) }}
+            {{ macros.form_field(it.form.professor_values, _('Values of that claim that mean professor, separated by commas. Other new users are students.')) }}
+          </fieldset>
+          <p class="actions">
+            {{ it.form.save(class="button confirm") }}
+            <a class="button" href="{{ url_for('get_users_admin') }}">{{ _('Cancel') }}</a>
+          </p>
+        </form>
+      </main>
+{%- endblock %}

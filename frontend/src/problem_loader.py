@@ -118,20 +118,22 @@ class ProblemLoader:
 
     @staticmethod
     def load_problem_statement(problem: vyg.Problem, path: str):
-        """ Load the problem statement from Asciidoc, Markdown, or HTML file """
-        if not problem.statement:
-            extensions = ['html', 'adoc', 'md']
-            for extension in extensions:
-                files = glob.glob(os.path.join(path, f'*.{extension}'))
-                for filename in files:
-                    if extension == 'html':
-                        problem.statement += ProblemLoader.read_file(problem, filename)
-                    elif extension == 'adoc':
-                        if ProblemLoader.is_loadable(problem, filename):
-                            problem.statement += ProblemLoader.convert_asciidoc(filename)
-                    elif extension == 'md':
-                        problem.statement += markdown.markdown(
-                            ProblemLoader.read_file(problem, filename))
+        """ Load the problem statement from the first loadable HTML, Asciidoc, or Markdown file,
+        in that order. A folder may have the statement in several formats (e.g. the Asciidoc
+        source and the HTML generated from it), so only one file is shown, not all of them """
+        if problem.statement:
+            return
+        converters = {
+            'html': lambda filename: ProblemLoader.read_file(problem, filename),
+            'adoc': ProblemLoader.convert_asciidoc,
+            'md': lambda filename: markdown.markdown(ProblemLoader.read_file(problem, filename)),
+        }
+        for extension, convert in converters.items():
+            # Sorted, so the chosen file does not depend on the order of the file system
+            for filename in sorted(glob.glob(os.path.join(path, f'*.{extension}'))):
+                if ProblemLoader.is_loadable(problem, filename):
+                    problem.statement = convert(filename)
+                    return
 
     @staticmethod
     def convert_asciidoc(filename: str) -> str:

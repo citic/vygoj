@@ -8,11 +8,13 @@ from flask_wtf.csrf import CSRFError, CSRFProtect
 from flask_talisman import Talisman
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+from admin import UserAdminController
 from courses import CourseController
 from limits import BACKEND_CONNECT_TIMEOUT, Limits
 from problems import BACKEND_STATUS_TIMEOUT, ProblemController
-from users import (DEFAULT_FONT, FONTS, TRANSLATIONS_FOLDER, User, UserForm, client_translations,
-    font_url, log_out, select_language)
+from sso import SsoAdminController, SsoController, SsoProvider
+from users import (DEFAULT_FONT, FONTS, TRANSLATIONS_FOLDER, UserForm, client_translations,
+    font_url, log_out, refresh_session, select_language)
 from db import db
 from activity_log import LogController, log_event
 
@@ -80,9 +82,8 @@ cdn = {
 talisman = Talisman(app, content_security_policy=cdn,
     # Do not serve information about who linked to this page, only the site
     referrer_policy='strict-origin',
-    # Disable browser features that we do not use, also for third parties (Topics API)
-    permissions_policy={'browsing-topics': '()', 'camera': '()', 'geolocation': '()',
-        'microphone': '()'},
+    # Disable browser features that we do not use, also for third parties
+    permissions_policy={'camera': '()', 'geolocation': '()', 'microphone': '()'},
     # Browsers may only use HTTPS for this site, and its subdomains, as before this package
     strict_transport_security_preload=True)
 
@@ -135,6 +136,12 @@ if (not isinstance(backends, list) or not backends
         or not all(isinstance(uri, str) for uri in backends)):
     raise RuntimeError(f'BACKENDS in {config_file} must be a list of at least one URI')
 
+# Single sign-on providers send users back to callback URLs of SITE_URL, and use their secrets
+if not isinstance(app.config['SITE_URL'], str):
+    raise RuntimeError(f'SITE_URL in {config_file} must be a string')
+if not isinstance(app.config['SSO_CLIENT_SECRETS'], dict):
+    raise RuntimeError(f'SSO_CLIENT_SECRETS in {config_file} must be a dictionary')
+
 # Database ----------------------------------------------------------------------------------------
 
 # Disable watching object changes to reduce resource consumption
@@ -155,15 +162,16 @@ app.config.setdefault('MAX_CONTENT_LENGTH', 2**20)
 # as long as the session instead of expiring after one hour
 app.config.setdefault('WTF_CSRF_TIME_LIMIT', None)
 csrf = CSRFProtect(app)
-# The database object maps Python objects to DB's tuples (ORM, object-relational mapping)
+# The database object maps Python objects to DB's tuples (ORM, object-relational mapping). The
+# tables are created and updated by manage.py (make users), which make runs once before starting
+# the servers: the gunicorn workers import this module at the same time, and creating the same
+# tables in parallel fails in all of them but one, so the server would not start
 db.init_app(app)
-# Create the users and progress tables, if they do not exist yet
-with app.app_context():
-    db.create_all()
-    # Nobody can log in without users. The administrator is created in the server, not in the web
-    if not db.session.scalar(db.select(User.id).limit(1)):
-        app.logger.warning('There are no users yet. Create the administrator in command line with: '
-                'make admin')
+
+@app.before_request
+def check_session():
+    """ Log out users that an administrator suspended or deleted after they logged in """
+    refresh_session()
 
 # Courses -----------------------------------------------------------------------------------------
 
@@ -180,6 +188,12 @@ def get_course(name):
     # The return value of a view function is the response to the client
     log_event('visit', course=name, material=name, type='course')
     return CourseController.get_course(name)
+
+@app.route('/course/<course_name>/files/<path:filename>')
+@talisman(content_security_policy=FILE_CSP)
+def get_course_file(course_name, filename):
+    """ Browser asked for an image of the course, e.g. its picture or banner """
+    return ProblemController.get_course_file(course_name, filename)
 
 # Problems ----------------------------------------------------------------------------------------
 
@@ -207,14 +221,65 @@ def post_problem(course_name, problem_name):
 def user():
     """ Get/post the login or preferences dialog """
     log_event('visit')
-    return UserForm.show_form()
+    return UserForm.show_form(SsoProvider.listed())
 
 @app.route('/logout', methods=['POST'])
 def logout():
     """ User wants to logout. Only POST with the CSRF token, so other sites cannot log users out """
     return log_out()
 
+@app.route('/login/sso/<alias>')
+def sso_login(alias):
+    """ User chose to log in with a single sign-on provider: go to its login page """
+    return SsoController.start(alias)
+
+@app.route('/login/sso/<alias>/callback')
+def sso_callback(alias):
+    """ The single sign-on provider sent the user back after logging in """
+    return SsoController.callback(alias)
+
 # Administration ----------------------------------------------------------------------------------
+
+@app.route('/admin/users')
+def get_users_admin():
+    """ Administrator asked for the page of users: login methods and the list of users """
+    log_event('visit')
+    return UserAdminController.get_users()
+
+@app.route('/admin/users/<int:user_id>', methods=['GET', 'POST'])
+def edit_user(user_id):
+    """ Administrator asked for the form of a user, or sent it """
+    return UserAdminController.edit_user(user_id)
+
+@app.route('/admin/users/<int:user_id>/suspend', methods=['POST'])
+def suspend_user(user_id):
+    """ Administrator suspends a user, who cannot log in until activated again """
+    return UserAdminController.set_status(user_id, 'suspended')
+
+@app.route('/admin/users/<int:user_id>/activate', methods=['POST'])
+def activate_user(user_id):
+    """ Administrator activates a suspended user again """
+    return UserAdminController.set_status(user_id, 'active')
+
+@app.route('/admin/users/<int:user_id>/delete', methods=['POST'])
+def delete_user(user_id):
+    """ Administrator removes a user and their data, but not their activity in the log """
+    return UserAdminController.delete_user(user_id)
+
+@app.route('/admin/sso/new', methods=['GET', 'POST'])
+def add_sso_provider():
+    """ Administrator asked for the form of a new single sign-on provider, or sent it """
+    return SsoAdminController.edit_provider()
+
+@app.route('/admin/sso/<alias>', methods=['GET', 'POST'])
+def edit_sso_provider(alias):
+    """ Administrator asked for the form of a single sign-on provider, or sent it """
+    return SsoAdminController.edit_provider(alias)
+
+@app.route('/admin/sso/<alias>/delete', methods=['POST'])
+def delete_sso_provider(alias):
+    """ Administrator removes a single sign-on provider """
+    return SsoAdminController.delete_provider(alias)
 
 @app.route('/admin/log')
 def get_log():
@@ -236,9 +301,10 @@ def get_status():
         uris = app.config['BACKENDS']
         return requests.get(f'{uris[0]}/status',
             timeout=(BACKEND_CONNECT_TIMEOUT, BACKEND_STATUS_TIMEOUT)).json()
-    except (requests.exceptions.RequestException, ValueError):
-        # The error text has the internal address of the backend, so it is logged, not shown
-        app.logger.exception('could not get the status of the backend')
+    except (requests.exceptions.RequestException, ValueError) as error:
+        # A stopped backend is expected, and clients poll this route, so a line without the
+        # traceback. The error text has the internal address of the backend: logged, not shown
+        app.logger.warning('could not get the status of the backend: %s', error)
         return flask.jsonify({ 'status': 'offline', 'error': 'backend not available' }), 504
 
 @app.route('/translations/<language>.json')
@@ -282,8 +348,9 @@ def set_headers(response):
     after this function, so the ones it sets (e.g. Referrer-Policy) are configured in Talisman """
     # Avoid other websites to embed our resources
     response.headers['Cross-Origin-Resource-Policy'] = 'same-site'
-    # Allow only embeds resources that explicitly grant permission to be loaded
-    response.headers['Cross-Origin-Embedder-Policy'] = 'require-corp'
+    # Load resources of other sites without credentials (cookies), unless they allow them with
+    # CORS, so the files of CDNs that do not send Cross-Origin-Resource-Policy still load
+    response.headers['Cross-Origin-Embedder-Policy'] = 'credentialless'
     # Avoid an attacker open our site in a new window
     response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
     return response

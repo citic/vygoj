@@ -3,27 +3,32 @@
   {%- if it.user %}
       <main class="user_preferences">
         <h2>{{ _('Preferences for %(role)s user %(email)s', role=it.user.role, email=it.user.email) }}</h2>
-        <form method="post">
+        <form method="post" class="fieldset_columns">
           {{ it.form.hidden_tag() }}
           <fieldset class="user_information">
             <legend>{{ _('User information') }}</legend>
             {{ it.form.fullname.label }} {{ it.form.fullname() }}
             {{ it.form.email.label }} {{ it.form.email() }}
           </fieldset>
+          {#- Users who logged in with single sign-on change their password in their provider #}
+          {%- if not it.user.sso %}
           <fieldset class="password">
             <legend>{{ _('Change password') }}</legend>
             {{ it.form.password.label }} {{ it.form.password() }}
             {{ it.form.new_password.label }} {{ it.form.new_password() }}
             {{ it.form.confirm_password.label }} {{ it.form.confirm_password() }}
           </fieldset>
+          {%- endif %}
           <fieldset class="color_scheme">
-            {{ it.form.color_scheme.label }} {{ it.form.color_scheme() }}
+            <legend>{{ it.form.color_scheme.label.text }}</legend>
+            {{ it.form.color_scheme() }}
           </fieldset>
           <fieldset class="language">
-            {{ it.form.language.label }} {{ it.form.language() }}
+            <legend>{{ it.form.language.label.text }}</legend>
+            {{ it.form.language() }}
           </fieldset>
           <fieldset class="font">
-            {{ it.form.font.label }}
+            <legend>{{ it.form.font.label.text }}</legend>
             {#- Each option is written in its font, so the user sees it before choosing #}
             <ul id="{{ it.form.font.id }}">
             {%- for option in it.form.font %}
@@ -42,6 +47,19 @@
       </main>
     {%- else %}
       <main class="login">
+      {%- if it.providers %}
+        {#- Links, not forms: the providers answer a redirect, which the form-action rule of the CSP
+            would block after a POST. The state parameter of the protocol protects the login #}
+        <section class="sso_login">
+          <h2>{{ _('Log in with') }}</h2>
+          <ul>
+          {%- for provider in it.providers %}
+            <li><a class="button confirm" href="{{ url_for('sso_login', alias=provider.alias, next=it.next_url) }}">{{ provider.name }}</a></li>
+          {%- endfor %}
+          </ul>
+          <p class="separator">{{ _('or with your VygOJ password') }}</p>
+        </section>
+      {%- endif %}
         <form method="post">
           {{ it.form.hidden_tag() }}
           <fieldset class="credentials">

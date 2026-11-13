@@ -121,6 +121,20 @@ class ProblemController:
         return flask.send_file(os.path.realpath(path), mimetype=file_type, max_age=FILE_MAX_AGE)
 
     @staticmethod
+    def get_course_file(course_name: str, filename: str):
+        """ Send an image of the course repository, e.g. the picture or the banner of the course.
+        It follows the rules of the files of problems, but only images are served """
+        course = CourseController.find_course(course_name)
+        if not course:
+            flask.abort(404)
+        path = safe_join(course.folder, filename)
+        file_type = FILE_TYPES.get(os.path.splitext(filename)[1][1:].lower(), '')
+        if (not path or not file_type.startswith('image/') or not os.path.isfile(path)
+                or not ProblemLoader.is_inside(course.folder, path)):
+            flask.abort(404)
+        return flask.send_file(os.path.realpath(path), mimetype=file_type, max_age=FILE_MAX_AGE)
+
+    @staticmethod
     def post_problem(course_name: str, problem_name: str):
         """ Client JavaScript asked for an action: fetch a problem, run user solution,
         save user code, ... All communication is made with JSON objects """
@@ -136,8 +150,10 @@ class ProblemController:
         except HTTPException:
             # E.g. 404 when the problem does not exist, Flask answers it
             raise
-        except requests.exceptions.RequestException:
-            app.logger.exception('backend failed running %s/%s', course_name, problem_name)
+        except requests.exceptions.RequestException as error:
+            # A stopped or slow backend is expected, so a line without the traceback
+            app.logger.warning('backend failed running %s/%s: %s', course_name, problem_name,
+                error)
             return ProblemController.error_response(
                 'the judge is not available, try again later', 502)
         except Exception: # pylint: disable=broad-exception-caught

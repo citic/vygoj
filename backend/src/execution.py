@@ -76,13 +76,22 @@ CONTAINER_TMP_SIZE = '64m'
 # Label that identifies the containers created by the backend, e.g. to remove leaked ones with
 # docker rm -f $(docker ps -aq --filter label=vygoj=engine)
 CONTAINER_LABELS = {'vygoj': 'engine'}
+# Exit status of the backend when Docker is not available. gunicorn stops on 4 (its APP_LOAD_ERROR)
+# instead of restarting the workers forever, and the Flask reloader would restart on 3
+DOCKER_UNAVAILABLE_STATUS = 4
 
 # Docker is a server, we need a client to use it. from_env() creates a client that connects to the
 # server using the default socket or configuration in your environment variables. from_env() gives
 # you access to the same client when you run the `docker` command in your shell. The timeout
 # bounds each API call, so a stuck container cannot block a backend worker forever.
 # Doc: https://docker-py.readthedocs.io/en/stable/client.html
-docker_client = docker.from_env(timeout=DOCKER_TIMEOUT)
+try:
+    docker_client = docker.from_env(timeout=DOCKER_TIMEOUT)
+except docker.errors.DockerException as docker_error:
+    # Without Docker no solution can run, so the backend stops with a message instead of a
+    # traceback
+    logger.critical('Docker server not available: %s', docker_error)
+    raise SystemExit(DOCKER_UNAVAILABLE_STATUS) from None
 
 # Compiler options of the sanitizers that a problem may ask for in gcc, g++, and clang. Only these
 # tools are accepted, any other word in problem.tools is ignored

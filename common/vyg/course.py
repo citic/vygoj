@@ -13,7 +13,7 @@ class Course(Resource):
 
     In a systems perspective, a course is compound of several resources:
 
-    - Attributes: name, title, description, image, startDate, finishDate
+    - Attributes: name, title, description, image, banner, startDate, finishDate
     - Instructors (teachers, professors)
     - Students
     - Sections that can be nested
@@ -37,8 +37,11 @@ class Course(Resource):
         # Override the folder with the repository folder where courses are stored, e.g:
         # data/u13/pexercises
         self.folder = folder
-        # Courses may have an allusive image for helping users to identify it
-        self.image = json_dict.get('image', '')
+        # Courses may have an allusive image for helping users to identify it. Courses without it
+        # show the gavel of VygOJ
+        self.image = json_dict.get('image') or '/img/logo2.svg'
+        # A wide image shown behind the title of the course page
+        self.banner = json_dict.get('banner', '')
         # Professors that created the course, they may be different than professors who teach it
         self.authors = json_dict.get('authors', [])
         # Status of the course: 'editing', 'available', 'enabled', 'disabled'
@@ -48,6 +51,14 @@ class Course(Resource):
     def get_course(self) -> 'Course':
         """ A course is the root of the material tree, so it contains itself """
         return self
+
+    def file_url(self, path: str) -> str:
+        """ Returns the URL of a file of the course, e.g. its image. A path of this site, such as
+        /img/logo2.svg, stays as it is, and a path relative to the course folder, such as
+        img/banner.png, is served by the files route of the course """
+        if path.startswith('/'):
+            return path
+        return f'/course/{self.name}/files/{path}'
 
     def add_symbol(self, material: 'Material'):
         """ Add this material to the course's symbols table, so it can be found by name """

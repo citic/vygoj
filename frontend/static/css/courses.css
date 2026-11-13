@@ -19,8 +19,8 @@
 }
 
 /* Card of a course in the lists: its image and progress at the left of its code and name,
-   description, and instructors, and the Enter button below them. The last row takes the height
-   of the image that is left */
+   description, and instructors, the Enter button below them, and its banner, if any, behind
+   them. The last row takes the height of the image that is left */
 .course_item {
   position: relative;
   display: grid;
@@ -230,11 +230,41 @@
   }
 }
 
-/* Course details as a banner: title and data at the left, total progress at the right. The
-   title and the data meet in the middle, so they stay together when the progress is taller */
+/* Banner of a course behind its card in the lists and behind its summary in the course page. It
+   covers them, cropped to their size, under a layer of the surface color. A halo of that color
+   around the letters keeps them readable over any banner, in the light and dark schemes */
+:is(.course_item, .course .summary):has(> .banner:not([hidden])) {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  text-shadow: 0 0 0.15em var(--surface), 0 0 0.3em var(--surface), 0 0 0.5em var(--surface);
+
+  /* No grid area, so it covers the padding too */
+  & > .banner {
+    grid-area: auto;
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-color: color-mix(in srgb, var(--surface) 60%, transparent);
+  }
+}
+
+/* Course details as a banner: picture, title, and data at the left, total progress at the right.
+   The title and the data meet in the middle, so they stay together when the progress is taller.
+   The banner of the course, if any, goes behind them */
 .course .summary {
   display: grid;
-  grid-template: "title progress" auto "data progress" auto / minmax(0, 1fr) auto;
+  grid-template: "picture title progress" auto "picture data progress" auto / auto minmax(0, 1fr) auto;
   column-gap: 2rem;
   margin-top: 1.5rem;
   padding: 1.5rem 2rem;
@@ -285,6 +315,16 @@
       font-size: clamp(1.75rem, 1.25rem + 1.5vw, 2.5rem);
       font-weight: bolder;
     }
+  }
+
+  & > .picture {
+    grid-area: picture;
+    align-self: center;
+  }
+
+  /* The total progress over a banner needs a color with contrast in the dark scheme too */
+  &:has(> .banner:not([hidden])) .total {
+    color: var(--label-color);
   }
 }
 
@@ -405,6 +445,18 @@
 @media (width <= 640px) {
   .course .summary {
     padding: 1rem;
+
+    /* The picture and the progress above, so the title and the data get the whole width */
+    grid-template: "picture progress" auto "title title" auto "data data" auto / auto 1fr;
+
+    & > .picture {
+      width: 3rem;
+      height: auto;
+    }
+
+    & .total {
+      justify-self: end;
+    }
   }
 
   .course .contents {

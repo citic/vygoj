@@ -35,6 +35,10 @@
       <main class="course">
         <article class="description">
           <header class="summary">
+{%- if it.course.banner %}
+            <img class="banner" src="{{ it.course.file_url(it.course.banner) }}" alt="">
+{%- endif %}
+            <img class="picture" src="{{ it.course.file_url(it.course.image) }}" data-fallback="/img/logo2.svg" alt="" width="64" height="60">
             <h3>{{ it.course.title }}</h3>
             <dl>
               <dt>{{ _('Code') }}</dt>

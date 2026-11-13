@@ -68,6 +68,22 @@ class Site {
     window.addEventListener(CHECK_EVENT, () => this.checkBackendStatus());
     // Register event handlers for flash messages' close buttons
     this.setupFlashMessages();
+    // No image of the page is shown broken
+    document.querySelectorAll('img').forEach((image) => Site.showImageOrFallback(image));
+  }
+
+  // An image that does not load, e.g. by a wrong path in vygoj.json, shows its data-fallback image
+  // instead, such as the gavel for courses, or hides if it has none or the fallback fails too
+  static showImageOrFallback(image) {
+    image.decode().catch(() => {
+      const { fallback } = image.dataset;
+      if (fallback && image.getAttribute('src') !== fallback) {
+        image.src = fallback;
+        Site.showImageOrFallback(image);
+      } else {
+        image.hidden = true;
+      }
+    });
   }
 
   // Ask the server for the backend status, then schedule the next check
