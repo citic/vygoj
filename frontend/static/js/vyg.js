@@ -35,7 +35,7 @@ class Enum {
 }
 
 export class Message {
-  constructor(action, error = '', language = '', code = '') {
+  constructor(action, error = '', language = '', code = '', stdin = '', args = '') {
     // Action to perform: 'run', 'fetch_problem'
     this.action = action;
     // Error message if any
@@ -44,6 +44,10 @@ export class Message {
     this.language = language;
     // Source code to run or submit
     this.code = code;
+    // Standard input and command line arguments that the user wrote to run the code, in
+    // problems without test cases
+    this.stdin = stdin;
+    this.args = args;
   }
 }
 
@@ -77,6 +81,10 @@ export class TestCase {
     this.points = json?.points || 0;
     // If true, the test case is hidden for users, so they cannot see what is in it
     this.hidden = json?.hidden || false;
+    // If true, the user wrote this test case to try their solution with their own input, e.g.
+    // in problems without test cases. It is run, but its outputs are not compared and it gives
+    // no points
+    this.custom = json?.custom || false;
     // Minimum number of threads that user solution must create in order to consider it right
     this.minThreads = json?.minThreads || 1;
     // Maximum number of threads that user solution may create to consider it correct
