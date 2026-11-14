@@ -39,6 +39,8 @@
           <p class="actions">
             {{ it.form.update(class="button confirm") }}
             {#{ it.form.logout(class="button reject") }#}
+            {#- A zip file with the last version of each solution that the user ran #}
+            <a href="{{ url_for('get_solutions') }}" class="button" id="download_solutions" download>{{ _('Download my solutions') }}</a>
             {#- Logout changes the session, so it is a POST with the CSRF token of this form #}
             <button type="submit" formaction="{{ url_for('logout') }}" formnovalidate class="button reject" id="reject_button">{{ _('Logout') }}</button>
             {#{ it.form.delete_account(class="button danger") }#}

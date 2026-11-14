@@ -29,7 +29,18 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
   them (never the logged administrator, who cannot change their own role nor status either). Suspended users (`status` column of `users`) cannot log in, and
   `refresh_session()` in `users.py` logs out suspended and deleted users at their next request.
   Tables with data of users declare their foreign key with `ondelete='CASCADE'`, so deleting a
-  user deletes it (`manage.py` updates the keys of older databases).
+  user deletes it (`manage.py` updates the keys of older databases), and the folder of the user
+  in `DATA_FOLDER` is deleted after the commit, unless it holds the course repo (`COURSES_REPO`).
+- `src/git_repo.py`: `GitRepo`, the operations on git repos shared by student repos and, later,
+  professor repos (commit a file at the end of a branch, versions, read, archive), and
+  `user_folder()`, the folder `DATA_FOLDER/user/<username>` with the repos of each user.
+- `src/student_repo.py`: `StudentRepo(GitRepo)`, the bare git repo with the solutions that each
+  user submits as a student, in `DATA_FOLDER/user/<username>/student_repo`
+  (`STUDENT_REPO_NAME`), created at login, with a branch per problem and a commit per run with new
+  code (`ProblemController.save_solution()`), the versions of the slider of the editor, and the
+  zip archive of the solutions (`download_solutions()` in `users.py`). It runs git through
+  `subprocess` with plumbing commands and a timeout, and validates names of courses, problems,
+  files, and commits before they become refs or paths (see "Student repos" in `readme.adoc`).
 - `src/runs.py`: `Run` model (`runs` table) that limits the code runs of each user: one at a
   time, 5 seconds between them, 120 per hour, and the same submission answered with the stored
   result of the last run.

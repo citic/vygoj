@@ -21,7 +21,7 @@ EXP_RAND_TYPE = [
 
 # Course repository, relative to DATA_FOLDER, that lists the courses
 # TODO(jhc): this path will be replaced by a database query
-COURSES_REPO = 'u13/pexercises/vygoj.json'
+COURSES_REPO = 'user/jhc/pexercises/vygoj.json'
 
 # The threads of a gunicorn worker share the cache of courses. The lock prevents two threads from
 # loading the course repository at once

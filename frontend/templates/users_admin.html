@@ -89,7 +89,7 @@
                     <button type="submit" class="small reject material-symbols-outlined" title="{{ _('Suspend') }}" aria-label="{{ _('Suspend %(username)s', username=user.username) }}">pause</button>
                   </form>
 {%-     endif %}
-                  <form method="post" action="{{ url_for('delete_user', user_id=user.id) }}" data-confirm="{{ _('Delete the user %(username)s and their data, such as their preferences and progress? Their activity stays in the log. This cannot be undone.', username=user.username) }}">
+                  <form method="post" action="{{ url_for('delete_user', user_id=user.id) }}" data-confirm="{{ _('Delete the user %(username)s and their data, such as their preferences, progress, and solutions? Their activity stays in the log. Only backups can recover them.', username=user.username) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="small danger material-symbols-outlined" title="{{ _('Delete') }}" aria-label="{{ _('Delete %(username)s', username=user.username) }}">close</button>
                   </form>

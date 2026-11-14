@@ -21,6 +21,10 @@ msgid " (CPU %(seconds)s s)"
 msgstr " (CPU %(seconds)s s)"
 
 #, python-format
+msgid "%(number)s of %(count)s, %(time)s"
+msgstr "%(number)s de %(count)s, %(time)s"
+
+#, python-format
 msgid "%(passed)s test cases passed (%(points)s points)"
 msgstr "%(passed)s casos de prueba aprobados (%(points)s puntos)"
 
@@ -101,14 +105,14 @@ msgstr ""
 "Un juez en línea educativo para enseñar y aprender programación de "
 "computadoras con énfasis en el paradigma de programación concurrente"
 
-msgid "Arguments, one per line"
-msgstr "Argumentos, uno por línea"
-
 msgid "Another provider has this alias"
 msgstr "Otro proveedor tiene este alias"
 
 msgid "Another user has this email"
 msgstr "Otro usuario tiene este correo"
+
+msgid "Arguments, one per line"
+msgstr "Argumentos, uno por línea"
 
 msgid "Assistant"
 msgstr "Asistente"
@@ -194,6 +198,9 @@ msgstr "No se pudo ejecutar la solución: %(error)s"
 msgid "Create an account for users who are not registered in VygOJ"
 msgstr "Crear una cuenta a los usuarios que no están registrados en VygOJ"
 
+msgid "Current code"
+msgstr "Código actual"
+
 msgid "Current password"
 msgstr "Contraseña actual"
 
@@ -229,12 +236,13 @@ msgstr ""
 
 #, python-format
 msgid ""
-"Delete the user %(username)s and their data, such as their preferences "
-"and progress? Their activity stays in the log. This cannot be undone."
+"Delete the user %(username)s and their data, such as their preferences, "
+"progress, and solutions? Their activity stays in the log. Only backups "
+"can recover them."
 msgstr ""
-"¿Eliminar al usuario %(username)s y sus datos, como sus preferencias y "
-"progreso? Su actividad se mantiene en la bitácora. Esto no se puede "
-"deshacer."
+"¿Eliminar al usuario %(username)s y sus datos, como sus preferencias, "
+"progreso y soluciones? Su actividad se mantiene en la bitácora. Solo los "
+"respaldos pueden recuperarlos."
 
 msgid "Deleted"
 msgstr "Eliminado"
@@ -260,6 +268,9 @@ msgstr "¿Desea borrar todo el código?"
 
 msgid "Do you want to revert to the initial code?"
 msgstr "¿Desea volver al código inicial?"
+
+msgid "Download my solutions"
+msgstr "Descargar mis soluciones"
 
 msgid "Edit"
 msgstr "Editar"
@@ -344,14 +355,14 @@ msgstr "Cerrar sesión"
 msgid "My courses"
 msgstr "Mis cursos"
 
-msgid "Next"
-msgstr "Siguiente"
-
 msgid "Name"
 msgstr "Nombre"
 
 msgid "New SSO provider"
 msgstr "Nuevo proveedor de SSO"
+
+msgid "Next"
+msgstr "Siguiente"
 
 msgid "No errors"
 msgstr "Sin errores"
@@ -550,10 +561,6 @@ msgstr "Caso de prueba %(number)d"
 msgid "Test case %(number)s verdict: %(status)s"
 msgstr "Veredicto del caso de prueba %(number)s: %(status)s"
 
-#, python-format
-msgid "The arguments are too long: at most %(length)d characters"
-msgstr "Los argumentos son demasiado largos: como máximo %(length)d caracteres"
-
 msgid "Testing"
 msgstr "Prueba"
 
@@ -563,6 +570,10 @@ msgid ""
 msgstr ""
 "Los proveedores en prueba no aparecen en la página de ingreso, pero "
 "cualquiera que conozca su URL de ingreso puede usarlos."
+
+#, python-format
+msgid "The arguments are too long: at most %(length)d characters"
+msgstr "Los argumentos son demasiado largos: como máximo %(length)d caracteres"
 
 msgid "The browser blocked the clipboard. Use Ctrl+X, Ctrl+C or Ctrl+V."
 msgstr "El navegador bloqueó el portapapeles. Use Ctrl+X, Ctrl+C o Ctrl+V."
@@ -608,6 +619,12 @@ msgstr "Usuario %(username)s activado."
 #, python-format
 msgid "User %(username)s deleted."
 msgstr "Usuario %(username)s eliminado."
+
+#, python-format
+msgid "User %(username)s has the courses in their folder and cannot be deleted."
+msgstr ""
+"El usuario %(username)s tiene los cursos en su carpeta y no se puede "
+"eliminar."
 
 #, python-format
 msgid "User %(username)s saved."
@@ -657,6 +674,9 @@ msgid ""
 msgstr ""
 "Valores de ese claim que indican profesor, separados por comas. Los demás"
 " usuarios nuevos son estudiantes."
+
+msgid "Version of your solution"
+msgstr "Versión de su solución"
 
 msgid "Vygotsky Online Judge"
 msgstr "Juez en línea Vygotsky"
@@ -765,4 +785,16 @@ msgstr "el servidor no respondió en %(seconds)s segundos"
 #~ "los administradores inician sesión con "
 #~ "su contraseña. Asígnele una en el "
 #~ "servidor con make admin."
+
+#~ msgid ""
+#~ "Delete the user %(username)s and their"
+#~ " data, such as their preferences and"
+#~ " progress? Their activity stays in "
+#~ "the log. This cannot be undone."
+#~ msgstr ""
+#~ "¿Eliminar al usuario %(username)s y sus"
+#~ " datos, como sus preferencias y "
+#~ "progreso? Su actividad se mantiene en"
+#~ " la bitácora. Esto no se puede "
+#~ "deshacer."
 

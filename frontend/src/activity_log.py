@@ -386,7 +386,7 @@ class ProblemFiles:
         repo = git_output(course.folder, 'rev-parse', '--show-toplevel')
         if not repo or not ProblemLoader.is_inside_course(problem, problem.get_path()):
             return None
-        # Repos may be symbolic links (e.g. vygdata/u13/pexercises), so real paths are compared
+        # Repos may be symbolic links (e.g. vygdata/user/jhc/pexercises), so real paths are compared
         problem_path = os.path.relpath(os.path.realpath(problem.get_path()),
             os.path.realpath(repo))
         if problem_path.startswith('..'):

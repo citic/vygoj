@@ -1,5 +1,6 @@
 """ Manages application users, their preferences, and courses' progress """
 import datetime
+import io
 import os
 import urllib.parse
 
@@ -13,6 +14,8 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from db import db
 from activity_log import log_event
+from git_repo import GitError
+from student_repo import StudentRepo
 
 # Fonts the user may choose for the site: key stored in the database, label shown in the
 # preferences, and the family query of Google Fonts that loads it (None for fonts of the system).
@@ -441,6 +444,20 @@ class UserForm(flask_wtf.FlaskForm):
             return flask.redirect(flask.url_for('user', next=next_url))
         return start_session(db_user, next_url)
 
+def download_solutions():
+    """ Send the logged user a zip archive with the last version of each of their solutions, or
+    ask them to log in """
+    user = flask.session.get('user')
+    if not user:
+        return flask.redirect(flask.url_for('user', next=flask.request.path))
+    try:
+        archive = StudentRepo(user['email']).archive_solutions()
+    except (GitError, OSError, ValueError):
+        flask.current_app.logger.exception('could not archive the solutions of %s', user['email'])
+        flask.abort(500)
+    return flask.send_file(io.BytesIO(archive), mimetype='application/zip', as_attachment=True,
+        download_name='student_repo.zip')
+
 def start_session(db_user: User, next_url: str | None, provider: str = None):
     """ Log in the given user, authenticated by password or by the single sign-on provider of
     the given key, and go to next_url """
@@ -459,6 +476,13 @@ def start_session(db_user: User, next_url: str | None, provider: str = None):
         # The preferences hide the password of users who logged in with single sign-on
         flask.session['user']['sso'] = provider
     logged_users.add(db_user.username)
+    # The student repo keeps the history of the solutions of the user. Without it the user still
+    # logs in, and the first run creates it
+    try:
+        StudentRepo(db_user.username).create()
+    except (GitError, OSError, ValueError):
+        flask.current_app.logger.exception('could not create the student repo of user %s',
+            db_user.username)
     flask.flash(gettext('Logged in successfully.'), 'success')
     log_event('login', { 'provider': provider } if provider else None)
     return flask.redirect(next_url or flask.url_for('get_index'))

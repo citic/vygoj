@@ -12,6 +12,8 @@ from werkzeug.security import safe_join
 import vyg
 from activity_log import log_event, log_run, repo_commit, save_code
 from courses import CourseController
+from git_repo import GitError
+from student_repo import StudentRepo, solution_filename
 from limits import CONSTRAINED_FIELDS, Limits
 from problem_loader import ProblemLoader
 from runs import Run, RunRejected
@@ -267,6 +269,8 @@ class ProblemController:
         # Only the code of accepted runs is saved, which are limited per user, so a robot cannot
         # fill the disk with rejected or repeated runs. A repeated run has the file of its first run
         save_code(code_hash, message.language, message.code)
+        ProblemController.save_solution(flask.session['user'].get('email'), course_name,
+            problem.name, message)
         # The commit of the course repo recovers the statement and test cases that judged the run.
         # Only accepted runs ask git for it, which are limited per user
         run_data['commit'] = repo_commit(problem.get_course().get_path())
@@ -293,6 +297,57 @@ class ProblemController:
             run.finish(result_json)
             log_run('run' if result_json else 'run_failed', run_data, result_json, id=run_id,
                 **log_cells)
+
+    @staticmethod
+    def save_solution(username: str, course_name: str, problem_name: str, message: vyg.Message):
+        """ Commit the code of the run to the student repo of the user, the history of their
+        solutions. A failure is logged, and the run goes on without it """
+        try:
+            StudentRepo(username).save(course_name, problem_name,
+                solution_filename(message.language), message.code)
+        except (GitError, OSError, ValueError):
+            app.logger.exception('could not save the solution of %s/%s', course_name,
+                problem_name)
+
+    @staticmethod
+    def get_versions(course_name: str, problem_name: str):
+        """ Answer the versions of the solution of the logged user to the problem, in the language
+        of the query, from the oldest to the newest, as [[commit, time], ...] """
+        repo, problem, filename = ProblemController.solution_of_user(course_name, problem_name)
+        try:
+            versions = repo.versions(problem.get_course().name, problem.name, filename)
+        except (GitError, OSError, ValueError):
+            app.logger.exception('could not list the versions of %s/%s', course_name, problem_name)
+            versions = []
+        # A run adds a version, so the browser asks for the list every time
+        return flask.jsonify(versions), 200, { 'Cache-Control': 'no-store' }
+
+    @staticmethod
+    def get_version(course_name: str, problem_name: str, commit: str):
+        """ Answer the code of a version of the solution of the logged user to the problem, in the
+        language of the query, as text. Other users never reach it: it is read from the repo of
+        the logged user only """
+        repo, problem, filename = ProblemController.solution_of_user(course_name, problem_name)
+        try:
+            code = repo.read(commit, problem.get_course().name, problem.name, filename)
+        except (GitError, OSError, ValueError):
+            flask.abort(404)
+        # A commit never changes, so the browser keeps its code
+        return flask.Response(code, mimetype='text/plain', headers={
+            'Cache-Control': 'private, max-age=31536000, immutable' })
+
+    @staticmethod
+    def solution_of_user(course_name: str, problem_name: str):
+        """ Return the repo of the logged user, the problem, and the file of its solution in the
+        language of the query, or abort if there is no user, problem, or enabled language """
+        user = flask.session.get('user')
+        if not user:
+            flask.abort(401)
+        problem = ProblemController.fetch_problem(course_name, problem_name)
+        language = flask.request.args.get('language', '')
+        if language not in problem.languages:
+            flask.abort(400)
+        return StudentRepo(user['email']), problem, solution_filename(language)
 
     @staticmethod
     def grade(result_json: str) -> int:
