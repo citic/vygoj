@@ -11,7 +11,8 @@ from werkzeug.security import safe_join
 import vyg
 from activity_log import log_event, log_run, repo_commit, save_code
 from courses import CourseController
-from git_repo import GitError, PersonalRepo, solution_filename
+from git_repo import GitError
+from student_repo import StudentRepo, solution_filename
 from limits import CONSTRAINED_FIELDS, Limits
 from problem_loader import ProblemLoader
 from runs import Run, RunRejected
@@ -266,10 +267,10 @@ class ProblemController:
 
     @staticmethod
     def save_solution(username: str, course_name: str, problem_name: str, message: vyg.Message):
-        """ Commit the code of the run to the personal repo of the user, the history of their
+        """ Commit the code of the run to the student repo of the user, the history of their
         solutions. A failure is logged, and the run goes on without it """
         try:
-            PersonalRepo(username).save(course_name, problem_name,
+            StudentRepo(username).save(course_name, problem_name,
                 solution_filename(message.language), message.code)
         except (GitError, OSError, ValueError):
             app.logger.exception('could not save the solution of %s/%s', course_name,
@@ -313,7 +314,7 @@ class ProblemController:
         language = flask.request.args.get('language', '')
         if language not in problem.languages:
             flask.abort(400)
-        return PersonalRepo(user['email']), problem, solution_filename(language)
+        return StudentRepo(user['email']), problem, solution_filename(language)
 
     @staticmethod
     def grade(result_json: str) -> int:

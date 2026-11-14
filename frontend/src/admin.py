@@ -153,11 +153,12 @@ class UserAdminController:
     def delete(db_user: User):
         """ Remove the given user and their data from the database: identities of single sign-on,
         progress, and runs, which the database deletes in cascade, and their folder in DATA_FOLDER
-        with their personal repo. The activity log keeps what they did. The number of the user is
+        with their student repo. The activity log keeps what they did. The number of the user is
         never given again """
         username, folder = db_user.username, user_folder(db_user.username)
-        # The folder of a user may hold the course repo that lists the courses (e.g. u13/pexercises)
-        # until courses are in the database. Deleting it would remove every course
+        # The folder of a user may hold the course repo that lists the courses (e.g.
+        # user/jhc/pexercises) until courses are in the database. Deleting it would remove every
+        # course
         courses_repo = os.path.join(flask.current_app.config['DATA_FOLDER'], COURSES_REPO)
         if os.path.commonpath([folder, courses_repo]) == folder:
             flask.flash(gettext('User %(username)s has the courses in their folder and cannot be '

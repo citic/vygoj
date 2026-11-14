@@ -35,7 +35,7 @@ class Course(Resource):
         self._symbols = {}
         super().__init__(json_dict, None)
         # Override the folder with the repository folder where courses are stored, e.g:
-        # data/u13/pexercises
+        # data/user/jhc/pexercises
         self.folder = folder
         # Courses may have an allusive image for helping users to identify it
         self.image = json_dict.get('image', '')

@@ -93,7 +93,7 @@ class Material(abstract):
 
     def get_path(self) -> str:
         """ Returns the path where this material is stored, e.g:
-        data/u13/pexercises/1.1_io/hello/ """
+        data/user/jhc/pexercises/1.1_io/hello/ """
         # My path is the concatenation of all parent materials and my folder
         return os.path.join(self._parent.get_path(), self.folder) if self._parent else self.folder
 

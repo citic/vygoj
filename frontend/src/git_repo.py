@@ -1,15 +1,14 @@
-""" Personal git repos of the users, with the history of their solutions.
+""" Git repos of the users, kept in their folders of DATA_FOLDER:
 
-Each user has a bare repo, without working tree, in DATA_FOLDER/u<username>/<PERSONAL_REPO_NAME>.
-The solution of a problem has this logical path, which does not exist on disk:
+    user/<username>/<STUDENT_REPO_NAME>    # student repo, see student_repo.py
+    user/<username>/<repo>                 # repos of professors, with their courses
 
-    <course>/<term_group>/<problem>/src/solution.c
-
-Each problem has a branch problems/<course>/<term_group>/<problem> with the linear history of its
-solution, a commit per run with new code. The trees of its commits hold the full logical path, so
-the branches of the problems can be merged later without conflicts. Files are committed with the
-plumbing commands of git (hash-object, update-index on a temporary index, write-tree, commit-tree,
-update-ref), which need no working tree """
+GitRepo runs git on a repo with a timeout, and offers the operations that every kind of repo
+needs: commit a file at the end of a branch, list the versions of a file, read a version, and
+archive the last files of some branches. Files are committed with the plumbing commands of git
+(hash-object, update-index on a temporary index, write-tree, commit-tree, update-ref), which need
+no working tree, so they work on bare repos too. Subclasses map their own concepts (e.g. courses
+and problems) to branches and paths, and validate them """
 
 import os
 import re
@@ -19,17 +18,10 @@ import urllib.parse
 
 from flask import current_app as app
 
-import vyg
-
 # Seconds that a git command may take. Commands are local and their files small
 GIT_TIMEOUT = 5
-# Offering of the courses (e.g. 2026b05 is group 05 of the second term of 2026), until courses
-# have offerings in the database
-TERM_GROUP = '2026b01'
-# Names of courses and problems (folders of the course repos, e.g. collatz_3n+1) and files of
-# solutions. They are parts of refs and paths of git, so they cannot have dots, slashes, or spaces
-NAME_PATTERN = re.compile(r'[A-Za-z0-9_+-]{1,64}')
-FILENAME_PATTERN = re.compile(r'[A-Za-z0-9_-]{1,64}\.[a-z0-9]{1,8}')
+# Folder of DATA_FOLDER with a folder per user
+USERS_FOLDER = 'user'
 # A commit given by the client, as the full hash of git
 COMMIT_PATTERN = re.compile(r'[0-9a-f]{40}')
 # Value of a ref that does not exist yet, for update-ref
@@ -48,30 +40,27 @@ GIT_ENV = {
 class GitError(Exception):
     """ A git command that failed or took too long """
 
-class PersonalRepo:
-    """ The bare git repo with the solutions of a user """
+class GitRepo:
+    """ A git repo in a folder of the server. Branches and paths given to its methods must be
+    validated by the caller, because they come from names chosen by users """
 
-    def __init__(self, username: str):
-        """ Find the folder of the repo from the username of the user """
-        # Path of the bare repo: DATA_FOLDER/u<username>/<PERSONAL_REPO_NAME>
-        self.path = os.path.join(user_folder(username), app.config['PERSONAL_REPO_NAME'])
+    def __init__(self, path: str):
+        """ Use the repo in the given folder, which may not exist yet """
+        self.path = path
 
     def create(self):
-        """ Create the repo if it does not exist """
+        """ Create the repo as a bare repo, without working tree, if it does not exist """
         if not os.path.isfile(os.path.join(self.path, 'HEAD')):
             os.makedirs(self.path, exist_ok=True)
             self.git('init', '--quiet', '--bare')
 
-    def save(self, course: str, problem: str, filename: str, code: str) -> bool:
-        """ Commit the code as the file of the solution of the problem, at the end of its branch,
-        unless the solution did not change. Return whether a commit was made """
-        self.create()
-        branch = problem_branch(course, problem)
-        path = solution_path(course, problem, filename)
+    def commit_file(self, branch: str, path: str, content: str, message: str) -> bool:
+        """ Commit the content as the file of the given path, at the end of the branch, unless the
+        file did not change. Return whether a commit was made """
         old_commit = self.last_commit(branch)
-        blob = self.git('hash-object', '-w', '--stdin', stdin=code)
+        blob = self.git('hash-object', '-w', '--stdin', stdin=content)
         # The tree of the last commit with the new file. The index is temporary, because workers
-        # of gunicorn may save at the same time
+        # of gunicorn may commit at the same time
         with tempfile.TemporaryDirectory() as folder:
             index = { 'GIT_INDEX_FILE': os.path.join(folder, 'index') }
             if old_commit:
@@ -81,36 +70,34 @@ class PersonalRepo:
         if old_commit and tree == self.git('rev-parse', f'{old_commit}^{{tree}}'):
             return False
         parent = ('-p', old_commit) if old_commit else ()
-        commit = self.git('commit-tree', tree, *parent, '-m', 'Run')
+        commit = self.git('commit-tree', tree, *parent, '-m', message)
         # Moves the branch only if it is still in the old commit, so a worker never overwrites the
         # commit of another one
         self.git('update-ref', branch, commit, old_commit or NO_COMMIT)
         return True
 
-    def versions(self, course: str, problem: str, filename: str) -> list:
-        """ Return the versions of the file of the solution of the problem, from the oldest to the
-        newest, as [commit, time] pairs, with the time in seconds since the epoch """
-        branch = problem_branch(course, problem)
+    def file_versions(self, branch: str, path: str) -> list:
+        """ Return the versions of the file of the given path in the branch, from the oldest to
+        the newest, as [commit, time] pairs, with the time in seconds since the epoch """
         if not self.last_commit(branch):
             return []
         output = self.git('log', f'--max-count={MAX_VERSIONS}', '--reverse', '--format=%H %ct',
-            branch, '--', solution_path(course, problem, filename))
+            branch, '--', path)
         return [[commit, int(time)] for commit, time in
             (line.split() for line in output.splitlines())]
 
-    def read(self, commit: str, course: str, problem: str, filename: str) -> str:
-        """ Return the code of the file of the solution of the problem in the commit """
+    def read_file(self, commit: str, path: str) -> str:
+        """ Return the content of the file of the given path in the commit, a full hash that may
+        come from the client """
         if not COMMIT_PATTERN.fullmatch(commit):
             raise ValueError('invalid commit')
-        return self.git('cat-file', 'blob', f'{commit}:{solution_path(course, problem, filename)}',
-            strip=False)
+        return self.git('cat-file', 'blob', f'{commit}:{path}', strip=False)
 
-    def archive(self) -> bytes:
-        """ Return a zip archive with the last version of the solution of every problem, in its
-        logical path. The trees of the branches of the problems have different paths, so a
-        temporary index joins them without conflicts, and no working tree is needed """
-        self.create()
-        branches = self.git('for-each-ref', '--format=%(refname)', 'refs/heads/problems/').split()
+    def archive(self, refs_prefix: str) -> bytes:
+        """ Return a zip archive with the files of the last commits of the branches whose refs
+        start with the prefix (e.g. refs/heads/problems/). Their trees must have different paths:
+        a temporary index joins them, and no working tree is needed """
+        branches = self.git('for-each-ref', '--format=%(refname)', refs_prefix).split()
         with tempfile.TemporaryDirectory() as folder:
             index = { 'GIT_INDEX_FILE': os.path.join(folder, 'index') }
             # ls-tree writes the files of a branch in the format that update-index reads
@@ -128,7 +115,7 @@ class PersonalRepo:
     def git(self, *args, stdin: str = None, env: dict = None, strip: bool = True,
             binary: bool = False) -> str | bytes:
         """ Run the git command in the repo and return its output, as bytes if binary, or as text
-        without the final newline if strip. Texts are bytes, so the code keeps its line endings.
+        without the final newline if strip. Texts are bytes, so files keep their line endings.
         Raise GitError if it fails """
         try:
             process = subprocess.run(['git', *GIT_OPTIONS, '-C', self.path, *args],
@@ -144,37 +131,15 @@ class PersonalRepo:
         return output.rstrip('\n') if strip else output
 
 def user_folder(username: str) -> str:
-    """ Return the folder of the user in DATA_FOLDER, u<username>, e.g. ue14 for the user e14.
-    Usernames may be emails of single sign-on, so characters other than letters, digits, and
-    @.+-_~ are encoded as in URLs (a/b is ua%2Fb): the folder has no slash, so it is always inside
-    DATA_FOLDER, and two users never share it. The u keeps the names . and .. away """
+    """ Return the folder of the user, with their repos: DATA_FOLDER/user/<username>, e.g.
+    DATA_FOLDER/user/e14 for the user e14. Usernames may be emails of single sign-on, so
+    characters other than letters, digits, and @.+-_~ are encoded as in URLs (a/b is a%2Fb): the
+    folder has no slash, so it is always inside DATA_FOLDER/user, and two users never share it.
+    The first dot of names that start with one is encoded too (.. is %2E.), so the folder of a
+    user is never DATA_FOLDER/user nor DATA_FOLDER """
     if not username:
         raise ValueError('empty username')
-    folder = 'u' + urllib.parse.quote(username, safe='@.+-_~')
-    return os.path.join(app.config['DATA_FOLDER'], folder)
-
-def problem_branch(course: str, problem: str) -> str:
-    """ Return the ref of the branch with the history of the solution of the problem """
-    check_names(course, problem)
-    return f'refs/heads/problems/{course}/{TERM_GROUP}/{problem}'
-
-def solution_path(course: str, problem: str, filename: str) -> str:
-    """ Return the logical path of the file of the solution of the problem """
-    check_names(course, problem)
-    if not FILENAME_PATTERN.fullmatch(filename):
-        raise ValueError('invalid file name')
-    return f'{course}/{TERM_GROUP}/{problem}/src/{filename}'
-
-def check_names(*names: str):
-    """ Raise ValueError if a name of a course or problem is not valid. Course repos validate them
-    too: this check keeps the refs and paths of the repo safe if they did not """
-    for name in names:
-        if not NAME_PATTERN.fullmatch(name):
-            raise ValueError(f'invalid name: {name!r}')
-
-def solution_filename(language: str) -> str:
-    """ Return the name of the file of a solution in the language, as the backend and the default
-    code of static/initial name it: Java needs the public class Solution in Solution.java """
-    if language == 'Java':
-        return 'Solution.java'
-    return f'solution.{vyg.EXTENSION_LANGUAGES[language]}'
+    folder = urllib.parse.quote(username, safe='@.+-_~')
+    if folder.startswith('.'):
+        folder = '%2E' + folder[1:]
+    return os.path.join(app.config['DATA_FOLDER'], USERS_FOLDER, folder)
