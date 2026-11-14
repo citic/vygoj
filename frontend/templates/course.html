@@ -7,7 +7,7 @@
 {%- macro course_rows(contents, level, prefix='') %}
   {%- for item in contents if not item.type.startswith('_') %}
     {%- set number = prefix ~ loop.index %}
-    {%- set label = number ~ ('.' if level == 2 else '') ~ ' ' ~ (item.title or item.folder) %}
+    {%- set label = number ~ ('.' if level == 3 else '') ~ ' ' ~ (item.title or item.folder) %}
             <tr data-type="{{ item.type }}" data-level="{{ level }}">
     {%- if item.type == 'section' %}
               <th scope="row" class="name"><h{{ [level, 6]|min }}><button type="button" aria-expanded="true">{{ label }}</button></h{{ [level, 6]|min }}></th>
@@ -39,7 +39,7 @@
             <img class="banner" src="{{ it.course.file_url(it.course.banner) }}" alt="">
 {%- endif %}
             <img class="picture" src="{{ it.course.file_url(it.course.image) }}" data-fallback="/img/logo2.svg" alt="" width="64" height="60">
-            <h3>{{ it.course.title }}</h3>
+            <h2>{{ it.course.title }}</h2>
             <dl>
               <dt>{{ _('Code') }}</dt>
               <dd>{{ it.course.name }}</dd>
@@ -64,7 +64,7 @@
               </tr>
             </thead>
             <tbody>
-{{- course_rows(it.course.contents, 2) }}
+{{- course_rows(it.course.contents, 3) }}
             </tbody>
           </table>
         </article>

@@ -13,7 +13,7 @@ class CourseManager {
         open.pop();
       }
       // Indentation of the row, the same for level 6 and deeper as their titles stay <h6>
-      row.style.setProperty('--depth', Math.min(level, 6) - 2);
+      row.style.setProperty('--depth', Math.min(level, 6) - 3);
       const element = row.querySelector('.progress');
       if (row.dataset.type === 'section') {
         const section = { element, level, scores: [] };
@@ -51,7 +51,7 @@ class CourseManager {
   // Clicking the Contents title collapses every section when one at least is expanded,
   // otherwise expands them all
   static toggleAll() {
-    const buttons = document.querySelectorAll('[data-type="section"][data-level="2"] button');
+    const buttons = document.querySelectorAll('[data-type="section"][data-level="3"] button');
     const expanded = ![...buttons].some((button) => button.getAttribute('aria-expanded') === 'true');
     buttons.forEach((button) => CourseManager.expand(button, expanded));
     CourseManager.save();

@@ -7,7 +7,7 @@
 {%- if progress is not none %}
               <p class="progress"><progress value="{{ progress }}" max="100" aria-hidden="true"></progress>{{ progress }}%</p>
 {%- endif %}
-              <h4><span class="code">{{ course.name }}</span> {{ course.title }}</h4>
+              <h3><span class="code">{{ course.name }}</span> {{ course.title }}</h3>
               <p class="description">{{ course.description }}</p>
               <ul class="instructors">
 {%- for instructor in course.authors %}

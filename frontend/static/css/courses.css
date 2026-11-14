@@ -1,18 +1,6 @@
 @import url('site.css');
 @import url('form.css');
 
-/* Lists of courses: each one is an article with a title bar and a card per course */
-.courses > article > header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin: 2rem 0 1rem;
-
-  & h3 {
-    margin: 0;
-  }
-}
-
 /* Names of the columns of the courses, once above the list on wide screens */
 .course_columns {
   display: none;
@@ -36,7 +24,7 @@
     grid-area: 1 / 1 / span 3;
   }
 
-  & :is(h4, ul, p) {
+  & :is(h3, ul, p) {
     margin: 0;
     overflow-wrap: anywhere;
   }
@@ -50,8 +38,13 @@
     display: inline;
   }
 
-  & h4 {
+  /* The name of the course in the text of the card, without the size and marks of headings */
+  & h3 {
+    padding: 0;
+    background: none;
+    font-size: 1em;
     font-weight: normal;
+    color: inherit;
   }
 
   & .code {
@@ -186,7 +179,7 @@
       grid-row: 1;
     }
 
-    & > :is(h4, .description, .instructors, .statistics, .enter) {
+    & > :is(h3, .description, .instructors, .statistics, .enter) {
       grid-row: 1 / span 2;
     }
 
@@ -208,7 +201,7 @@
     }
 
     /* A straight line separates the columns */
-    & > :is(h4, .description, .instructors, .statistics) {
+    & > :is(h3, .description, .instructors, .statistics) {
       padding-inline-start: 1.25rem;
       border-inline-start: 1px solid rgb(128 128 128 / 50%);
     }
@@ -216,6 +209,20 @@
     & .enter {
       grid-column: auto;
     }
+  }
+}
+
+/* Sections of the home page (administration and lists of courses), which fold (site.css). The
+   actions of a section, such as Add Course, go at the right below its title */
+.courses > details {
+  & > summary {
+    margin-bottom: 1rem;
+  }
+
+  & > a {
+    display: block;
+    width: fit-content;
+    margin: 0 0 1rem auto;
   }
 }
 
@@ -271,10 +278,13 @@
   border-radius: 0.5rem;
   background-color: rgb(128 128 128 / 8%);
 
-  & h3 {
+  /* Title of the course, without the rule of the headings: the banner frames it */
+  & h2 {
     grid-area: title;
     align-self: end;
     margin: 0 0 0.25rem;
+    padding: 0;
+    border: none;
     font-size: 1.15rem;
     font-weight: 600;
     overflow-wrap: anywhere;
@@ -360,14 +370,21 @@
     letter-spacing: 0.05em;
   }
 
-  /* Section titles as big as the table text; only the top level is a little bigger */
+  /* Section titles as big as the table text, in its color and without the marks of the headings
+     of the site; only the top level is a little bigger */
   & :is(h2, h3, h4, h5, h6) {
     margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
     font-size: 1em;
     font-weight: 600;
+    letter-spacing: normal;
+    text-transform: none;
+    color: inherit;
   }
 
-  & h2 {
+  & h3 {
     font-size: 1.05em;
   }
 
@@ -395,12 +412,8 @@
     outline: 2px solid var(--bg-color);
   }
 
-  /* Arrow in a box of fixed size so the title does not move when it changes. Its size comes from
-     the table, so every title, small or big, has the same arrow. The arrow is drawn as a mask
-     instead of a text character because fonts draw hollow and filled triangles in different
-     sizes: an expanded section shows a hollow triangle pointing down, and a collapsed one the
-     same triangle filled and pointing right. Like the font, the triangle takes about a third of
-     the box, so it is as tall as the capital letters of the title */
+  /* Triangle of the site (site.css) in a box of fixed size so the title does not move when it
+     changes. Its size comes from the table, so every title, small or big, has the same one */
   & button::before {
     content: '';
     display: inline-block;
@@ -409,11 +422,11 @@
     font-size: var(--arrow-size);
     vertical-align: middle;
     background-color: gray;
-    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M3.2 3.6h3.6L5 6.7z' fill='none' stroke='black' stroke-width='0.6' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: var(--arrow-expanded) center / contain no-repeat;
   }
 
   & button[aria-expanded="false"]::before {
-    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M3.6 3.2v3.6l3.1 -1.8z' stroke='black' stroke-width='0.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+    mask-image: var(--arrow-collapsed);
   }
 
   /* Deadline and progress columns take only the width of their contents */

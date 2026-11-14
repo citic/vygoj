@@ -34,6 +34,14 @@ DEFAULT_CODE_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.abspa
 TITLE_PATTERN = re.compile(r'\s*(?:<[a-z][^>]*>\s*)*(<(h[12])\b[^>]*>(.*?)</\2>)',
     re.IGNORECASE | re.DOTALL)
 
+# Level of the first headings of a statement inside the problem page, where <h1> is the name of the
+# site and <h2> is the title of the statement (templates/problem.html)
+STATEMENT_HEADING_LEVEL = 3
+
+# Opening or closing tag of a heading, e.g. <h4 id="x"> or </h4>. It is applied to sanitized HTML,
+# where '<' only starts tags (nh3 escapes it in texts and attribute values)
+HEADING_TAG_PATTERN = re.compile(r'<(/?)h([1-6])\b', re.IGNORECASE)
+
 logger = logging.getLogger(__name__)
 
 # Problems are shared by the threads of a gunicorn worker. The lock prevents two threads from
@@ -65,6 +73,7 @@ class ProblemLoader:
                     problem.statement = sanitize_html(problem.statement,
                         f'{ProblemLoader.page_url(problem)}/files/')
                     ProblemLoader.take_title(problem)
+                    ProblemLoader.renumber_headings(problem)
                     # Mark it loaded at the end, so other threads never use a partial problem
                     problem.folder_loaded = True
 
@@ -77,6 +86,18 @@ class ProblemLoader:
             problem.statement_title = html.unescape(re.sub('<[^>]*>', '', match[3])).strip()
             statement = problem.statement
             problem.statement = statement[:match.start(1)] + statement[match.end(1):]
+
+    @staticmethod
+    def renumber_headings(problem: vyg.Problem):
+        """ Renumber the headings of the statement so they follow the title of the statement in
+        the problem page without gaps. Authors may use any levels, e.g. <h1>, <h4>, and <h6>:
+        each level used becomes the next one by rank, <h3>, <h4>, and <h5>, keeping their order.
+        Levels beyond <h6> stay <h6> """
+        levels = sorted({int(level) for _, level in HEADING_TAG_PATTERN.findall(problem.statement)})
+        new_levels = {level: min(STATEMENT_HEADING_LEVEL + rank, 6)
+            for rank, level in enumerate(levels)}
+        problem.statement = HEADING_TAG_PATTERN.sub(
+            lambda match: f'<{match[1]}h{new_levels[int(match[2])]}', problem.statement)
 
     @staticmethod
     def page_url(problem: vyg.Problem) -> str:

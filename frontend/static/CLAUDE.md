@@ -15,6 +15,11 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
   which problem statements share for the tables of their authors. Forms take the
   `fieldset_columns` class of `form.css` to place their fieldsets of radio buttons side by side
   when the window has space for them (the preferences and the form of a user for administrators).
+  Headings follow one order in every page: `<h1>` is the name of the site and each page starts at
+  `<h2>`; `site.css` gives every level its look. Sections that fold are a native `<details>` whose
+  `<summary>` holds only the heading of the section (`<summary><h2>...</h2></summary>`, with no
+  links or buttons inside it); `site.css` draws the triangle of the site before the title. The
+  course contents use the same triangle (`--arrow-expanded`, `--arrow-collapsed`).
 - `img/`, `icon/`: images and SVG icons. `json/`: static data.
 - `initial/`: default code of each language (`solution.c`, `Solution.java`...). The server reads
   it (`ProblemLoader.default_code()`) and sends it in the `initialCodeFor` of problems without

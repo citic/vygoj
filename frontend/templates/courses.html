@@ -6,10 +6,9 @@
 {%- block main %}
       <main class="courses">
 {%- if it.user and it.user.role == 'admin' %}
-        <article id="admin_article">
-          <header>
-            <h3>{{ _('Administration') }}</h3>
-          </header>
+        {#- Each section folds when its title is clicked, as the sections of the other pages #}
+        <details id="admin_section" open>
+          <summary><h2>{{ _('Administration') }}</h2></summary>
           <div id="admin_panel" class="panel">
             <a class="icon_control" href="{{ url_for('get_users_admin') }}">
               <img src="/icon/user-detail.svg" alt="{{ _('Admin Users') }}">
@@ -26,37 +25,35 @@
               <span class="caption">{{ _('Submissions') }}</span>
             </a>
           </div>
-        </article>
+        </details>
 {%- endif %}
 {%- if it.my_courses|length > 0 %}
-        <article id="my_courses">
-          <header>
-            <h3>{{ _('My courses') }}</h3>
+        <details id="my_courses" open>
+          {#- The action goes below the title: a link inside the summary would be a control inside
+              the button that folds the section #}
+          <summary><h2>{{ _('My courses') }}</h2></summary>
 {%- if it.user and it.user.role == 'professor' %}
-            <a href="/course/admin" class="button confirm small">{{ _('Add Course') }}</a>
+          <a href="/course/admin" class="button confirm small">{{ _('Add Course') }}</a>
 {%- endif %}
-          </header>
           <p class="course_columns" aria-hidden="true"><span class="name">Course</span><span class="description">Description</span><span class="instructors">Author</span><span class="statistics">Statistics</span></p>
           <ul class="course_list">
 {%- for course in it.my_courses %}
             <li>{{ macros.course_entry(course, it.progress[course.name]) }}</li>
 {%- endfor %}
           </ul>
-        </article>
+        </details>
 {%- else %}
         <p>{{ _('Please login to see your courses.') }}</p>
 {%- endif %}
 {%- if it.available_courses|length > 0 %}
-        <article id="available_courses">
-          <header>
-            <h3>{{ _('Available courses') }}</h3>
-          </header>
+        <details id="available_courses" open>
+          <summary><h2>{{ _('Available courses') }}</h2></summary>
           <ul class="course_list">
 {%- for _, course in it.available_courses.items() %}
             <li>{{ macros.course_entry(course) }}</li>
 {%- endfor %}
           </ul>
-        </article>
+        </details>
 {%- endif %}
       </main>
 {%- endblock %}

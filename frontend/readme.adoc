@@ -378,6 +378,8 @@ The ids of a statement get the prefix `content_` (and its `#section` links too),
 
 A `<h1>` or `<h2>` heading that starts a statement, such as `= Title` in Asciidoc or `# Title` in Markdown, is its title: the problem page shows it once, above the statement, and clicking it folds the statement. If the problem has a `title` in `vygoj.json`, that one is shown instead, and without either the page shows _Problem statement_.
 
+The problem page uses `<h1>` for the name of the site and `<h2>` for the title of the statement and for _Your solution_, so the other headings of a statement are renumbered from `<h3>` by `renumber_headings()` in `src/problem_loader.py`: each level that the statement uses becomes the next one by rank, keeping their order, whatever levels its author chose (e.g. `<h1>`, `<h4>`, and `<h6>` become `<h3>`, `<h4>`, and `<h5>`), and levels beyond `<h6>` stay `<h6>`.
+
 Formulas (`stem`) are kept as text, and MathJax typesets them in the browser. To show an SVG image, use `image::` (an `<img>` element), because inline SVG is removed.
 
 [[videos]]
