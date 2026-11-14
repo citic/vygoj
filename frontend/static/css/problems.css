@@ -45,90 +45,6 @@ label {
     margin-bottom: 1.25rem;
   }
 
-  /* Links at the end to the problem before this one, the course, and the problem after, on a thin
-     line. Each one has a small text that says what it is, and below the name of where it goes:
-     the number and title of the problem, or the section of this one. The three are light tinted
-     boxes, a bit darker when they are pointed or focused. The problems end in the tip of an arrow
-     toward their side */
-  & > .materials {
-    --tip: 1rem; /* Length of the tips of the arrows */
-
-    display: grid;
-    grid-template-areas: "previous course next";
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    column-gap: 0.375rem;
-    margin-top: 1.5rem;
-    border-bottom: 1px solid var(--toolbar-border);
-
-    & a {
-      display: grid;
-      grid-template: "icon context" "icon name" / auto minmax(0, 1fr);
-      align-items: center;
-      column-gap: 0.5rem;
-      min-width: 0;
-      padding: 0.5rem calc(var(--tip) + 0.5rem);
-      background: color-mix(in srgb, transparent, var(--label-color) 8%);
-      line-height: 1.4;
-      color: inherit;
-      text-decoration: none;
-    }
-
-    & a:hover,
-    & a:focus-visible {
-      background: color-mix(in srgb, transparent, var(--label-color) 16%);
-    }
-
-    /* The tips of the arrows would cut an outline drawn outside */
-    & a:focus-visible {
-      outline-offset: -4px;
-    }
-
-    & a[rel="prev"] {
-      grid-area: previous;
-      clip-path: polygon(var(--tip) 0, 100% 0, 100% 100%, var(--tip) 100%, 0 50%);
-    }
-
-    & a:not([rel]) {
-      grid-area: course;
-      grid-template: "context" "name" / minmax(0, max-content);
-      justify-content: center;
-      text-align: center;
-    }
-
-    & a[rel="next"] {
-      grid-area: next;
-      grid-template: "context icon" "name icon" / minmax(0, 1fr) auto;
-      text-align: right;
-      clip-path: polygon(0 0, calc(100% - var(--tip)) 0, 100% 50%, calc(100% - var(--tip)) 100%, 0 100%);
-    }
-
-    & .material-symbols-outlined {
-      grid-area: icon;
-      color: var(--toolbar-icon);
-    }
-
-    & a:hover .material-symbols-outlined,
-    & a:focus-visible .material-symbols-outlined {
-      color: var(--label-color);
-    }
-
-    & small {
-      grid-area: context;
-      font-size: 0.8em;
-      color: var(--toolbar-icon);
-    }
-
-    & .name,
-    & .section {
-      grid-area: name;
-      overflow: hidden;
-      font-weight: 600;
-      color: var(--label-color);
-      white-space: nowrap;
-      text-overflow: ellipsis;
-    }
-  }
-
   /* Shown while the connection with the judge is lost */
   & > [role="alert"] {
     padding: 0.5rem;
@@ -428,9 +344,12 @@ editor-toolbar {
   }
 }
 
-/* Problem page: the statement, the solution (code editor), and the evaluation. Its layout is
-   chosen in the layout menu */
+/* Problem page: the statement, the solution (code editor), the evaluation, and the links to other
+   materials. Its layout is chosen in the layout menu. It is a container for the width of the
+   links */
 .problem {
+  container-type: inline-size;
+
   /* The statement can be made shorter with its corner handle; problem.js remembers its size */
   & > .description {
     max-width: 100%;
@@ -461,6 +380,90 @@ editor-toolbar {
       max-height: none;
     }
   }
+
+  /* Links at the end of the page to the problem before this one, the course, and the problem
+     after, on a thin line as wide as the page in every layout. Each one has a small text that says what it is, and below the name of where it goes:
+     the number and title of the problem, or the section of this one. The three are light tinted
+     boxes, a bit darker when they are pointed or focused. The problems end in the tip of an arrow
+     toward their side */
+  & > .materials {
+    --tip: 1rem; /* Length of the tips of the arrows */
+
+    display: grid;
+    grid-template-areas: "previous course next";
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 0.375rem;
+    margin-top: 1.5rem;
+    border-bottom: 1px solid var(--toolbar-border);
+
+    & a {
+      display: grid;
+      grid-template: "icon context" "icon name" / auto minmax(0, 1fr);
+      align-items: center;
+      column-gap: 0.5rem;
+      min-width: 0;
+      padding: 0.5rem calc(var(--tip) + 0.5rem);
+      background: color-mix(in srgb, transparent, var(--label-color) 8%);
+      line-height: 1.4;
+      color: inherit;
+      text-decoration: none;
+    }
+
+    & a:hover,
+    & a:focus-visible {
+      background: color-mix(in srgb, transparent, var(--label-color) 16%);
+    }
+
+    /* The tips of the arrows would cut an outline drawn outside */
+    & a:focus-visible {
+      outline-offset: -4px;
+    }
+
+    & a[rel="prev"] {
+      grid-area: previous;
+      clip-path: polygon(var(--tip) 0, 100% 0, 100% 100%, var(--tip) 100%, 0 50%);
+    }
+
+    & a:not([rel]) {
+      grid-area: course;
+      grid-template: "context" "name" / minmax(0, max-content);
+      justify-content: center;
+      text-align: center;
+    }
+
+    & a[rel="next"] {
+      grid-area: next;
+      grid-template: "context icon" "name icon" / minmax(0, 1fr) auto;
+      text-align: right;
+      clip-path: polygon(0 0, calc(100% - var(--tip)) 0, 100% 50%, calc(100% - var(--tip)) 100%, 0 100%);
+    }
+
+    & .material-symbols-outlined {
+      grid-area: icon;
+      color: var(--toolbar-icon);
+    }
+
+    & a:hover .material-symbols-outlined,
+    & a:focus-visible .material-symbols-outlined {
+      color: var(--label-color);
+    }
+
+    & small {
+      grid-area: context;
+      font-size: 0.8em;
+      color: var(--toolbar-icon);
+    }
+
+    & .name,
+    & .section {
+      grid-area: name;
+      overflow: hidden;
+      font-weight: 600;
+      color: var(--label-color);
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+  }
 }
 
 @media (width <= 640px) {
@@ -476,10 +479,10 @@ editor-toolbar {
   }
 }
 
-/* An evaluation too narrow for the three links puts the course above, and the problems side by
-   side below */
+/* A page too narrow for the three links puts the course above, and the problems side by side
+   below */
 @container (width < 45rem) {
-  .evaluation > .materials {
+  .problem > .materials {
     grid-template: "course course" "previous next" / minmax(0, 1fr) minmax(0, 1fr);
   }
 }
@@ -506,6 +509,10 @@ editor-toolbar {
       min-width: 100%;
     }
 
+    & > .materials {
+      grid-area: materials;
+    }
+
     /* With the editor hidden, everything goes one below the other, as in the top layout.
        min-width wins over the width given by the corner handle, which is kept for later */
     &:has(> .solution:not([open])) > .description {
@@ -526,12 +533,16 @@ editor-toolbar {
     /* Side by side only while the editor is open */
     &:has(> .solution[open]):has([value="left"]:checked) {
       display: grid;
-      grid-template: "description solution" auto "evaluation solution" 1fr / auto minmax(0, 1fr);
+      grid-template:
+        "description solution" auto "evaluation solution" 1fr "materials materials" auto
+        / auto minmax(0, 1fr);
     }
 
     &:has(> .solution[open]):has([value="right"]:checked) {
       display: grid;
-      grid-template: "solution description" auto "solution evaluation" 1fr / minmax(0, 1fr) auto;
+      grid-template:
+        "solution description" auto "solution evaluation" 1fr "materials materials" auto
+        / minmax(0, 1fr) auto;
     }
 
     /* Side by side, the corner handle changes the width of the statement and the editor takes

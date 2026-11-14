@@ -10,7 +10,7 @@
   {%- if neighbor %}
     {%- set number, problem = neighbor %}
     {%- set label = number ~ ' ' ~ (problem.title or problem.folder) %}
-            <a href="{{ problem.build_url() }}" rel="{{ rel }}" title="{{ label }}"><span class="material-symbols-outlined" aria-hidden="true">{{ icon }}</span><small>{{ text }}</small><span class="name">{{ label }}</span></a>
+          <a href="{{ problem.build_url() }}" rel="{{ rel }}" title="{{ label }}"><span class="material-symbols-outlined" aria-hidden="true">{{ icon }}</span><small>{{ text }}</small><span class="name">{{ label }}</span></a>
   {%- endif %}
 {%- endmacro %}
 
@@ -104,14 +104,14 @@
             <pre id="stderr"></pre>
           </figure>
           <output id="test_verdict"></output>
-          {%- set course = it.problem.get_course() %}
-          {%- set section = it.problem.get_parent() %}
-          <nav class="materials" aria-label="{{ _('Problems of the course') }}">
-{{- neighbor_link(it.previous, 'prev', _('Previous'), 'arrow_back') }}
-            <a href="{{ course.build_url() }}" title="{{ _('Return to the course') }}"><small>{{ course.title or course.name }}</small>
-              {%- if section is not sameas course %}<span class="section">{{ section.title or section.folder }}</span>{% endif %}</a>
-{{- neighbor_link(it.next, 'next', _('Next'), 'arrow_forward') }}
-          </nav>
         </section>
+        {%- set course = it.problem.get_course() %}
+        {%- set section = it.problem.get_parent() %}
+        <nav class="materials" aria-label="{{ _('Problems of the course') }}">
+{{- neighbor_link(it.previous, 'prev', _('Previous'), 'arrow_back') }}
+          <a href="{{ course.build_url() }}" title="{{ _('Return to the course') }}"><small>{{ course.title or course.name }}</small>
+            {%- if section is not sameas course %}<span class="section">{{ section.title or section.folder }}</span>{% endif %}</a>
+{{- neighbor_link(it.next, 'next', _('Next'), 'arrow_forward') }}
+        </nav>
       </main>
 {%- endblock %}

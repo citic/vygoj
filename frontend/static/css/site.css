@@ -185,18 +185,20 @@ summary {
     display: none;
   }
 
-  /* The box of the triangle is a little taller than the line, and its negative margins keep the
-     line as high as the ones of the other headings */
+  /* The triangle is drawn 1.5em high, as in the course contents, in a narrower box that cuts its
+     empty sides, so it starts near the edge without negative margins, which would overflow to the
+     left (scrollable in the statement on the right, which is right to left). The negative margins
+     above and below keep the line as high as the ones of the other headings */
   & > :is(h2, h3, h4, h5, h6)::before {
     content: '';
     display: inline-block;
-    width: 1.5em;
+    width: 0.9em;
     height: 1.5em;
     margin-block: -0.25em;
-    margin-inline: -0.35em 0.1em;
+    margin-inline-end: 0.35em;
     vertical-align: middle;
     background-color: gray;
-    mask: var(--arrow-expanded) center / contain no-repeat;
+    mask: var(--arrow-expanded) center / 1.5em no-repeat;
   }
 }
 

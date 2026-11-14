@@ -13,6 +13,9 @@ const FETCH_TIMEOUT = 30000;
 const DEFAULT_RUN_TIMEOUT = 120000;
 // HTTP statuses of the frontend or a proxy when the judge cannot be reached
 const UNREACHABLE_STATUSES = [502, 503, 504];
+// Side in pixels of the square of the corner handle of an element with CSS resize, about the size
+// that browsers draw it
+const RESIZE_HANDLE_SIZE = 16;
 // A line of the compiler, the linker, or the linter about a line of the solution, with its line,
 // its column or section of the linker, its severity, and its message. E.g. "solution.c:4:18:
 // error: 'y' undeclared" (gcc), "/tmp/solution.c:3:(.text+0x5): undefined reference to `foo'"
@@ -173,6 +176,26 @@ class ProblemManager {
     });
     new ResizeObserver(() => saveConfig(sizeKey(), `${statement.style.width};${statement.style.height}`))
       .observe(statement);
+    // Double clicking the corner handle gives the statement back the size of its layout, the one
+    // it has the first time the page is loaded. Browsers send no events of the handle itself, so
+    // the double click is taken on the statement, inside the square of the handle
+    statement.addEventListener('dblclick', (event) => {
+      if (ProblemManager.isOnResizeHandle(statement, event)) {
+        Object.assign(statement.style, { width: '', height: '' });
+        saveConfig(sizeKey(), ';');
+      }
+    });
+  }
+
+  // True if the mouse event happened on the corner handle of the given element with CSS resize:
+  // the bottom right corner, or the bottom left one when its direction is right to left
+  static isOnResizeHandle(element, { clientX, clientY }) {
+    const { left, right, bottom } = element.getBoundingClientRect();
+    const rightToLeft = window.getComputedStyle(element).direction === 'rtl';
+    const fromSide = rightToLeft ? clientX - left : right - clientX;
+    const fromBottom = bottom - clientY;
+    return [fromSide, fromBottom].every((distance) => distance >= 0
+      && distance <= RESIZE_HANDLE_SIZE);
   }
 
   setupCodeEditor() {
