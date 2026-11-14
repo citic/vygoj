@@ -45,8 +45,13 @@
           <header>
 {%- if it.user %}
             <button id="run_button" class="button action" disabled="disabled" title="{{ _('Run my solution against the test cases') }}">{{ _('Run') }}</button>
+  {%- if it.problem.tests %}
             {#- problem.js shows the score instead after the first run #}
             <p id="run_hint">{{ _('Press Run to check your solution') }}</p>
+  {%- else %}
+            {#- Runs with the input of the user are not graded, so the hint stays #}
+            <p id="run_hint">{{ _('Press Run to run your solution with your input') }}</p>
+  {%- endif %}
 {%- else %}
             {#- Only registered users may run code. After logging in, they come back to this problem #}
             <a href="{{ url_for('user', next=request.path) }}" id="login_to_run" class="button action">{{ _('Log in to run') }}</a>
@@ -69,11 +74,18 @@
 {%- endfor %}
           </div>
           <div id="active_test" class="test_editors">
+{%- if not it.problem.tests %}
+            {#- Problems without test cases run the code with the arguments of the user #}
+            <div id="active_test_args_wrapper">
+              <label for="args">{{ _('Arguments, one per line') }}</label>
+              <monaco-editor id="args"></monaco-editor>
+            </div>
+{%- endif %}
             <div id="active_test_input_wrapper">
               <label for="active_test_input">{{ _('Input') }}</label>
-              <monaco-editor id="active_test_input" readonly></monaco-editor>
+              <monaco-editor id="active_test_input"{% if it.problem.tests %} readonly{% endif %}></monaco-editor>
             </div>
-            <div id="active_test_expected_output_wrapper">
+            <div id="active_test_expected_output_wrapper"{% if not it.problem.tests %} hidden{% endif %}>
               <label for="active_test_expected_output">{{ _('Expected output') }}</label>
               <monaco-editor id="active_test_expected_output" readonly></monaco-editor>
             </div>

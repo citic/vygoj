@@ -56,6 +56,14 @@ function saveConfig(key, value) {
   window.localStorage.setItem(`${key}:${window.location.pathname}`, value);
 }
 
+// Writes each line of the text as a command line argument in single quotes, so the backend, which
+// splits them as a shell would, gets each line whole. A single quote in a line closes the quotes,
+// goes escaped, and opens them again: it's -> 'it'\''s'. Empty lines are skipped
+function quoteLines(text) {
+  return text.split(/\r?\n/).filter((line) => line)
+    .map((line) => `'${line.replaceAll("'", "'\\''")}'`).join(' ');
+}
+
 // Show a number of bytes with a binary unit, e.g. 1536 as '1.5 KiB'
 function formatBytes(bytes) {
   const units = ['B', 'KiB', 'MiB', 'GiB'];
@@ -344,6 +352,14 @@ class ProblemManager {
       const index = parseInt(loadConfig('test') || '0', 10);
       this.activeTestCaseIndex = index >= 0 && index < buttons.length ? index : 0;
       this.showTestCase(this.activeTestCaseIndex);
+    } else {
+      // Without test cases, the arguments and the input of the user are kept as the code is
+      const { editor: args } = document.getElementById('args');
+      args.updateOptions({ renderWhitespace: 'all' });
+      [['args', args], ['stdin', this.editors[1]]].forEach(([key, editor]) => {
+        editor.setValue(loadConfig(key) || '');
+        editor.onDidChangeModelContent(() => saveConfig(key, editor.getValue()));
+      });
     }
   }
 
@@ -469,12 +485,16 @@ class ProblemManager {
     // Disable the Run button while the backend is running the code
     this.running = true;
     this.updateRunButton();
+    // Problems without test cases run the code with the input and arguments of the user
+    const custom = this.problem.tests.length === 0;
     try {
       // Send the code to the backend and wait the result
       this.result = new ExecutionResult(await ProblemManager.sendJson({
         action: 'run',
         language,
         code: this.editors[0].getValue(),
+        stdin: custom ? this.editors[1].getValue() : '',
+        args: custom ? quoteLines(document.getElementById('args').editor.getValue()) : '',
       }, ProblemManager.getRunTimeout()));
       // The result has been received, update the test cases
       this.updateResult();
@@ -482,6 +502,12 @@ class ProblemManager {
       // E.g. the network or the judge failed, or the session expired: show it as a diagnostic
       console.error(error);
       this.updateCompileOutput(_('Could not run the solution: %(error)s', { error: error.message }));
+      // The output of the last run would look like the output of the input that the user changed
+      if (custom) {
+        this.editors[3].setValue('');
+        hideElement('stderr_wrapper');
+        document.getElementById('test_verdict').textContent = '';
+      }
       // site.js checks the connection now, and disables Run until it is restored if it is lost
       if (error instanceof ConnectionError) {
         window.dispatchEvent(new Event(CHECK_EVENT));
@@ -516,16 +542,22 @@ class ProblemManager {
     totalTestCount.textContent = String(this.result.results.length);
     const score = this.result.results.length > 0 ? Math.round((
       100.0 * parseFloat(this.result.passedTestCount)) / this.result.results.length) : 0;
-    window.localStorage.setItem(this.problem.name, `${score}`);
+    // Runs with the input of the user (problems without test cases) are not graded
+    if (this.problem.tests.length > 0) {
+      window.localStorage.setItem(this.problem.name, `${score}`);
+    }
     console.log(`${this.problem.name} := ${score}`);
     console.dir(this.problem);
 
     const totalPointsElement = document.getElementById('user_points');
     console.assert(totalPointsElement);
     totalPointsElement.textContent = String(this.result.points);
-    // The score takes the place of the hint to press Run
-    document.getElementById('score').hidden = false;
-    document.getElementById('run_hint').hidden = true;
+    // The score takes the place of the hint to press Run. Runs with the input of the user
+    // (problems without test cases) are not graded, so they keep the hint
+    if (this.problem.tests.length > 0) {
+      document.getElementById('score').hidden = false;
+      document.getElementById('run_hint').hidden = true;
+    }
   }
 
   // Shows the diagnostics of the judge and the compiler (warnings or errors), if any
@@ -682,6 +714,10 @@ class ProblemManager {
       // Updates the standard output/error of the selected test case
       this.showTestOutput(this.activeTestCaseIndex);
     }
+    // Problems without test cases show the output of the run with the input of the user
+    if (this.problem.tests.length === 0) {
+      this.editors[3].setValue(this.result.results[0]?.stdout || '');
+    }
   }
 
   // Shows or updates the verdict message
@@ -697,11 +733,13 @@ class ProblemManager {
       const test = this.result.results[index];
       // console.dir(test);
       const { status } = test;
-      verdict = _('Test case %(number)s verdict: %(status)s', { number: index + 1, status });
-      if (test.message) {
-        verdict += `: ${test.message}`;
-      }
-      verdict += _('. It took %(seconds)s s', { seconds: test.wallTime.toFixed(3) });
+      // Runs with the input of the user (problems without test cases) are not judged: they have
+      // no verdict, only the message of a failure
+      const judged = this.problem.tests.length > 0;
+      verdict = [judged && _('Test case %(number)s verdict: %(status)s', { number: index + 1, status }),
+        test.message].filter((text) => text).join(': ');
+      const seconds = test.wallTime.toFixed(3);
+      verdict += verdict ? _('. It took %(seconds)s s', { seconds }) : _('It took %(seconds)s s', { seconds });
       if (test.cpuTime) {
         // CPU time adds up all threads, so it is longer than the wall time in parallel code
         verdict += _(' (CPU %(seconds)s s)', { seconds: test.cpuTime.toFixed(3) });

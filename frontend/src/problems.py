@@ -5,6 +5,7 @@ import random
 import requests
 import flask
 from flask import current_app as app
+from flask_babel import gettext
 from werkzeug.exceptions import HTTPException
 from werkzeug.security import safe_join
 
@@ -28,6 +29,9 @@ BACKEND_FIELDS = ('allowIndeterminism', 'languages', 'maxThreads', 'minThreads',
 
 # Actions that the client JavaScript may ask with a POST to a problem
 VALID_ACTIONS = ('fetch_problem', 'run')
+
+# Characters of the command line arguments that the backend accepts (MAX_ARGS_LENGTH)
+MAX_ARGS_LENGTH = 4096
 
 # Files of a problem folder that browsers may get, by extension, with their media type. They are
 # the images, videos, and subtitles of the statements. Other files, such as test cases or
@@ -181,7 +185,8 @@ class ProblemController:
             return None
         message = vyg.Message(json_dict)
         # JSON may carry any type in these fields. The body size is bounded by MAX_CONTENT_LENGTH
-        if not isinstance(message.language, str) or not isinstance(message.code, str):
+        if not all(isinstance(text, str) for text in
+                (message.language, message.code, message.stdin, message.args)):
             return None
         return message
 
@@ -234,8 +239,13 @@ class ProblemController:
         user_id = Run.find_user_id(flask.session['user'].get('email'))
         if user_id is None:
             return ProblemController.error_response('Log in to run code', 401)
+        # The backend rejects longer arguments, so the user is told why
+        if len(message.args) > MAX_ARGS_LENGTH:
+            return ProblemController.error_response(
+                gettext('The arguments are too long: at most %(length)d characters',
+                    length=MAX_ARGS_LENGTH), 400)
         course_name = problem.get_course().name
-        problem_dict = ProblemController.backend_problem(problem, message.language)
+        problem_dict = ProblemController.backend_problem(problem, message)
         code_hash = Run.hash_code(problem_dict, message.language, message.code)
         # Cells and data of the activity log of this run. The code hash names the file of its code
         log_cells = { 'course': course_name, 'material': problem.name, 'type': problem.type }
@@ -270,7 +280,12 @@ class ProblemController:
             # answered as it came, it is parsed only to grade it. It is stored for repeated runs
             # only after it was graded, so an invalid answer is not reused
             backend_json = ProblemController.run_solution(problem_dict, message, context)
-            Progress.store(course_name, problem.name, ProblemController.grade(backend_json))
+            if problem.tests:
+                Progress.store(course_name, problem.name, ProblemController.grade(backend_json))
+            else:
+                # Runs with the input of the user (problems without test cases) are not graded,
+                # but grade() also checks that the backend answered a result
+                ProblemController.grade(backend_json)
             result_json = backend_json
             return ProblemController.json_response(result_json)
         finally:
@@ -294,17 +309,20 @@ class ProblemController:
         return int(100 * passed / len(results) + 0.5)
 
     @staticmethod
-    def backend_problem(problem: vyg.Problem, language: str) -> dict:
+    def backend_problem(problem: vyg.Problem, message: vyg.Message) -> dict:
         """ Return the fields of the problem that the backend needs to judge a solution in the
-        language, with the effective limits of the problem and of each test case """
+        language of the message, with the effective limits of the problem and of each test case.
+        A problem without test cases gets one written by the user: the input and arguments of the
+        message, run without comparing its outputs """
         problem_dict = { field: value for field, value in vyg.to_dict(problem).items()
             if field in BACKEND_FIELDS }
         # Limits of the professor out of the range of config.py, or missing, are replaced
         for field in CONSTRAINED_FIELDS:
             problem_dict.pop(field, None)
-        problem_dict.update(Limits.effective_problem(problem, language))
-        problem_dict['tests'] = [Limits.effective_test(test, problem_dict)
-            for test in problem.tests]
+        problem_dict.update(Limits.effective_problem(problem, message.language))
+        tests = problem.tests or [vyg.TestCase({ 'stdin': message.stdin, 'args': message.args,
+            'custom': True })]
+        problem_dict['tests'] = [Limits.effective_test(test, problem_dict) for test in tests]
         return problem_dict
 
     @staticmethod

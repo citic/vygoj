@@ -28,6 +28,10 @@ class TestCase:
         self.points = json_dict.get('points', 0)
         # If true, the test case is hidden for users, so they cannot see what is in it
         self.hidden = json_dict.get('hidden', False)
+        # If true, the user wrote this test case to try their solution with their own input, e.g.
+        # in problems without test cases. It is run, but its outputs are not compared and it gives
+        # no points
+        self.custom = json_dict.get('custom', False)
         # Minimum number of threads that user solution must create in order to consider it right
         self.minThreads = json_dict.get('minThreads', 1)
         # Maximum number of threads that user solution may create to consider it correct

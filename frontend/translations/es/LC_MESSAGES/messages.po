@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: VygOJ \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-10 15:35-0600\n"
+"POT-Creation-Date: 2026-11-13 12:01-0600\n"
 "PO-Revision-Date: 2026-11-09 15:19-0600\n"
 "Last-Translator: \n"
 "Language: es\n"
@@ -100,6 +100,9 @@ msgid ""
 msgstr ""
 "Un juez en línea educativo para enseñar y aprender programación de "
 "computadoras con énfasis en el paradigma de programación concurrente"
+
+msgid "Arguments, one per line"
+msgstr "Argumentos, uno por línea"
 
 msgid "Another provider has this alias"
 msgstr "Otro proveedor tiene este alias"
@@ -304,6 +307,10 @@ msgstr "Instructores"
 msgid "Invalid user or password"
 msgstr "Usuario o contraseña inválidos"
 
+#, python-format
+msgid "It took %(seconds)s s"
+msgstr "Tardó %(seconds)s s"
+
 msgid "Language"
 msgstr "Idioma"
 
@@ -400,6 +407,9 @@ msgstr "Preferencias actualizadas con éxito."
 
 msgid "Press Run to check your solution"
 msgstr "Presione Ejecutar para validar su solución"
+
+msgid "Press Run to run your solution with your input"
+msgstr "Presione Ejecutar para correr su solución con su entrada"
 
 msgid "Previous"
 msgstr "Anterior"
@@ -536,6 +546,10 @@ msgstr "Caso de prueba %(number)d"
 #, python-format
 msgid "Test case %(number)s verdict: %(status)s"
 msgstr "Veredicto del caso de prueba %(number)s: %(status)s"
+
+#, python-format
+msgid "The arguments are too long: at most %(length)d characters"
+msgstr "Los argumentos son demasiado largos: como máximo %(length)d caracteres"
 
 msgid "Testing"
 msgstr "Prueba"

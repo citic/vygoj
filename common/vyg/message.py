@@ -15,3 +15,7 @@ class Message:
         self.language = json_dict.get('language', '')
         # The source code
         self.code = json_dict.get('code', '')
+        # Standard input and command line arguments that the user wrote to run the code, in
+        # problems without test cases
+        self.stdin = json_dict.get('stdin', '')
+        self.args = json_dict.get('args', '')
