@@ -51,6 +51,9 @@ class Problem(Activity, material_type='problem'): # pylint: disable=too-many-ins
         #     self.initialCodeFor[lang] = code
         # True when the frontend already loaded the files of the problem folder
         self.folder_loaded = False
+        # Title in the heading that starts the statement, which the frontend takes out of it when
+        # it loads the folder, e.g. 'Formateador de fecha'. Empty if the statement has none
+        self.statement_title = ''
 
     @staticmethod
     def load_tests(json_tests):

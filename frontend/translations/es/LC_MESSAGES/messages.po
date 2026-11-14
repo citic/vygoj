@@ -414,6 +414,9 @@ msgstr "Presione Ejecutar para correr su solución con su entrada"
 msgid "Previous"
 msgstr "Anterior"
 
+msgid "Problem statement"
+msgstr "Enunciado del problema"
+
 msgid "Problems of the course"
 msgstr "Problemas del curso"
 
