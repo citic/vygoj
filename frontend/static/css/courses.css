@@ -292,6 +292,11 @@
     color: var(--muted-text);
   }
 
+  /* A zip ready to download delivers a result, so its button takes the action color */
+  & button[data-state="download"] {
+    background: var(--action-bg);
+  }
+
   /* The messages are a list of the flash messages component (site.css) */
   & .flash_messages {
     margin: 0;

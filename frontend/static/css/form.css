@@ -68,24 +68,38 @@ a.button {
   padding: 4px 10px;
 }
 
+/* Colors of the buttons, by the effect of their action:
+   confirm: saves, creates, or prepares something in VygOJ (Save, Add, Edit, Log in, Generate)
+   action: runs something or delivers a result (Run, Activate, Download, Push)
+   reject: reverts, pauses, or leaves without destroying anything (Cancel, Suspend, Logout)
+   danger: destroys something that cannot be recovered, after asking (Delete)
+   neutral: helps without changing data (Copy, Show, Hide) */
+.confirm,
+.action,
+.reject,
+.danger,
+.neutral {
+  color: #fff;
+}
+
 .confirm {
-  color: #fff;
-  background: #3f51b5;
-}
-
-.reject {
-  color: #fff;
-  background: #ff8500;
-}
-
-.danger {
-  color: #fff;
-  background: red;
+  background: var(--confirm-bg);
 }
 
 .action {
-  color: #fff;
-  background: #409635;
+  background: var(--action-bg);
+}
+
+.reject {
+  background: var(--reject-bg);
+}
+
+.danger {
+  background: var(--danger-bg);
+}
+
+.neutral {
+  background: var(--neutral-bg);
 }
 
 button:disabled {

@@ -68,7 +68,7 @@
             {{ it.form.password.label }} {{ it.form.password() }}
           </fieldset>
           <p class="cookie_notice"><small>{{ _('By pressing the button below you are accepting the use of cookies in this site to keep your session active.') }}</small></p>
-          {{ it.form.login() }}
+          {{ it.form.login(class="button confirm") }}
         </form>
       </main>
   {%- endif %}

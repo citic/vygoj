@@ -27,6 +27,14 @@ Monospace:
   --readonly-bg: light-dark(rgb(228 228 228), rgb(55 55 55));
   --form-shadow: light-dark(#ebebeb, transparent);
   --button-shadow: light-dark(#dadada, black);
+
+  /* Backgrounds of the colors of the buttons, by the effect of their action (form.css). Dark
+     enough for their white text (contrast of 4.5:1 at least) */
+  --confirm-bg: #3f51b5;
+  --action-bg: #2e7d32;
+  --reject-bg: #b85c00;
+  --danger-bg: #d32f2f;
+  --neutral-bg: #616161;
   --border: light-dark(black, gray);
   --label-color: light-dark(var(--bg-color), rgb(120 190 182));
   --accent: light-dark(rgb(20 163 154), rgb(63 193 181));

@@ -53,13 +53,13 @@
               <label for="repo_origin">{{ _('Origin') }}</label>
               <input type="text" id="repo_origin" maxlength="256" placeholder="git@github.com:user/repo.git" spellcheck="false" autocomplete="off">
               <button type="button" class="button confirm" id="set_origin" disabled>{{ _('Set origin') }}</button>
-              <button type="button" class="button confirm" data-job="push" data-running="{{ _('Pushing...') }}" disabled>{{ _('Push') }}</button>
+              <button type="button" class="button action" data-job="push" data-running="{{ _('Pushing...') }}" disabled>{{ _('Push') }}</button>
             </p>
             <p class="repo_line">
               <label for="repo_key">{{ _('SSH key') }}</label>
               <input type="text" id="repo_key" class="repo_key" readonly>
               {#- An icon: content_copy, and check for a moment after copying #}
-              <button type="button" class="button small confirm material-symbols-outlined" id="copy_key" title="{{ _('Copy the SSH key') }}" aria-label="{{ _('Copy the SSH key') }}" data-done="{{ _('Copied') }}" disabled>content_copy</button>
+              <button type="button" class="button small neutral material-symbols-outlined" id="copy_key" title="{{ _('Copy the SSH key') }}" aria-label="{{ _('Copy the SSH key') }}" data-done="{{ _('Copied') }}" disabled>content_copy</button>
               <small>{{ _('Add this public key to your repo in your Git host with write access (e.g. a deploy key in GitHub), set the SSH URL of the repo as origin, and press Push. Each Push sends your new solutions; nothing is brought from the origin.') }}</small>
             </p>
             {#- The messages look and close as the flash messages of the server (site.css and site.js);
