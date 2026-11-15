@@ -35,7 +35,12 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
   `<summary>` holds only the heading of the section (`<summary><h2>...</h2></summary>`, with no
   links or buttons inside it); `site.css` draws the triangle of the site before the title. The
   course contents use the same triangle (`--arrow-expanded`, `--arrow-collapsed`).
-- `img/`, `icon/`: images and SVG icons. `json/`: static data.
+- `img/`, `icon/`: images and SVG icons. `json/`: static data. Icons of the interface are glyphs
+  of the Material Symbols font (`<span class="material-symbols-outlined">person</span>`), which
+  `base.html` loads in every page with one subset of the icons that the site uses: two subsets in
+  a page would hide the icons of each other, so pages do not load their own. Add new icons to
+  its `icon_names`, in alphabetical order. The user link of the header shows the role of the user
+  (`data-role`) with its icon and color.
 - `initial/`: default code of each language (`solution.c`, `Solution.java`...). The server reads
   it (`ProblemLoader.default_code()`) and sends it in the `initialCodeFor` of problems without
   initial code for an enabled language.

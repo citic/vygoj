@@ -754,9 +754,6 @@ msgstr "Usuario %(username)s guardado."
 msgid "User %(username)s suspended."
 msgstr "Usuario %(username)s suspendido."
 
-msgid "User control"
-msgstr "Control de usuario"
-
 msgid "User credentials"
 msgstr "Credenciales del usuario"
 
@@ -987,4 +984,7 @@ msgstr "su repositorio de estudiante es demasiado grande"
 
 #~ msgid "Admin Users"
 #~ msgstr "Administrar usuarios"
+
+#~ msgid "User control"
+#~ msgstr "Control de usuario"
 

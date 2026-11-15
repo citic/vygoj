@@ -291,15 +291,34 @@ details:not([open]) > summary > :is(h2, h3, h4, h5, h6)::before {
   }
 }
 
-/* Link with an icon above its caption */
+/* Link with an icon above its caption, e.g. the user of the site header. Its icon has the color
+   of the role of the user (data-role): turquoise for students, blue for professors and
+   assistants, orange for administrators, and red for visitors who are not logged in. The colors
+   of the buttons (form.css) are lighter in the dark scheme, so they stand out in both */
 .icon_control {
+  --role-color: var(--label-color);
+
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   align-items: center;
 
-  & img {
-    min-width: 2.75rem;
+  &:is([data-role="professor"], [data-role="assistant"]) {
+    --role-color: light-dark(var(--confirm-bg), var(--info));
+  }
+
+  &[data-role="admin"] {
+    --role-color: light-dark(var(--reject-bg), var(--warning));
+  }
+
+  &[data-role="visitor"] {
+    --role-color: light-dark(var(--danger-bg), var(--error));
+  }
+
+  & .icon {
+    font-size: 2.75rem;
+    line-height: 1;
+    color: var(--role-color);
   }
 }
 

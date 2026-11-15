@@ -15,8 +15,8 @@ from problems import BACKEND_STATUS_TIMEOUT, ProblemController
 from repos.repo_controller import RepoController
 from repos.repo_jobs import check_config as check_repo_config
 from sso import SsoAdminController, SsoController, SsoProvider
-from users import (DEFAULT_FONT, FONTS, TRANSLATIONS_FOLDER, UserForm, client_translations,
-    font_url, log_out, refresh_session, select_language)
+from users import (DEFAULT_FONT, FONTS, ROLES, TRANSLATIONS_FOLDER, UserForm,
+    client_translations, font_url, log_out, refresh_session, select_language)
 from db import db
 from activity_log import LogController, log_event
 
@@ -32,7 +32,8 @@ app = flask.Flask(__name__, template_folder=template_path,
         static_url_path='', static_folder=static_path)
 
 # Every page uses the font chosen by the user, base.html loads it with these names
-app.jinja_env.globals.update(FONTS=FONTS, DEFAULT_FONT=DEFAULT_FONT, font_url=font_url)
+app.jinja_env.globals.update(FONTS=FONTS, DEFAULT_FONT=DEFAULT_FONT, font_url=font_url,
+    ROLES=ROLES)
 
 # Texts of the interface marked with _() are shown in the language chosen by the user or by the
 # browser. Their translations are in translations/ (see "Translations" in readme.adoc), and
