@@ -4,7 +4,7 @@
     <link rel="stylesheet" href="/css/courses.css">
 {%- if it.user %}
     {#- Icons of the Repositories section, the same font and icons of the code editor #}
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&amp;icon_names=check,content_copy">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&amp;icon_names=check,check_circle,content_copy,error,info,warning">
 {%- endif %}
 {%- endblock %}
 {%- block main %}
@@ -62,9 +62,9 @@
               <button type="button" class="button small neutral material-symbols-outlined" id="copy_key" title="{{ _('Copy the SSH key') }}" aria-label="{{ _('Copy the SSH key') }}" data-done="{{ _('Copied') }}" disabled>content_copy</button>
               <small>{{ _('Add this public key to your repo in your Git host with write access (e.g. a deploy key in GitHub), set the SSH URL of the repo as origin, and press Push. Each Push sends your new solutions; nothing is brought from the origin.') }}</small>
             </p>
-            {#- The messages look and close as the flash messages of the server (site.css and site.js);
-                data-dynamic keeps the list when its last message is closed, for the next ones #}
-            <ul id="repo_messages" class="flash_messages" role="status" aria-live="polite" data-close="{{ _('Close') }}" data-dynamic></ul>
+            {#- Log of the repo: the state of its jobs and the result of the last action, each one
+                with an icon of its category (message_log of site.css) #}
+            <ul id="repo_messages" class="message_log" role="status" aria-live="polite" data-close="{{ _('Close') }}"></ul>
           </fieldset>
         </details>
 {%- endif %}

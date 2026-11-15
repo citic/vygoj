@@ -25,8 +25,11 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
   changing data (Copy). A button whose action changes with its state changes its color with a
   `data-*` attribute (e.g. `data-state="download"`), not with classes. Buttons keep their color
   when `disabled`, half transparent.
-  Messages shown by scripts reuse the `flash_messages` list of
-  `site.css` (with `data-dynamic`, so `site.js` keeps the list when its last message is closed).
+  Messages that a script keeps showing in a page (the state of jobs, the result of the last
+  action) go in a `message_log` list of `site.css`: each `li` has a `data-category` (`success`,
+  `info`, `warning`, `error`) and an icon of its category before its text, which keeps the
+  colors of the page. The `flash_messages` of the server, with strong backgrounds and a close
+  button each, are for the messages of a request.
   Headings follow one order in every page: `<h1>` is the name of the site and each page starts at
   `<h2>`; `site.css` gives every level its look. Sections that fold are a native `<details>` whose
   `<summary>` holds only the heading of the section (`<summary><h2>...</h2></summary>`, with no

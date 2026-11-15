@@ -296,11 +296,6 @@
   & button[data-state="download"] {
     background: var(--action-bg);
   }
-
-  /* The messages are a list of the flash messages component (site.css) */
-  & .flash_messages {
-    margin: 0;
-  }
 }
 
 /* Banner of a course behind its card in the lists and behind its summary in the course page. It

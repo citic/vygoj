@@ -14,6 +14,14 @@ const COPIED_TIME = 2000;
 // hidden after a reload, and how many ids it keeps
 const DISMISSED_KEY = 'vygoj.repo.dismissed';
 const MAX_DISMISSED = 20;
+// Icon of the Material Symbols font and name of each category of messages, in the language of
+// the page
+const CATEGORY_ICONS = {
+  success: ['check_circle', _('Success')],
+  info: ['info', _('Information')],
+  warning: ['warning', _('Warning')],
+  error: ['error', _('Error')],
+};
 
 // Texts of the message codes of the server (repo_jobs.py and repos.py)
 const REASONS = {
@@ -190,20 +198,22 @@ class StudentRepoPanel {
     return messages;
   }
 
-  // Show the notices and the messages of the jobs that were not closed. Errors have a button at
-  // their right that closes them
+  // Show the notices and the messages of the jobs that were not closed, each one after the icon
+  // of its category. Errors have a button at their right that closes them
   showMessages() {
     const notices = this.notices.map((notice, index) => ({ ...notice, notice: index }));
     const jobs = this.jobMessages.filter(({ id }) => !this.dismissed.includes(id));
     this.messages.replaceChildren(...[...notices, ...jobs].map((message) => {
       const item = document.createElement('li');
       item.dataset.category = message.category;
+      item.append(StudentRepoPanel.categoryIcon(message.category));
       const text = document.createElement('p');
       text.textContent = message.text;
       item.append(text);
       if (message.category === 'error') {
         const close = document.createElement('button');
         close.type = 'button';
+        close.className = 'close';
         close.textContent = '×';
         close.setAttribute('aria-label', this.closeLabel);
         close.title = this.closeLabel;
@@ -212,6 +222,18 @@ class StudentRepoPanel {
       }
       return item;
     }));
+  }
+
+  // Return the icon of a category of messages, an image for screen readers named by the category
+  static categoryIcon(category) {
+    const [name, label] = CATEGORY_ICONS[category] ?? CATEGORY_ICONS.info;
+    const icon = document.createElement('span');
+    icon.className = 'icon';
+    icon.textContent = name;
+    icon.setAttribute('role', 'img');
+    icon.setAttribute('aria-label', label);
+    icon.title = label;
+    return icon;
   }
 
   // Close the message of the clicked button: a notice is forgotten, and the id of a failure of a

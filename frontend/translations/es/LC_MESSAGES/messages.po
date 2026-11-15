@@ -324,6 +324,9 @@ msgstr "Correo"
 msgid "Email claim"
 msgstr "Claim del correo"
 
+msgid "Error"
+msgstr "Error"
+
 msgid "Exit fullscreen"
 msgstr "Salir de pantalla completa"
 
@@ -356,6 +359,9 @@ msgstr "Ayuda"
 
 msgid "Home"
 msgstr "Inicio"
+
+msgid "Information"
+msgstr "Información"
 
 msgid "Input"
 msgstr "Entrada"
@@ -621,6 +627,9 @@ msgstr "Repositorio de estudiante"
 msgid "Submissions"
 msgstr "Envíos"
 
+msgid "Success"
+msgstr "Éxito"
+
 msgid "Suspend"
 msgstr "Suspender"
 
@@ -794,6 +803,9 @@ msgstr "Versión de su solución"
 
 msgid "Vygotsky Online Judge"
 msgstr "Juez en línea Vygotsky"
+
+msgid "Warning"
+msgstr "Advertencia"
 
 msgid "Write a claim name, or names separated by dots"
 msgstr "Escriba el nombre de un claim, o nombres separados por puntos"
