@@ -237,6 +237,67 @@
   }
 }
 
+/* Student repo of the Repositories section of the home page (static/js/user/repos.js): a line
+   with its info and the buttons of its zips, a line with its origin and Push, a line with the
+   SSH key of the user and its Copy button, and the messages of its jobs. Lines wrap on narrow screens */
+.repo {
+  gap: 0.75rem;
+
+  & .repo_line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+  }
+
+  & .repo_info {
+    flex: 1 1 15rem;
+  }
+
+  & .repo_actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  & label {
+    margin: 0;
+    color: var(--label-color);
+    font-weight: 600;
+  }
+
+  & input {
+    flex: 1 1 15rem;
+    min-width: 0;
+  }
+
+  & .repo_key {
+    font-family: monospace;
+    font-size: 0.85em;
+  }
+
+  /* Icon buttons, e.g. copy the key. Buttons inherit the font of the page (form.css), the icons
+     need theirs */
+  & .material-symbols-outlined {
+    min-width: auto;
+    padding: 4px 6px;
+    font-family: "Material Symbols Outlined", sans-serif;
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+
+  & small {
+    flex: 1 1 100%;
+    color: var(--muted-text);
+  }
+
+  /* A zip ready to download delivers a result, so its button takes the action color */
+  & button[data-state="download"] {
+    background: var(--action-bg);
+  }
+}
+
 /* Banner of a course behind its card in the lists and behind its summary in the course page. It
    covers them, cropped to their size, under a layer of the surface color. A halo of that color
    around the letters keeps them readable over any banner, in the light and dark schemes */

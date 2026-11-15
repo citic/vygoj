@@ -15,6 +15,21 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
   which problem statements share for the tables of their authors. Forms take the
   `fieldset_columns` class of `form.css` to place their fieldsets of radio buttons side by side
   when the window has space for them (the preferences and the form of a user for administrators).
+  Fields that users cannot edit take the `readonly` attribute, which `form.css` shows with the
+  `--readonly-bg` background of `site.css`; no class is needed. Buttons of actions take the color
+  of the effect of their action (`form.css`, backgrounds in `site.css`): `confirm` (blue) saves,
+  creates, or prepares something (Save, Add, Edit, Log in, Generate); `action` (green) runs
+  something or delivers a result (Run, Activate, Download, Push); `reject` (orange) reverts,
+  pauses, or leaves without destroying (Cancel, Suspend, Logout); `danger` (red) destroys
+  something that cannot be recovered, after asking (Delete); and `neutral` (gray) helps without
+  changing data (Copy). A button whose action changes with its state changes its color with a
+  `data-*` attribute (e.g. `data-state="download"`), not with classes. Buttons keep their color
+  when `disabled`, half transparent.
+  Messages that a script keeps showing in a page (the state of jobs, the result of the last
+  action) go in a `message_log` list of `site.css`: each `li` has a `data-category` (`success`,
+  `info`, `warning`, `error`) and an icon of its category before its text, which keeps the
+  colors of the page. The `flash_messages` of the server, with strong backgrounds and a close
+  button each, are for the messages of a request.
   Headings follow one order in every page: `<h1>` is the name of the site and each page starts at
   `<h2>`; `site.css` gives every level its look. Sections that fold are a native `<details>` whose
   `<summary>` holds only the heading of the section (`<summary><h2>...</h2></summary>`, with no
@@ -122,8 +137,8 @@ errors and the layout at phone and desktop widths.
     `data-category="error"`.
   - The shared variants of buttons and the shared layouts `data_table` (`site.css`) and
     `fieldset_columns` (`form.css`) are the only extra classes. Variants of buttons: `button` (a
-    link that looks like a button), `small`, and the colors `confirm`, `reject`, `danger`, and
-    `action` (`form.css`).
+    link that looks like a button), `small`, and the colors `confirm`, `action`, `reject`,
+    `danger`, and `neutral` (`form.css`).
   - Kebab-case only for classes of external libraries (`material-symbols-outlined`).
   - Avoid styling by `id` and avoid `!important`.
 - Stylelint (`no-descending-specificity`) asks for the less specific selectors first. When it

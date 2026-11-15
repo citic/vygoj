@@ -31,16 +31,27 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
   Tables with data of users declare their foreign key with `ondelete='CASCADE'`, so deleting a
   user deletes it (`manage.py` updates the keys of older databases), and the folder of the user
   in `DATA_FOLDER` is deleted after the commit, unless it holds the course repo (`COURSES_REPO`).
-- `src/git_repo.py`: `GitRepo`, the operations on git repos shared by student repos and, later,
-  professor repos (commit a file at the end of a branch, versions, read, archive), and
-  `user_folder()`, the folder `DATA_FOLDER/user/<username>` with the repos of each user.
-- `src/student_repo.py`: `StudentRepo(GitRepo)`, the bare git repo with the solutions that each
-  user submits as a student, in `DATA_FOLDER/user/<username>/student_repo`
-  (`STUDENT_REPO_NAME`), created at login, with a branch per problem and a commit per run with new
-  code (`ProblemController.save_solution()`), the versions of the slider of the editor, and the
-  zip archive of the solutions (`download_solutions()` in `users.py`). It runs git through
-  `subprocess` with plumbing commands and a timeout, and validates names of courses, problems,
-  files, and commits before they become refs or paths (see "Student repos" in `readme.adoc`).
+- `src/repos/`: package with the git repos of the users (imported as `repos.git_repo`...).
+  - `git_repo.py`: `GitRepo`, the operations on git repos shared by student repos and, later,
+    professor repos (commit a file at the end of a branch, versions, read, archive, merge
+    branches, copy with a working tree, push over SSH only), `check_ssh_url()` for the remotes of
+    users, and `user_folder()`, the folder `DATA_FOLDER/user/<username>` with the repos of each
+    user.
+  - `student_repo.py`: `StudentRepo(GitRepo)`, the bare git repo with the solutions that each
+    user submits as a student, in `DATA_FOLDER/user/<username>/student_repo`
+    (`STUDENT_REPO_NAME`), created at login, with a branch per problem and a commit per run with
+    new code (`ProblemController.save_solution()`), the versions of the slider of the editor, the
+    `main` branch that merges the problems for copies and pushes, and the origin of the user. It
+    runs git through `subprocess` with plumbing commands and a timeout, and validates names of
+    courses, problems, files, and commits before they become refs or paths (see "Student repos"
+    in `readme.adoc`).
+  - `repo_controller.py`: `RepoController`, the routes of the Repositories section of the home
+    page (`/user/repo...`, script `static/js/user/repos.js`).
+  - `repo_jobs.py`: `RepoJob`, the background jobs of a student repo (zip of the last solutions,
+    zip of a copy with history, push): started as `manage.py repo-job` processes with `nice` 19
+    and a time limit, with their state in `DATA_FOLDER/user/<username>/jobs/` and a lock per job.
+  - `ssh_key.py`: `UserKey`, the SSH key pair of each user, never shared between users (see
+    "Repositories section" in `readme.adoc`).
 - `src/runs.py`: `Run` model (`runs` table) that limits the code runs of each user: one at a
   time, 5 seconds between them, 120 per hour, and the same submission answered with the stored
   result of the last run.

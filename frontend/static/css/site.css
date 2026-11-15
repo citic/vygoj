@@ -22,8 +22,19 @@ Monospace:
   --surface: light-dark(rgb(248 248 248), rgb(38 38 38));
   --surface-alt: light-dark(rgb(228 227 227), rgb(58 58 58));
   --form-bg: light-dark(#f3f3f3, rgb(30 30 30));
+
+  /* Background of the fields that users cannot edit (readonly), so they look different */
+  --readonly-bg: light-dark(rgb(228 228 228), rgb(55 55 55));
   --form-shadow: light-dark(#ebebeb, transparent);
   --button-shadow: light-dark(#dadada, black);
+
+  /* Backgrounds of the colors of the buttons, by the effect of their action (form.css). Dark
+     enough for their white text (contrast of 4.5:1 at least) */
+  --confirm-bg: #3f51b5;
+  --action-bg: #2e7d32;
+  --reject-bg: #b85c00;
+  --danger-bg: #d32f2f;
+  --neutral-bg: #616161;
   --border: light-dark(black, gray);
   --label-color: light-dark(var(--bg-color), rgb(120 190 182));
   --accent: light-dark(rgb(20 163 154), rgb(63 193 181));
@@ -345,6 +356,67 @@ details:not([open]) > summary > :is(h2, h3, h4, h5, h6)::before {
 .page_content {
   flex-grow: 1;
   margin: 0.5rem 2.5rem;
+}
+
+/* Log of the messages that a script shows in a page, e.g. the jobs of the student repo. Each
+   message has an icon of its category (data-category: success, info, warning, or error) before
+   its text, which keeps the colors of the page, so a long log does not tire the eyes. Errors may
+   have a close button at their right */
+.message_log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  & li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5em;
+    padding: 0.2em 0;
+  }
+
+  /* Icons of the Material Symbols font, which the page loads. Their colors are darker in the
+     light scheme, so they stand out from the background in both */
+  & .icon {
+    font-family: "Material Symbols Outlined", sans-serif;
+    font-size: 1.25rem;
+    line-height: 1;
+    color: light-dark(var(--action-bg), var(--success));
+  }
+
+  & li[data-category="info"] .icon {
+    color: light-dark(var(--confirm-bg), var(--info));
+  }
+
+  & li[data-category="warning"] .icon {
+    color: light-dark(var(--reject-bg), var(--warning));
+  }
+
+  & li[data-category="error"] .icon {
+    color: light-dark(var(--danger-bg), var(--error));
+  }
+
+  & p {
+    flex: 1 1 auto;
+    margin: 0;
+  }
+
+  /* Close buttons, without the look that form.css gives to buttons */
+  & .close {
+    min-width: auto;
+    padding: 0 0.25em;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    color: var(--muted-text);
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+
+  & .close:hover {
+    color: inherit;
+    font-weight: normal;
+    filter: none;
+  }
 }
 
 /* Messages of the server (flask.flash), each one with the color of its category and a button

@@ -2,6 +2,10 @@
 {% extends 'base.html' %}
 {%- block styles %}
     <link rel="stylesheet" href="/css/courses.css">
+{%- if it.user %}
+    {#- Icons of the Repositories section, the same font and icons of the code editor #}
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&amp;icon_names=check,check_circle,content_copy,error,info,warning">
+{%- endif %}
 {%- endblock %}
 {%- block main %}
       <main class="courses">
@@ -25,6 +29,43 @@
               <span class="caption">{{ _('Submissions') }}</span>
             </a>
           </div>
+        </details>
+{%- endif %}
+{%- if it.user %}
+        {#- The repos of the user. static/js/user/repos.js fills the student repo from
+            GET /user/repo, and runs its jobs: the zips and the push, in the background #}
+        <details id="repositories" open>
+          <summary><h2>{{ _('Repositories') }}</h2></summary>
+          <fieldset id="student_repo" class="repo" data-csrf-token="{{ csrf_token() }}">
+            <legend>{{ _('Student repository') }}</legend>
+            <p class="repo_line">
+              <span id="repo_info" class="repo_info">{{ _('Loading...') }}</span>
+              {#- A zip with the last version of each solution, and a zip with a copy of the repo
+                  (its history, and the last solutions in its working tree). Each button generates
+                  its zip, says Generating... meanwhile, and then downloads it, until it expires or
+                  the repo gets a new version (data-state: generate, running, or download) #}
+              <span class="repo_actions">
+                <button type="button" class="button confirm" data-job="solutions" data-running="{{ _('Generating...') }}" data-download="{{ _('Download last solutions') }}" data-url="{{ url_for('get_repo_zip', kind='solutions') }}" disabled>{{ _('Generate last solutions') }}</button>
+                <button type="button" class="button confirm" data-job="history" data-running="{{ _('Generating...') }}" data-download="{{ _('Download solution history') }}" data-url="{{ url_for('get_repo_zip', kind='history') }}" disabled>{{ _('Generate solution history') }}</button>
+              </span>
+            </p>
+            <p class="repo_line">
+              <label for="repo_origin">{{ _('Origin') }}</label>
+              <input type="text" id="repo_origin" maxlength="256" placeholder="git@github.com:user/repo.git" spellcheck="false" autocomplete="off">
+              <button type="button" class="button confirm" id="set_origin" disabled>{{ _('Set origin') }}</button>
+              <button type="button" class="button action" data-job="push" data-running="{{ _('Pushing...') }}" disabled>{{ _('Push') }}</button>
+            </p>
+            <p class="repo_line">
+              <label for="repo_key">{{ _('SSH key') }}</label>
+              <input type="text" id="repo_key" class="repo_key" readonly>
+              {#- An icon: content_copy, and check for a moment after copying #}
+              <button type="button" class="button small neutral material-symbols-outlined" id="copy_key" title="{{ _('Copy the SSH key') }}" aria-label="{{ _('Copy the SSH key') }}" data-done="{{ _('Copied') }}" disabled>content_copy</button>
+              <small>{{ _('Add this public key to your repo in your Git host with write access (e.g. a deploy key in GitHub), set the SSH URL of the repo as origin, and press Push. Each Push sends your new solutions; nothing is brought from the origin.') }}</small>
+            </p>
+            {#- Log of the repo: the state of its jobs and the result of the last action, each one
+                with an icon of its category (message_log of site.css) #}
+            <ul id="repo_messages" class="message_log" role="status" aria-live="polite" data-close="{{ _('Close') }}"></ul>
+          </fieldset>
         </details>
 {%- endif %}
 {%- if it.my_courses|length > 0 %}

@@ -37,11 +37,13 @@ translations: install
 	$(ACT) && pybabel compile -d $(TRANSLATIONS)
 
 # Collect the texts of the interface marked with _() in the files of babel.cfg into messages.pot,
-# and add the new texts to the .po file of every language, ready to be translated
+# and add the new texts to the .po file of every language, ready to be translated. The .po files
+# keep their POT-Creation-Date, so branches that run this rule do not conflict on that date when
+# they are merged (git tells when their texts changed)
 update-translations: install
 	$(ACT) && pybabel extract -F babel.cfg -k lazy_gettext -o $(TRANSLATIONS)/messages.pot \
 		--no-location --sort-output . && pybabel update -i $(TRANSLATIONS)/messages.pot \
-		-d $(TRANSLATIONS) --no-fuzzy-matching
+		-d $(TRANSLATIONS) --no-fuzzy-matching --ignore-pot-creation-date
 
 node_modules:
 	npm i

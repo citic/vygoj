@@ -21,6 +21,10 @@ msgid " (CPU %(seconds)s s)"
 msgstr " (CPU %(seconds)s s)"
 
 #, python-format
+msgid "%(commits)s versions of %(problems)s problems, the last one on %(time)s."
+msgstr "%(commits)s versiones de %(problems)s problemas, la última el %(time)s."
+
+#, python-format
 msgid "%(number)s of %(count)s, %(time)s"
 msgstr "%(number)s de %(count)s, %(time)s"
 
@@ -83,6 +87,17 @@ msgstr "Agregar curso"
 msgid "Add SSO provider"
 msgstr "Agregar proveedor de SSO"
 
+msgid ""
+"Add this public key to your repo in your Git host with write access (e.g."
+" a deploy key in GitHub), set the SSH URL of the repo as origin, and "
+"press Push. Each Push sends your new solutions; nothing is brought from "
+"the origin."
+msgstr ""
+"Agregue esta clave pública a su repositorio en su servicio de Git con "
+"permiso de escritura (p. ej. una deploy key en GitHub), establezca la URL"
+" SSH del repositorio como origen y presione Enviar. Cada envío manda sus "
+"soluciones nuevas; no se trae nada del origen."
+
 msgid "Admin Users"
 msgstr "Administrar usuarios"
 
@@ -144,10 +159,10 @@ msgid "Clear all"
 msgstr "Borrar todo"
 
 msgid "Client ID"
-msgstr "Client ID"
+msgstr "ID de cliente"
 
 msgid "Client secret"
-msgstr "Client secret"
+msgstr "Secreto de cliente"
 
 msgid "Close"
 msgstr "Cerrar"
@@ -176,8 +191,14 @@ msgstr "Conexión"
 msgid "Contents"
 msgstr "Contenido"
 
+msgid "Copied"
+msgstr "Copiado"
+
 msgid "Copy"
 msgstr "Copiar"
+
+msgid "Copy the SSH key"
+msgstr "Copiar la clave SSH"
 
 #, python-format
 msgid "Could not connect with %(provider)s. Try again later."
@@ -190,6 +211,21 @@ msgstr "No se pudo ingresar con %(provider)s. Intente más tarde."
 #, python-format
 msgid "Could not log in with %(provider)s. Try again."
 msgstr "No se pudo ingresar con %(provider)s. Intente de nuevo."
+
+#, python-format
+msgid "Could not make the zip of your last solutions: %(reason)s."
+msgstr "No se pudo generar el zip de sus últimas soluciones: %(reason)s."
+
+#, python-format
+msgid "Could not make the zip of your solution history: %(reason)s."
+msgstr "No se pudo generar el zip del historial de sus soluciones: %(reason)s."
+
+#, python-format
+msgid "Could not push to the origin: %(reason)s."
+msgstr "No se pudo enviar al origen: %(reason)s."
+
+msgid "Could not read your student repo."
+msgstr "No se pudo leer su repositorio de estudiante."
 
 #, python-format
 msgid "Could not run the solution: %(error)s"
@@ -269,8 +305,11 @@ msgstr "¿Desea borrar todo el código?"
 msgid "Do you want to revert to the initial code?"
 msgstr "¿Desea volver al código inicial?"
 
-msgid "Download my solutions"
-msgstr "Descargar mis soluciones"
+msgid "Download last solutions"
+msgstr "Descargar últimas soluciones"
+
+msgid "Download solution history"
+msgstr "Descargar historial de soluciones"
 
 msgid "Edit"
 msgstr "Editar"
@@ -284,6 +323,9 @@ msgstr "Correo"
 
 msgid "Email claim"
 msgstr "Claim del correo"
+
+msgid "Error"
+msgstr "Error"
 
 msgid "Exit fullscreen"
 msgstr "Salir de pantalla completa"
@@ -300,6 +342,15 @@ msgstr "Nombre completo"
 msgid "Fullscreen"
 msgstr "Pantalla completa"
 
+msgid "Generate last solutions"
+msgstr "Generar últimas soluciones"
+
+msgid "Generate solution history"
+msgstr "Generar historial de soluciones"
+
+msgid "Generating..."
+msgstr "Generando..."
+
 msgid "Given by the team of the provider"
 msgstr "Lo entrega el equipo del proveedor"
 
@@ -308,6 +359,9 @@ msgstr "Ayuda"
 
 msgid "Home"
 msgstr "Inicio"
+
+msgid "Information"
+msgstr "Información"
 
 msgid "Input"
 msgstr "Entrada"
@@ -330,6 +384,9 @@ msgstr "Distribución"
 
 msgid "Light mode"
 msgstr "Modo claro"
+
+msgid "Loading..."
+msgstr "Cargando..."
 
 msgid "Log in to run"
 msgstr "Inicie sesión para ejecutar"
@@ -371,6 +428,13 @@ msgid "No network connection"
 msgstr "Sin conexión a la red"
 
 msgid ""
+"No solutions yet: each run of a problem saves a version in this "
+"repository."
+msgstr ""
+"Aún no hay soluciones: cada ejecución de un problema guarda una versión "
+"en este repositorio."
+
+msgid ""
 "Not configured: public client with PKCE only. Add it to "
 "SSO_CLIENT_SECRETS in config.py."
 msgstr ""
@@ -396,6 +460,12 @@ msgid ""
 msgstr ""
 "Opcional. El inicio de sesión único vincula a este usuario las cuentas de"
 " proveedores con este correo."
+
+msgid "Origin"
+msgstr "Origen"
+
+msgid "Origin saved."
+msgstr "Origen guardado."
 
 msgid "Password"
 msgstr "Contraseña"
@@ -457,11 +527,24 @@ msgstr "Proveedor %(provider)s eliminado."
 msgid "Provider %(provider)s saved."
 msgstr "Proveedor %(provider)s guardado."
 
+msgid "Push"
+msgstr "Enviar"
+
+#, python-format
+msgid "Pushed to the origin on %(time)s."
+msgstr "Enviado al origen el %(time)s."
+
+msgid "Pushing..."
+msgstr "Enviando..."
+
 msgid "Redirect URI (callback) to register in the provider"
 msgstr "Redirect URI (callback) que se registra en el proveedor"
 
 msgid "Redo"
 msgstr "Rehacer"
+
+msgid "Repositories"
+msgstr "Repositorios"
 
 msgid "Return to the course"
 msgstr "Volver al curso"
@@ -481,6 +564,9 @@ msgstr "Ejecutar mi solución con los casos de prueba"
 msgid "Running"
 msgstr "Ejecutando"
 
+msgid "SSH key"
+msgstr "Clave SSH"
+
 msgid "SSO"
 msgstr "SSO"
 
@@ -496,10 +582,13 @@ msgstr ""
 "proveedor."
 
 msgid "Scopes"
-msgstr "Scopes"
+msgstr "Ámbitos"
 
 msgid "Separated by spaces, e.g. openid profile email"
 msgstr "Separados por espacios, p. ej. openid profile email"
+
+msgid "Set origin"
+msgstr "Establecer origen"
 
 msgid ""
 "Short name chosen in VygOJ for URLs and for SSO_CLIENT_SECRETS in "
@@ -532,8 +621,14 @@ msgstr "Estado"
 msgid "Student"
 msgstr "Estudiante"
 
+msgid "Student repository"
+msgstr "Repositorio de estudiante"
+
 msgid "Submissions"
 msgstr "Envíos"
+
+msgid "Success"
+msgstr "Éxito"
 
 msgid "Suspend"
 msgstr "Suspender"
@@ -585,8 +680,36 @@ msgstr ""
 "Se perdió la conexión con el juez. No se puede ejecutar código hasta que "
 "se restablezca."
 
+#, python-format
+msgid ""
+"The origin must be the SSH URL of a repo in %(hosts)s, e.g. "
+"git@github.com:user/repo.git"
+msgstr ""
+"El origen debe ser la URL SSH de un repositorio en %(hosts)s, p. ej. "
+"git@github.com:usuario/repo.git"
+
+#, python-format
+msgid "The origin was up to date on %(time)s."
+msgstr "El origen estaba actualizado el %(time)s."
+
 msgid "The requested resource was not found in this site."
 msgstr "El recurso solicitado no se encontró en este sitio."
+
+#, python-format
+msgid ""
+"The zip of your last solutions is ready until %(time)s, or until you save"
+" a new version. Then it is deleted, and you must generate it again."
+msgstr ""
+"El zip de sus últimas soluciones está listo hasta %(time)s, o hasta que "
+"guarde una versión nueva. Luego se elimina y debe generarlo de nuevo."
+
+#, python-format
+msgid ""
+"The zip of your solution history is ready until %(time)s, or until you "
+"save a new version. Then it is deleted, and you must generate it again."
+msgstr ""
+"El zip de su historial de soluciones está listo hasta %(time)s, o hasta "
+"que guarde una versión nueva. Luego se elimina y debe generarlo de nuevo."
 
 msgid "There are no SSO providers. Users log in with their password."
 msgstr "No hay proveedores de SSO. Los usuarios ingresan con su contraseña."
@@ -681,6 +804,9 @@ msgstr "Versión de su solución"
 msgid "Vygotsky Online Judge"
 msgstr "Juez en línea Vygotsky"
 
+msgid "Warning"
+msgstr "Advertencia"
+
 msgid "Write a claim name, or names separated by dots"
 msgstr "Escriba el nombre de un claim, o nombres separados por puntos"
 
@@ -730,6 +856,15 @@ msgstr ""
 msgid "Your solution"
 msgstr "Su solución"
 
+msgid "an error occurred, try again later"
+msgstr "ocurrió un error, intente de nuevo más tarde"
+
+msgid "could not connect to the host of the origin"
+msgstr "no se pudo conectar con el servidor del origen"
+
+msgid "could not connect to the server"
+msgstr "no se pudo conectar con el servidor"
+
 #, python-format
 msgid "could not connect to the server (%(message)s)"
 msgstr "no se pudo conectar con el servidor (%(message)s)"
@@ -741,8 +876,44 @@ msgstr ""
 "p. ej. https://sso.ucr.ac.cr/realms/UCR o su URL /.well-known/openid-"
 "configuration"
 
+msgid "it took too long"
+msgstr "tardó demasiado"
+
+msgid "it was interrupted, try again"
+msgstr "se interrumpió, intente de nuevo"
+
 msgid "or with your VygOJ password"
 msgstr "o con su contraseña de VygOJ"
+
+msgid "set the origin first"
+msgstr "establezca primero el origen"
+
+msgid "that job is running already"
+msgstr "esa tarea ya se está ejecutando"
+
+msgid "the identity of the host of the origin changed"
+msgstr "cambió la identidad del servidor del origen"
+
+msgid ""
+"the origin did not accept the SSH key: add it to the repo with write "
+"access"
+msgstr ""
+"el origen no aceptó la clave SSH: agréguela al repositorio con permiso de"
+" escritura"
+
+msgid ""
+"the origin has commits that your student repo does not have: use an empty"
+" repo"
+msgstr ""
+"el origen tiene commits que su repositorio de estudiante no tiene: use un"
+" repositorio vacío"
+
+msgid "the origin repo does not exist, or the SSH key cannot access it"
+msgstr "el repositorio de origen no existe o la clave SSH no tiene acceso"
+
+#, python-format
+msgid "the server answered %(status)s"
+msgstr "el servidor respondió %(status)s"
 
 #, python-format
 msgid "the server answered %(status)s %(text)s"
@@ -751,6 +922,22 @@ msgstr "el servidor respondió %(status)s %(text)s"
 #, python-format
 msgid "the server did not answer in %(seconds)s seconds"
 msgstr "el servidor no respondió en %(seconds)s segundos"
+
+msgid "the server is running other jobs, try again in a few minutes"
+msgstr "el servidor está ejecutando otras tareas, intente de nuevo en unos minutos"
+
+msgid "wait a minute after the last request, and try again"
+msgstr "espere un minuto después de la última solicitud e intente de nuevo"
+
+msgid ""
+"your student repo has no solutions yet: each run of a problem saves a "
+"version"
+msgstr ""
+"su repositorio de estudiante aún no tiene soluciones: cada ejecución de "
+"un problema guarda una versión"
+
+msgid "your student repo is too big"
+msgstr "su repositorio de estudiante es demasiado grande"
 
 #~ msgid "Administrators are created and recovered in the server with make admin."
 #~ msgstr "Los administradores se crean y recuperan en el servidor con make admin."
@@ -797,4 +984,7 @@ msgstr "el servidor no respondió en %(seconds)s segundos"
 #~ "progreso? Su actividad se mantiene en"
 #~ " la bitácora. Esto no se puede "
 #~ "deshacer."
+
+#~ msgid "Download my solutions"
+#~ msgstr "Descargar mis soluciones"
 

@@ -16,12 +16,28 @@ fieldset {
   font: inherit;
 }
 
+/* Fields that show a value that users cannot edit, but may select and copy (readonly), e.g. the
+   SSH key of the student repo. The attribute selects them, not :read-only, which also matches
+   buttons, checkboxes, and other inputs that cannot be edited */
+input[readonly],
+textarea[readonly] {
+  background-color: var(--readonly-bg);
+}
+
 fieldset {
   padding: 1rem;
   margin: 1rem 0;
   display: flex;
   flex-direction: column;
   background-color: var(--form-bg);
+}
+
+/* Titles of the fieldsets, with the color of the headings of the site (--label-color is lighter
+   in the dark scheme, so they stand out from the background) */
+legend {
+  padding: 0 0.25em;
+  font-weight: bold;
+  color: var(--label-color);
 }
 
 /* Forms whose fieldsets of options (radio buttons) are narrow, e.g. the preferences of a user and
@@ -60,24 +76,38 @@ a.button {
   padding: 4px 10px;
 }
 
+/* Colors of the buttons, by the effect of their action:
+   confirm: saves, creates, or prepares something in VygOJ (Save, Add, Edit, Log in, Generate)
+   action: runs something or delivers a result (Run, Activate, Download, Push)
+   reject: reverts, pauses, or leaves without destroying anything (Cancel, Suspend, Logout)
+   danger: destroys something that cannot be recovered, after asking (Delete)
+   neutral: helps without changing data (Copy, Show, Hide) */
+.confirm,
+.action,
+.reject,
+.danger,
+.neutral {
+  color: #fff;
+}
+
 .confirm {
-  color: #fff;
-  background: #3f51b5;
-}
-
-.reject {
-  color: #fff;
-  background: #ff8500;
-}
-
-.danger {
-  color: #fff;
-  background: red;
+  background: var(--confirm-bg);
 }
 
 .action {
-  color: #fff;
-  background: #409635;
+  background: var(--action-bg);
+}
+
+.reject {
+  background: var(--reject-bg);
+}
+
+.danger {
+  background: var(--danger-bg);
+}
+
+.neutral {
+  background: var(--neutral-bg);
 }
 
 button:disabled {

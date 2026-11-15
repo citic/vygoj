@@ -12,9 +12,11 @@ from admin import UserAdminController
 from courses import CourseController
 from limits import BACKEND_CONNECT_TIMEOUT, Limits
 from problems import BACKEND_STATUS_TIMEOUT, ProblemController
+from repos.repo_controller import RepoController
+from repos.repo_jobs import check_config as check_repo_config
 from sso import SsoAdminController, SsoController, SsoProvider
 from users import (DEFAULT_FONT, FONTS, TRANSLATIONS_FOLDER, UserForm, client_translations,
-    download_solutions, font_url, log_out, refresh_session, select_language)
+    font_url, log_out, refresh_session, select_language)
 from db import db
 from activity_log import LogController, log_event
 
@@ -120,6 +122,8 @@ def check_secret_key(secret_key):
 check_secret_key(app.config['SECRET_KEY'])
 # Invalid limits of runs would fail every run, so the server does not start with them
 Limits.check_config(app.config)
+# Invalid limits of the jobs of student repos would fail them, or let them use the server freely
+check_repo_config(app.config)
 
 # Behind a reverse proxy, every request comes from the address of the proxy, which adds the address
 # of the client to the X-Forwarded-For header. TRUSTED_PROXIES is the number of proxies that add
@@ -233,10 +237,25 @@ def user():
     log_event('visit')
     return UserForm.show_form(SsoProvider.listed())
 
-@app.route('/user/solutions.zip')
-def get_solutions():
-    """ User asked for a zip archive with the last version of each of their solutions """
-    return download_solutions()
+@app.route('/user/repo')
+def get_repo():
+    """ Client JavaScript asked for the state of the student repo of the user and its jobs """
+    return RepoController.get_state()
+
+@app.route('/user/repo/origin', methods=['POST'])
+def set_repo_origin():
+    """ User set the URL of the remote of their student repo """
+    return RepoController.set_origin()
+
+@app.route('/user/repo/<kind>', methods=['POST'])
+def start_repo_job(kind):
+    """ User asked for a zip of their student repo (solutions or history), or to push it """
+    return RepoController.start_job(kind)
+
+@app.route('/user/repo/<kind>.zip')
+def get_repo_zip(kind):
+    """ User downloads the zip that a job of their student repo made """
+    return RepoController.download(kind)
 
 @app.route('/logout', methods=['POST'])
 def logout():

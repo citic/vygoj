@@ -58,7 +58,7 @@ The interface is written in English and translated with https://python-babel.git
 
 Texts of the interface are marked to be translated: `{{ _('My courses') }}` in templates, `gettext()` in Python, `lazy_gettext()` for texts defined when the module loads, such as the labels of forms, and `_()` of `static/js/i18n.js` in JavaScript. JavaScript gets the translations of the language of the page from `/translations/<language>.json`, which the server reads from the same catalogs. Values go in named placeholders, so translators can move them: `_('Test case %(number)d', number=loop.index)`. Each language has a catalog in `translations/<language>/LC_MESSAGES/messages.po`, with the English texts (`msgid`) and their translations (`msgstr`). The servers read the catalogs compiled to `.mo` files, which `make` compiles before starting (`make translations`) and git ignores.
 
-After adding or changing texts of the interface, update the catalogs and translate the texts that have an empty `msgstr`; texts that no longer exist are commented out at the end:
+After adding or changing texts of the interface, update the catalogs and translate the texts that have an empty `msgstr`; texts that no longer exist are commented out at the end. The rule keeps the `POT-Creation-Date` of the catalogs (`--ignore-pot-creation-date`), so branches that update them do not conflict on that line when they are merged:
 
 [source,sh]
 ----
@@ -224,36 +224,75 @@ The username of users created by a provider is their email, so usernames have up
 [[student_repos]]
 == Student repos
 
-Every user may be a student of courses made by other professors, including professors who also make their own courses. Each user has a student repo: a bare git repo with the history of the solutions to the questions and problems that they submit in their role of student. Its default path is `<DATA_FOLDER>/user/<username>/student_repo`, where `<username>` is the username of the user, without prefix (e.g. `user/e14` for the user `e14`), and `student_repo` is `STUDENT_REPO_NAME` in `config.py` (`src/student_repo.py`). `DATA_FOLDER` keeps the activity log and the folders of the users apart, so it does not fill up with folders:
+Every user may be a student of courses made by other professors, including professors who also make their own courses. Each user has a student repo: a bare git repo with the history of the solutions to the questions and problems that they submit in their role of student. Its default path is `<DATA_FOLDER>/user/<username>/student_repo`, where `<username>` is the username of the user, without prefix (e.g. `user/ann.li` for the user `ann.li`), and `student_repo` is `STUDENT_REPO_NAME` in `config.py`. `DATA_FOLDER` keeps the activity log and the folders of the users apart, so it does not fill up with folders:
 
 ----
 log/                       # activity log
 user/<username>/
   student_repo/            # student repo of the user
+  jobs/                    # state and zips of the jobs of the student repo (<<repositories>>)
+  ssh/                     # SSH key of the user, to push their repos
   <repo>/                  # repos of professors with their courses, e.g. user/jhc/pexercises
 ----
 
 Usernames may be emails of single sign-on, so characters other than letters, digits, and `@.+-_~` are encoded as in URLs (`a/b` is `a%2Fb`): the folder stays inside `DATA_FOLDER/user`, and two users never share it. The first dot of a username that starts with one is encoded too (`..` is `%2E.`), so the folder of a user is never `DATA_FOLDER/user` nor `DATA_FOLDER`. The frontend creates the repo when the user logs in, and when they run code if it does not exist yet. Each run accepted by the limits (<<run_limits>>) commits the code, unless it is the same as the last version of that problem and language. Repeated and rejected runs commit nothing, and if git fails the student still gets the result of the run, and the error is logged in the log of the server. The repo has no working tree, so its folder has no loose source files:
 
 ----
-user/e14/student_repo/                            # student repo of the user e14
-  refs/heads/problems/CI0113/2026b01/format_date  # a branch per problem, a commit per run
+user/ann.li/student_repo/                          # student repo of the user ann.li
+  refs/heads/problems/CI0113/2026b01/format_date   # a branch per problem, a commit per run
 ----
 
-The commits of a branch have the solution in the path `<course>/<term_group>/<problem>/src/<file>`, e.g. `CI0113/2026b01/format_date/src/solution.c`, so the branches of different problems can be merged later without conflicts. The file is `solution.<extension>` of the language, or `Solution.java` in Java, so each language of a problem has its own file in the same branch. The term and group (`TERM_GROUP` in `src/student_repo.py`, e.g. `2026b01` is group 01 of the second term of 2026) is fixed until courses have offerings in the database. Commits have VygOJ as author and `Run` as message; their date is the time of the run. To see the history of a user in the server:
+The commits of a branch have the solution in the path `<course>/<term_group>/<problem>/src/<file>`, e.g. `CI0113/2026b01/format_date/src/solution.c`, so the branches of different problems can be merged later without conflicts. The file is `solution.<extension>` of the language, or `Solution.java` in Java, so each language of a problem has its own file in the same branch. The term and group (`TERM_GROUP` in `src/repos/student_repo.py`, e.g. `2026b01` is group 01 of the second term of 2026) is fixed until courses have offerings in the database. Commits have VygOJ as author and their date is the time of the run. Their message is the path of the problem in the course, with the term and group and the names of its sections and subsections, and the action, which is `run` for now: `<course>/<term_group>/<sections>/<problem>: <action>`, e.g. `CI0112/2026b01/1.1_intro_io/practice/sum_int: run` (`commit_message()` in `src/repos/student_repo.py`; characters other than letters, digits, `.`, `+`, `-`, and `_` in the names of sections become `_`). To see the history of a user in the server:
 
 [source,sh]
 ----
-R=DATA_FOLDER/user/e14/student_repo
-git -C $R log --all --format='%h %ci %s' --name-only             # versions of every problem
+R=DATA_FOLDER/user/ann.li/student_repo
+git -C $R log --all --format='%h %ci %s' --name-only               # versions of every problem
 git -C $R show <commit>:CI0113/2026b01/format_date/src/solution.c  # the code of a version
 ----
 
-The frontend runs git with the plumbing commands (`hash-object`, `update-index` on a temporary index, `write-tree`, `commit-tree`, `update-ref`), which need no working tree, so several gunicorn workers may save at the same time. `update-ref` moves a branch only if it still points to the commit that was read, so a worker never overwrites the commit of another one: the later one fails and is logged. Every git command runs without a shell, with a timeout of 5 seconds (`GIT_TIMEOUT`), without hooks of the repo, and without asking for passwords. Names of courses and problems become parts of refs and paths, so they must match `[A-Za-z0-9_+-]{1,64}` (`NAME_PATTERN`); the run of a problem with another name is judged but not saved. Deleting a user deletes their folder (<<users_admin>>).
+The frontend runs git with the plumbing commands (`hash-object`, `update-index` on a temporary index, `write-tree`, `commit-tree`, `update-ref`), which need no working tree, so several gunicorn workers may save at the same time. `update-ref` moves a branch only if it still points to the commit that was read, so a worker never overwrites the commit of another one: the later one fails and is logged. Every git command runs without a shell, with a timeout of 5 seconds (`GIT_TIMEOUT`), or the time limit of the job for the copies and pushes of the background jobs (<<repositories>>), without hooks of the repo, and without asking for passwords. Names of courses and problems become parts of refs and paths, so they must match `[A-Za-z0-9_+-]{1,64}` (`NAME_PATTERN`); the run of a problem with another name is judged but not saved. Deleting a user deletes their folder (<<users_admin>>).
 
 The toolbar of the code editor has a slider with the versions of the solution in the chosen language, from the oldest to the newest, and at its end the code in the editor. Dragging it shows each version with its number and time; editing a version makes it the code in the editor, which the next run saves as a new version at the end of the branch. When the browser has no code of the user for the problem and language, the editor shows their last version instead of the initial code. The page asks for the list of versions (`GET /problem/<course>/<problem>/versions?language=<language>`, `[[commit, time], ...]`), and for the code of a version only when the slider reaches it (`GET .../versions/<commit>?language=<language>`), which the browser keeps, since a commit never changes. Both answer only the logged user, from their own repo.
 
-The preferences page has a link to download the solutions (`/user/solutions.zip`): a zip archive (`student_repo.zip`) with the last version of the solution of every problem, in its logical path. A temporary index joins the trees of the branches of the problems, and `git archive` writes the zip, without a working tree.
+[[repositories]]
+=== Repositories section
+
+Every logged user manages their student repo in the _Repositories_ section of the home page, between _Administration_ and _My courses_ (`static/js/user/repos.js`, `src/repos/repo_controller.py`). Its _Student repository_ fieldset has four lines: the info of the repo (versions, problems, and the time of the last version) with the buttons of its two zips, each one with four states: disabled while the repo has no versions, _Generate_, _Generating..._ while the job runs, and _Download_ once the zip is ready; the _Origin_ field with _Set origin_ and _Push_; the SSH public key of the user, with an icon button that copies it to the clipboard; and the messages of the jobs. _Set origin_ is disabled while the field is empty or has the stored origin, and _Push_ while the repo has no versions or no origin. The messages are a log (`message_log` of `site.css`): each one has an icon of its category (success, information, warning, or error) before its text, which keeps the colors of the page, and errors have an X at their right that closes them; the browser remembers the closed failures of jobs (`localStorage`), so they stay closed after a reload until a job fails again:
+
+[cols="1,4",options="header"]
+|===
+| Button | Effect
+| Generate last solutions | A zip (`solutions.zip`) with the last version of the solution of every problem, in its logical path, without git. A temporary index joins the trees of the branches of the problems, and `git archive` writes the zip
+| Generate solution history | A zip (`student_repo.zip`) with a copy of the repo: a valid git repo with every branch of the problems and their history, and the `main` branch in its working tree, so the folder has the last solutions. The copy has no remote, `FETCH_HEAD`, nor reflog, which would reveal the path of the repo in the server
+| Set origin | Sets the URL of a repo of the user in a Git host as the `origin` of their student repo (`remote.origin.url` in its config). The route removes it if it receives an empty URL, but the page does not offer it. Only SSH URLs of the hosts of `REPO_ORIGIN_HOSTS` are accepted, e.g. `git@github.com:user/repo.git` or `ssh://git@gitlab.com/user/repo.git`
+| Push | Pushes `main` and the branches of the problems to the origin, without force and all of them or none (`--atomic`). Nothing is fetched: the student repo is the only source of the solutions. A remote with other commits in those branches rejects the push, so the origin should be an empty repo. Each Push sends the solutions saved since the last one
+|===
+
+The `main` branch is made when the repo is copied or pushed (`StudentRepo.build_main()`): a commit whose tree has the files of every branch of the problems, which never collide, and whose parents are the old `main` and the branches that have new commits. So `main` only moves forward, and pushing it never needs force.
+
+The zips and Push take time and resources, so they run in the background, one of each kind at a time per user, a minute after the last start of that kind at least (`JOB_INTERVAL`), and at most `REPO_MAX_JOBS` in the server (`src/repos/repo_jobs.py`). The request starts `python manage.py repo-job <kind> <username>` as a separate process, which lowers its priority to the minimum (`nice` 19), stops after `REPO_JOB_TIMEOUT` seconds, refuses repos bigger than `STUDENT_REPO_MAX_SIZE`, and keeps going if the gunicorn worker that started it stops. Its state is in files of the folder of the user, so the buttons say _Generating..._ or _Pushing..._ until it ends, after a reload, and in other browsers or computers too; the page asks for it (`GET /user/repo`) every 3 seconds while a job runs:
+
+----
+user/<username>/jobs/
+  history.json     # state: running, done, or failed, its times, and the code of its message
+  history.lock     # locked by the process while it runs; a job without lock was interrupted
+  history.log      # output of the last process, for administrators
+  history.zip      # the zip, deleted after REPO_ZIP_RETENTION (24 hours)
+----
+
+A done zip is downloaded from its button (`GET /user/repo/<kind>.zip`) until `REPO_ZIP_RETENTION` ends or the repo gets a new version; the messages line tells until when. The state of a zip keeps the version of the repo from which it was made (`StudentRepo.version()`, a hash of the last commits of the branches of the problems), so a zip of an older version is deleted, and its button goes back to _Generate_. Old zips are deleted when the user asks for the state, and the expired ones of every user when a job starts. Every route answers only the logged user, from their own folder; jobs are started with POST and the CSRF token (`POST /user/repo/<kind>`, `POST /user/repo/origin`).
+
+Each user has their own SSH key pair, made the first time the section is shown (`src/repos/ssh_key.py`), which the user adds to their repo in the Git host with write access (e.g. a deploy key in GitHub):
+
+----
+user/<username>/ssh/
+  id_ed25519        # private key, without passphrase, readable only by the user of the server
+  id_ed25519.pub    # public key shown in the section
+  known_hosts       # keys of the hosts, trusted the first time each one is used
+----
+
+A key shared by all users would let any user push to, or read, the repos of other users that trust it. With a key per user, a remote that trusts a key trusts only that user. The push runs ssh with that key only (`-F /dev/null`, `IdentitiesOnly`, no agent, `BatchMode`), and git refuses every protocol but SSH (`protocol.allow=never`), so a remote cannot be a local path, `file://`, or `ext::`. URLs are checked against patterns whose names cannot start with `-`, so no part is read as an option of ssh. `REPO_ORIGIN_HOSTS` keeps users from making the server connect to other computers, e.g. of its network: add the Git host of the institution there if students use it. Errors of git and ssh are logged in `<kind>.log`, and users see only the cause (e.g. the origin did not accept the key), because they may have paths of the server. Deleting a user deletes their folder, with their key and zips.
 
 [[activity_log]]
 == Activity log
@@ -297,6 +336,8 @@ Each month has its own file, so no file grows forever. Rows have a few fixed col
 | `run_failed` | The judge did not answer a valid result, e.g. no backend was available | `language`, `code`, `commit`
 | `log_download` | An administrator downloaded an archive of the log | `archive`: `log` or `submissions`
 | `sso_provider` | An administrator added, changed, or deleted a single sign-on provider | `action`: `add`, `update`, or `delete`; `provider`: its alias; `status`
+| `repo_job` | A user started a job of their student repo (<<repositories>>) | `kind`: `solutions`, `history`, or `push`
+| `repo_origin` | A user set or removed the origin of their student repo | `host`: the host of the URL, empty if it was removed. The path of the repo is not logged
 |===
 
 The log does not store problem statements, test cases, or program outputs, so it stays small: the `commit` of a run recovers the statement and test cases that judged it from the course repo (`git checkout`). Each code file is saved once, by the first run of that submission, and only accepted runs save code or ask git for the commit, so a robot cannot fill the disk or start processes with rejected or repeated runs (runs are limited per user). Passwords are never logged.

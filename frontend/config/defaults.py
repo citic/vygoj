@@ -9,8 +9,20 @@ DATA_FOLDER = "/home/user/vygdata"
 # TSV file in DATA_FOLDER with the users to add to the database (username and password columns)
 USERS_FILE = "users-passwords.tsv"
 # Name of the student repo: the bare git repo with the solutions to the questions and problems that
-# each user submits as a student, in their folder DATA_FOLDER/<username>
+# each user submits as a student, in their folder DATA_FOLDER/user/<username>
 STUDENT_REPO_NAME = "student_repo"
+# Background jobs on the student repos (Repositories section of the home page): zip the last
+# solutions, zip a copy of the repo with its history, and push it to the remote of the user. They
+# run with the lowest priority of the OS. Seconds that a job may take, jobs that the server runs at
+# once (a user runs one of each kind at a time), seconds that the zips are kept for download, and
+# bytes of a student repo that the jobs accept
+REPO_JOB_TIMEOUT = 300
+REPO_MAX_JOBS = 4
+REPO_ZIP_RETENTION = 24 * 60 * 60
+STUDENT_REPO_MAX_SIZE = 100 * 1024 * 1024
+# Hosts where users may push their student repos, over SSH only (e.g. git@github.com:user/repo.git).
+# Other hosts are refused, so users cannot make the server connect to other computers
+REPO_ORIGIN_HOSTS = ['github.com', 'gitlab.com', 'bitbucket.org']
 # Database URI for SQLAlchemy. Without user and password, PostgreSQL uses the system user
 SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg:///vygoj'
 # Frontend network port to listen on

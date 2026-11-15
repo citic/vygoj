@@ -87,6 +87,10 @@ class CourseController:
                 for course in courses},
             # The list of available courses for this user
             'available_courses': CourseController.fetch_all_courses(),
+            'scripts': [
+                '<script src="/js/user/repos.js" type="module" async="async"></script>',
+                '<script src="/js/site.js" type="module" async="async"></script>',
+            ],
         }
         # print(json.dumps(it, indent=2))
         return flask.render_template('courses.html', it=it)

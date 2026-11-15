@@ -4,14 +4,17 @@
     python manage.py import [users.tsv]        # make users
     python manage.py log output.zip            # the activity log and its analysis tables
     python manage.py submissions output.zip    # the code of the runs, a folder per submission
+    python manage.py repo-job kind username    # a background job of a student repo
 
 admin creates an administrator, or resets the password of a user and makes it administrator. It
 runs in the server, so the first administrator, and one who lost their password, never depend on
 the web application, where administrators give and take the role of the others. import creates
 and updates the tables of the database, and adds the users of a TSV file that are not in the
 database yet; make runs it before starting the servers. log and submissions write the archives
-that administrators download from the web application. Their logic lives in users.py and
-activity_log.py, so the web application may reuse it """
+that administrators download from the web application. repo-job runs a job on the student repo
+of a user (solutions, history, or push); the web application starts it in the background (see
+repo_jobs.py). Their logic lives in users.py, activity_log.py, and repo_jobs.py, so the web
+application may reuse it """
 import csv
 import getpass
 import os
@@ -23,10 +26,11 @@ from db import db
 from activity_log import write_archive, log_event
 from courses import CourseController
 from main import app
+from repos.repo_jobs import JOB_KINDS, RepoJob
 from users import MAX_PASSWORD_LENGTH, MAX_USERNAME_LENGTH, LoginAttempt, User
 
 USAGE = ('Usage: python manage.py admin [username] | import [users.tsv] | log output.zip'
-    ' | submissions output.zip')
+    ' | submissions output.zip | repo-job kind username')
 
 # Administrators can do everything, so their passwords must not be easy to guess
 MIN_PASSWORD_LENGTH = 12
@@ -167,19 +171,32 @@ def export_archive(kind: str, output: str = None) -> int:
     print(f'manage: {kind} archive written to {output}')
     return 0
 
+# Student repos -----------------------------------------------------------------------------------
+
+def run_repo_job(kind: str = None, username: str = None) -> int:
+    """ Run the job of the kind on the student repo of the user. Return the exit status """
+    if kind not in JOB_KINDS or not username:
+        print(USAGE, file=sys.stderr)
+        return 2
+    return RepoJob(username, kind).run()
+
 # Main --------------------------------------------------------------------------------------------
 
-# Subcommands and the functions that run them with an optional argument
+# Subcommands and the functions that run them with optional arguments: one, or the number in
+# MAX_ARGUMENTS
 COMMANDS = {
     'admin': manage_admin,
     'import': import_users,
     'log': lambda output=None: export_archive('log', output),
     'submissions': lambda output=None: export_archive('submissions', output),
+    'repo-job': run_repo_job,
 }
+MAX_ARGUMENTS = { 'repo-job': 2 }
 
 def main() -> int:
     """ Run the subcommand of the command line. Return the exit status: 0 on success """
-    if not 2 <= len(sys.argv) <= 3 or sys.argv[1] not in COMMANDS:
+    if (len(sys.argv) < 2 or sys.argv[1] not in COMMANDS
+            or len(sys.argv) - 2 > MAX_ARGUMENTS.get(sys.argv[1], 1)):
         print(USAGE, file=sys.stderr)
         return 2
     with app.app_context():
