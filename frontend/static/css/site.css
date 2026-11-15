@@ -22,6 +22,9 @@ Monospace:
   --surface: light-dark(rgb(248 248 248), rgb(38 38 38));
   --surface-alt: light-dark(rgb(228 227 227), rgb(58 58 58));
   --form-bg: light-dark(#f3f3f3, rgb(30 30 30));
+
+  /* Background of the fields that users cannot edit (readonly), so they look different */
+  --readonly-bg: light-dark(rgb(228 228 228), rgb(55 55 55));
   --form-shadow: light-dark(#ebebeb, transparent);
   --button-shadow: light-dark(#dadada, black);
   --border: light-dark(black, gray);

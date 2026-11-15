@@ -15,6 +15,11 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
   which problem statements share for the tables of their authors. Forms take the
   `fieldset_columns` class of `form.css` to place their fieldsets of radio buttons side by side
   when the window has space for them (the preferences and the form of a user for administrators).
+  Fields that users cannot edit take the `readonly` attribute, which `form.css` shows with the
+  `--readonly-bg` background of `site.css`; no class is needed. Buttons of actions take a color
+  variant (e.g. `confirm`, blue), which they keep when `disabled`, half transparent (`form.css`).
+  Messages shown by scripts reuse the `flash_messages` list of
+  `site.css` (with `data-dynamic`, so `site.js` keeps the list when its last message is closed).
   Headings follow one order in every page: `<h1>` is the name of the site and each page starts at
   `<h2>`; `site.css` gives every level its look. Sections that fold are a native `<details>` whose
   `<summary>` holds only the heading of the section (`<summary><h2>...</h2></summary>`, with no

@@ -15,7 +15,7 @@ from sqlalchemy.orm import selectinload
 from db import db
 from activity_log import log_event
 from courses import COURSES_REPO
-from git_repo import user_folder
+from repos.git_repo import user_folder
 from sso import STATUSES, SsoProvider
 from users import ROLES, USER_STATUSES, User, require_admin
 

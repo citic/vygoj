@@ -12,8 +12,8 @@ from werkzeug.security import safe_join
 import vyg
 from activity_log import log_event, log_run, repo_commit, save_code
 from courses import CourseController
-from git_repo import GitError
-from student_repo import StudentRepo, solution_filename
+from repos.git_repo import GitError
+from repos.student_repo import StudentRepo, solution_filename
 from limits import CONSTRAINED_FIELDS, Limits
 from problem_loader import ProblemLoader
 from runs import Run, RunRejected
@@ -269,8 +269,7 @@ class ProblemController:
         # Only the code of accepted runs is saved, which are limited per user, so a robot cannot
         # fill the disk with rejected or repeated runs. A repeated run has the file of its first run
         save_code(code_hash, message.language, message.code)
-        ProblemController.save_solution(flask.session['user'].get('email'), course_name,
-            problem.name, message)
+        ProblemController.save_solution(flask.session['user'].get('email'), problem, message)
         # The commit of the course repo recovers the statement and test cases that judged the run.
         # Only accepted runs ask git for it, which are limited per user
         run_data['commit'] = repo_commit(problem.get_course().get_path())
@@ -299,15 +298,14 @@ class ProblemController:
                 **log_cells)
 
     @staticmethod
-    def save_solution(username: str, course_name: str, problem_name: str, message: vyg.Message):
+    def save_solution(username: str, problem: vyg.Problem, message: vyg.Message):
         """ Commit the code of the run to the student repo of the user, the history of their
         solutions. A failure is logged, and the run goes on without it """
         try:
-            StudentRepo(username).save(course_name, problem_name,
-                solution_filename(message.language), message.code)
+            StudentRepo(username).save(problem, solution_filename(message.language), message.code)
         except (GitError, OSError, ValueError):
-            app.logger.exception('could not save the solution of %s/%s', course_name,
-                problem_name)
+            app.logger.exception('could not save the solution of %s/%s',
+                problem.get_course().name, problem.name)
 
     @staticmethod
     def get_versions(course_name: str, problem_name: str):

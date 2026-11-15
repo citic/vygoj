@@ -164,15 +164,19 @@ class Site {
 
   // eslint-disable-next-line class-methods-use-this
   setupFlashMessages() {
-    // The close button of each message removes it, and the list after its last message
-    document.querySelectorAll('.flash_messages button').forEach((button) => {
-      button.addEventListener('click', () => {
-        const list = button.closest('.flash_messages');
-        button.closest('li').remove();
-        if (list.children.length === 0) {
-          list.remove();
-        }
-      });
+    // The close button of each message removes it, and the list after its last message. One
+    // listener for the page, so it also closes the messages that scripts add later. Lists filled
+    // by scripts (data-dynamic) stay, so their scripts can show the next messages
+    document.addEventListener('click', ({ target }) => {
+      // A script may have redrawn its list already, so its button is no longer in a list
+      const list = target.closest('.flash_messages button')?.closest('.flash_messages');
+      if (!list) {
+        return;
+      }
+      target.closest('li').remove();
+      if (list.children.length === 0 && !('dynamic' in list.dataset)) {
+        list.remove();
+      }
     });
   }
 }

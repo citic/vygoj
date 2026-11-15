@@ -16,6 +16,14 @@ fieldset {
   font: inherit;
 }
 
+/* Fields that show a value that users cannot edit, but may select and copy (readonly), e.g. the
+   SSH key of the student repo. The attribute selects them, not :read-only, which also matches
+   buttons, checkboxes, and other inputs that cannot be edited */
+input[readonly],
+textarea[readonly] {
+  background-color: var(--readonly-bg);
+}
+
 fieldset {
   padding: 1rem;
   margin: 1rem 0;
