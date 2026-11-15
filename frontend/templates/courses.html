@@ -3,8 +3,8 @@
 {%- block styles %}
     <link rel="stylesheet" href="/css/courses.css">
 {%- if it.user %}
-    {#- Icons of the Repositories section, the same font and icons of the code editor #}
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&amp;icon_names=check,check_circle,content_copy,error,info,warning">
+    {#- Icons of the Administration and Repositories sections, the same font of the code editor #}
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined&amp;icon_names=check,check_circle,content_copy,error,folder_zip,info,manage_accounts,receipt_long,warning">
 {%- endif %}
 {%- endblock %}
 {%- block main %}
@@ -13,22 +13,13 @@
         {#- Each section folds when its title is clicked, as the sections of the other pages #}
         <details id="admin_section" open>
           <summary><h2>{{ _('Administration') }}</h2></summary>
-          <div id="admin_panel" class="panel">
-            <a class="icon_control" href="{{ url_for('get_users_admin') }}">
-              <img src="/icon/user-detail.svg" alt="{{ _('Admin Users') }}">
-              <span class="caption">{{ _('Users') }}</span>
-            </a>
+          <ul id="admin_links" class="admin_links">
+            <li><a href="{{ url_for('get_users_admin') }}"><span class="icon material-symbols-outlined" aria-hidden="true">manage_accounts</span><span class="caption">{{ _('Users') }}</span></a></li>
             {#- Zip files made from the activity log: the log with tables to analyze it, and the code
                 of the runs in a folder per user, course, material, and submission #}
-            <a class="icon_control" href="{{ url_for('get_log') }}" download>
-              <img src="/icon/archive.svg" alt="">
-              <span class="caption">{{ _('Activity log') }}</span>
-            </a>
-            <a class="icon_control" href="{{ url_for('get_submissions') }}" download>
-              <img src="/icon/archive.svg" alt="">
-              <span class="caption">{{ _('Submissions') }}</span>
-            </a>
-          </div>
+            <li><a href="{{ url_for('get_log') }}" download><span class="icon material-symbols-outlined" aria-hidden="true">receipt_long</span><span class="caption">{{ _('Activity log') }}</span></a></li>
+            <li><a href="{{ url_for('get_submissions') }}" download><span class="icon material-symbols-outlined" aria-hidden="true">folder_zip</span><span class="caption">{{ _('Submissions') }}</span></a></li>
+          </ul>
         </details>
 {%- endif %}
 {%- if it.user %}

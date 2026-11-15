@@ -303,17 +303,6 @@ details:not([open]) > summary > :is(h2, h3, h4, h5, h6)::before {
   }
 }
 
-/* Box of controls, e.g. the links of the administration, apart from each other. They wrap to the
-   next line on narrow screens */
-.panel {
-  display: flex;
-  flex-flow: row wrap;
-  gap: 1rem 2rem;
-  border: 1px solid gray;
-  border-radius: 0.5rem;
-  padding: 1rem;
-}
-
 /* Tables of data of the pages (format below): on narrow screens their cells wrap their text and
    grow downward instead of widening the page, and their headers start at the same edge as their
    data. Cells of long words without spaces (emails, codes) need overflow-wrap: anywhere */

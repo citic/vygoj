@@ -98,9 +98,6 @@ msgstr ""
 " SSH del repositorio como origen y presione Enviar. Cada envío manda sus "
 "soluciones nuevas; no se trae nada del origen."
 
-msgid "Admin Users"
-msgstr "Administrar usuarios"
-
 msgid "Administration"
 msgstr "Administración"
 
@@ -987,4 +984,7 @@ msgstr "su repositorio de estudiante es demasiado grande"
 
 #~ msgid "Download my solutions"
 #~ msgstr "Descargar mis soluciones"
+
+#~ msgid "Admin Users"
+#~ msgstr "Administrar usuarios"
 
