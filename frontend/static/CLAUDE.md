@@ -53,6 +53,9 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
 - The `<editor-toolbar for="code_editor">` element in `js/components/editor-toolbar.js` adds the
   editor buttons (cut, copy, paste, undo, redo, clear, revert, fullscreen). `problem.html` places
   the layout menu and the language list inside it. Icons come from the Material Symbols font.
+- The `<tab-control>` element in `js/components/tab-control.js` is a row of tabs (the buttons of
+  its `role="tablist"` child) and the panel of the selected one (its `role="tabpanel"` child),
+  which the page fills on its `change` event. `problem.html` shows the test cases as its tabs.
 
 ## Commands
 

@@ -76,40 +76,92 @@
             <figcaption>{{ _('Diagnostics') }}</figcaption>
             <pre id="diagnostics">{{ _('No errors') }}</pre>
           </figure>
-          <div class="test_cases">
-{%- for test in it.problem.tests %}
-            <button class="button small" title="{{ _('Test case %(number)d', number=loop.index) }}">{{ loop.index }}</button>
-{%- endfor %}
-          </div>
-          <div id="active_test" class="test_editors">
-{%- if not it.problem.tests %}
-            {#- Problems without test cases run the code with the arguments of the user #}
-            <div id="active_test_args_wrapper">
-              <label for="args">{{ _('Arguments, one per line') }}</label>
-              <monaco-editor id="args"></monaco-editor>
-            </div>
+          {#- The test cases are the tabs of a box with the parts of the selected one, and a toolbar at
+              the end of the row of the tabs shows or hides those parts. Problems without test cases
+              run the code with the arguments and the input of the user, in the same box #}
+          {%- set tests = it.problem.tests %}
+          <details class="test_cases" open>
+            <summary><h3>{{ _('Test cases') if tests else _('Input and output') }}</h3></summary>
+            <tab-control>
+{%- if tests %}
+              <div class="tabs" role="tablist" aria-label="{{ _('Test cases') }}">
+  {%- for test in tests %}
+                <button type="button" title="{{ _('Test case %(number)d', number=loop.index) }}">{{ loop.index }}</button>
+  {%- endfor %}
+              </div>
 {%- endif %}
-            <div id="active_test_input_wrapper">
-              <label for="active_test_input">{{ _('Input') }}</label>
-              <monaco-editor id="active_test_input"{% if it.problem.tests %} readonly{% endif %}></monaco-editor>
-            </div>
-            <div id="active_test_expected_output_wrapper"{% if not it.problem.tests %} hidden{% endif %}>
-              <label for="active_test_expected_output">{{ _('Expected output') }}</label>
-              <monaco-editor id="active_test_expected_output" readonly></monaco-editor>
-            </div>
-            <div id="active_test_user_output_wrapper">
-              <label for="active_test_user_output">{{ _('Your output') }}</label>
-              <monaco-editor id="active_test_user_output" readonly></monaco-editor>
-            </div>
-            <div id="output_diff_wrapper" hidden>
-              <header><label for="output_diff">{{ _('Expected output') }}</label><label for="output_diff">{{ _('Your output') }}</label></header>
-              <monaco-editor id="output_diff" readonly diff></monaco-editor>
-            </div>
-          </div>
-          <figure id="stderr_wrapper" hidden>
-            <figcaption>{{ _('Standard error output') }}</figcaption>
-            <pre id="stderr"></pre>
-          </figure>
+              {#- Groups of buttons as the groups of parts below: (group, name, buttons), and each
+                  button is (part, short text, title, pressed by default). problem.js remembers
+                  them. The short texts are the names of the streams in programming, so they are
+                  not translated. Without test cases, nothing is expected nor compared #}
+              {%- set expected_output = [('expected_output', 'exp out', _('Expected output'), 'true')] if tests else [] %}
+              {%- set expected_error = [('expected_error', 'exp err', _('Expected error'), 'false')] if tests else [] %}
+              {%- set diff = [('diff', 'diff', _('Diff'), 'true')] if tests else [] %}
+              {%- set groups = [
+                ('input', _('Input'), [
+                  ('args', 'args', _('Command line arguments'), 'false' if tests else 'true'),
+                  ('input', 'stdin', _('Standard input'), 'true')]),
+                ('output', _('Output'), expected_output + [('user_output', 'stdout', _('Your output'), 'true')]),
+                ('error', _('Error'), expected_error + [('user_error', 'stderr', _('Your error'), 'false')]),
+                ('view', _('View'), diff + [('word_wrap', 'wrap', _('Word wrap'), 'false')]),
+              ] %}
+              <div class="test_toolbar" role="toolbar" aria-label="{{ _('Parts of the test case') }}">
+{%- for group, name, buttons in groups %}
+                <div class="{{ group }}" role="group" aria-label="{{ name }}">
+  {%- for part, text, title, pressed in buttons %}
+                  <button type="button" class="button small" data-part="{{ part }}" title="{{ title }}" aria-pressed="{{ pressed }}">{{ text }}</button>
+  {%- endfor %}
+                </div>
+{%- endfor %}
+              </div>
+              {#- The parts in three groups. With the diff on, after a run, a diff takes the place
+                  of the expected and the user outputs if any of them is on, and another one of the
+                  errors #}
+              <div id="active_test" class="test_editors" role="tabpanel">
+                <fieldset class="input">
+                  <legend>{{ _('Input') }}</legend>
+                  <div id="active_test_args_wrapper">
+                    <label for="args">{{ _('Command line arguments') if tests else _('Arguments, one per line') }}</label>
+                    <monaco-editor id="args"{% if tests %} readonly{% endif %}></monaco-editor>
+                  </div>
+                  <div id="active_test_input_wrapper">
+                    <label for="active_test_input">{{ _('Standard input') }}</label>
+                    <monaco-editor id="active_test_input"{% if tests %} readonly{% endif %}></monaco-editor>
+                  </div>
+                </fieldset>
+                <fieldset class="output">
+                  <legend>{{ _('Output') }}</legend>
+                  <div id="active_test_expected_output_wrapper">
+                    <label for="active_test_expected_output">{{ _('Expected output') }}</label>
+                    <monaco-editor id="active_test_expected_output" readonly></monaco-editor>
+                  </div>
+                  <div id="active_test_user_output_wrapper">
+                    <label for="active_test_user_output">{{ _('Your output') }}</label>
+                    <monaco-editor id="active_test_user_output" readonly></monaco-editor>
+                  </div>
+                  <div id="output_diff_wrapper" hidden>
+                    <header><label for="output_diff">{{ _('Expected output') }}</label><label for="output_diff">{{ _('Your output') }}</label></header>
+                    <monaco-editor id="output_diff" readonly diff></monaco-editor>
+                  </div>
+                </fieldset>
+                <fieldset class="error">
+                  <legend>{{ _('Error') }}</legend>
+                  <div id="active_test_expected_error_wrapper">
+                    <label for="active_test_expected_error">{{ _('Expected error') }}</label>
+                    <monaco-editor id="active_test_expected_error" readonly></monaco-editor>
+                  </div>
+                  <div id="active_test_user_error_wrapper">
+                    <label for="active_test_user_error">{{ _('Your error') }}</label>
+                    <monaco-editor id="active_test_user_error" readonly></monaco-editor>
+                  </div>
+                  <div id="error_diff_wrapper" hidden>
+                    <header><label for="error_diff">{{ _('Expected error') }}</label><label for="error_diff">{{ _('Your error') }}</label></header>
+                    <monaco-editor id="error_diff" readonly diff></monaco-editor>
+                  </div>
+                </fieldset>
+              </div>
+            </tab-control>
+          </details>
           <output id="test_verdict"></output>
         </section>
         {%- set course = it.problem.get_course() %}

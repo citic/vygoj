@@ -5,6 +5,7 @@ import { CHECK_EVENT, STATUS_EVENT } from '../site.js';
 import _ from '../i18n.js';
 import '../components/monaco-editor.js';
 import '../components/editor-toolbar.js';
+import '../components/tab-control.js';
 
 // Milliseconds to wait for the answers of the server, so the page never waits forever. The time of
 // a run depends on the limits of the judge, so the page gets it in data-run-timeout (seconds, see
@@ -279,20 +280,85 @@ class ProblemManager {
     this.setupTestCaseEditor('active_test_input');
     this.setupTestCaseEditor('active_test_expected_output');
     this.setupTestCaseEditor('active_test_user_output');
+    this.setupTestCaseEditor('active_test_expected_error');
+    this.setupTestCaseEditor('active_test_user_error');
+    // The diffs show spaces and tabs as the editors do. They also show the spaces at the start or
+    // end of a line, that Monaco ignores by default, because the backend compares them
+    document.querySelectorAll('.test_editors [diff]').forEach(({ editor }) => {
+      editor.updateOptions({ renderWhitespace: 'all', ignoreTrimWhitespace: false });
+    });
+    document.getElementById('args').editor.updateOptions({ renderWhitespace: 'all' });
     ProblemManager.resizeTestCaseEditorsTogether();
+    this.setupTestToolbar();
   }
 
-  // Side by side, stretching one of these editors with its corner handle stretches the others too,
-  // so the row stays aligned. One below the other, each one keeps its own height
+  // Side by side, stretching one of these editors with its corner handle stretches the others of
+  // its row too, so the row stays aligned. One below the other, each one keeps its own height
   static resizeTestCaseEditorsTogether() {
-    const row = document.getElementById('active_test');
-    const editors = row.querySelectorAll('monaco-editor');
+    const editors = document.querySelectorAll('#active_test monaco-editor');
     const observer = new ResizeObserver(([{ target }]) => {
-      if (getComputedStyle(row).flexDirection === 'row') {
-        editors.forEach((editor) => { editor.style.height = target.style.height; });
-      }
+      const { top } = target.getBoundingClientRect();
+      editors.forEach((editor) => {
+        if (editor.getBoundingClientRect().top === top) {
+          editor.style.height = target.style.height;
+        }
+      });
     });
     editors.forEach((editor) => observer.observe(editor));
+  }
+
+  // The buttons of the toolbar of the test cases show or hide each part of the selected test
+  // case, and turn the diff and the word wrap on or off. They stay as the user leaves them, in all
+  // the problems
+  setupTestToolbar() {
+    // Problems without test cases (no tabs) need other parts, e.g. the arguments, so the browser
+    // keeps their buttons apart
+    const toolbar = document.querySelector('.test_cases [role="tablist"]') ? 'test_toolbar' : 'input_toolbar';
+    document.querySelectorAll('.test_toolbar button').forEach((button) => {
+      const key = `${toolbar}:${button.dataset.part}`;
+      button.ariaPressed = window.localStorage.getItem(key) ?? button.ariaPressed;
+      button.addEventListener('click', () => {
+        button.ariaPressed = String(button.ariaPressed !== 'true');
+        window.localStorage.setItem(key, button.ariaPressed);
+        this.showParts();
+      });
+    });
+    this.showParts();
+    // The test cases fold away as the user leaves them, in all the problems
+    const details = document.querySelector('details.test_cases');
+    details.open = window.localStorage.getItem('test_cases') !== 'false';
+    details.addEventListener('toggle', () => {
+      window.localStorage.setItem('test_cases', details.open);
+      // Closed, the list of tabs could not scroll to the selected one
+      if (details.open && this.problem?.tests.length > 0) {
+        details.querySelector('tab-control').selectedIndex = this.activeTestCaseIndex;
+      }
+    });
+  }
+
+  // Shows the parts of the test case at the index that the toolbar asks for. With the diff on,
+  // after a run, a diff takes the place of the expected and the user outputs if any of them is
+  // shown, and another one of the errors
+  showParts(index = this.activeTestCaseIndex) {
+    // Problems without test cases have no buttons of the expected parts nor of the diff
+    const on = (part) => document.querySelector(`.test_toolbar [data-part="${part}"]`)?.ariaPressed === 'true';
+    const diff = on('diff') && Boolean(this.result?.results[index]);
+    document.getElementById('active_test_args_wrapper').hidden = !on('args');
+    document.getElementById('active_test_input_wrapper').hidden = !on('input');
+    document.querySelector('.test_editors .input').hidden = !on('args') && !on('input');
+    ['output', 'error'].forEach((kind) => {
+      const [expected, user] = [on(`expected_${kind}`), on(`user_${kind}`)];
+      const combined = diff && (expected || user);
+      document.querySelector(`.test_editors .${kind}`).hidden = !expected && !user;
+      document.getElementById(`active_test_expected_${kind}_wrapper`).hidden = !expected || combined;
+      document.getElementById(`active_test_user_${kind}_wrapper`).hidden = !user || combined;
+      document.getElementById(`${kind}_diff_wrapper`).hidden = !combined;
+    });
+    const wordWrap = on('word_wrap') ? 'on' : 'off';
+    const diffs = [...document.querySelectorAll('.test_editors [diff]')].map(({ editor }) => editor);
+    const { editor: args } = document.getElementById('args');
+    [...this.editors.slice(1), args, ...diffs]
+      .forEach((editor) => editor.updateOptions({ wordWrap }));
   }
 
   setupTestCaseEditor(id) {
@@ -371,24 +437,20 @@ class ProblemManager {
 
   loadTestCases() {
     console.assert(this.problem);
-    const buttons = document.querySelectorAll('.test_cases button');
-    console.assert(buttons.length === this.problem.tests.length);
-    // Make each test case button clickable
-    for (let index = 0; index < buttons.length; index += 1) {
-      buttons[index].addEventListener('click', () => {
-        this.showTestCase(index);
-      });
-    }
+    // Each test case is a tab, and selecting one shows its parts in the box below the tabs
+    const tabControl = document.querySelector('.test_cases tab-control');
+    const { length } = tabControl.tabs;
+    console.assert(length === this.problem.tests.length);
+    tabControl.addEventListener('change', ({ detail: index }) => this.showTestCase(index));
     // Make the last selected test case (in local storage) as the active one. localStorage can
     // be edited by anyone, and problems may have fewer test cases now, so check the index
-    if (buttons.length > 0) {
+    if (length > 0) {
       const index = parseInt(loadConfig('test') || '0', 10);
-      this.activeTestCaseIndex = index >= 0 && index < buttons.length ? index : 0;
+      this.activeTestCaseIndex = index >= 0 && index < length ? index : 0;
       this.showTestCase(this.activeTestCaseIndex);
     } else {
       // Without test cases, the arguments and the input of the user are kept as the code is
       const { editor: args } = document.getElementById('args');
-      args.updateOptions({ renderWhitespace: 'all' });
       [['args', args], ['stdin', this.editors[1]]].forEach(([key, editor]) => {
         editor.setValue(loadConfig(key) || '');
         editor.onDidChangeModelContent(() => saveConfig(key, editor.getValue()));
@@ -398,38 +460,38 @@ class ProblemManager {
 
   showTestCase(index) {
     console.assert(this.problem);
-    console.assert(this.editors.length === 4);
-    // Show input, expected output, and user output for this test case. The server does not
-    // send the contents of hidden test cases
+    console.assert(this.editors.length === 6);
+    // Show the arguments, input, expected output, and expected error for this test case. The
+    // server does not send the contents of hidden test cases
     const test = this.problem.tests[index];
     const hidden = test.hidden ? '(hidden test case)' : '';
+    document.getElementById('args').editor.setValue(test.args || hidden);
     this.editors[1].setValue(test.stdin || hidden);
     this.editors[2].setValue(test.stdout || hidden);
+    this.editors[4].setValue(test.stderr || hidden);
     this.showTestOutput(index);
-    // Deselect previous test case number
-    const buttons = document.querySelectorAll('.test_cases button');
-    console.assert(this.activeTestCaseIndex < buttons.length);
-    buttons[this.activeTestCaseIndex].removeAttribute('aria-current');
-    // Mark this test case as the active in the interface
-    console.assert(index < buttons.length);
+    // Mark this test case as the selected tab, also when the page selects it
+    document.querySelector('.test_cases tab-control').selectedIndex = index;
     this.activeTestCaseIndex = index;
-    buttons[index].setAttribute('aria-current', 'true');
     saveConfig('test', `${index}`);
   }
 
   // Shows the standard output and error of the given test case after a run
   showTestOutput(index) {
     if (this.result) {
-      // Show standard output
-      const test = index < this.result.results.length ? this.result.results[index] : null;
+      const test = this.result.results[index];
       // The backend does not send the output of hidden test cases
       const hidden = this.problem.tests[index].hidden ? '(hidden test case)' : '';
       this.editors[3].setValue(test?.stdout || hidden);
-      // But if test case was failed, show diff instead
-      this.showOutputDiff(index);
-      // Show standard error
-      this.updateErrorOutput(index);
-      // Show message if nay
+      this.editors[5].setValue(test?.stderr || hidden);
+      // The diffs compare the expected output and error (left) with the ones of the user (right).
+      // The backend trims both before comparing them, so a final newline is not a difference
+      [['output_diff', 2, 3], ['error_diff', 4, 5]].forEach(([id, expected, user]) => {
+        const { editor } = document.getElementById(id);
+        editor.getOriginalEditor().setValue(this.editors[expected].getValue().trim());
+        editor.getModifiedEditor().setValue(this.editors[user].getValue().trim());
+      });
+      this.showParts(index);
       this.updateVerdict(index);
     }
   }
@@ -662,7 +724,7 @@ class ProblemManager {
       // The output of the last run would look like the output of the input that the user changed
       if (custom) {
         this.editors[3].setValue('');
-        hideElement('stderr_wrapper');
+        this.editors[5].setValue('');
         document.getElementById('test_verdict').textContent = '';
       }
       // site.js checks the connection now, and disables Run until it is restored if it is lost
@@ -682,7 +744,6 @@ class ProblemManager {
     this.updateStatistics();
     this.updateCompileOutput();
     this.updateTestCases();
-    this.updateErrorOutput(this.activeTestCaseIndex);
     this.updateVerdict(this.activeTestCaseIndex);
   }
 
@@ -799,65 +860,10 @@ class ProblemManager {
     return null;
   }
 
-  // Shows standard error output for the selected test case
-  updateErrorOutput(index) {
-    // The DOM element where the output will be shown
-    const stderrElement = document.getElementById('stderr');
-    console.assert(stderrElement);
-    // The program stderr output text for the active test case
-    let stderrOutput = null;
-    console.assert(this.result);
-    // If the test case result exists, get its message, otherwise (compilation error?) clear field
-    if (index < this.result.results.length) {
-      // Compiler output should be identical for each test case, we take the first one
-      // TODO(jhc): Compile output is in the problem result instead of test result
-      if (this.result && index < this.result.results.length) {
-        stderrOutput = this.result.results[index].stderr;
-      }
-    }
-    // If there is output text, show it
-    if (stderrOutput && stderrOutput.length > 0) {
-      stderrElement.textContent = stderrOutput;
-      showElement('stderr_wrapper');
-    } else {
-      hideElement('stderr_wrapper');
-    }
-  }
-
-  // Shows a diff output instead of standard output
-  showOutputDiff(index) {
-    // Expected output
-    console.assert(this.problem);
-    console.assert(index < this.problem.tests.length);
-    const expectedOutput = this.problem.tests[index].stdout;
-    // User output
-    console.assert(this.result);
-    // If the test case result exists, get its message, otherwise (compilation error?) clear field
-    let userOutput = null;
-    if (index < this.result.results.length) {
-      userOutput = this.result.results[index].stdout;
-    }
-    if (userOutput && this.result.results[index].status === Status.WRONG) {
-      // Hide expected output and user output and show diff element
-      hideElement('active_test_expected_output_wrapper');
-      hideElement('active_test_user_output_wrapper');
-      showElement('output_diff_wrapper');
-      // Expected output on the left, user output on the right
-      const { editor } = document.getElementById('output_diff');
-      editor.getOriginalEditor().setValue(expectedOutput);
-      editor.getModifiedEditor().setValue(userOutput);
-    } else {
-      // Show expected output and user output and hide diff element
-      hideElement('output_diff_wrapper');
-      showElement('active_test_expected_output_wrapper');
-      showElement('active_test_user_output_wrapper');
-    }
-  }
-
   // Updates the test cases buttons after a run
   updateTestCases() {
     // Update the test case handlers (buttons) to show if passed or failed
-    const buttons = document.querySelectorAll('.test_cases button');
+    const buttons = document.querySelectorAll('.test_cases [role="tab"]');
     console.assert(this.result);
     for (let index = 0; index < buttons.length; index += 1) {
       const test = index < this.result.results.length ? this.result.results[index] : null;
@@ -874,6 +880,7 @@ class ProblemManager {
     // Problems without test cases show the output of the run with the input of the user
     if (this.problem.tests.length === 0) {
       this.editors[3].setValue(this.result.results[0]?.stdout || '');
+      this.editors[5].setValue(this.result.results[0]?.stderr || '');
     }
   }
 

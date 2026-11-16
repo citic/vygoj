@@ -36,15 +36,6 @@ label {
     }
   }
 
-  /* The buttons of the test cases, apart from the editors of the selected one below. Their rows
-     leave room for the triangle under the selected button */
-  & > .test_cases {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.875rem 0.25rem;
-    margin-bottom: 1.25rem;
-  }
-
   /* Shown while the connection with the judge is lost */
   & > [role="alert"] {
     padding: 0.5rem;
@@ -299,64 +290,186 @@ editor-toolbar {
   }
 }
 
-/* A button for each test case. The selected one has a triangle below, and after a run, each
-   one has the color of its result */
-.test_cases button {
-  &:hover:not([aria-current="true"]) {
-    border: 1px dashed;
+/* Test cases: a title that folds them, and a tab control with a tab for each one */
+.test_cases {
+  margin-bottom: 0.75rem;
+}
+
+/* Tab control (tab-control.js): the tabs in a row on the top border of the panel, the selected one
+   open to it, and the other elements of the row (e.g. a toolbar) at its right end. Its rows wrap
+   upwards from the panel, which goes first, so an element that does not fit next to the tabs goes
+   above them, and the tabs stay on the panel */
+tab-control {
+  display: flex;
+  flex-wrap: wrap-reverse;
+  align-items: flex-start; /* The bottom of each row, as they wrap upwards */
+
+  & > :not([role="tablist"], [role="tabpanel"]) {
+    margin: 0 0 0.375rem auto;
   }
 
-  &[aria-current="true"] {
-    position: relative;
-    border: 1px solid;
+  /* Many tabs wrap in up to three rows, and the rest scroll inside the list, so the panel stays
+     close and all the tabs (e.g. the results of the test cases) can be seen at a glance */
+  & > [role="tablist"] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 2px;
+    max-height: calc(3 * 1.75rem + 2 * 2px + 0.25rem); /* The selected tab is 0.25rem taller */
+    margin-bottom: -1px; /* The tabs cover the top border of the panel */
+    padding-left: 0.5rem;
+    overflow-y: auto;
+    scrollbar-width: thin;
   }
 
-  &[aria-current="true"]::after {
-    /* Triangle below active test case https://stackoverflow.com/a/41328158 */
-    border-right: solid 10px transparent;
-    border-left: solid 10px transparent;
-    border-top: solid 10px CanvasText;
-    transform: translateX(-50%);
-    position: absolute;
-    content: '';
-    top: 100%;
-    left: 50%;
+  & > [role="tabpanel"] {
+    flex-basis: 100%;
+    order: -1;
+    min-width: 0;
+    border: 1px solid var(--toolbar-border);
+    border-radius: 0.5rem;
   }
 
-  &[data-status="passed"] {
-    background: #40963581;
+  & [role="tab"] {
+    min-width: 2rem;
+    height: 1.75rem;
+    padding: 0 0.375rem;
+    border: 1px solid var(--toolbar-border);
+    border-radius: 0.375rem 0.375rem 0 0;
+    box-shadow: none;
+    background: var(--surface-alt);
+    font-size: 0.8125rem;
   }
 
-  &[data-status="failed"] {
-    background: rgb(255 0 0 / 50%);
+  /* Replaces the bold and shadow that form.css gives to buttons on hover */
+  & > [role="tablist"] > button:hover {
+    font-weight: normal;
+    filter: none;
+    border-color: var(--label-color);
+  }
+
+  /* Taller and bold, and open to the panel */
+  & [role="tab"][aria-selected="true"] {
+    height: 2rem;
+    border-bottom-color: Canvas;
+    background: Canvas;
+    font-weight: 600;
   }
 }
 
-/* Input, expected output, and user output of the selected test case, side by side. With a wrong
-   output, a diff takes the place of the two outputs */
-.test_editors {
+/* After a run, each test case has the color of its result, also the selected one */
+.test_cases [role="tab"] {
+  &[data-status="passed"] {
+    border-color: var(--success);
+    background: color-mix(in srgb, var(--success) 30%, var(--surface));
+  }
+
+  &[data-status="failed"] {
+    border-color: var(--error);
+    background: color-mix(in srgb, var(--error) 30%, var(--surface));
+  }
+}
+
+/* Buttons that show or hide the parts of the selected test case, and turn the diff and the word
+   wrap on or off, with a line between the groups of the parts below. Each one is a small chip with
+   the name of its stream in the font of code, which has the same width in bold, so pressing does
+   not move the others. A pressed one has a solid border, a tint, and bold text, and the others a
+   dashed border, so the state does not depend on the color only */
+.test_toolbar {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.625rem;
 
   & > div {
-    width: 100%;
-    min-width: 0; /* Lets the editors shrink when the page gets narrower, e.g. with zoom */
-    margin-right: 1px;
+    display: flex;
+    gap: 0.25rem;
   }
 
-  /* The diff replaces the expected and user outputs, so it shrinks half as much to take their
-     two thirds and the input keeps its width */
-  & > div:has([diff]) {
-    flex-shrink: 0.5;
+  & > div + div {
+    padding-left: 0.625rem;
+    border-left: 1px solid var(--toolbar-border);
   }
 
-  /* Each label of the diff is as wide as its side, so they stay where the output labels were */
+  /* .button, as form.css gives padding to .button.small */
+  & .button {
+    min-width: 0;
+    height: 1.5rem;
+    padding: 0 0.5rem;
+    border: 1px dashed var(--toolbar-border);
+    border-radius: 0.375rem;
+    box-shadow: none;
+    background: none;
+    color: var(--toolbar-icon);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+
+  & .button:hover {
+    font-weight: normal;
+    filter: none;
+    border-color: var(--label-color);
+    color: var(--label-color);
+  }
+
+  & .button:focus-visible {
+    outline: 2px solid var(--label-color);
+    outline-offset: 1px;
+  }
+
+  & .button[aria-pressed="true"] {
+    border: 1px solid var(--label-color);
+    background: color-mix(in srgb, var(--label-color) 12%, Canvas);
+    color: var(--label-color);
+    font-weight: 600;
+  }
+}
+
+/* Parts of the selected test case, in the panel of the tabs, in three groups: its input, its
+   outputs, and its errors. In each group, the parts side by side, or one below the other when
+   narrow. A diff takes the place of the expected and the user parts */
+.test_editors {
+  padding: 0.5rem 0.75rem 0.25rem; /* The groups have a space below */
+
+  & fieldset {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+    gap: 0.5rem;
+    margin: 0 0 0.5rem;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    background: none;
+
+    /* The display above would show a group that the toolbar hides */
+    &[hidden] {
+      display: none;
+    }
+
+    & > div {
+      min-width: 0; /* Lets the editors shrink when the page gets narrower, e.g. with zoom */
+    }
+
+    & > div:has([diff]) {
+      grid-column: 1 / -1;
+    }
+  }
+
+  & legend {
+    font-weight: 600;
+  }
+
+  /* Each label of a diff is as wide as its side. The second one does not get the space between
+     the fields of a form (form.css) */
   & header {
     display: flex;
 
     & > * {
       flex: 1;
+    }
+
+    & > label:not(:first-of-type) {
+      margin-top: 0;
     }
   }
 
@@ -364,8 +477,8 @@ editor-toolbar {
     height: 6.25rem;
   }
 
-  /* The diff is one box, so a double line in its middle draws the borders of the two output
-     boxes that it replaces */
+  /* A diff is one box, so a double line in its middle draws the borders of the two boxes that it
+     replaces */
   & monaco-editor[diff] {
     position: relative;
   }
@@ -502,18 +615,6 @@ editor-toolbar {
   }
 }
 
-@media (width <= 640px) {
-  .test_editors {
-    flex-direction: column;
-  }
-}
-
-@container (width < 30rem) {
-  .test_editors {
-    flex-direction: column;
-    align-items: stretch;
-  }
-}
 
 /* A page too narrow for the three links puts the course above, and the problems side by side
    below */

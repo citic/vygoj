@@ -170,6 +170,9 @@ msgstr "Código"
 msgid "Color scheme"
 msgstr "Esquema de colores"
 
+msgid "Command line arguments"
+msgstr "Argumentos de la línea de comandos"
+
 msgid "Configured in config.py"
 msgstr "Configurado en config.py"
 
@@ -283,6 +286,9 @@ msgstr "Eliminado"
 msgid "Diagnostics"
 msgstr "Diagnósticos"
 
+msgid "Diff"
+msgstr "Diferencias"
+
 msgid "Disabled"
 msgstr "Desactivado"
 
@@ -327,6 +333,9 @@ msgstr "Error"
 msgid "Exit fullscreen"
 msgstr "Salir de pantalla completa"
 
+msgid "Expected error"
+msgstr "Error esperado"
+
 msgid "Expected output"
 msgstr "Salida esperada"
 
@@ -362,6 +371,9 @@ msgstr "Información"
 
 msgid "Input"
 msgstr "Entrada"
+
+msgid "Input and output"
+msgstr "Entrada y salida"
 
 msgid "Instructors"
 msgstr "Instructores"
@@ -463,6 +475,12 @@ msgstr "Origen"
 
 msgid "Origin saved."
 msgstr "Origen guardado."
+
+msgid "Output"
+msgstr "Salida"
+
+msgid "Parts of the test case"
+msgstr "Partes del caso de prueba"
 
 msgid "Password"
 msgstr "Contraseña"
@@ -600,8 +618,8 @@ msgstr "Se muestra en el botón de ingreso, p. ej. Universidad de Costa Rica"
 msgid "Site logo"
 msgstr "Logo del sitio"
 
-msgid "Standard error output"
-msgstr "Salida de error estándar"
+msgid "Standard input"
+msgstr "Entrada estándar"
 
 msgid "Statement on the left"
 msgstr "Enunciado a la izquierda"
@@ -652,6 +670,9 @@ msgstr "Caso de prueba %(number)d"
 #, python-format
 msgid "Test case %(number)s verdict: %(status)s"
 msgstr "Veredicto del caso de prueba %(number)s: %(status)s"
+
+msgid "Test cases"
+msgstr "Casos de prueba"
 
 msgid "Testing"
 msgstr "Prueba"
@@ -795,11 +816,17 @@ msgstr ""
 msgid "Version of your solution"
 msgstr "Versión de su solución"
 
+msgid "View"
+msgstr "Vista"
+
 msgid "Vygotsky Online Judge"
 msgstr "Juez en línea Vygotsky"
 
 msgid "Warning"
 msgstr "Advertencia"
+
+msgid "Word wrap"
+msgstr "Ajuste de línea"
 
 msgid "Write a claim name, or names separated by dots"
 msgstr "Escriba el nombre de un claim, o nombres separados por puntos"
@@ -836,6 +863,9 @@ msgstr "Su cuenta fue eliminada."
 #, python-format
 msgid "Your email is not verified by %(provider)s."
 msgstr "Su correo no está verificado por %(provider)s."
+
+msgid "Your error"
+msgstr "Su error"
 
 msgid "Your output"
 msgstr "Su salida"
@@ -987,4 +1017,7 @@ msgstr "su repositorio de estudiante es demasiado grande"
 
 #~ msgid "User control"
 #~ msgstr "Control de usuario"
+
+#~ msgid "Standard error output"
+#~ msgstr "Salida de error estándar"
 
