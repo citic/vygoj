@@ -194,6 +194,16 @@ def get_course(name):
     log_event('visit', course=name, material=name, type='course')
     return CourseController.get_course(name)
 
+@app.route('/course/<name>/offer', methods=['POST'])
+def offer_course(name):
+    """ The professor of a prepared course offers it to every user """
+    return CourseController.offer(name)
+
+@app.route('/course/<name>/enroll', methods=['POST'])
+def enroll_course(name):
+    """ The logged user enrolls in an offered course """
+    return CourseController.enroll(name)
+
 @app.route('/course/<course_name>/files/<path:filename>')
 @talisman(content_security_policy=FILE_CSP)
 def get_course_file(course_name, filename):
@@ -247,6 +257,17 @@ def get_repo():
 def set_repo_origin():
     """ User set the URL of the remote of their student repo """
     return RepoController.set_origin()
+
+@app.route('/user/repo/professor', methods=['POST'])
+def add_professor_repo():
+    """ A professor adds a repo with courses, and the judge clones it in the background """
+    return RepoController.add_professor_repo()
+
+@app.route('/user/repo/professor/<int:repo_id>', methods=['POST'])
+def pull_professor_repo(repo_id):
+    """ A professor changes the URL of their repo, if needed, and the judge clones or pulls it in
+    the background """
+    return RepoController.pull_professor_repo(repo_id)
 
 @app.route('/user/repo/<kind>', methods=['POST'])
 def start_repo_job(kind):
@@ -319,12 +340,12 @@ def delete_sso_provider(alias):
 @app.route('/admin/log')
 def get_log():
     """ Administrator asked for the activity log and its analysis tables, as a zip file """
-    return LogController.download('log', CourseController.cache_courses)
+    return LogController.download('log', CourseController.load_all_courses)
 
 @app.route('/admin/submissions')
 def get_submissions():
     """ Administrator asked for the code of the runs, a folder per submission, as a zip file """
-    return LogController.download('submissions', CourseController.cache_courses)
+    return LogController.download('submissions', CourseController.load_all_courses)
 
 # Misc --------------------------------------------------------------------------------------------
 

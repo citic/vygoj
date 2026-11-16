@@ -1,17 +1,19 @@
-""" Background jobs on the student repo of a user, which take too long or too many resources for a
-request: zip the last solutions, zip a copy of the repo with its history and a working tree, and
-push the repo to the remote of the user. A request starts the job as a separate process,
-`python manage.py repo-job <kind> <username>`, with the lowest priority of the operating system and
-a time limit, and the page asks for its state until it ends. The state is kept in files, so it
-survives reloads, other browsers and computers, and restarts of the gunicorn workers:
+""" Background jobs on the repos of a user, which take too long or too many resources for a
+request: on the student repo, zip the last solutions, zip a copy of the repo with its history and
+a working tree, and push the repo to the remote of the user; on each professor repo, clone it or
+pull its changes, and update its courses. A request starts the job as a separate process,
+`python manage.py repo-job <kind> <username> [<repo id>]`, with the lowest priority of the
+operating system and a time limit, and the page asks for its state until it ends. The state is
+kept in files, so it survives reloads, other browsers and computers, and restarts of the gunicorn
+workers. A job of a professor repo is named <kind>_<repo id> (e.g. pull_7):
 
-    user/<username>/jobs/<kind>.json    # state: running, done, or failed, with times and message
-    user/<username>/jobs/<kind>.lock    # locked by the process while it runs
-    user/<username>/jobs/<kind>.log     # output of the last process, for the administrators
-    user/<username>/jobs/<kind>.zip     # the zip made by the job, kept for REPO_ZIP_RETENTION,
+    user/<username>/jobs/<name>.json    # state: running, done, or failed, with times and message
+    user/<username>/jobs/<name>.lock    # locked by the process while it runs
+    user/<username>/jobs/<name>.log     # output of the last process, for the administrators
+    user/<username>/jobs/<name>.zip     # the zip made by the job, kept for REPO_ZIP_RETENTION,
                                         # or until the repo gets a new version
 
-A user runs one job of each kind at a time, a minute after the last start of that kind at least,
+A user runs one job of each name at a time, a minute after the last start of that name at least,
 and the server at most REPO_MAX_JOBS """
 
 import fcntl
@@ -27,15 +29,16 @@ import zipfile
 
 from flask import current_app as app
 
-from repos.git_repo import USERS_FOLDER, GitError, user_folder
+from course_offer import parse_courses, sync_offers
+from repos.git_repo import JOBS_FOLDER, USERS_FOLDER, GitError, user_folder
+from repos.professor_repo import CloneError, ProfessorRepo
 from repos.ssh_key import UserKey
 from repos.student_repo import StudentRepo
 
-# Kinds of jobs, and the ones that make a zip
-JOB_KINDS = ('solutions', 'history', 'push')
+# Kinds of jobs, the ones that make a zip, and the ones of a professor repo, which need its id
+JOB_KINDS = ('solutions', 'history', 'push', 'pull')
 ZIP_KINDS = ('solutions', 'history')
-# Folder of the jobs in the folder of each user
-JOBS_FOLDER = 'jobs'
+PROFESSOR_KINDS = ('pull',)
 # Priority of the processes of the jobs (nice): the lowest one, so runs and pages go first
 NICENESS = 19
 # Seconds that a new process may take to take its lock. Until then a job without lock is starting;
@@ -51,11 +54,17 @@ MANAGE_SCRIPT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__f
 # Message codes of the jobs, which the page translates: errors of the request that starts a job,
 # results of the jobs, and causes of their failures
 RUNNING, BUSY, TOO_SOON = 'running', 'busy', 'too_soon'
-UP_TO_DATE, PUSHED = 'up_to_date', 'pushed'
+UP_TO_DATE, PUSHED, CLONED, PULLED = 'up_to_date', 'pushed', 'cloned', 'pulled'
 EMPTY, TOO_BIG, NO_ORIGIN, TIMEOUT, INTERRUPTED, FAILED = (
     'empty', 'too_big', 'no_origin', 'timeout', 'interrupted', 'failed')
-# Causes of failed pushes, by a text of the error output of git or ssh
-PUSH_ERRORS = (
+# Fields of the state of a done job that the page receives, besides its times and message: the
+# expiration of a zip, and the courses found by a pull, with the names that other repos have and
+# the number of courses that are not valid
+RESULT_FIELDS = ('expires', 'courses', 'skipped', 'invalid')
+# Causes of failed pushes, clones, and pulls, by a text of the error output of git or ssh
+REMOTE_ERRORS = (
+    ('Remote branch main not found', 'no_main'),
+    ("couldn't find remote ref", 'no_main'),
     ('Host key verification failed', 'host_key'),
     ('Permission denied', 'denied'),
     ('Repository not found', 'not_found'),
@@ -84,16 +93,22 @@ class JobTimeout(Exception):
     the job may catch """
 
 class RepoJob:
-    """ A job of a kind on the student repo of a user """
+    """ A job of a kind on the student repo of a user, or on one of their professor repos """
 
-    def __init__(self, username: str, kind: str):
-        """ Find the files of the job. Raise ValueError if the kind is not valid """
-        if kind not in JOB_KINDS:
+    def __init__(self, username: str, kind: str, repo_id: int = None):
+        """ Find the files of the job. Raise ValueError if the kind is not valid, or the id of
+        the professor repo is missing in a job of a professor repo, or given in another one """
+        if kind not in JOB_KINDS or (kind in PROFESSOR_KINDS) != (repo_id is not None):
             raise ValueError(f'invalid kind of job: {kind!r}')
+        if repo_id is not None and (isinstance(repo_id, bool) or not isinstance(repo_id, int)
+                or repo_id <= 0):
+            raise ValueError(f'invalid repo id: {repo_id!r}')
         self.username = username
         self.kind = kind
+        self.repo_id = repo_id
+        self.name = kind if repo_id is None else f'{kind}_{repo_id}'
         self.folder = os.path.join(user_folder(username), JOBS_FOLDER)
-        self.files = job_files(self.folder, kind)
+        self.files = job_files(self.folder, self.name)
         # Fields that the job adds to its state when it is done, e.g. the version of its zip
         self.result = {}
 
@@ -114,8 +129,8 @@ class RepoJob:
                 remove_file(self.files['zip'])
                 return { 'state': 'none' }
             state['expires'] = expires
-        return { key: state[key] for key in ('state', 'started', 'finished', 'expires', 'message')
-            if key in state } or { 'state': 'none' }
+        return { key: state[key] for key in ('state', 'started', 'finished', 'message',
+            *RESULT_FIELDS) if key in state } or { 'state': 'none' }
 
     def repo_version(self) -> str | None:
         """ Return the version of the student repo of the user, or None if it cannot be read """
@@ -158,8 +173,9 @@ class RepoJob:
                 # A new session, so the process goes on if the worker that started it stops.
                 # Without shell: the username is one argument, whatever it has. The process
                 # outlives this request, so it is not waited in a with block, but reaped later
+                repo = [] if self.repo_id is None else [str(self.repo_id)]
                 _children.append(subprocess.Popen( # pylint: disable=consider-using-with
-                    [sys.executable, MANAGE_SCRIPT, 'repo-job', self.kind, self.username],
+                    [sys.executable, MANAGE_SCRIPT, 'repo-job', self.kind, self.username, *repo],
                     cwd=os.path.dirname(MANAGE_SCRIPT), stdin=subprocess.DEVNULL, stdout=log,
                     stderr=subprocess.STDOUT, start_new_session=True))
         except OSError:
@@ -179,24 +195,34 @@ class RepoJob:
             started = read_state(self.files['json']).get('started', int(time.time()))
             state, message = 'failed', FAILED
             signal.signal(signal.SIGALRM, stop_job)
-            signal.alarm(app.config['REPO_JOB_TIMEOUT'])
+            signal.alarm(self.time_limit())
             try:
                 message = getattr(self, f'run_{self.kind}')()
                 state = 'done'
-            except RepoJobError as error:
+            except (RepoJobError, CloneError) as error:
                 message = error.code
             except JobTimeout:
                 message = TIMEOUT
             except GitError as error:
-                app.logger.exception('repo job %s of %s failed', self.kind, self.username)
-                message = TIMEOUT if error.timed_out else push_error(error.stderr)
+                app.logger.exception('repo job %s of %s failed', self.name, self.username)
+                message = TIMEOUT if error.timed_out else remote_error(error.stderr)
             except (OSError, ValueError):
-                app.logger.exception('repo job %s of %s failed', self.kind, self.username)
+                app.logger.exception('repo job %s of %s failed', self.name, self.username)
             finally:
                 signal.alarm(0)
             self.write_state(state=state, started=started, finished=int(time.time()),
                 message=message, **(self.result if state == 'done' else {}))
         return 0 if state == 'done' else 1
+
+    def time_limit(self) -> int:
+        """ Return the seconds that the job may take: a clone of a professor repo may bring many
+        materials, and a pull only their changes """
+        if self.kind != 'pull':
+            return app.config['REPO_JOB_TIMEOUT']
+        repo = self.professor_repo()
+        if repo and repo.clone().is_clone():
+            return app.config['PROFESSOR_REPO_PULL_TIMEOUT']
+        return app.config['PROFESSOR_REPO_CLONE_TIMEOUT']
 
     def run_solutions(self) -> str:
         """ Zip the last version of the solution of every problem """
@@ -223,6 +249,41 @@ class RepoJob:
         # --porcelain writes a line per ref, which starts with = when the ref was up to date
         refs = [line for line in output.splitlines() if line[:1] in '=*+-!' and '\t' in line]
         return UP_TO_DATE if all(line.startswith('=') for line in refs) else PUSHED
+
+    def run_pull(self) -> str:
+        """ Clone the professor repo, or pull its changes if it has a clone, and update its
+        courses. A repo bigger than PROFESSOR_REPO_MAX_SIZE is removed, or goes back to the
+        commit before the pull """
+        repo = self.professor_repo()
+        if not repo:
+            raise RepoJobError(FAILED)
+        clone = repo.clone()
+        ssh_command, timeout = UserKey(self.username).ssh_command(), self.time_limit()
+        # The commit before the pull, or None for a new clone
+        old_commit = None
+        if clone.is_clone():
+            old_commit = clone.pull_from(repo.url, ssh_command, timeout)
+        else:
+            clone.clone_from(repo.url, ssh_command, timeout)
+        if clone.size() > app.config['PROFESSOR_REPO_MAX_SIZE']:
+            if old_commit:
+                clone.revert(old_commit, timeout)
+            else:
+                clone.remove()
+            raise RepoJobError(TOO_BIG)
+        try:
+            courses, invalid = parse_courses(clone.read_catalog(), clone.path)
+        except CloneError:
+            # Without a valid vygoj.json, the repo has no courses: the offered ones are hidden
+            sync_offers(repo, [], clone.head())
+            raise
+        skipped = sync_offers(repo, list(courses), clone.head())
+        self.result.update(courses=len(courses) - len(skipped), skipped=skipped, invalid=invalid)
+        return PULLED if old_commit else CLONED
+
+    def professor_repo(self) -> ProfessorRepo | None:
+        """ Return the professor repo of the job, if it still belongs to the user """
+        return ProfessorRepo.find(self.username, self.repo_id)
 
     def checked_repo(self) -> StudentRepo:
         """ Return the student repo of the user, and keep its version in the result of the job.
@@ -305,8 +366,10 @@ def count_running() -> int:
     count = 0
     for path in glob.glob(jobs_pattern('json')):
         folder, name = os.path.split(path)
-        kind = name.removesuffix('.json')
-        if kind in JOB_KINDS and is_running(job_files(folder, kind), read_state(path)):
+        name = name.removesuffix('.json')
+        # The name of a job of a professor repo has its kind before the id of the repo
+        if (name.partition('_')[0] in JOB_KINDS
+                and is_running(job_files(folder, name), read_state(path))):
             count += 1
     return count
 
@@ -337,10 +400,10 @@ def stop_job(*_):
     """ Stop the job when its time limit ends (handler of SIGALRM) """
     raise JobTimeout('the job took too long')
 
-def push_error(stderr: str) -> str:
-    """ Return the code of the cause of a failed push, from the error output of git and ssh. The
-    output is not shown: it may have paths of the server """
-    return next((code for text, code in PUSH_ERRORS if text in stderr), FAILED)
+def remote_error(stderr: str) -> str:
+    """ Return the code of the cause of a failed push, clone, or pull, from the error output of
+    git and ssh. The output is not shown: it may have paths of the server """
+    return next((code for text, code in REMOTE_ERRORS if text in stderr), FAILED)
 
 def write_bytes(path: str, data: bytes):
     """ Write the data to a new file """
@@ -362,7 +425,8 @@ def zip_folder(folder: str, path: str):
 def check_config(config: dict):
     """ Raise RuntimeError if a setting of the repo jobs in config.py is not valid """
     for name in ('REPO_JOB_TIMEOUT', 'REPO_MAX_JOBS', 'REPO_ZIP_RETENTION',
-            'STUDENT_REPO_MAX_SIZE'):
+            'STUDENT_REPO_MAX_SIZE', 'PROFESSOR_REPO_CLONE_TIMEOUT', 'PROFESSOR_REPO_PULL_TIMEOUT',
+            'PROFESSOR_REPO_MAX_SIZE'):
         value = config[name]
         if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
             raise RuntimeError(f'{name} in config.py must be an integer greater than 0')

@@ -20,13 +20,20 @@ KEYGEN_TIMEOUT = 10
 CONNECT_TIMEOUT = 15
 # Comment of the public keys, which hosts show in their lists of keys
 KEY_COMMENT = 'VygOJ'
+# Folder of the key in the folder of each user
+SSH_FOLDER = 'ssh'
+# Seconds between the messages that ssh sends to check that the host answers, and messages without
+# answer before closing the connection, so a stalled transfer fails in a minute instead of holding
+# its job until its time limit
+ALIVE_INTERVAL = 15
+ALIVE_COUNT = 4
 
 class UserKey:
     """ The SSH key pair of a user """
 
     def __init__(self, username: str):
         """ Find the files of the key from the username of the user """
-        self.folder = os.path.join(user_folder(username), 'ssh')
+        self.folder = os.path.join(user_folder(username), SSH_FOLDER)
         self.private = os.path.join(self.folder, 'id_ed25519')
         self.known_hosts = os.path.join(self.folder, 'known_hosts')
 
@@ -50,10 +57,13 @@ class UserKey:
     def ssh_command(self) -> str:
         """ Return the command for GIT_SSH_COMMAND that connects with this key only: no agent,
         config, nor keys of the user of the server, and no questions. A host is trusted the first
-        time, and its key is kept in the known_hosts of the user. git runs the command with the
-        shell, so the paths are quoted """
+        time, and its key is kept in the known_hosts of the user. A host that stops answering
+        closes the connection after ALIVE_INTERVAL * ALIVE_COUNT seconds. git runs the command
+        with the shell, so the paths are quoted """
         return shlex.join(['ssh', '-F', '/dev/null', '-i', self.private,
             '-o', 'IdentitiesOnly=yes', '-o', 'IdentityAgent=none', '-o', 'BatchMode=yes',
             '-o', 'StrictHostKeyChecking=accept-new',
             '-o', f'UserKnownHostsFile={self.known_hosts}',
-            '-o', f'ConnectTimeout={CONNECT_TIMEOUT}'])
+            '-o', f'ConnectTimeout={CONNECT_TIMEOUT}',
+            '-o', f'ServerAliveInterval={ALIVE_INTERVAL}',
+            '-o', f'ServerAliveCountMax={ALIVE_COUNT}'])

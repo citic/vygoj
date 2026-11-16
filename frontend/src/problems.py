@@ -129,8 +129,9 @@ class ProblemController:
     @staticmethod
     def get_course_file(course_name: str, filename: str):
         """ Send an image of the course repository, e.g. the picture or the banner of the course.
-        It follows the rules of the files of problems, but only images are served """
-        course = CourseController.find_course(course_name)
+        It follows the rules of the files of problems, but only images are served. Users who see
+        the card of a course get its images, also before they enroll in it """
+        course = CourseController.find_course(course_name, to_enter=False)
         if not course:
             flask.abort(404)
         path = safe_join(course.folder, filename)

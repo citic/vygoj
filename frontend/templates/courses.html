@@ -19,11 +19,25 @@
         </details>
 {%- endif %}
 {%- if it.user %}
-        {#- The repos of the user. static/js/user/repos.js fills the student repo from
-            GET /user/repo, and runs its jobs: the zips and the push, in the background #}
-        <details id="repositories" open>
+{%- set professor = it.user.role == 'professor' %}
+        {#- The repos of the user. static/js/user/repos.js fills them from GET /user/repo, and runs
+            their jobs in the background: the zips and the push of the student repo, and the
+            clones and pulls of the professor repos #}
+        <details id="repositories" class="repositories" open data-csrf-token="{{ csrf_token() }}" data-close="{{ _('Close') }}">
           <summary><h2>{{ _('Repositories') }}</h2></summary>
-          <fieldset id="student_repo" class="repo" data-csrf-token="{{ csrf_token() }}">
+          {#- The SSH key is shared by the student repo and the professor repos #}
+          <p id="ssh_key" class="repo_line">
+            <label for="repo_key">{{ _('SSH key') }}</label>
+            <input type="text" id="repo_key" class="repo_key" readonly>
+            {#- An icon: content_copy, and check for a moment after copying #}
+            <button type="button" class="button small neutral material-symbols-outlined" id="copy_key" title="{{ _('Copy the SSH key') }}" aria-label="{{ _('Copy the SSH key') }}" data-done="{{ _('Copied') }}" disabled>content_copy</button>
+{%- if professor %}
+            <small>{{ _('Add this public key to your repositories in your Git host (e.g. a deploy key in GitHub): with write access to the origin of your student repository, and read access to your professor repositories.') }}</small>
+{%- else %}
+            <small>{{ _('Add this public key to the origin of your student repository in your Git host with write access (e.g. a deploy key in GitHub).') }}</small>
+{%- endif %}
+          </p>
+          <fieldset id="student_repo" class="repo">
             <legend>{{ _('Student repository') }}</legend>
             <p class="repo_line">
               <span id="repo_info" class="repo_info">{{ _('Loading...') }}</span>
@@ -41,47 +55,102 @@
               <input type="text" id="repo_origin" maxlength="256" placeholder="git@github.com:user/repo.git" spellcheck="false" autocomplete="off">
               <button type="button" class="button confirm" id="set_origin" disabled>{{ _('Set origin') }}</button>
               <button type="button" class="button action" data-job="push" data-running="{{ _('Pushing...') }}" disabled>{{ _('Push') }}</button>
-            </p>
-            <p class="repo_line">
-              <label for="repo_key">{{ _('SSH key') }}</label>
-              <input type="text" id="repo_key" class="repo_key" readonly>
-              {#- An icon: content_copy, and check for a moment after copying #}
-              <button type="button" class="button small neutral material-symbols-outlined" id="copy_key" title="{{ _('Copy the SSH key') }}" aria-label="{{ _('Copy the SSH key') }}" data-done="{{ _('Copied') }}" disabled>content_copy</button>
-              <small>{{ _('Add this public key to your repo in your Git host with write access (e.g. a deploy key in GitHub), set the SSH URL of the repo as origin, and press Push. Each Push sends your new solutions; nothing is brought from the origin.') }}</small>
+              <small>{{ _('Set the SSH URL of an empty repo of yours as origin, and press Push. Each Push sends your new solutions; nothing is brought from the origin.') }}</small>
             </p>
             {#- Log of the repo: the state of its jobs and the result of the last action, each one
                 with an icon of its category (message_log of site.css) #}
-            <ul id="repo_messages" class="message_log" role="status" aria-live="polite" data-close="{{ _('Close') }}"></ul>
+            <ul id="repo_messages" class="message_log" role="status" aria-live="polite"></ul>
           </fieldset>
+{%- if professor %}
+          {#- The repos where the professor writes their courses, which the judge only reads. Each
+              line has the URL of a repo and its button, Clone until the repo has a clone, and Pull
+              then, which say Cloning... or Pulling... while their job runs. repos.js makes a line
+              per repo from the template, and an empty one with Add repository #}
+          <fieldset id="professor_repos" class="repo">
+            <legend>{{ _('Professor repositories') }}</legend>
+            <ul id="professor_repo_list" class="repo_list"></ul>
+            <template id="professor_repo_template">
+              <li class="repo_line">
+                <label>{{ _('Repository') }}</label>
+                <input type="text" maxlength="256" placeholder="git@github.com:user/courses.git" spellcheck="false" autocomplete="off">
+                <button type="button" class="button action" data-clone="{{ _('Clone') }}" data-pull="{{ _('Pull') }}" data-cloning="{{ _('Cloning...') }}" data-pulling="{{ _('Pulling...') }}" disabled>{{ _('Clone') }}</button>
+              </li>
+            </template>
+            <p class="repo_line">
+              <button type="button" class="button confirm small" id="add_repo">{{ _('Add repository') }}</button>
+              <small>{{ _('Write the SSH URL of each repository with courses, and press Clone. The judge reads the courses listed in the vygoj.json file of its main branch, which appear in My prepared courses. After you change the repository, press Pull.') }}</small>
+            </p>
+            <ul id="professor_messages" class="message_log" role="status" aria-live="polite"></ul>
+          </fieldset>
+{%- endif %}
         </details>
-{%- endif %}
-{%- if it.my_courses|length > 0 %}
-        <details id="my_courses" open>
-          {#- The action goes below the title: a link inside the summary would be a control inside
-              the button that folds the section #}
-          <summary><h2>{{ _('My courses') }}</h2></summary>
-{%- if it.user and it.user.role == 'professor' %}
-          <a href="/course/admin" class="button confirm small">{{ _('Add Course') }}</a>
-{%- endif %}
-          <p class="course_columns" aria-hidden="true"><span class="name">Course</span><span class="description">Description</span><span class="instructors">Author</span><span class="statistics">Statistics</span></p>
+{%- if it.prepared_courses is not none %}
+        {#- The courses of the repos of the professor: only they see them, until they offer them #}
+        <details id="prepared_courses" open>
+          <summary><h2>{{ _('My prepared courses') }}</h2></summary>
+{%- if it.prepared_courses %}
+          {{ macros.course_columns() }}
           <ul class="course_list">
-{%- for course in it.my_courses %}
-            <li>{{ macros.course_entry(course, it.progress[course.name]) }}</li>
+{%- for entry in it.prepared_courses %}
+            <li>
+{%- call macros.course_entry(entry) %}
+                <a class="enter" href="/course/{{ entry.course.name }}">{{ _('Enter') }} ›</a>
+{%- if entry.offer.offered_at %}
+                <p class="offered">{{ _('Offered') }}</p>
+{%- else %}
+                {#- Offering asks for confirmation (courses.js) with the text of data-confirm #}
+                <form class="offer" method="post" action="{{ url_for('offer_course', name=entry.course.name) }}" data-confirm="{{ _('Offer the course %(name)s? Every user will see it in Available courses and may enroll in it.', name=entry.course.name) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="button action small">{{ _('Offer') }}</button>
+                </form>
+{%- endif %}
+{%- endcall %}
+            </li>
 {%- endfor %}
           </ul>
-        </details>
 {%- else %}
-        <p>{{ _('Please login to see your courses.') }}</p>
+          <p class="empty">{{ _('No prepared courses yet: clone a professor repository with courses.') }}</p>
 {%- endif %}
-{%- if it.available_courses|length > 0 %}
+        </details>
+{%- endif %}
+        <details id="enrolled_courses" open>
+          <summary><h2>{{ _('My enrolled courses') }}</h2></summary>
+{%- if it.enrolled_courses %}
+          {{ macros.course_columns() }}
+          <ul class="course_list">
+{%- for entry in it.enrolled_courses %}
+            <li>
+{%- call macros.course_entry(entry, it.progress[entry.course.name]) %}
+                <a class="enter" href="/course/{{ entry.course.name }}">{{ _('Enter') }} ›</a>
+{%- endcall %}
+            </li>
+{%- endfor %}
+          </ul>
+{%- else %}
+          <p class="empty">{{ _('You are not enrolled in any course yet: enroll in one of the available courses.') }}</p>
+{%- endif %}
+        </details>
+{%- if it.available_courses %}
+        {#- Courses offered by professors, where the user may enroll #}
         <details id="available_courses" open>
           <summary><h2>{{ _('Available courses') }}</h2></summary>
+          {{ macros.course_columns() }}
           <ul class="course_list">
-{%- for _, course in it.available_courses.items() %}
-            <li>{{ macros.course_entry(course) }}</li>
+{%- for entry in it.available_courses %}
+            <li>
+{%- call macros.course_entry(entry) %}
+                <form class="enroll" method="post" action="{{ url_for('enroll_course', name=entry.course.name) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="button confirm small">{{ _('Enroll') }}</button>
+                </form>
+{%- endcall %}
+            </li>
 {%- endfor %}
           </ul>
         </details>
+{%- endif %}
+{%- else %}
+        <p>{{ _('Please login to see your courses.') }}</p>
 {%- endif %}
       </main>
 {%- endblock %}

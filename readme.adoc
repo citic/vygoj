@@ -58,7 +58,7 @@ Frontend and backend are recommeded to be installed in different machines. You l
 [[common_install]]
 === Common
 
-VygOJ is designed to run in Unix-like environments. The following instructions are for Debian-based Linux distributions, but they can be adapted to other Unix-like systems. First install the required dependencies: Git for cloning and for the repos of the users, Make for building, Python 3.9+ for running the server code, and the OpenSSH client (`ssh` and `ssh-keygen`), with which the frontend pushes the student repos to the remotes of the users.
+VygOJ is designed to run in Unix-like environments. The following instructions are for Debian-based Linux distributions, but they can be adapted to other Unix-like systems. First install the required dependencies: Git for cloning and for the repos of the users, Make for building, Python 3.9+ for running the server code, and the OpenSSH client (`ssh` and `ssh-keygen`), with which the frontend pushes the student repos to the remotes of the users and clones the repos of professors with their courses.
 
 [source,sh]
 ----
@@ -142,7 +142,7 @@ cd vygoj/frontend
 make server
 ----
 
-If you need to stop the server, call `make stop`. Logs are written to `frontend/data/` and `backend/data/`. The activity of the users (logins, page visits, runs) is logged for statistical analysis in the `log/` folder of `DATA_FOLDER`, and administrators download it from the home page (see the activity log section of `frontend/readme.adoc`). The solutions that each user submits as a student are kept in their student repo, a git repo in `DATA_FOLDER/user/<username>/student_repo`, which users download or push to a Git host from the home page (see the student repos section of `frontend/readme.adoc`).
+If you need to stop the server, call `make stop`. Logs are written to `frontend/data/` and `backend/data/`. The activity of the users (logins, page visits, runs) is logged for statistical analysis in the `log/` folder of `DATA_FOLDER`, and administrators download it from the home page (see the activity log section of `frontend/readme.adoc`). The solutions that each user submits as a student are kept in their student repo, a git repo in `DATA_FOLDER/user/<username>/student_repo`, which users download or push to a Git host from the home page (see the student repos section of `frontend/readme.adoc`). Professors write their courses in git repos of their own, which the frontend clones in `DATA_FOLDER/user/<username>/<repo>` and pulls when they ask for it in the home page (see the professor repositories section of `frontend/readme.adoc`).
 
 
 

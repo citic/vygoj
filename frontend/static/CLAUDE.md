@@ -8,7 +8,8 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
 
 - `js/vyg.js`: client copy of the shared model (see "Shared model" in the root `CLAUDE.md`).
 - `js/site.js`: behavior common to all pages (loaded from `base.html`).
-- `js/<page>/<page>.js`: one module per page (`problem/`, `course/`, `user/`).
+- `js/<page>/<page>.js`: one module per page (`problem/`, `course/`, `courses/` for the home page,
+  `user/`).
 - `css/site.css`: global layout and variables; `css/<page>.css` for page-specific styles.
   Tables of data take the `data_table` class of `site.css` (headers of columns with the color
   of the site, headers of rows marked with `<th scope="row">`, rows of alternate background),
