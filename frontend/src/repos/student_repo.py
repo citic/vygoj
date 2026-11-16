@@ -68,6 +68,14 @@ class StudentRepo(GitRepo):
         return self.file_versions(problem_branch(course, problem),
             solution_path(course, problem, filename))
 
+    def last_problem(self, course: str) -> str | None:
+        """ Return the name of the problem of the course whose solution got a version last, or
+        None if the user has no solutions in the course """
+        check_names(course)
+        # The last part of the ref of the branch is the name of the problem
+        return self.git('for-each-ref', '--sort=-committerdate', '--count=1',
+            '--format=%(refname:lstrip=-1)', f'{PROBLEMS_REFS}{course}/{TERM_GROUP}/') or None
+
     def read(self, commit: str, course: str, problem: str, filename: str) -> str:
         """ Return the code of the file of the solution of the problem in the commit """
         return self.read_file(commit, solution_path(course, problem, filename))

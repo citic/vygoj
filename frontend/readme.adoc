@@ -255,6 +255,8 @@ The frontend runs git with the plumbing commands (`hash-object`, `update-index` 
 
 The toolbar of the code editor has a slider with the versions of the solution in the chosen language, from the oldest to the newest, and at its end the code in the editor. Dragging it shows each version with its number and time; editing a version makes it the code in the editor, which the next run saves as a new version at the end of the branch. When the browser has no code of the user for the problem and language, the editor shows their last version instead of the initial code. The page asks for the list of versions (`GET /problem/<course>/<problem>/versions?language=<language>`, `[[commit, time], ...]`), and for the code of a version only when the slider reaches it (`GET .../versions/<commit>?language=<language>`), which the browser keeps, since a commit never changes. Both answer only the logged user, from their own repo.
 
+The course page scrolls to the problem whose solution got a version last (`StudentRepo.last_problem()`, the branch of the course with the newest commit), and _Return to the course_ in a problem page scrolls to that problem, named after `#` in its link. `static/js/course/course.js` expands the sections that hide the problem.
+
 [[repositories]]
 === Repositories section
 
