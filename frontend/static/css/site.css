@@ -109,8 +109,15 @@ Monospace:
   }
 }
 
+/* iOS enlarges the text of wide blocks when the phone turns to landscape (text autosizing). The
+   sizes of the site are responsive already, and the enlarged text changed the widths that the
+   autosizing measures, so the cards of the home page and the problem page resized in an endless
+   loop. The size of the text is the one of the CSS in every orientation */
 html {
   height: 100vh;
+  /* stylelint-disable-next-line property-no-vendor-prefix -- iOS reads only the prefixed one */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
