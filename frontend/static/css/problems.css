@@ -15,26 +15,10 @@ label {
   color: var(--label-color);
 }
 
-/* Evaluation of the solution: run buttons and score, compiler output, test cases, outputs of the
-   selected test case, and its verdict. A narrow evaluation puts its parts one below the other,
-   as on small screens */
+/* Evaluation of the solution: compiler output, test cases, outputs of the selected test case,
+   and its verdict. A narrow evaluation puts its parts one below the other, as on small screens */
 .evaluation {
   container-type: inline-size;
-
-  /* Run button and its score, which goes below when it does not fit, apart from the code editor
-     above and the test cases below */
-  & > header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem 1rem;
-    margin-block: 1rem 0.75rem;
-
-    & > p {
-      flex: 1 1 12rem;
-      margin: 0;
-    }
-  }
 
   /* Shown while the connection with the judge is lost */
   & > [role="alert"] {
@@ -79,6 +63,21 @@ label {
 
   & pre button[data-index]:focus-visible {
     outline: 2px solid var(--bg-color);
+  }
+}
+
+/* Run bar at the end of the solution, below the code editor: the run button and its hint or
+   score, which goes below the button when it does not fit */
+.run_bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-block: 1rem 0.75rem;
+
+  & > p {
+    flex: 1 1 12rem;
+    margin: 0;
   }
 }
 

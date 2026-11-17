@@ -48,9 +48,9 @@
             </editor-toolbar>
             <monaco-editor id="code_editor" aria-label="{{ _('Your solution') }}"></monaco-editor>
           </div>
-        </details>
-        <section class="evaluation">
-          <header>
+          {#- Run button and its hint, replaced by the score after the first run. They fold with
+              the solution #}
+          <footer class="run_bar">
 {%- if it.user %}
             <button id="run_button" class="button action" disabled="disabled" title="{{ _('Run my solution against the test cases') }}">{{ _('Run') }}</button>
   {%- if it.problem.tests %}
@@ -69,7 +69,9 @@
               {%- set points %}<span id="user_points">0</span>/<span id="total_points">{{ it.problem.calculate_total_points() }}</span>{% endset %}
               {{ _('%(passed)s test cases passed (%(points)s points)', passed=passed, points=points) }}
             </p>
-          </header>
+          </footer>
+        </details>
+        <section class="evaluation">
           {#- problem.js shows it while the connection with the frontend or the backend is lost #}
           <p id="connection_error" role="alert" hidden>{{ _('The connection with the judge was lost. Running code is disabled until it is restored.') }}</p>
           <figure id="diagnostics_wrapper" hidden>
@@ -81,7 +83,7 @@
               run the code with the arguments and the input of the user, in the same box #}
           {%- set tests = it.problem.tests %}
           <details class="test_cases" open>
-            <summary><h3>{{ _('Test cases') if tests else _('Input and output') }}</h3></summary>
+            <summary><h2>{{ _('Test cases') if tests else _('Input and output') }}</h2></summary>
             <tab-control>
 {%- if tests %}
               <div class="tabs" role="tablist" aria-label="{{ _('Test cases') }}">
