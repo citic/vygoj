@@ -55,7 +55,7 @@
               <dd id="course_progress"></dd>
             </dl>
           </header>
-          <table class="contents" data-course="{{ it.course.name }}">
+          <table class="contents" data-course="{{ it.course.name }}"{% if it.last_problem %} data-last-problem="{{ it.last_problem }}"{% endif %}>
             <thead>
               <tr>
                 <th scope="col" class="name"><button type="button" id="toggle_all" aria-expanded="true">{{ _('Contents') }}</button></th>

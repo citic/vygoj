@@ -6,6 +6,8 @@ import threading
 import flask
 from flask import current_app as app
 import vyg
+from repos.git_repo import GitError
+from repos.student_repo import StudentRepo
 #from users import logged_users
 from users import Progress
 
@@ -156,9 +158,24 @@ class CourseController:
                 '<script src="/js/site.js" type="module" async="async"></script>',
             ],
             'progress': Progress.load(course.name),
+            # The problem where the user ran new code last, where the course page scrolls to
+            'last_problem': CourseController.last_problem(course.name),
         }
         # print(json.dumps(it, indent=2))
         return flask.render_template('course.html', it=it)
+
+    @staticmethod
+    def last_problem(course_name: str) -> str | None:
+        ''' Return the problem of the course whose solution the logged user changed last, from
+        their student repo, or None. A failure is logged, and the course page does not scroll '''
+        user = flask.session.get('user')
+        if not user:
+            return None
+        try:
+            return StudentRepo(user.get('email')).last_problem(course_name)
+        except (GitError, OSError, ValueError):
+            app.logger.exception('could not find the last problem of %s', course_name)
+            return None
 
     @staticmethod
     def load_courses(path):

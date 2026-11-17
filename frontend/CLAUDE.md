@@ -41,7 +41,8 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
     user submits as a student, in `DATA_FOLDER/user/<username>/student_repo`
     (`STUDENT_REPO_NAME`), created at login, with a branch per problem and a commit per run with
     new code (`ProblemController.save_solution()`), the versions of the slider of the editor, the
-    `main` branch that merges the problems for copies and pushes, and the origin of the user. It
+    last problem of a course (the course page scrolls to it), the `main` branch that merges the
+    problems for copies and pushes, and the origin of the user. It
     runs git through `subprocess` with plumbing commands and a timeout, and validates names of
     courses, problems, files, and commits before they become refs or paths (see "Student repos"
     in `readme.adoc`).

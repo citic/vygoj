@@ -35,6 +35,7 @@ class CourseManager {
       CourseManager.show(element, scores.length ? Math.round(sum / scores.length) : 0);
     });
     CourseManager.restore();
+    CourseManager.scrollToProblem();
     document.querySelector('.course .contents').addEventListener('click', CourseManager.toggle);
     document.getElementById('toggle_all').addEventListener('click', CourseManager.toggleAll);
   }
@@ -66,6 +67,39 @@ class CourseManager {
       row.hidden = !expanded;
       row.querySelector('button')?.setAttribute('aria-expanded', expanded);
     }
+  }
+
+  // Scrolls to the problem of the link that the user followed (#name, e.g. Return to the course
+  // of a problem page), or else to the problem where the user ran new code last. The sections that
+  // hide it are expanded. Names are compared as text, never used as selectors
+  static scrollToProblem() {
+    const { lastProblem } = document.querySelector('.course .contents').dataset;
+    const name = window.location.hash.slice(1) || lastProblem;
+    const cell = [...document.querySelectorAll('.course .progress[data-problem]')]
+      .find((element) => element.dataset.problem === name);
+    if (!cell) {
+      return;
+    }
+    const row = cell.closest('tr');
+    // Sections before the row with a lower level contain it. Expanding the outermost collapsed
+    // one shows every row inside it
+    let level = Number(row.dataset.level);
+    let collapsed = null;
+    for (let header = row.previousElementSibling; header && level > 3;
+      header = header.previousElementSibling) {
+      if (Number(header.dataset.level) < level) {
+        level = Number(header.dataset.level);
+        const button = header.querySelector('button');
+        if (button.getAttribute('aria-expanded') === 'false') {
+          collapsed = button;
+        }
+      }
+    }
+    if (collapsed) {
+      CourseManager.expand(collapsed, true);
+      CourseManager.save();
+    }
+    row.scrollIntoView({ block: 'center' });
   }
 
   // The titles of the collapsed sections are kept in localStorage, one per line, by course
