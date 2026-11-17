@@ -52,6 +52,15 @@ msgstr " y terminó con el código %(code)s"
 msgid ". It took %(seconds)s s"
 msgstr ". Tardó %(seconds)s s"
 
+msgid ""
+"A CSV or TSV file in UTF-8 with a row per user and the columns username "
+"and email, and optionally fullname, password, role, status, language, and"
+" font. Choose it or drop it here."
+msgstr ""
+"Un archivo CSV o TSV en UTF-8 con una fila por usuario y las columnas "
+"username y email, y opcionalmente fullname, password, role, status, "
+"language y font. Elíjalo o suéltelo aquí."
+
 msgid "Account"
 msgstr "Cuenta"
 
@@ -110,6 +119,9 @@ msgstr "Los administradores ingresan con su contraseña."
 msgid "Alias"
 msgstr "Alias"
 
+msgid "Already exists"
+msgstr "Ya existe"
+
 msgid ""
 "An educative online judge for teaching and learning computing programming"
 " with emphasis in concurrent programming paradigm"
@@ -138,6 +150,9 @@ msgid ""
 msgstr ""
 "Al presionar el botón de abajo, acepta el uso de cookies en este sitio "
 "para mantener su sesión activa."
+
+msgid "CSV example"
+msgstr "Ejemplo CSV"
 
 msgid "Cancel"
 msgstr "Cancelar"
@@ -339,6 +354,9 @@ msgstr "Error esperado"
 msgid "Expected output"
 msgstr "Salida esperada"
 
+msgid "File"
+msgstr "Archivo"
+
 msgid "Font"
 msgstr "Tipografía"
 
@@ -365,6 +383,18 @@ msgstr "Ayuda"
 
 msgid "Home"
 msgstr "Inicio"
+
+msgid "Import"
+msgstr "Importar"
+
+msgid "Import result"
+msgstr "Resultado de la importación"
+
+msgid "Import users"
+msgstr "Importar usuarios"
+
+msgid "Imported"
+msgstr "Importado"
 
 msgid "Information"
 msgstr "Información"
@@ -393,6 +423,9 @@ msgstr "Distribución"
 
 msgid "Light mode"
 msgstr "Modo claro"
+
+msgid "Line"
+msgstr "Línea"
 
 msgid "Loading..."
 msgstr "Cargando..."
@@ -558,8 +591,14 @@ msgstr "Redirect URI (callback) que se registra en el proveedor"
 msgid "Redo"
 msgstr "Rehacer"
 
+msgid "Rejected"
+msgstr "Rechazado"
+
 msgid "Repositories"
 msgstr "Repositorios"
+
+msgid "Result"
+msgstr "Resultado"
 
 msgid "Return to the course"
 msgstr "Volver al curso"
@@ -663,6 +702,9 @@ msgstr ""
 msgid "Suspended"
 msgstr "Suspendido"
 
+msgid "TSV example"
+msgstr "Ejemplo TSV"
+
 #, python-format
 msgid "Test case %(number)d"
 msgstr "Caso de prueba %(number)d"
@@ -697,6 +739,14 @@ msgid ""
 msgstr ""
 "Se perdió la conexión con el juez. No se puede ejecutar código hasta que "
 "se restablezca."
+
+#, python-format
+msgid ""
+"The file must be a CSV or TSV file in UTF-8 of up to 1 MiB and %(rows)d "
+"users, with the columns username and email, and optionally %(columns)s."
+msgstr ""
+"El archivo debe ser CSV o TSV en UTF-8 de hasta 1 MiB y %(rows)d "
+"usuarios, con las columnas username y email, y opcionalmente %(columns)s."
 
 #, python-format
 msgid ""
@@ -806,6 +856,9 @@ msgstr "Usuarios"
 msgid "Users (%(count)d)"
 msgstr "Usuarios (%(count)d)"
 
+msgid "Users file"
+msgstr "Archivo de usuarios"
+
 msgid ""
 "Values of that claim that mean professor, separated by commas. Other new "
 "users are students."
@@ -900,6 +953,13 @@ msgstr ""
 "p. ej. https://sso.ucr.ac.cr/realms/UCR o su URL /.well-known/openid-"
 "configuration"
 
+#, python-format
+msgid "invalid %(column)s"
+msgstr "%(column)s no válido"
+
+msgid "it needs a username and a valid email"
+msgstr "necesita un nombre de usuario y un correo válido"
+
 msgid "it took too long"
 msgstr "tardó demasiado"
 
@@ -914,6 +974,10 @@ msgstr "establezca primero el origen"
 
 msgid "that job is running already"
 msgstr "esa tarea ya se está ejecutando"
+
+#, python-format
+msgid "the email belongs to the user %(username)s"
+msgstr "el correo pertenece al usuario %(username)s"
 
 msgid "the identity of the host of the origin changed"
 msgstr "cambió la identidad del servidor del origen"
@@ -949,6 +1013,9 @@ msgstr "el servidor no respondió en %(seconds)s segundos"
 
 msgid "the server is running other jobs, try again in a few minutes"
 msgstr "el servidor está ejecutando otras tareas, intente de nuevo en unos minutos"
+
+msgid "the username or the email is repeated in the file"
+msgstr "el nombre de usuario o el correo se repite en el archivo"
 
 msgid "wait a minute after the last request, and try again"
 msgstr "espere un minuto después de la última solicitud e intente de nuevo"
@@ -1020,4 +1087,5 @@ msgstr "su repositorio de estudiante es demasiado grande"
 
 #~ msgid "Standard error output"
 #~ msgstr "Salida de error estándar"
+
 

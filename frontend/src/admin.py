@@ -1,8 +1,12 @@
 """ Administration of the users: administrators see the users in /admin/users, edit their data and
 role, and suspend, activate, or delete them. Administrators cannot change their own role nor
-status, so there is always an administrator, and nobody locks themselves out. The first
-administrator, and one who lost their password, are created in the server (manage.py admin) """
+status, so there is always an administrator, and nobody locks themselves out. They also add
+users from a CSV or TSV file. The first administrator, and one who lost their password, are
+created in the server (manage.py admin) """
+import csv
+import io
 import os
+import re
 import shutil
 
 import flask
@@ -11,16 +15,32 @@ from flask_babel import gettext, lazy_gettext
 import wtforms
 from wtforms import validators
 from sqlalchemy.orm import selectinload
+from werkzeug.security import generate_password_hash
 
 from db import db
 from activity_log import log_event
 from courses import COURSES_REPO
 from repos.git_repo import user_folder
 from sso import STATUSES, SsoProvider
-from users import ROLES, USER_STATUSES, User, require_admin
+from users import (FONTS, LANGUAGES, MAX_PASSWORD_LENGTH, MAX_USERNAME_LENGTH, ROLES,
+    USER_STATUSES, User, require_admin)
 
 # Emails are optional. When given, they need a local part and a domain, without spaces
 EMAIL_PATTERN = r'[^@\s]+@[^@\s]+\.[^@\s]+$'
+
+# Largest file of users that administrators may import, in bytes, and most users in it. Hashing a
+# password takes about 70 ms, so a file is imported long before the 30 seconds that gunicorn
+# gives to a request
+MAX_IMPORT_SIZE = 2**20
+MAX_IMPORT_ROWS = 200
+# Columns that a file of users may have, with the values that each one accepts, or the size of its
+# column for texts. username and email are required. A file cannot make administrators, whose
+# passwords must not be easy to guess (manage.py admin): they are named in the form of a user
+IMPORT_COLUMNS = {
+    'username': MAX_USERNAME_LENGTH, 'email': 128, 'fullname': 128,
+    'password': MAX_PASSWORD_LENGTH, 'role': { role for role in ROLES if role != 'admin' },
+    'status': USER_STATUSES, 'language': LANGUAGES, 'font': FONTS,
+}
 
 # States of a user that the form offers: deleting a user from the form is the same as from the
 # table of users
@@ -48,8 +68,9 @@ class UserAdminController:
     """ Lets administrators see the users and change, suspend, activate, or delete them """
 
     @staticmethod
-    def get_users():
-        """ Show the page of users: the single sign-on providers and the list of users """
+    def get_users(report: list = None):
+        """ Show the page of users: the single sign-on providers, the list of users, and the report
+        of the last import, if any """
         require_admin()
         providers = db.session.scalars(db.select(SsoProvider).order_by(SsoProvider.name)).all()
         users = db.session.scalars(db.select(User).order_by(User.id)
@@ -62,7 +83,89 @@ class UserAdminController:
             'users': users,
             'roles': ROLES,
             'user_statuses': USER_STATUSES,
+            'report': report,
         })
+
+    @staticmethod
+    def import_users():
+        """ Add the users of the CSV or TSV file sent by the administrator, and show the page of
+        users with what happened to each row: imported, rejected with its reason, or skipped
+        because the user exists. The file is untrusted: each value is checked """
+        require_admin()
+        file = flask.request.files.get('users')
+        try:
+            # A larger file is not read whole, so it cannot fill the memory of the server
+            data = file.read(MAX_IMPORT_SIZE + 1) if file else b''
+            if not data or len(data) > MAX_IMPORT_SIZE:
+                raise ValueError
+            text = data.decode('utf-8-sig')
+            # The separator of the names of the columns: commas, tabs, or the semicolons of the CSV
+            # files of spreadsheets in Spanish
+            dialect = csv.Sniffer().sniff(text.partition('\n')[0], ',;\t')
+            rows = csv.DictReader(io.StringIO(text), delimiter=dialect.delimiter,
+                skipinitialspace=True)
+            columns = set(rows.fieldnames or [])
+            if not {'username', 'email'} <= columns or columns - IMPORT_COLUMNS.keys():
+                raise ValueError
+            return UserAdminController.get_users(UserAdminController.add_users(rows))
+        except (UnicodeDecodeError, ValueError, csv.Error):
+            flask.flash(gettext('The file must be a CSV or TSV file in UTF-8 of up to 1 MiB and '
+                '%(rows)d users, with the columns username and email, and optionally %(columns)s.',
+                rows=MAX_IMPORT_ROWS, columns=', '.join(list(IMPORT_COLUMNS)[2:])), 'error')
+            return UserAdminController.get_users()
+
+    @staticmethod
+    def add_users(rows) -> list:
+        """ Add the users of the rows that are valid and new, and return the report of each row as
+        (line, username, result, reason), with result imported, rejected, or skipped """
+        report, new_users, seen = [], [], set()
+        # The users of the database, to check each row without a query
+        users = db.session.execute(db.select(User.username, User.email)).all()
+        usernames = { username for username, _ in users }
+        owners = { email.lower(): username for username, email in users if email }
+        for row in rows:
+            if len(report) == MAX_IMPORT_ROWS:
+                db.session.rollback()
+                raise ValueError
+            values = { column: value.strip() for column, value in row.items()
+                if column in IMPORT_COLUMNS and isinstance(value, str) and value.strip() }
+            # Emails are compared in lowercase, as the form of a user and single sign-on do
+            values['email'] = values.get('email', '').lower()
+            username, email = values.get('username', ''), values['email']
+            reason = UserAdminController.check_row(values, seen)
+            seen |= { username, email }
+            if not reason and owners.get(email, username) != username:
+                reason = gettext('the email belongs to the user %(username)s',
+                    username=owners[email])
+            if reason or username in usernames:
+                # The number of the last line of the row, also after empty lines
+                report.append((rows.line_num, username, 'rejected' if reason else 'skipped',
+                    reason))
+                continue
+            password = values.pop('password', None)
+            db.session.add(User(**{ 'fullname': username, **values,
+                'password': password and generate_password_hash(password) }))
+            new_users.append((username, values.get('role', 'student')))
+            report.append((rows.line_num, username, 'imported', ''))
+        db.session.commit()
+        # Logged after the commit, so the log has only the users that the database has
+        for username, role in new_users:
+            log_event('user_create', { 'source': 'import' }, user=username, role=role)
+        return report
+
+    @staticmethod
+    def check_row(values: dict, seen: set) -> str:
+        """ Return why the values of a row of a file of users are not valid, or an empty string.
+        seen has the usernames and emails of the rows before it """
+        if not values.get('username') or not re.match(EMAIL_PATTERN, values['email']):
+            return gettext('it needs a username and a valid email')
+        if values['username'] in seen or values['email'] in seen:
+            return gettext('the username or the email is repeated in the file')
+        for column, rule in IMPORT_COLUMNS.items():
+            value = values.get(column)
+            if value and (len(value) > rule if isinstance(rule, int) else value not in rule):
+                return gettext('invalid %(column)s', column=column)
+        return ''
 
     @staticmethod
     def edit_user(user_id: int):

@@ -26,7 +26,8 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
   finds, links, or creates the user), and `SsoAdminController` (provider forms).
 - `src/admin.py`: `UserAdminController`, the users page of administrators (`/admin/users`): edit
   the student ID, full name, email, role, and status of users, and suspend, activate, or delete
-  them (never the logged administrator, who cannot change their own role nor status either). Suspended users (`status` column of `users`) cannot log in, and
+  them (never the logged administrator, who cannot change their own role nor status either), and
+  import users from a CSV or TSV file (`import_users()`). Suspended users (`status` column of `users`) cannot log in, and
   `refresh_session()` in `users.py` logs out suspended and deleted users at their next request.
   Tables with data of users declare their foreign key with `ondelete='CASCADE'`, so deleting a
   user deletes it (`manage.py` updates the keys of older databases), and the folder of the user
@@ -69,13 +70,12 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
 - `src/manage.py`: command line to manage the frontend in the server. `admin [username]` creates
   an administrator, or resets the password of a user and makes it administrator (`make admin`);
   the first administrator is created here, and then administrators give and take the role of
-  others in the web (never their own). `import [users.tsv]` creates the missing tables (`db.create_all()`), updates the
-  users table, and adds the users of a git-ignored TSV file with plain passwords, `USERS_FILE` in
-  `DATA_FOLDER` (both in `config/config.py`); `make`, `make release`, and `make server` run it
-  before starting, because gunicorn workers creating tables at the same time fail. `main.py`
-  never changes the schema. `log output.zip` and `submissions output.zip` write the
-  archives of the activity log. Their logic is in `users.py` (e.g. `User.add_new()`) and
-  `activity_log.py`, so the web application can reuse it.
+  others in the web (never their own). `import` creates the missing tables (`db.create_all()`) and
+  updates the users table; `make`, `make release`, and `make server` run it before starting,
+  because gunicorn workers creating tables at the same time fail. `main.py` never changes the
+  schema. Administrators import users from CSV or TSV files in `/admin/users` (`admin.py`).
+  `log output.zip` and `submissions output.zip` write the archives of the activity log. Their
+  logic is in `users.py` and `activity_log.py`, so the web application can reuse it.
 - `templates/`: Jinja2 templates. `base.html` is the layout; pages extend it and fill blocks.
   Views pass data to templates in a single `it` object.
 - `config/defaults.py`: default value and explanation of every setting. `main.py` loads it, and
