@@ -40,7 +40,7 @@ legend {
   color: var(--label-color);
 }
 
-/* Forms whose fieldsets of options (radio buttons) are narrow, e.g. the preferences of a user and
+/* Forms whose fieldsets of options (radio buttons or checkboxes) are narrow, e.g. the preferences of a user and
    the form of a user for administrators: those fieldsets share a row when the window has space
    for them, and the other fieldsets and the actions take a whole row */
 .fieldset_columns {
@@ -52,7 +52,7 @@ legend {
     flex: 1 1 100%;
   }
 
-  & > fieldset:has(input[type="radio"]) {
+  & > fieldset:has(input[type="radio"], input[type="checkbox"]) {
     flex: 1 1 15rem;
   }
 }

@@ -7,7 +7,7 @@ as JSON in the data column, and the code of each submission in data/log/code/<ha
     data/log/code/<hash>.cpp
 
 The frontend sends a context with each submission: the id of the run in its activity log (the id
-column here, which joins both logs), the user, their role and address, the course, the material,
+column here, which joins both logs), the user, their roles and address, the course, the material,
 and the commit of the course repo. The backend does not use the context to judge. See "Run log" in
 readme.adoc """
 import hashlib

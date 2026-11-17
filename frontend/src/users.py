@@ -63,7 +63,7 @@ def client_translations(language: str) -> dict:
 def is_admin() -> bool:
     """ True if the logged user is an administrator """
     user = flask.session.get('user')
-    return bool(user) and user.get('role') == 'admin'
+    return bool(user) and 'admin' in user.get('roles', ())
 
 def require_admin():
     """ Stop the request if the logged user is not an administrator """
@@ -79,13 +79,20 @@ def font_url(font: str) -> str | None:
 # Longest username, the size of its column. Emails of single sign-on users are usernames too
 MAX_USERNAME_LENGTH = 128
 
-# Roles of the users and their names in the interface
+# Roles of the users and their names in the interface, from the lowest to the highest. A user has
+# one or more, e.g. a director who is also an administrator and a student of a course.
+# TODO(EliuAV): directors name professors and assign them courses, administrators do not
 ROLES = {
     'student': lazy_gettext('Student'),
     'assistant': lazy_gettext('Assistant'),
     'professor': lazy_gettext('Professor'),
+    'director': lazy_gettext('Director'),
     'admin': lazy_gettext('Administrator'),
 }
+
+def sorted_roles(roles) -> list:
+    """ Return the known roles among the given ones, from the lowest to the highest (ROLES) """
+    return [role for role in ROLES if role in roles]
 
 # States of a user: suspended users cannot log in, but their data is kept until they are active
 USER_STATUSES = {
@@ -109,8 +116,8 @@ class User(db.Model):
     email = db.Column(db.String(128), unique=True)
     # Full name including last name(s)
     fullname = db.Column(db.String(128), nullable=False)
-    # Role: one of the keys of ROLES
-    role = db.Column(db.String(16), nullable=False, default='student')
+    # Roles: keys of ROLES, from the lowest to the highest (sorted_roles())
+    roles = db.Column(db.ARRAY(db.String(16)), nullable=False, default=lambda: ['student'])
     # One of USER_STATUSES. Administrators suspend and activate users in /admin/users
     status = db.Column(db.String(16), nullable=False, default='active')
     # Color scheme: 'default' follows the operating system, 'light' or 'dark' force one
@@ -295,7 +302,7 @@ def suspended_message() -> str:
 
 def refresh_session():
     """ Log out the logged user if an administrator suspended or deleted them after they logged in,
-    and take the changes of their full name and role. Sessions are signed cookies that the server
+    and take the changes of their full name and roles. Sessions are signed cookies that the server
     cannot revoke, so every request checks the user in the database """
     user = flask.session.get('user')
     # Static files do not need the user, and they are most of the requests
@@ -309,8 +316,8 @@ def refresh_session():
         flask.flash(suspended_message() if db_user else gettext('Your account was deleted.'),
             'error')
         return
-    if (user.get('fullname'), user.get('role')) != (db_user.fullname, db_user.role):
-        user.update(fullname=db_user.fullname, role=db_user.role)
+    if (user.get('fullname'), user.get('roles')) != (db_user.fullname, db_user.roles):
+        user.update(fullname=db_user.fullname, roles=db_user.roles)
         flask.session['user'] = user
 
 class UserForm(flask_wtf.FlaskForm):
@@ -438,7 +445,8 @@ class UserForm(flask_wtf.FlaskForm):
         LoginAttempt.clear(name, address)
         # Checked after the password, so only the owner of the account learns that it is suspended
         if db_user.status != 'active':
-            log_event('login_failed', { 'reason': 'suspended' }, user=name, role=db_user.role)
+            log_event('login_failed', { 'reason': 'suspended' }, user=name,
+                role=' '.join(db_user.roles))
             flask.flash(suspended_message(), 'error')
             return flask.redirect(flask.url_for('user', next=next_url))
         return start_session(db_user, next_url)
@@ -452,7 +460,7 @@ def start_session(db_user: User, next_url: str | None, provider: str = None):
     flask.session['user'] = {
         'email': db_user.username,
         'fullname': db_user.fullname,
-        'role': db_user.role,
+        'roles': db_user.roles,
         'color_scheme': db_user.color_scheme,
         'font': db_user.font,
         'language': db_user.language,

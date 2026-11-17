@@ -5,7 +5,7 @@
 {%- endblock %}
 {%- block main %}
       <main class="courses">
-{%- if it.user and it.user.role == 'admin' %}
+{%- if it.user and 'admin' in it.user.roles %}
         {#- Each section folds when its title is clicked, as the sections of the other pages #}
         <details id="admin_section" open>
           <summary><h2>{{ _('Administration') }}</h2></summary>
@@ -60,7 +60,7 @@
           {#- The action goes below the title: a link inside the summary would be a control inside
               the button that folds the section #}
           <summary><h2>{{ _('My courses') }}</h2></summary>
-{%- if it.user and it.user.role == 'professor' %}
+{%- if it.user and 'professor' in it.user.roles %}
           <a href="/course/admin" class="button confirm small">{{ _('Add Course') }}</a>
 {%- endif %}
           <p class="course_columns" aria-hidden="true"><span class="name">Course</span><span class="description">Description</span><span class="instructors">Author</span><span class="statistics">Statistics</span></p>

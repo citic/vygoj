@@ -289,6 +289,9 @@ msgstr "Diagnósticos"
 msgid "Diff"
 msgstr "Diferencias"
 
+msgid "Director"
+msgstr "Director"
+
 msgid "Disabled"
 msgstr "Desactivado"
 
@@ -567,8 +570,8 @@ msgstr "Volver al curso"
 msgid "Revert to initial code"
 msgstr "Volver al código inicial"
 
-msgid "Role"
-msgstr "Rol"
+msgid "Roles"
+msgstr "Roles"
 
 msgid "Run"
 msgstr "Ejecutar"
@@ -840,8 +843,8 @@ msgstr "Escriba un URL https://"
 msgid "Write scopes separated by spaces, including openid"
 msgstr "Escriba scopes separados por espacios, incluido openid"
 
-msgid "You cannot change your own role."
-msgstr "No puede cambiar su propio rol."
+msgid "You cannot remove your own administrator role."
+msgstr "No puede quitar su propio rol de administrador."
 
 msgid "You cannot suspend nor delete yourself."
 msgstr "No puede suspenderse ni eliminarse a sí mismo."
@@ -1020,4 +1023,3 @@ msgstr "su repositorio de estudiante es demasiado grande"
 
 #~ msgid "Standard error output"
 #~ msgstr "Salida de error estándar"
-

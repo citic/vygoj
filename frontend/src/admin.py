@@ -1,7 +1,8 @@
 """ Administration of the users: administrators see the users in /admin/users, edit their data and
-role, and suspend, activate, or delete them. Administrators cannot change their own role nor
-status, so there is always an administrator, and nobody locks themselves out. The first
-administrator, and one who lost their password, are created in the server (manage.py admin) """
+roles, and suspend, activate, or delete them. Administrators cannot remove their own administrator
+role nor change their status, so there is always an administrator, and nobody locks themselves
+out. The first administrator, and one who lost their password, are created in the server
+(manage.py admin) """
 import os
 import shutil
 
@@ -17,7 +18,7 @@ from activity_log import log_event
 from courses import COURSES_REPO
 from repos.git_repo import user_folder
 from sso import STATUSES, SsoProvider
-from users import ROLES, USER_STATUSES, User, require_admin
+from users import ROLES, USER_STATUSES, User, require_admin, sorted_roles
 
 # Emails are optional. When given, they need a local part and a domain, without spaces
 EMAIL_PATTERN = r'[^@\s]+@[^@\s]+\.[^@\s]+$'
@@ -27,15 +28,17 @@ EMAIL_PATTERN = r'[^@\s]+@[^@\s]+\.[^@\s]+$'
 FORM_STATUSES = { **USER_STATUSES, 'deleted': lazy_gettext('Deleted') }
 
 class UserAdminForm(flask_wtf.FlaskForm):
-    """ Lets administrators change the data, role, and status of a user. Sizes are the ones of the
+    """ Lets administrators change the data, roles, and status of a user. Sizes are the ones of the
     columns. The username is not changed, because it identifies the user in the activity log """
     fullname = wtforms.StringField(lazy_gettext('Full name'),
         validators=[validators.DataRequired(), validators.Length(max=128)])
     email = wtforms.EmailField(lazy_gettext('Email'), validators=[validators.Optional(),
         validators.Length(max=128), validators.Regexp(EMAIL_PATTERN,
             message=lazy_gettext('Write a valid email, or leave it empty'))])
-    # RadioFields reject values that are not in their choices, which edit_user() limits
-    role = wtforms.RadioField(lazy_gettext('Role'), choices=[])
+    # Checkboxes of the roles and radio buttons of the status. Both reject values that are not in
+    # their choices, and edit_user() limits the statuses
+    roles = wtforms.SelectMultipleField(lazy_gettext('Roles'), choices=list(ROLES.items()),
+        widget=wtforms.widgets.ListWidget(), option_widget=wtforms.widgets.CheckboxInput())
     status = wtforms.RadioField(lazy_gettext('Status'), choices=[])
     save = wtforms.SubmitField(lazy_gettext('Save'))
 
@@ -70,12 +73,12 @@ class UserAdminController:
         require_admin()
         db_user = UserAdminController.find_user(user_id)
         form = UserAdminForm(obj=db_user)
-        # Administrators keep their own role and status, so they cannot lock themselves out
+        # Administrators keep their own administrator role and status, so they cannot lock
+        # themselves out. Its checkbox is disabled, so browsers do not send it
         if is_self(db_user):
-            form.role.choices = [(db_user.role, ROLES.get(db_user.role, db_user.role))]
+            form.roles.data = sorted_roles({ *form.roles.data, 'admin' })
             form.status.choices = [(db_user.status, FORM_STATUSES[db_user.status])]
         else:
-            form.role.choices = list(ROLES.items())
             form.status.choices = list(FORM_STATUSES.items())
         if form.validate_on_submit() and UserAdminController.check_form(form, db_user):
             if form.status.data == 'deleted':
@@ -107,7 +110,8 @@ class UserAdminController:
         values = {
             'fullname': form.fullname.data.strip(),
             'email': (form.email.data or '').strip() or None,
-            'role': form.role.data,
+            # Users without roles are students
+            'roles': sorted_roles(form.roles.data) or ['student'],
         }
         changes = {name: [getattr(db_user, name), value] for name, value in values.items()
             if getattr(db_user, name) != value}

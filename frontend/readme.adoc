@@ -160,7 +160,7 @@ sudo systemctl restart apache2
 [[users_admin]]
 == Users
 
-Administrators manage the users in the users page (`/admin/users`, the _Users_ link of the home page, `src/admin.py`). Users have two identifiers, both unique:
+Administrators manage the users in the users page (`/admin/users`, the _Users_ link of the home page, `src/admin.py`). Users have one or more roles (`roles` column of `users`, `ROLES` in `src/users.py`): student, assistant, professor, director, and administrator, e.g. a director who is also administrator and a student of a course. Directors will name professors and assign them courses, which administrators do not do; for now the role has no pages of its own. The header shows the highest role of the user. Users have two identifiers, both unique:
 
 * The user identifier (`id`, the _#_ column): a number assigned by the database, read only. The sequence of PostgreSQL never gives the number of a deleted user again.
 * The username: the name to log in, which for users of single sign-on is their federated name (their email in the institution), unique by nature. It is the `user` column of the activity log, so it does not change.
@@ -169,14 +169,14 @@ Administrators manage the users in the users page (`/admin/users`, the _Users_ l
 [cols="1,4",options="header"]
 |===
 | Action | Effect
-| Edit (pencil) | Opens the form of the user (`/admin/users/<id>`): full name, email, role, and status. Emails are unique, and single sign-on links the accounts of providers with that email to the user (<<sso>>). Choosing _Suspended_, _Active_, or _Deleted_ as status and saving has the same effect as the buttons of the table
+| Edit (pencil) | Opens the form of the user (`/admin/users/<id>`): full name, email, roles (checkboxes; a user without roles is a student), and status. Emails are unique, and single sign-on links the accounts of providers with that email to the user (<<sso>>). Choosing _Suspended_, _Active_, or _Deleted_ as status and saving has the same effect as the buttons of the table
 | Suspend (pause) | The user cannot log in, with their password or with single sign-on, and if they are logged in, their session ends at their next request. Their data is kept. Suspended users are shown in gray, with an Activate (play) button that lets them log in again
 | Delete (red X) | Removes the user and their data from the database: preferences, progress, single sign-on identities, and runs, and their folder in `DATA_FOLDER` (`user/<username>`) with their student repo (<<student_repos>>). Their activity stays in the log (<<activity_log>>). It cannot be undone: only backups recover them. The user whose folder holds the course repo that lists the courses (`COURSES_REPO` in `src/courses.py`, e.g. `user/jhc/pexercises`) cannot be deleted
 |===
 
-Suspending, activating, and deleting ask for confirmation. Administrators give and take the administrator role of other users, e.g. one who retires, and may suspend or delete other administrators, but they cannot change their own role nor status, so there is always an administrator and nobody locks themselves out. A common setup: the local administrator who installed VygOJ (<<administrators>>) connects it to the single sign-on of the organization, and once some staff members have logged in with it, makes some of them administrators. They keep logging in with single sign-on. Changes of the role and full name of a logged user take effect at their next request.
+Suspending, activating, and deleting ask for confirmation. Administrators give and take the administrator role of other users, e.g. one who retires, and may suspend or delete other administrators, but they cannot remove their own administrator role nor change their status, so there is always an administrator and nobody locks themselves out. A common setup: the local administrator who installed VygOJ (<<administrators>>) connects it to the single sign-on of the organization, and once some staff members have logged in with it, makes some of them administrators. They keep logging in with single sign-on. Changes of the roles and full name of a logged user take effect at their next request.
 
-Tables with data of users declare their foreign key to `users` with `ON DELETE CASCADE`, so the database deletes that data with the user. `make users` (`manage.py import`) adds the `status` column to older users tables and makes their existing foreign keys delete in cascade.
+Tables with data of users declare their foreign key to `users` with `ON DELETE CASCADE`, so the database deletes that data with the user. `make users` (`manage.py import`) adds the `status` column to older users tables, turns the `role` of each user into a list of `roles`, and makes their existing foreign keys delete in cascade.
 
 [[sso]]
 == Single sign-on (SSO)
@@ -314,7 +314,7 @@ Each month has its own file, so no file grows forever. Rows have a few fixed col
 | Column | Meaning
 | `time` | Date and time in UTC, ISO 8601 with milliseconds, e.g. `2026-11-08T14:03:12.345+00:00`
 | `id` | Random identifier of the event, that joins the tables of the log archive. The `id` of a run is also in the run log of the backend, which joins both logs
-| `user`, `role` | Logged user and their role. For `login_failed` and `login_blocked`, the typed username (empty for single sign-on)
+| `user`, `role` | Logged user and their roles, separated by spaces (e.g. `student admin`). For `login_failed` and `login_blocked`, the typed username (empty for single sign-on)
 | `address` | Network address of the client (see `TRUSTED_PROXIES` in <<reverse_proxy>>)
 | `event` | One of the events of the next table
 | `path` | Page of the request, e.g. `/problem/CI0112/hello`. Empty for the command line
@@ -330,7 +330,7 @@ Each month has its own file, so no file grows forever. Rows have a few fixed col
 | `login_failed`, `login_blocked` | A login has a wrong user or password, or it is rejected by the limits (<<login_limits>>), or a login with a single sign-on provider fails | For single sign-on, `provider` and `reason`: `provider not available`, `invalid answer` (e.g. an invalid ID token), `cancelled`, `no email`, `email not verified`, `administrator`, `not registered`, `concurrent login`, or `suspended`. For a password login of a suspended user, `reason`: `suspended`
 | `preferences` | A user saves their preferences | `color_scheme`, `font`
 | `user_create`, `user_admin` | `manage.py` or a single sign-on login adds a user, or `manage.py` makes an existing user administrator | `source`: `import`, `make admin`, or `sso` with its `provider`
-| `user_update` | An administrator changed the data or role of a user (<<users_admin>>) | `username`; `changes`: the value before and after of each changed field (`fullname`, `email`, `role`), e.g. `{"role": ["admin", "professor"]}`
+| `user_update` | An administrator changed the data or roles of a user (<<users_admin>>) | `username`; `changes`: the value before and after of each changed field (`fullname`, `email`, `roles`), e.g. `{"roles": [["student"], ["student", "professor"]]}`
 | `user_suspend`, `user_activate`, `user_delete` | An administrator suspended, activated, or deleted a user | `username`
 | `run` | The judge ran a submission | `language`; `code`: SHA-256 hash of the submission (`Run.hash_code()`, see <<run_limits>>); `commit`: of the course repo; `status` and `passed` (test cases) of the result; `tests`: the `status` and `wallTime` of each test case
 | `run_repeated` | The same submission was answered with the result of the last run, without running it (<<run_limits>>) | As `run`, without `commit`
@@ -406,7 +406,7 @@ The frontend is exposed to the Internet and receives untrusted data from student
 [[secret_key]]
 === Session key
 
-Flask signs the session cookie with `SECRET_KEY` of `config/config.py`. The session stores the logged user and their role, so anyone who knows the key can forge a session of any user, including administrators. The frontend refuses to start if the key is missing (it is empty in `config/defaults.py`), is the public example key of an old configuration file, or has fewer than 32 characters. Generate a random key with:
+Flask signs the session cookie with `SECRET_KEY` of `config/config.py`. The session stores the logged user and their roles, so anyone who knows the key can forge a session of any user, including administrators. The frontend refuses to start if the key is missing (it is empty in `config/defaults.py`), is the public example key of an old configuration file, or has fewer than 32 characters. Generate a random key with:
 
 [source,sh]
 ----
@@ -513,7 +513,7 @@ Only logged users may run code (see <<input_limits>>). Their runs are stored in 
 
 The checks and the new run are stored while the row of the user is locked (`SELECT ... FOR UPDATE`), so two requests sent at the same time cannot both pass. Only the result of the last run of each problem is kept, if it is smaller than 1 MiB, and runs older than one day are deleted. Runs are logged as `run`, `run_repeated`, `run_rejected`, or `run_failed` (<<activity_log>>).
 
-The frontend sends the backend a compact JSON object (`run_solution()` in `src/problems.py`) with three parts: the solution; the fields of the problem that judge it (`BACKEND_FIELDS`: the test cases, the languages, the limits, and other fields that change verdicts), not the statement or the initial code; and a context for the run log of the backend (`run_context()`: the `id` of the run event in the activity log, the user, their role and address, the material, and the commit of the course repo; see `backend/readme.adoc`). It answers the browser the JSON of the backend as it came, parsed only to store the grade. Texts travel as JSON strings, so code and output in any language arrive intact.
+The frontend sends the backend a compact JSON object (`run_solution()` in `src/problems.py`) with three parts: the solution; the fields of the problem that judge it (`BACKEND_FIELDS`: the test cases, the languages, the limits, and other fields that change verdicts), not the statement or the initial code; and a context for the run log of the backend (`run_context()`: the `id` of the run event in the activity log, the user, their roles and address, the material, and the commit of the course repo; see `backend/readme.adoc`). It answers the browser the JSON of the backend as it came, parsed only to store the grade. Texts travel as JSON strings, so code and output in any language arrive intact.
 
 The administrator sets the limits of the runs in `config.py` (their defaults and explanation are in `config/defaults.py`). Each limit has an absolute range (`ABS_MIN_*`, `ABS_MAX_*`) and a default (`DEF_*`), which may be a number or a dictionary with a number for each language. Professors may choose a value in `vygoj.json`, for the problem or for a test case; values out of the range are clamped, and a missing value or 0 means the default. `src/limits.py` computes the effective values and sends them in the problem. The frontend does not start with invalid limits.
 
@@ -532,11 +532,11 @@ The browser never waits forever, and it always gets an answer before giving up. 
 [[administrators]]
 === Administrators
 
-The first administrator is created in the server with `make admin` (`src/manage.py admin`), so only who can log in the server can create it. Single sign-on never creates administrators nor links an account of a provider to an administrator by its email, even if they are the same: an administrator account not linked yet logs in with its password. The command asks the username and a password of at least 12 characters. If the user exists, it resets its password, makes it administrator, activates it if it was suspended, and forgets its failed logins, so it also recovers a forgotten password. While the users table is empty, the frontend writes a warning in its log that suggests `make admin`.
+The first administrator is created in the server with `make admin` (`src/manage.py admin`), so only who can log in the server can create it. Single sign-on never creates administrators nor links an account of a provider to an administrator by its email, even if they are the same: an administrator account not linked yet logs in with its password. The command asks the username and a password of at least 12 characters. If the user exists, it resets its password, adds the administrator role to the ones it has, activates it if it was suspended, and forgets its failed logins, so it also recovers a forgotten password. While the users table is empty, the frontend writes a warning in its log that suggests `make admin`.
 
-Then, administrators give and take the administrator role of other users in the users page (<<users_admin>>), but never their own role nor status, so there is always an administrator. Users of single sign-on made administrators there keep logging in with their provider, through the identity linked at their first login.
+Then, administrators give and take the administrator role of other users in the users page (<<users_admin>>), but never remove their own administrator role nor change their status, so there is always an administrator. Users of single sign-on made administrators there keep logging in with their provider, through the identity linked at their first login.
 
-Sessions are signed cookies, which the server cannot revoke. Every request of a logged user, except for static files, checks the user in the database (`refresh_session()` in `src/users.py`): if an administrator suspended or deleted them, the session ends; if their role changed, the session takes it, so a role taken away is not kept until the next login.
+Sessions are signed cookies, which the server cannot revoke. Every request of a logged user, except for static files, checks the user in the database (`refresh_session()` in `src/users.py`): if an administrator suspended or deleted them, the session ends; if their roles changed, the session takes them, so a role taken away is not kept until the next login.
 
 [[sso_security]]
 === Single sign-on

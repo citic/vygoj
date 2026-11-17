@@ -270,7 +270,7 @@ class SsoController:
         # Usernames of existing users are often their emails too
         db_user = db.session.scalar(db.select(User).filter(db.or_(
             db.func.lower(User.username) == email, db.func.lower(User.email) == email)))
-        if db_user and db_user.role == 'admin':
+        if db_user and 'admin' in db_user.roles:
             # Administrators can do everything, an account of a provider must not take theirs
             raise SsoLoginError(gettext('Administrators log in with their password.'),
                 'administrator')
@@ -280,7 +280,7 @@ class SsoController:
         created = not db_user
         if created:
             db_user = User(username=email, email=email, fullname=full_name(claims, email),
-                role=provider.infer_role(claims))
+                roles=[provider.infer_role(claims)])
             db.session.add(db_user)
         db.session.add(UserIdentity(user=db_user, provider=provider.alias, issuer=issuer,
             subject=subject))
@@ -293,7 +293,7 @@ class SsoController:
                 provider=provider.name), 'concurrent login') from error
         if created:
             log_event('user_create', { 'source': 'sso', 'provider': provider.alias },
-                user=db_user.username, role=db_user.role)
+                user=db_user.username, role=' '.join(db_user.roles))
         return db_user
 
     @staticmethod

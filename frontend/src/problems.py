@@ -384,7 +384,7 @@ class ProblemController:
         log of the frontend, the logged user, their role and address, the material, and the commit
         of its course repo. The backend does not use it to judge """
         user = flask.session['user']
-        return { 'run': run_id, 'user': user.get('email'), 'role': user.get('role'),
+        return { 'run': run_id, 'user': user.get('email'), 'role': ' '.join(user.get('roles', ())),
             'address': flask.request.remote_addr, **log_cells, 'commit': commit }
 
     @staticmethod
