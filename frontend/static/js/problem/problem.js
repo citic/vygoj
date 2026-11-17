@@ -14,6 +14,16 @@ const FETCH_TIMEOUT = 30000;
 const DEFAULT_RUN_TIMEOUT = 120000;
 // HTTP statuses of the frontend or a proxy when the judge cannot be reached
 const UNREACHABLE_STATUSES = [502, 503, 504];
+// Names of the statuses of the results (vyg.Status) in the verdict, in the language of the page
+const STATUS_NAMES = {
+  [Status.PENDING]: _('pending'),
+  [Status.PASSED]: _('passed'),
+  [Status.WRONG]: _('wrong'),
+  [Status.TIMEOUT]: _('timeout'),
+  [Status.COMPILER_ERROR]: _('compiler error'),
+  [Status.RUNTIME_ERROR]: _('runtime error'),
+  [Status.INTERNAL_ERROR]: _('internal error'),
+};
 // Side in pixels of the square of the corner handle of an element with CSS resize, about the size
 // that browsers draw it
 const RESIZE_HANDLE_SIZE = 16;
@@ -373,7 +383,7 @@ class ProblemManager {
     try {
       this.problem = new Problem(await ProblemManager.sendJson(message, FETCH_TIMEOUT));
     } catch (error) {
-      throw Error(`could not load the problem: ${error.message}`);
+      throw Error(_('could not load the problem: %(error)s', { error: error.message }));
     }
   }
 
@@ -464,7 +474,7 @@ class ProblemManager {
     // Show the arguments, input, expected output, and expected error for this test case. The
     // server does not send the contents of hidden test cases
     const test = this.problem.tests[index];
-    const hidden = test.hidden ? '(hidden test case)' : '';
+    const hidden = test.hidden ? _('(hidden test case)') : '';
     document.getElementById('args').editor.setValue(test.args || hidden);
     this.editors[1].setValue(test.stdin || hidden);
     this.editors[2].setValue(test.stdout || hidden);
@@ -481,7 +491,7 @@ class ProblemManager {
     if (this.result) {
       const test = this.result.results[index];
       // The backend does not send the output of hidden test cases
-      const hidden = this.problem.tests[index].hidden ? '(hidden test case)' : '';
+      const hidden = this.problem.tests[index].hidden ? _('(hidden test case)') : '';
       this.editors[3].setValue(test?.stdout || hidden);
       this.editors[5].setValue(test?.stderr || hidden);
       // The diffs compare the expected output and error (left) with the ones of the user (right).
@@ -900,7 +910,7 @@ class ProblemManager {
       // Runs with the input of the user (problems without test cases) are not judged: they have
       // no verdict, only the message of a failure
       const judged = this.problem.tests.length > 0;
-      verdict = [judged && _('Test case %(number)s verdict: %(status)s', { number: index + 1, status }),
+      verdict = [judged && _('Test case %(number)s verdict: %(status)s', { number: index + 1, status: STATUS_NAMES[status] }),
         test.message].filter((text) => text).join(': ');
       const seconds = test.wallTime.toFixed(3);
       verdict += verdict ? _('. It took %(seconds)s s', { seconds }) : _('It took %(seconds)s s', { seconds });

@@ -3,6 +3,8 @@ import datetime
 import hashlib
 import json
 
+from flask_babel import lazy_gettext, lazy_ngettext
+
 from db import db
 from limits import Limits
 from users import User
@@ -23,12 +25,9 @@ RUNS_KEPT = datetime.timedelta(days=1)
 # Larger results are not stored, so their submissions run again if repeated
 MAX_STORED_RESULT = 2**20
 
-def plural(count: int, noun: str) -> str:
-    """ Return the count with the noun in singular or plural, e.g. '1 minute', '2 minutes' """
-    return f'{count} {noun}' if count == 1 else f'{count} {noun}s'
-
 class RunRejected(Exception):
-    """ A run that a limit does not allow now. Its message is shown to the user """
+    """ A run that a limit does not allow now. Its message is shown to the user in their language,
+    and it is lazy, so the log may write it in English (see ProblemController.judge_solution()) """
 
     def __init__(self, message: str, retry_after: datetime.timedelta):
         """ Store the message, and the time to wait before running again """
@@ -117,19 +116,22 @@ class Run(db.Model):
         max_duration = datetime.timedelta(seconds=Limits.max_backend_wait() + STALE_RUN_GRACE)
         if last and not last.finished and last.started > now - max_duration:
             # Most runs take a few seconds, so the client may try again soon
-            raise RunRejected('Your previous run has not finished yet. Wait for its result.',
-                MIN_RUN_INTERVAL)
+            raise RunRejected(lazy_gettext('Your previous run has not finished yet. Wait for its '
+                'result.'), MIN_RUN_INTERVAL)
         if last and last.started > now - MIN_RUN_INTERVAL:
             wait = last.started + MIN_RUN_INTERVAL - now
-            raise RunRejected(f'Wait {plural(int(wait.total_seconds()) + 1, "second")} before '
-                'running again.', wait)
+            seconds = int(wait.total_seconds()) + 1
+            raise RunRejected(lazy_ngettext('Wait %(num)d second before running again.',
+                'Wait %(num)d seconds before running again.', seconds), wait)
         count = db.session.scalar(db.select(db.func.count()).select_from(recent.subquery()))
         if count >= MAX_RUNS_PER_WINDOW:
             oldest = db.session.scalar(db.select(db.func.min(Run.started)).filter(
                 Run.user_id == user_id, Run.started > now - RUNS_WINDOW))
             wait = oldest + RUNS_WINDOW - now
-            raise RunRejected(f'You reached {MAX_RUNS_PER_WINDOW} runs in an hour. Try again in '
-                f'{plural(int(wait.total_seconds() // 60) + 1, "minute")}.', wait)
+            minutes = int(wait.total_seconds() // 60) + 1
+            raise RunRejected(lazy_ngettext('You reached %(runs)d runs in an hour. Try again in '
+                '%(num)d minute.', 'You reached %(runs)d runs in an hour. Try again in %(num)d '
+                'minutes.', minutes, runs=MAX_RUNS_PER_WINDOW), wait)
 
     def finish(self, result: str):
         """ Store the end of this run, and its result in JSON if it is not too large. The result

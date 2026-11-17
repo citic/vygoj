@@ -5,7 +5,7 @@ import random
 import requests
 import flask
 from flask import current_app as app
-from flask_babel import gettext
+from flask_babel import force_locale, gettext
 from werkzeug.exceptions import HTTPException
 from werkzeug.security import safe_join
 
@@ -146,11 +146,11 @@ class ProblemController:
         save user code, ... All communication is made with JSON objects """
         message = ProblemController.parse_message()
         if message is None:
-            return ProblemController.error_response('invalid message', 400)
+            return ProblemController.error_response(gettext('invalid message'), 400)
         # Only registered users may run code, so it cannot be abused anonymously. The problem page
         # hides the Run button from anonymous visitors, but robots post here directly
         if message.action == 'run' and not flask.session.get('user'):
-            return ProblemController.error_response('Log in to run code', 401)
+            return ProblemController.error_response(gettext('Log in to run code'), 401)
         try:
             return ProblemController.do_action(course_name, problem_name, message)
         except HTTPException:
@@ -160,12 +160,17 @@ class ProblemController:
             # A stopped or slow backend is expected, so a line without the traceback
             app.logger.warning('backend failed running %s/%s: %s', course_name, problem_name,
                 error)
+            # The backend rejects problems that it cannot run, e.g. with too many test cases.
+            # Running again does not help, so the student is told to report it
+            if error.response is not None and error.response.status_code == 400:
+                return ProblemController.error_response(
+                    gettext('the judge cannot run this problem, tell your professor'), 400)
             return ProblemController.error_response(
-                'the judge is not available, try again later', 502)
+                gettext('the judge is not available, try again later'), 502)
         except Exception: # pylint: disable=broad-exception-caught
             # Details may have host paths or course data, so they go to the log, not to the client
             app.logger.exception('could not %s %s/%s', message.action, course_name, problem_name)
-            return ProblemController.error_response('internal error, try again later', 500)
+            return ProblemController.error_response(gettext('internal error, try again later'), 500)
 
     @staticmethod
     def do_action(course_name: str, problem_name: str, message: vyg.Message):
@@ -175,7 +180,7 @@ class ProblemController:
             return ProblemController.to_client_json(problem)
         # Only the languages enabled for the problem may be sent to the judge
         if message.language not in problem.languages:
-            return ProblemController.error_response('language not enabled', 400)
+            return ProblemController.error_response(gettext('language not enabled'), 400)
         return ProblemController.judge_solution(problem, message)
 
     @staticmethod
@@ -240,7 +245,7 @@ class ProblemController:
         per user (see runs.py), so a user or a robot cannot overload the backends """
         user_id = Run.find_user_id(flask.session['user'].get('email'))
         if user_id is None:
-            return ProblemController.error_response('Log in to run code', 401)
+            return ProblemController.error_response(gettext('Log in to run code'), 401)
         # The backend rejects longer arguments, so the user is told why
         if len(message.args) > MAX_ARGS_LENGTH:
             return ProblemController.error_response(
@@ -263,7 +268,9 @@ class ProblemController:
         try:
             run = Run.start(user_id, course_name, problem.name, code_hash)
         except RunRejected as rejection:
-            log_event('run_rejected', { **run_data, 'reason': str(rejection) }, **log_cells)
+            # The log keeps the reasons in English, whatever the language of the user
+            with force_locale('en'):
+                log_event('run_rejected', { **run_data, 'reason': str(rejection) }, **log_cells)
             return ProblemController.error_response(str(rejection), 429,
                 { 'Retry-After': str(rejection.retry_after) })
         # Only the code of accepted runs is saved, which are limited per user, so a robot cannot

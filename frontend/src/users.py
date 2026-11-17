@@ -51,14 +51,15 @@ def select_language() -> str:
 
 def client_translations(language: str) -> dict:
     """ Return the translations of the interface to the given language as {text: translation},
-    for the texts written by JavaScript. English and unknown languages have none. The language is
-    checked against LANGUAGES before building the path of its file """
+    for the texts written by JavaScript. English and unknown languages have none, and texts in
+    singular and plural are left out, as only the server uses them. The language is checked
+    against LANGUAGES before building the path of its file """
     path = os.path.join(TRANSLATIONS_FOLDER, language, 'LC_MESSAGES', 'messages.mo')
     if language not in LANGUAGES or not os.path.isfile(path):
         return {}
     with open(path, 'rb') as file:
         return {message.id: message.string for message in read_mo(file)
-            if message.id and message.string}
+            if message.id and message.string and not message.pluralizable}
 
 def is_admin() -> bool:
     """ True if the logged user is an administrator """
