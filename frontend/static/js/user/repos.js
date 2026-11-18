@@ -51,8 +51,8 @@ const PROFESSOR_REASONS = {
   not_found: _('the repository does not exist, or the SSH key cannot access it'),
   connect: _('could not connect to the host of the repository'),
   no_main: _('the repository has no main branch'),
-  no_catalog: _('the repository has no vygoj.json file in its root'),
-  invalid_catalog: _('the vygoj.json file of the repository is not a valid JSON object'),
+  no_catalog: _('the repository has no vygoj.json, vygoj.yaml, info.json, or info.yaml file in its root'),
+  invalid_catalog: _('the configuration file of the repository is not a valid JSON or YAML object'),
   folder_exists: _('the judge has a folder with the name of the repository that is not a clone: ask the administrator'),
   invalid_name: _('the name of the repository may only have letters, digits, dots, hyphens, and underscores'),
   reserved_name: _('the name of the repository is reserved by the judge: rename the repository'),
@@ -472,10 +472,10 @@ class ProfessorRepoPanel {
     }
     const messages = [{ text: _(PULLED[job.message], { repo: folder, time: formatTime(job.finished), courses: job.courses ?? 0 }), category: 'success' }];
     if (job.skipped?.length) {
-      messages.push({ text: _('Skipped courses of %(repo)s, because other repositories have courses with the same names: %(names)s. Rename them in vygoj.json.', { repo: folder, names: job.skipped.join(', ') }), category: 'warning' });
+      messages.push({ text: _('Skipped courses of %(repo)s, because other repositories have courses with the same names: %(names)s. Rename them in its configuration file.', { repo: folder, names: job.skipped.join(', ') }), category: 'warning' });
     }
     if (job.invalid) {
-      messages.push({ text: _('Skipped courses of %(repo)s that are not valid in vygoj.json: %(count)s.', { repo: folder, count: job.invalid }), category: 'warning' });
+      messages.push({ text: _('Skipped courses of %(repo)s that are not valid in its configuration file: %(count)s.', { repo: folder, count: job.invalid }), category: 'warning' });
     }
     return messages;
   }

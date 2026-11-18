@@ -29,7 +29,7 @@ import zipfile
 
 from flask import current_app as app
 
-from course_offer import parse_courses, sync_offers
+from courses.course_offer import parse_courses, sync_offers
 from repos.git_repo import JOBS_FOLDER, USERS_FOLDER, GitError, user_folder
 from repos.professor_repo import CloneError, ProfessorRepo
 from repos.ssh_key import UserKey
@@ -274,7 +274,8 @@ class RepoJob:
         try:
             courses, invalid = parse_courses(clone.read_catalog(), clone.path)
         except CloneError:
-            # Without a valid vygoj.json, the repo has no courses: the offered ones are hidden
+            # Without a valid configuration file, the repo has no courses: the offered ones are
+            # hidden
             sync_offers(repo, [], clone.head())
             raise
         skipped = sync_offers(repo, list(courses), clone.head())

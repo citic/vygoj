@@ -20,9 +20,77 @@ msgstr ""
 msgid " (CPU %(seconds)s s)"
 msgstr " (CPU %(seconds)s s)"
 
+msgid "\"hidden\", \"disabled\", or \"half\""
+msgstr "\"hidden\", \"disabled\" o \"half\""
+
+msgid "\"none\" or \"lines\""
+msgstr "\"none\" o \"lines\""
+
 #, python-format
 msgid "%(commits)s versions of %(problems)s problems, the last one on %(time)s."
 msgstr "%(commits)s versiones de %(problems)s problemas, la última el %(time)s."
+
+#, python-format
+msgid "%(file)s is larger than %(size)s bytes, so it was ignored"
+msgstr "Se ignoró %(file)s porque tiene más de %(size)s bytes"
+
+#, python-format
+msgid "%(file)s is not valid, so it was ignored: %(error)s"
+msgstr "Se ignoró %(file)s porque no es válido: %(error)s"
+
+#, python-format
+msgid "%(file)s is out of the repository, so it was ignored"
+msgstr "Se ignoró %(file)s porque está fuera del repositorio"
+
+#, python-format
+msgid "%(file)s must be an object of fields, so it was ignored"
+msgstr "Se ignoró %(file)s porque debe ser un objeto de campos"
+
+#, python-format
+msgid ""
+"%(file)s: ignored %(test)s of tests, which must be default or the number "
+"of a test case"
+msgstr ""
+"%(file)s: se ignoró %(test)s de tests, que debe ser default o el número "
+"de un caso de prueba"
+
+#, python-format
+msgid ""
+"%(file)s: ignored the field %(field)s of the test case %(test)s, which "
+"must be %(kind)s"
+msgstr ""
+"%(file)s: se ignoró el campo %(field)s del caso de prueba %(test)s, que "
+"debe ser %(kind)s"
+
+#, python-format
+msgid "%(file)s: ignored the field %(field)s, which must be %(kind)s"
+msgstr "%(file)s: se ignoró el campo %(field)s, que debe ser %(kind)s"
+
+#, python-format
+msgid "%(file)s: ignored the field %(field)s, which the course sets"
+msgstr "%(file)s: se ignoró el campo %(field)s, que lo define el curso"
+
+#, python-format
+msgid ""
+"%(file)s: ignored the test case %(test)s of tests, which has no input "
+"file in the tests folder"
+msgstr ""
+"%(file)s: se ignoró el caso de prueba %(test)s de tests, que no tiene "
+"archivo de entrada en la carpeta tests"
+
+#, python-format
+msgid "%(file)s: ignored the test case %(test)s of tests, which must be an object"
+msgstr ""
+"%(file)s: se ignoró el caso de prueba %(test)s de tests, que debe ser un "
+"objeto"
+
+#, python-format
+msgid ""
+"%(file)s: none of the languages of the problem is a language of the "
+"course, so it has the ones of the course: %(languages)s"
+msgstr ""
+"%(file)s: ninguno de los lenguajes del problema es un lenguaje del curso,"
+" así que tiene los del curso: %(languages)s"
 
 #, python-format
 msgid "%(num)d student"
@@ -618,6 +686,9 @@ msgstr "Anterior"
 msgid "Problem statement"
 msgstr "Enunciado del problema"
 
+msgid "Problems of the configuration of this problem"
+msgstr "Problemas de la configuración de este problema"
+
 msgid "Problems of the course"
 msgstr "Problemas del curso"
 
@@ -754,16 +825,21 @@ msgid "Site logo"
 msgstr "Logo del sitio"
 
 #, python-format
-msgid "Skipped courses of %(repo)s that are not valid in vygoj.json: %(count)s."
-msgstr "Cursos de %(repo)s omitidos por no ser válidos en vygoj.json: %(count)s."
+msgid ""
+"Skipped courses of %(repo)s that are not valid in its configuration file:"
+" %(count)s."
+msgstr ""
+"Cursos de %(repo)s omitidos por no ser válidos en su archivo de "
+"configuración: %(count)s."
 
 #, python-format
 msgid ""
 "Skipped courses of %(repo)s, because other repositories have courses with"
-" the same names: %(names)s. Rename them in vygoj.json."
+" the same names: %(names)s. Rename them in its configuration file."
 msgstr ""
 "Se omitieron cursos de %(repo)s porque otros repositorios tienen cursos "
-"con los mismos nombres: %(names)s. Renómbrelos en vygoj.json."
+"con los mismos nombres: %(names)s. Renómbrelos en su archivo de "
+"configuración."
 
 msgid "Standard input"
 msgstr "Entrada estándar"
@@ -1008,14 +1084,14 @@ msgstr "Escriba scopes separados por espacios, incluido openid"
 
 msgid ""
 "Write the SSH URL of each repository with courses, and press Clone. The "
-"judge reads the courses listed in the vygoj.json file of its main branch,"
-" which appear in My prepared courses. After you change the repository, "
-"press Pull."
+"judge reads the courses listed in the vygoj.json or vygoj.yaml file of "
+"its main branch, which appear in My prepared courses. After you change "
+"the repository, press Pull."
 msgstr ""
 "Escriba el URL SSH de cada repositorio con cursos, y presione Clonar. El "
-"juez lee los cursos listados en el archivo vygoj.json de su rama main, "
-"que aparecen en Mis cursos preparados. Después de cambiar el repositorio,"
-" presione Actualizar."
+"juez lee los cursos listados en el archivo vygoj.json o vygoj.yaml de su "
+"rama main, que aparecen en Mis cursos preparados. Después de cambiar el "
+"repositorio, presione Actualizar."
 
 #, python-format
 msgid "You are enrolled in %(name)s."
@@ -1068,8 +1144,35 @@ msgstr ""
 msgid "Your solution"
 msgstr "Su solución"
 
+msgid "a list of test cases or an object of settings"
+msgstr "una lista de casos de prueba o un objeto de ajustes"
+
+msgid "a list of texts"
+msgstr "una lista de textos"
+
+msgid "a number"
+msgstr "un número"
+
+msgid "a text"
+msgstr "un texto"
+
+msgid "a text or a list of texts"
+msgstr "un texto o una lista de textos"
+
+msgid "a text or a number of weeks"
+msgstr "un texto o un número de semanas"
+
 msgid "an error occurred, try again later"
 msgstr "ocurrió un error, intente de nuevo más tarde"
+
+msgid "an integer"
+msgstr "un entero"
+
+msgid "an integer or \"stdin\""
+msgstr "un entero o \"stdin\""
+
+msgid "an object of texts"
+msgstr "un objeto de textos"
 
 msgid "could not connect to the host of the origin"
 msgstr "no se pudo conectar con el servidor del origen"
@@ -1112,6 +1215,13 @@ msgstr "establezca primero el origen"
 
 msgid "that job is running already"
 msgstr "esa tarea ya se está ejecutando"
+
+msgid ""
+"the configuration file of the repository is not a valid JSON or YAML "
+"object"
+msgstr ""
+"el archivo de configuración del repositorio no es un objeto JSON o YAML "
+"válido"
 
 #, python-format
 msgid "the email belongs to the user %(username)s"
@@ -1172,8 +1282,12 @@ msgstr "el repositorio no existe, o la clave SSH no tiene acceso a él"
 msgid "the repository has no main branch"
 msgstr "el repositorio no tiene una rama main"
 
-msgid "the repository has no vygoj.json file in its root"
-msgstr "el repositorio no tiene un archivo vygoj.json en su raíz"
+msgid ""
+"the repository has no vygoj.json, vygoj.yaml, info.json, or info.yaml "
+"file in its root"
+msgstr ""
+"el repositorio no tiene un archivo vygoj.json, vygoj.yaml, info.json o "
+"info.yaml en su raíz"
 
 msgid "the repository is bigger than the judge accepts"
 msgstr "el repositorio es más grande de lo que el juez acepta"
@@ -1196,8 +1310,8 @@ msgstr "el servidor está ejecutando otras tareas, intente de nuevo en unos minu
 msgid "the username or the email is repeated in the file"
 msgstr "el nombre de usuario o el correo se repite en el archivo"
 
-msgid "the vygoj.json file of the repository is not a valid JSON object"
-msgstr "el archivo vygoj.json del repositorio no es un objeto JSON válido"
+msgid "true or false"
+msgstr "true o false"
 
 msgid "wait a minute after the last request, and try again"
 msgstr "espere un minuto después de la última solicitud e intente de nuevo"

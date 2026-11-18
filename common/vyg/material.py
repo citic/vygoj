@@ -61,6 +61,10 @@ class Material(abstract):
         # Add this material to the course's symbols table, so it can be found by name
         if parent and parent.get_course():
             parent.get_course().add_symbol(self)
+        # Problems found in the files of the material while it was loaded, which skipped some of
+        # their values, as (code, parameters). Only its professor is told. Private, so it is not
+        # serialized: students and backends do not get it
+        self._warnings = []
         # Materials can be nested, so a material can have a list of contents. Load them
         self.contents = []
         # Notice parent is not used for child materials, because self is the parent for them
@@ -85,6 +89,15 @@ class Material(abstract):
         if material_class is None:
             raise TypeError(f'Unknown material type: {material_type}')
         return material_class(json_dict, parent)
+
+    def add_warning(self, code: str, params: dict):
+        """ Keep a problem found in the files of this material, e.g.
+        ('invalid_field', {'file': 'info.yaml', 'field': 'maxDuration', 'kind': 'number'}) """
+        self._warnings.append((code, params))
+
+    def get_warnings(self) -> list:
+        """ Returns the problems found in the files of this material, as (code, parameters) """
+        return self._warnings
 
     def get_course(self) -> 'Material':
         """ Returns the course that contains this material, or None if it is not in a course.

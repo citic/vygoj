@@ -5,17 +5,17 @@ import random
 import requests
 import flask
 from flask import current_app as app
-from flask_babel import gettext
+from flask_babel import gettext, lazy_gettext
 from werkzeug.exceptions import HTTPException
 from werkzeug.security import safe_join
 
 import vyg
 from activity_log import log_event, log_run, repo_commit, save_code
-from courses import CourseController
+from courses.course_controller import CourseController
 from repos.git_repo import GitError
 from repos.student_repo import StudentRepo, solution_filename
 from limits import CONSTRAINED_FIELDS, Limits
-from problem_loader import ProblemLoader
+from problems.problem_loader import ProblemLoader
 from runs import Run, RunRejected
 from users import Progress
 
@@ -34,6 +34,55 @@ VALID_ACTIONS = ('fetch_problem', 'run')
 
 # Characters of the command line arguments that the backend accepts (MAX_ARGS_LENGTH)
 MAX_ARGS_LENGTH = 4096
+
+# Text of each warning about the configuration file of a problem (problem_config.py), shown to
+# the professor of the course. Their parameters are the name of the file, the field, the number of
+# the test case, the kind of value expected, or the error found
+WARNING_TEXTS = {
+    'fixed_field': lazy_gettext('%(file)s: ignored the field %(field)s, which the course sets'),
+    'invalid_field': lazy_gettext('%(file)s: ignored the field %(field)s, which must be '
+        '%(kind)s'),
+    'invalid_file': lazy_gettext('%(file)s is not valid, so it was ignored: %(error)s'),
+    'invalid_test': lazy_gettext('%(file)s: ignored the test case %(test)s of tests, which must '
+        'be an object'),
+    'invalid_test_field': lazy_gettext('%(file)s: ignored the field %(field)s of the test case '
+        '%(test)s, which must be %(kind)s'),
+    'invalid_test_key': lazy_gettext('%(file)s: ignored %(test)s of tests, which must be default '
+        'or the number of a test case'),
+    'no_common_language': lazy_gettext('%(file)s: none of the languages of the problem is a '
+        'language of the course, so it has the ones of the course: %(languages)s'),
+    'not_object': lazy_gettext('%(file)s must be an object of fields, so it was ignored'),
+    'outside_repo': lazy_gettext('%(file)s is out of the repository, so it was ignored'),
+    'too_big': lazy_gettext('%(file)s is larger than %(size)s bytes, so it was ignored'),
+    'unknown_test': lazy_gettext('%(file)s: ignored the test case %(test)s of tests, which has no '
+        'input file in the tests folder'),
+}
+
+# Kinds of values that the warnings of WARNING_TEXTS expect
+KIND_TEXTS = {
+    'codes': lazy_gettext('an object of texts'),
+    'date': lazy_gettext('a text or a number of weeks'),
+    'flag': lazy_gettext('true or false'),
+    'integer': lazy_gettext('an integer'),
+    'none_lines': lazy_gettext('"none" or "lines"'),
+    'number': lazy_gettext('a number'),
+    'overdue_policy': lazy_gettext('"hidden", "disabled", or "half"'),
+    'tests': lazy_gettext('a list of test cases or an object of settings'),
+    'text': lazy_gettext('a text'),
+    'texts': lazy_gettext('a list of texts'),
+    'threads': lazy_gettext('an integer or "stdin"'),
+    'words': lazy_gettext('a text or a list of texts'),
+}
+
+def warning_texts(problem: vyg.Problem) -> list:
+    """ Return the texts of the warnings of the problem, in the language of the user """
+    texts = []
+    for code, params in problem.get_warnings():
+        params = dict(params)
+        if 'kind' in params:
+            params['kind'] = str(KIND_TEXTS.get(params['kind'], params['kind']))
+        texts.append(str(WARNING_TEXTS[code]) % params)
+    return texts
 
 # Files of a problem folder that browsers may get, by extension, with their media type. They are
 # the images, videos, and subtitles of the statements. Other files, such as test cases or
@@ -95,6 +144,9 @@ class ProblemController:
                 { 'href': problem.build_url(), 'text': problem.name },
             ],
             'problem': problem,
+            # Problems of the files of the problem folder, only for the professor of the course
+            'warnings': (warning_texts(problem)
+                if CourseController.is_owner(course_name) else []),
             # (number, problem) of the problems before and after this one in the course, or None
             'previous': previous,
             'next': following,

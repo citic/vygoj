@@ -2,7 +2,6 @@
 import functools
 import glob
 import html
-import json
 import logging
 import os
 import re
@@ -13,6 +12,8 @@ import urllib.parse
 import markdown
 
 import vyg
+from config_file import ConfigError, is_inside
+from problems.problem_config import ProblemConfig
 from sanitize import sanitize_html
 
 # Maximum seconds that asciidoctor may spend converting a problem statement to HTML
@@ -24,8 +25,10 @@ MAX_FILE_SIZE = 16 * 2**20
 
 # Folder with the default code of each language, shown when a problem has no initial code for it.
 # Each file is named after the source file of the backend, e.g. solution.c, Solution.java. It is in
-# static/, so browsers may also get the files, e.g. /initial/Solution.java
-DEFAULT_CODE_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+# static/ of the frontend, two folders above this one (src/problems/), so browsers may also get
+# the files, e.g. /initial/Solution.java
+DEFAULT_CODE_FOLDER = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
     'static', 'initial')
 
 # The heading that starts a statement, which is its title, after the tags that open before it,
@@ -50,8 +53,9 @@ logger = logging.getLogger(__name__)
 _load_lock = threading.Lock()
 
 class ProblemLoader:
-    """ Fills a vyg.Problem with the files stored in its folder: the vygoj.json configuration,
-    the statement in HTML, Asciidoc, or Markdown, the initial code, and the test cases """
+    """ Fills a vyg.Problem with the files stored in its folder: the configuration file
+    (config_file.py), the statement in HTML, Asciidoc, or Markdown, the initial code, and the test
+    cases """
 
     @staticmethod
     def load_folder(problem: vyg.Problem):
@@ -62,14 +66,19 @@ class ProblemLoader:
                 if problem.folder_loaded is False:
                     path = problem.get_path()
                     if ProblemLoader.is_inside_course(problem, path):
-                        ProblemLoader.load_json(problem, path)
+                        # The languages that the course sets, or that it inherits from its sections
+                        course_languages = list(problem.languages)
+                        config = ProblemLoader.load_config(problem, path)
                         ProblemLoader.load_problem_statement(problem, path)
                         ProblemLoader.load_initial_code(problem, path)
-                        ProblemLoader.load_test_cases(problem, path)
+                        ProblemLoader.load_test_cases(problem, path, config)
+                        ProblemLoader.choose_languages(problem, course_languages, config)
+                        for code, params in config.warnings:
+                            problem.add_warning(code, params)
                     else:
                         logger.warning('problem %s: folder out of its course repo', problem.name)
                     # Sanitize here, also when the folder was not loaded, because the statement
-                    # may come from vygoj.json files too
+                    # may come from configuration files too
                     problem.statement = sanitize_html(problem.statement,
                         f'{ProblemLoader.page_url(problem)}/files/')
                     ProblemLoader.take_title(problem)
@@ -110,8 +119,7 @@ class ProblemLoader:
     def is_inside(folder: str, path: str) -> bool:
         """ True if the path is the folder or is inside it. Symbolic links are resolved before
         comparing, so a link inside the folder that points out of it is out of it """
-        root = os.path.realpath(folder)
-        return os.path.commonpath([root, os.path.realpath(path)]) == root
+        return is_inside(folder, path)
 
     @staticmethod
     def is_inside_course(problem: vyg.Problem, path: str) -> bool:
@@ -147,13 +155,24 @@ class ProblemLoader:
             return file.read()
 
     @staticmethod
-    def load_json(problem: vyg.Problem, path: str):
-        """ Load the JSON file, if any, with configuration for this problem """
-        path = os.path.join(path, 'vygoj.json')
-        if os.path.isfile(path):
-            text = ProblemLoader.read_file(problem, path)
-            if text:
-                problem.merge(json.loads(text))
+    def load_config(problem: vyg.Problem, path: str) -> ProblemConfig:
+        """ Merge into the problem the valid fields of the configuration file of its folder, if
+        any, and return the file, with the settings of its test cases and its warnings. A file
+        that cannot be read is skipped with a warning, so a mistake of the professor does not break
+        the page """
+        config = ProblemConfig(problem.get_course().folder)
+        try:
+            fields = config.load(path)
+            if fields:
+                problem.merge(fields)
+        except ConfigError as error:
+            config.warnings.append((error.code, error.params))
+        # The fields were checked, so this never happens, but a mistake of a repo must not break
+        # the page
+        except Exception as error: # pylint: disable=broad-exception-caught
+            logger.exception('problem %s: could not merge %s', problem.name, config.filename)
+            config.warn('invalid_file', error=type(error).__name__)
+        return config
 
     @staticmethod
     def load_problem_statement(problem: vyg.Problem, path: str):
@@ -188,8 +207,8 @@ class ProblemLoader:
 
     @staticmethod
     def load_initial_code(problem: vyg.Problem, path: str):
-        """ Load the initial code from a file """
-        enable_language = len(problem.languages) == 0
+        """ Load the initial code of each language from the files of the initial and given
+        folders, unless the configuration file had it """
         if len(problem.initialCodeFor) == 0:
             files = (glob.glob(os.path.join(path, 'initial/*')) +
                     glob.glob(os.path.join(path, 'given/*')))
@@ -205,11 +224,21 @@ class ProblemLoader:
                         problem.initialCodeFor[language] += '\n' + initial_code
                     else:
                         problem.initialCodeFor[language] = initial_code
-                    if enable_language and language not in problem.languages:
-                        problem.languages.append(language)
-            # If initial code remains empty, enable at least one language
-            if enable_language and len(problem.languages) == 0:
-                problem.languages.append('C')
+
+    @staticmethod
+    def choose_languages(problem: vyg.Problem, course_languages: list, config: ProblemConfig):
+        """ Set the languages of the problem: the ones of the course that the problem supports
+        too, or else the ones of the course, with a warning if the problem set others. The problem
+        supports the languages of its configuration file, or else the ones of its initial code.
+        Without languages in the course nor in the problem, every language of VygOJ is enabled """
+        problem_languages = config.languages or list(problem.initialCodeFor)
+        if not course_languages:
+            problem.languages = problem_languages or list(vyg.LANGUAGE_EXTENSIONS.values())
+            return
+        common = [language for language in course_languages if language in problem_languages]
+        problem.languages = common or course_languages
+        if config.languages and not common:
+            config.warn('no_common_language', languages=', '.join(course_languages))
 
     @staticmethod
     @functools.cache
@@ -225,8 +254,9 @@ class ProblemLoader:
         return codes
 
     @staticmethod
-    def load_test_cases(problem: vyg.Problem, path: str):
-        """ Load the test cases from the problem folder """
+    def load_test_cases(problem: vyg.Problem, path: str, config: ProblemConfig):
+        """ Load the test cases from the problem folder, with the settings of the configuration
+        file for each one """
         if len(problem.tests) > 0:
             return  # Test cases are already loaded
         # TODO(jhc): implement test case generators
@@ -248,15 +278,17 @@ class ProblemLoader:
                 os.path.join(path, f'tests/args{num}.txt'))
             error_content = ProblemLoader.load_test(problem,
                 os.path.join(path, f'tests/error{num}.txt'))
-            # TODO(jhc): if vygoj.json does not contain stdin/stdout, fetch from file
+            # TODO(jhc): if the configuration file has no stdin/stdout, fetch from file
             json_dict = {
                 'args': args_content,
                 'stdin': input_content,
                 'stdout': output_content,
                 'stderr': error_content,
-                'points': 1
+                'points': 1,
+                **config.test_fields(num),
             }
             problem.tests.append(vyg.TestCase(json_dict))
+        config.warn_unused_tests()
 
     @staticmethod
     def load_test(problem: vyg.Problem, file_path: str) -> str:

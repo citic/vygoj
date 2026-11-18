@@ -10,7 +10,8 @@ THREADS=16# Number of threads per gunicorn worker
 # fix bugs and security issues; a new major version may break the code, so it is updated by hand.
 # Packages in version 0.x may break in any minor version, so their minor version is fixed too
 DEPS+=authlib~=1.0 flask-babel~=4.0 flask-squeeze~=5.0 flask-sqlalchemy~=3.0 flask-talisman~=1.0 \
-    flask-wtf~=1.0 markdown~=3.0 nh3~=0.3.0 psycopg~=3.0 psycopg-binary~=3.0 requests~=2.0
+    flask-wtf~=1.0 markdown~=3.0 nh3~=0.3.0 psycopg~=3.0 psycopg-binary~=3.0 pyyaml~=6.0 \
+    requests~=2.0
 
 # Create and update the tables of the database, and add the new users of the TSV file set in
 # config.py, if it exists, before running the web app. It runs once, before gunicorn starts its

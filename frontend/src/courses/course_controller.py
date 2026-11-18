@@ -6,7 +6,7 @@ from flask import current_app as app
 from flask_babel import gettext
 import vyg
 from activity_log import log_event
-from course_offer import CourseOffer, parse_courses
+from courses.course_offer import CourseOffer, parse_courses
 from repos.git_repo import GitError
 from repos.professor_repo import CloneError
 from repos.student_repo import StudentRepo
@@ -66,6 +66,13 @@ class CourseController:
         if not offer or offer.hidden or not CourseController.can_see(offer, to_enter):
             return None
         return CourseController.load_course(offer)
+
+    @staticmethod
+    def is_owner(name: str) -> bool:
+        """ True if the course of the given name is in a repo of the logged user """
+        offer = CourseOffer.find(name)
+        user_id = User.logged_id()
+        return bool(offer and user_id and offer.owned_by(user_id))
 
     @staticmethod
     def can_see(offer: CourseOffer, to_enter: bool) -> bool:

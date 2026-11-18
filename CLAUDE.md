@@ -43,8 +43,8 @@ The owner controls every frontend and backend in production and updates them tog
   (the activity log of the frontend and the run log of the backend). `make deps` installs it in editable mode
   (`pip install -e ../common`) into the `.venv` of each layer, so a change affects both layers
   without reinstalling. Keep it free of Flask-specific code, file loading, and rendering (the
-  frontend loads problems from disk in `frontend/src/problem_loader.py`), and declare its own
-  dependencies in `common/pyproject.toml`.
+  frontend loads problems from disk in `frontend/src/problems/problem_loader.py`), and declare its
+  own dependencies in `common/pyproject.toml`.
 - Each class lives in its own module named in `snake_case` (`execution_result.py` holds
   `ExecutionResult`). Test cases are the exception: `testcase.py` and `testcase_result.py` avoid
   the `test_*.py` pattern of pytest, and their classes set `__test__ = False`. Constants and

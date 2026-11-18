@@ -18,6 +18,16 @@
         {#- The title of the problem, or the one at the start of its statement, folds the statement #}
         <details class="description" open>
           <summary><h2>{{ it.problem.title or it.problem.statement_title or _('Problem statement') }}</h2></summary>
+{%- if it.warnings %}
+          {#- Only the professor of the course sees what the judge skipped of the problem folder #}
+          <aside class="config_warnings" aria-label="{{ _('Problems of the configuration of this problem') }}">
+            <ul class="message_log">
+{%-   for text in it.warnings %}
+              <li data-category="warning"><span class="icon" role="img" aria-label="{{ _('Warning') }}" title="{{ _('Warning') }}">warning</span><p>{{ text }}</p></li>
+{%-   endfor %}
+            </ul>
+          </aside>
+{%- endif %}
           <div class="statement">{{ it.problem.statement|safe }}</div>
         </details>
         <details class="solution" open>

@@ -81,6 +81,15 @@ label {
   }
 }
 
+/* Warnings about the configuration file of the problem folder, shown only to the professor of
+   the course above the statement, on a box with the border of warnings */
+.config_warnings {
+  margin: 0.5rem 0;
+  padding: 0.25rem 0.75rem;
+  border-left: 4px solid var(--warning);
+  background-color: var(--surface-alt);
+}
+
 /* Statement written by the course authors, cleaned by the sanitizer. The narrower the statement,
    the bigger its letters: 1rem when wide, up to 1.25rem when narrow */
 .statement {
