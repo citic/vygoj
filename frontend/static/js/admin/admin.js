@@ -16,14 +16,14 @@ function confirmationOf(form) {
   return changed ? changed.dataset.confirm : null;
 }
 
-document.querySelectorAll('form[method="post"]').forEach((form) => {
-  form.addEventListener('submit', (event) => {
-    const text = confirmationOf(form);
-    // eslint-disable-next-line no-alert -- a native dialog is enough for a rare admin action
-    if (text && !window.confirm(text)) {
-      event.preventDefault();
-    }
-  });
+// Listened in the document, so the forms of the rows that a search brings ask too (site.js)
+document.addEventListener('submit', (event) => {
+  const form = event.target;
+  const text = form.method === 'post' ? confirmationOf(form) : null;
+  // eslint-disable-next-line no-alert -- a native dialog is enough for a rare admin action
+  if (text && !window.confirm(text)) {
+    event.preventDefault();
+  }
 });
 
 // The file of users to import: Import is enabled when a file is chosen, and the fieldset also

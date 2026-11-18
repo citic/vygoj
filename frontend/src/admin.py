@@ -19,8 +19,9 @@ from werkzeug.security import generate_password_hash
 
 from db import db
 from activity_log import log_event
+from data_table import Column, DataTable, choice_match, request_params, text_match
 from repos.git_repo import user_folder
-from sso import STATUSES, SsoProvider
+from sso import STATUSES, SsoProvider, UserIdentity
 from users import (FONTS, LANGUAGES, MAX_PASSWORD_LENGTH, MAX_USERNAME_LENGTH, ROLES,
     USER_STATUSES, User, require_admin, sorted_roles)
 
@@ -40,6 +41,28 @@ IMPORT_COLUMNS = {
     'password': MAX_PASSWORD_LENGTH, 'role': { role for role in ROLES if role != 'admin' },
     'status': USER_STATUSES, 'language': LANGUAGES, 'font': FONTS,
 }
+
+def with_role(role: str):
+    """ Return the SQL condition of the users who have the role """
+    return db.literal(role) == db.any_(User.roles)
+
+# Columns of the table of users that are searched or sorted (data_table.py). Users are sorted by
+# their highest role, so the ones of each role are together. A user may have several providers, so
+# that column is searched, but not sorted. A number of more than 9 digits is not an id
+USER_COLUMNS = [
+    Column('id', '#', User.id,
+        lambda text: User.id == int(text) if text.isdigit() and len(text) < 10 else db.false()),
+    Column('username', lazy_gettext('Username'), User.username, text_match(User.username)),
+    Column('fullname', lazy_gettext('Full name'), User.fullname, text_match(User.fullname)),
+    Column('email', lazy_gettext('Email'), User.email, text_match(User.email)),
+    Column('roles', lazy_gettext('Roles'),
+        db.case(*((with_role(role), rank) for rank, role in reversed(list(enumerate(ROLES))))),
+        choice_match(ROLES, lambda roles: db.or_(*map(with_role, roles)))),
+    Column('sso', lazy_gettext('SSO'), None,
+        lambda text: User.identities.any(text_match(UserIdentity.provider)(text))),
+    Column('status', lazy_gettext('Status'), User.status,
+        choice_match(USER_STATUSES, User.status.in_)),
+]
 
 # States of a user that the form offers: deleting a user from the form is the same as from the
 # table of users
@@ -70,18 +93,21 @@ class UserAdminController:
 
     @staticmethod
     def get_users(report: list = None):
-        """ Show the page of users: the single sign-on providers, the list of users, and the report
-        of the last import, if any """
+        """ Show the page of users: the single sign-on providers, the page of users that the
+        search, sort, and page of the URL ask for, the newest first by default, and the report of
+        the last import, if any """
         require_admin()
         providers = db.session.scalars(db.select(SsoProvider).order_by(SsoProvider.name)).all()
-        users = db.session.scalars(db.select(User).order_by(User.id)
-            .options(selectinload(User.identities))).all()
+        users = DataTable(db.select(User).options(selectinload(User.identities)), USER_COLUMNS,
+            'get_users_admin', '-id')
         return flask.render_template('users_admin.html', it={
             'title': gettext('Users'),
             'user': flask.session.get('user'),
             'providers': providers,
             'statuses': STATUSES,
             'users': users,
+            # The search, sort, and page of the users, which the actions on a user keep
+            'params': request_params(),
             'roles': ROLES,
             'user_statuses': USER_STATUSES,
             'report': report,
@@ -194,7 +220,8 @@ class UserAdminController:
             'form': form,
             'edited_user': db_user,
             'is_self': is_self(db_user),
-            'breadcrumbs': [{ 'href': flask.url_for('get_users_admin'), 'text': gettext('Users') }],
+            'breadcrumbs': [{ 'href': flask.url_for('get_users_admin', **request_params()),
+                'text': gettext('Users') }],
         })
 
     @staticmethod
@@ -226,7 +253,7 @@ class UserAdminController:
         if form.status.data != db_user.status:
             UserAdminController.change_status(db_user, form.status.data)
         flask.flash(gettext('User %(username)s saved.', username=db_user.username), 'success')
-        return flask.redirect(flask.url_for('get_users_admin'))
+        return flask.redirect(flask.url_for('get_users_admin', **request_params()))
 
     @staticmethod
     def set_status(user_id: int, status: str):
@@ -239,7 +266,7 @@ class UserAdminController:
             if status == 'suspended'
             else gettext('User %(username)s activated.', username=db_user.username))
         flask.flash(message, 'warning' if status == 'suspended' else 'success')
-        return flask.redirect(flask.url_for('get_users_admin'))
+        return flask.redirect(flask.url_for('get_users_admin', **request_params()))
 
     @staticmethod
     def change_status(db_user: User, status: str):
@@ -275,7 +302,7 @@ class UserAdminController:
                 flask.current_app.logger.exception('could not delete the folder of %s', username)
         log_event('user_delete', { 'username': username })
         flask.flash(gettext('User %(username)s deleted.', username=username), 'warning')
-        return flask.redirect(flask.url_for('get_users_admin'))
+        return flask.redirect(flask.url_for('get_users_admin', **request_params()))
 
     @staticmethod
     def find_user(user_id: int, changeable: bool = False) -> User:

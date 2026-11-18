@@ -84,6 +84,13 @@
           </fieldset>
 {%- endif %}
         </details>
+{%- if it.user %}
+        {#- The search of the courses of the lists below, a GET form to this page. site.js replaces
+            the lists with the ones of the page of the search while the user types #}
+        <form class="list_search" method="get" action="{{ url_for('get_index') }}" role="search" aria-controls="prepared_courses enrolled_courses available_courses">
+{{- macros.search_field(it.query, _('Search courses, e.g. CI0112'), url_for('get_index')) }}
+        </form>
+{%- endif %}
 {%- if it.prepared_courses is not none %}
         {#- The courses of the repos of the professor: only they see them, until they offer them #}
         <details id="prepared_courses" open>
@@ -109,7 +116,7 @@
 {%- endfor %}
           </ul>
 {%- else %}
-          <p class="empty">{{ _('No prepared courses yet: clone a professor repository with courses.') }}</p>
+          <p class="empty">{% if it.query %}{{ _('No course matches the search.') }}{% else %}{{ _('No prepared courses yet: clone a professor repository with courses.') }}{% endif %}</p>
 {%- endif %}
         </details>
 {%- endif %}
@@ -127,12 +134,12 @@
 {%- endfor %}
           </ul>
 {%- else %}
-          <p class="empty">{{ _('You are not enrolled in any course yet: enroll in one of the available courses.') }}</p>
+          <p class="empty">{% if it.query %}{{ _('No course matches the search.') }}{% else %}{{ _('You are not enrolled in any course yet: enroll in one of the available courses.') }}{% endif %}</p>
 {%- endif %}
         </details>
-{%- if it.available_courses %}
-        {#- Courses offered by professors, where the user may enroll #}
-        <details id="available_courses" open>
+        {#- Courses offered by professors, where the user may enroll, hidden without them, so a
+            search may show it #}
+        <details id="available_courses" open{% if not it.available_courses %} hidden{% endif %}>
           <summary><h2>{{ _('Available courses') }}</h2></summary>
           {{ macros.course_columns() }}
           <ul class="course_list">
@@ -148,7 +155,6 @@
 {%- endfor %}
           </ul>
         </details>
-{%- endif %}
 {%- else %}
         <p>{{ _('Please login to see your courses.') }}</p>
 {%- endif %}

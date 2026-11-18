@@ -619,3 +619,13 @@
     }
   }
 }
+
+/* Search of the courses (site.css): apart from the Repositories section above it, and close to
+   the lists of courses below it, which it filters */
+.courses > .list_search {
+  margin: 3rem 0 0;
+
+  & + details > summary > h2 {
+    margin-top: 0.25rem;
+  }
+}

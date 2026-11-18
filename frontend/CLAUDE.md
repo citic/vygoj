@@ -89,6 +89,11 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
     limit, with their state in `DATA_FOLDER/user/<username>/jobs/` and a lock per job.
   - `ssh_key.py`: `UserKey`, the SSH key pair of each user, never shared between users (see
     "Repositories section" in `readme.adoc`).
+- `src/data_table.py`: `DataTable`, a page of the rows of a SELECT searched, filtered
+  (`column:value`), sorted (with pinned columns as the first sort keys), and split in pages in the
+  server with the parameters of the URL (`q`, `sort`, `pin`, `page`, `size`), and `Column`, each
+  searched or sorted column. Templates show it with the macros `list_search`, `column_header`, and
+  `list_pages` of `macros.html`. The users page of administrators uses it (`USER_COLUMNS`).
 - `src/runs.py`: `Run` model (`runs` table) that limits the code runs of each user: one at a
   time, 5 seconds between them, 120 per hour, and the same submission answered with the stored
   result of the last run.
