@@ -4,12 +4,10 @@
 {%- endblock %}
 {%- block main %}
       <main class="users_admin">
-        <h2>{{ _('Users') }}</h2>
-        <section id="login_methods">
-          <header>
-            <h3>{{ _('SSO providers') }}</h3>
-            <a class="button confirm small" href="{{ url_for('add_sso_provider') }}" aria-label="{{ _('Add SSO provider') }}">+ {{ _('Add') }}</a>
-          </header>
+        {#- Each section folds when its title is clicked, as the sections of the other pages #}
+        <details id="login_methods">
+          <summary><h2>{{ _('SSO providers') }}</h2></summary>
+          <p class="add"><a class="button confirm small" href="{{ url_for('add_sso_provider') }}" aria-label="{{ _('Add SSO provider') }}">+ {{ _('Add') }}</a></p>
 {%- if it.providers %}
           <table class="data_table">
             <thead>
@@ -41,11 +39,53 @@
 {%- else %}
           <p class="empty">{{ _('There are no SSO providers. Users log in with their password.') }}</p>
 {%- endif %}
-        </section>
-        <section id="user_list">
-          <header>
-            <h3>{{ _('Users (%(count)d)', count=it.users|length) }}</h3>
-          </header>
+        </details>
+        <details id="import_users"{% if it.report %} open{% endif %}>
+          <summary><h2>{{ _('Import users') }}</h2></summary>
+          {#- admin.js enables Import when a file is chosen or dropped on the fieldset #}
+          <form method="post" action="{{ url_for('import_users') }}" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <fieldset class="users_file">
+              <legend>{{ _('Users file') }}</legend>
+              <p class="file">
+                <label for="users_file">{{ _('File') }}</label>
+                <input type="file" id="users_file" name="users" accept=".csv,.tsv" required aria-describedby="users_file_hint">
+                <button type="submit" class="button confirm small">{{ _('Import') }}</button>
+              </p>
+              <p class="hint" id="users_file_hint">{{ _('A CSV or TSV file in UTF-8 with a row per user and the columns username and email, and optionally fullname, password, role, status, language, and font. Choose it or drop it here.') }}</p>
+              <p class="examples">
+                <a class="button action small" href="/examples/users.csv" download>{{ _('CSV example') }}</a>
+                <a class="button action small" href="/examples/users.tsv" download>{{ _('TSV example') }}</a>
+              </p>
+            </fieldset>
+          </form>
+{%- if it.report %}
+          {%- set results = { 'imported': _('Imported'), 'skipped': _('Already exists'), 'rejected': _('Rejected') } %}
+          <fieldset class="report">
+            <legend>{{ _('Import result') }}</legend>
+            <table class="data_table">
+              <thead>
+                <tr>
+                  <th scope="col">{{ _('Line') }}</th>
+                  <th scope="col">{{ _('Username') }}</th>
+                  <th scope="col">{{ _('Result') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+{%-   for line, username, result, reason in it.report %}
+                <tr class="row" data-result="{{ result }}">
+                  <th scope="row" class="line">{{ line }}</th>
+                  <td class="username">{{ username }}</td>
+                  <td class="result">{{ results[result] }}{% if reason %}: {{ reason }}{% endif %}</td>
+                </tr>
+{%-   endfor %}
+              </tbody>
+            </table>
+          </fieldset>
+{%- endif %}
+        </details>
+        <details id="user_list" open>
+          <summary><h2>{{ _('Users (%(count)d)', count=it.users|length) }}</h2></summary>
           {#- The users with the providers that each user logged in with. Suspending, activating, and
               deleting change data, so they are POSTs with the CSRF token, confirmed by admin.js.
               Administrators do not suspend nor delete themselves #}
@@ -96,7 +136,7 @@
 {%- endfor %}
             </tbody>
           </table>
-        </section>
+        </details>
       </main>
 {%- endblock %}
 {%- block scripts %}

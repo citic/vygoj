@@ -281,6 +281,11 @@ def get_users_admin():
     log_event('visit')
     return UserAdminController.get_users()
 
+@app.route('/admin/users/import', methods=['POST'])
+def import_users():
+    """ Administrator sends a CSV or TSV file with users to add """
+    return UserAdminController.import_users()
+
 @app.route('/admin/users/<int:user_id>', methods=['GET', 'POST'])
 def edit_user(user_id):
     """ Administrator asked for the form of a user, or sent it """

@@ -25,3 +25,22 @@ document.querySelectorAll('form[method="post"]').forEach((form) => {
     }
   });
 });
+
+// The file of users to import: Import is enabled when a file is chosen, and the fieldset also
+// takes a file dropped on it. The disabled state is set here, so the form works without scripts
+const usersFile = document.getElementById('users_file');
+if (usersFile) {
+  const importButton = usersFile.form.querySelector('button[type="submit"]');
+  const enableImport = () => {
+    importButton.disabled = usersFile.files.length === 0;
+  };
+  const dropZone = usersFile.closest('fieldset');
+  dropZone.addEventListener('dragover', (event) => event.preventDefault());
+  dropZone.addEventListener('drop', (event) => {
+    event.preventDefault();
+    usersFile.files = event.dataTransfer.files;
+    enableImport();
+  });
+  usersFile.addEventListener('change', enableImport);
+  enableImport();
+}

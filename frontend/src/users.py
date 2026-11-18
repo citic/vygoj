@@ -136,25 +136,6 @@ class User(db.Model):
             return None
         return db.session.get(User, user_id)
 
-    @staticmethod
-    def add_new(rows) -> int:
-        """ Add the users of the given rows that are not in the database yet, and return how many
-        were added. Each row is a dictionary with username and password, e.g. the rows of a TSV
-        file read by csv.DictReader. Existing users are skipped, so a file can be added again """
-        new_users = []
-        for row in rows:
-            username = row['username']
-            if not db.session.scalar(db.select(User).filter_by(username=username)):
-                # Full name is required, but the file has none, so use the username
-                db.session.add(User(username=username, fullname=username,
-                    password=generate_password_hash(row['password'])))
-                new_users.append(username)
-        db.session.commit()
-        # Logged after the commit, so the log has only the users that the database has
-        for username in new_users:
-            log_event('user_create', { 'source': 'import' }, user=username, role='student')
-        return len(new_users)
-
 class Progress(db.Model):
     """ The progress is the grade user got for each evaluation """
     # SQLAlchemy uses the class name for the table, we override it for lowercase

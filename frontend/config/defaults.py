@@ -6,8 +6,6 @@
 
 # Data folder to store course repos, student code submissions
 DATA_FOLDER = "/home/user/vygdata"
-# TSV file in DATA_FOLDER with the users to add to the database (username and password columns)
-USERS_FILE = "users-passwords.tsv"
 # Name of the student repo: the bare git repo with the solutions to the questions and problems that
 # each user submits as a student, in their folder DATA_FOLDER/user/<username>
 STUDENT_REPO_NAME = "student_repo"

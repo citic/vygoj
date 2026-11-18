@@ -111,7 +111,7 @@ echo "SECRET_KEY = '$(python3 -c 'import secrets; print(secrets.token_hex(32))')
 nano config.py
 ----
 
-Third, create the PostgreSQL database and fill it with the users. The frontend connects to the database set in `SQLALCHEMY_DATABASE_URI` in `config.py`. The users come from a TSV file with a `username` and a `password` column, named `USERS_FILE` in `config.py` and saved in `DATA_FOLDER`. Keep that file out of the repository because it has plain passwords:
+Third, create the PostgreSQL database and its tables. The frontend connects to the database set in `SQLALCHEMY_DATABASE_URI` in `config.py`. Administrators add the users later, one by one or from a CSV or TSV file, in the users page of the web application:
 
 [source,console]
 ----
@@ -122,7 +122,7 @@ cd vygoj/frontend/src
 ../.venv/bin/python manage.py import
 ----
 
-The script creates the tables of the database that do not exist yet, updates the ones of older versions, and only adds users that are not in the database yet. `make`, `make release`, and `make server` run it before starting the frontend, in a single process: the gunicorn workers do not create tables, because they start at the same time. An optional argument loads a different file: `manage.py import /path/to/users.tsv`.
+The script creates the tables of the database that do not exist yet, and updates the ones of older versions. `make`, `make release`, and `make server` run it before starting the frontend, in a single process: the gunicorn workers do not create tables, because they start at the same time.
 
 Create the administrator in the server. The command asks the username, the full name, and the password (at least 12 characters, not shown while typed). Run it again to reset the password of an administrator who forgot it; the username can be given as `make admin ADMIN=name`:
 

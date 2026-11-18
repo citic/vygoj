@@ -1,23 +1,20 @@
 """ Manage the frontend from the command line of the server:
 
     python manage.py admin [username]          # make admin
-    python manage.py import [users.tsv]        # make users
+    python manage.py import                    # make users
     python manage.py log output.zip            # the activity log and its analysis tables
     python manage.py submissions output.zip    # the code of the runs, a folder per submission
     python manage.py repo-job kind username    # a background job of a student repo
 
 admin creates an administrator, or resets the password of a user and makes it administrator. It
 runs in the server, so the first administrator, and one who lost their password, never depend on
-the web application, where administrators give and take the role of the others. import creates
-and updates the tables of the database, and adds the users of a TSV file that are not in the
-database yet; make runs it before starting the servers. log and submissions write the archives
-that administrators download from the web application. repo-job runs a job on the student repo
-of a user (solutions, history, or push); the web application starts it in the background (see
-repo_jobs.py). Their logic lives in users.py, activity_log.py, and repo_jobs.py, so the web
-application may reuse it """
-import csv
+the web application, where administrators give and take the role of the others, and import
+users from files. import creates and updates the tables of the database; make runs it before
+starting the servers. log and submissions write the archives that administrators download from
+the web application. repo-job runs a job on the student repo of a user (solutions, history, or
+push); the web application starts it in the background (see repo_jobs.py). Their logic lives in
+users.py, activity_log.py, and repo_jobs.py, so the web application may reuse it """
 import getpass
-import os
 import sys
 
 from werkzeug.security import generate_password_hash
@@ -29,7 +26,7 @@ from main import app
 from repos.repo_jobs import JOB_KINDS, RepoJob
 from users import MAX_PASSWORD_LENGTH, MAX_USERNAME_LENGTH, LoginAttempt, User
 
-USAGE = ('Usage: python manage.py admin [username] | import [users.tsv] | log output.zip'
+USAGE = ('Usage: python manage.py admin [username] | import | log output.zip'
     ' | submissions output.zip | repo-job kind username')
 
 # Administrators can do everything, so their passwords must not be easy to guess
@@ -89,24 +86,12 @@ def manage_admin(username: str = None) -> int:
 
 # Import ------------------------------------------------------------------------------------------
 
-def import_users(users_file: str = None) -> int:
-    """ Update the database and add the users of the given TSV file (username and password
-    columns), or of USERS_FILE in DATA_FOLDER. Return the exit status """
+def import_users() -> int:
+    """ Create and update the tables of the database. Return the exit status """
     update_database()
     # Nobody can log in without users. The first administrator is created in the server
     if not db.session.scalar(db.select(User.id).limit(1)):
         print('manage: there are no users yet. Create the administrator with: make admin')
-    if users_file is None:
-        # The file has plain passwords, so it is kept out of git in the data folder
-        users_file = os.path.join(app.config['DATA_FOLDER'],
-            app.config['USERS_FILE'])
-    # A missing file is not an error, because make runs this script before every start
-    if not os.path.isfile(users_file):
-        print(f'manage: no users file {users_file}, skipped')
-        return 0
-    with open(users_file, encoding='utf-8', newline='') as file:
-        added = User.add_new(csv.DictReader(file, delimiter='\t'))
-    print(f'manage: {added} new users added from {users_file}')
     return 0
 
 def update_database():

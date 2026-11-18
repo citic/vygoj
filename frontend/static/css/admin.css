@@ -1,15 +1,40 @@
 @import url('site.css');
 @import url('form.css');
 
-/* Sections of the page of users: a title bar with its actions at the right */
-.users_admin > section > header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin: 2rem 0 1rem;
+/* Forms of an SSO provider and of a user: hints and errors below their fields */
+:is(.sso_provider, .user_admin) {
+  & .hint {
+    color: gray;
+  }
 
-  & h3 {
-    margin: 0;
+  & .field_error {
+    color: var(--error);
+  }
+
+  & fieldset ul {
+    padding: 0;
+    list-style: none;
+  }
+
+  & .checkbox {
+    margin: 1rem 0 0;
+  }
+
+  & .registration dd {
+    margin: 0 0 0.5rem;
+    overflow-wrap: anywhere;
+  }
+
+  & .status li[data-status="suspended"] label {
+    color: var(--warning);
+  }
+
+  & .status li[data-status="deleted"] label {
+    color: var(--error);
+  }
+
+  & input[readonly] {
+    color: gray;
   }
 }
 
@@ -61,41 +86,47 @@
   & .provider[data-status="disabled"] .status {
     color: gray;
   }
-}
 
-/* Forms of an SSO provider and of a user: hints and errors below their fields */
-:is(.sso_provider, .user_admin) {
-  & .hint {
-    color: gray;
+  /* File of users to import: the field of the file with its button, and below it its explanation,
+     with the links to the examples beside it when the window has space */
+  & .users_file {
+    display: grid;
+    gap: 0.5rem 1rem;
+
+    & p {
+      margin: 0;
+    }
+
+    & .hint {
+      color: gray;
+    }
+
+    & .file {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    @media (width >= 640px) {
+      grid-template-columns: 1fr auto;
+
+      & .file {
+        grid-column: 1 / -1;
+      }
+    }
   }
 
-  & .field_error {
-    color: var(--error);
+  /* Result of each row of the last import of users */
+  & .row[data-result="imported"] .result {
+    color: var(--success);
   }
 
-  & fieldset ul {
-    padding: 0;
-    list-style: none;
-  }
-
-  & .checkbox {
-    margin: 1rem 0 0;
-  }
-
-  & .registration dd {
-    margin: 0 0 0.5rem;
-    overflow-wrap: anywhere;
-  }
-
-  & .status li[data-status="suspended"] label {
+  & .row[data-result="skipped"] .result {
     color: var(--warning);
   }
 
-  & .status li[data-status="deleted"] label {
+  & .row[data-result="rejected"] .result {
     color: var(--error);
-  }
-
-  & input[readonly] {
-    color: gray;
   }
 }
