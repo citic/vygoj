@@ -84,76 +84,82 @@
           </fieldset>
 {%- endif %}
         </details>
-{%- if it.user %}
-        {#- The search of the courses of the lists below, a GET form to this page. site.js replaces
-            the lists with the ones of the page of the search while the user types #}
-        <form class="list_search" method="get" action="{{ url_for('get_index') }}" role="search" aria-controls="prepared_courses enrolled_courses available_courses">
-{{- macros.search_field(it.query, _('Search courses, e.g. CI0112'), url_for('get_index')) }}
-        </form>
-{%- endif %}
 {%- if it.prepared_courses is not none %}
         {#- The courses of the repos of the professor: only they see them, until they offer them #}
         <details id="prepared_courses" open>
           <summary><h2>{{ _('My prepared courses') }}</h2></summary>
+{{- macros.course_search('prepared', it.query.prepared) }}
+          <div id="prepared_results" class="results">
 {%- if it.prepared_courses %}
-          {{ macros.course_columns() }}
-          <ul class="course_list">
+            {{ macros.course_columns() }}
+            <ul class="course_list">
 {%- for entry in it.prepared_courses %}
-            <li>
+              <li>
 {%- call macros.course_entry(entry) %}
-                <a class="enter" href="/course/{{ entry.course.name }}">{{ _('Enter') }} ›</a>
+                  <a class="enter" href="/course/{{ entry.course.name }}">{{ _('Enter') }} ›</a>
 {%- if entry.offer.offered_at %}
-                <p class="offered">{{ _('Offered') }}</p>
+                  <p class="offered">{{ _('Offered') }}</p>
 {%- else %}
-                {#- Offering asks for confirmation (courses.js) with the text of data-confirm #}
-                <form class="offer" method="post" action="{{ url_for('offer_course', name=entry.course.name) }}" data-confirm="{{ _('Offer the course %(name)s? Every user will see it in Available courses and may enroll in it.', name=entry.course.name) }}">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                  <button type="submit" class="button action small">{{ _('Offer') }}</button>
-                </form>
+                  {#- Offering asks for confirmation (courses.js) with the text of data-confirm #}
+                  <form class="offer" method="post" action="{{ url_for('offer_course', name=entry.course.name) }}" data-confirm="{{ _('Offer the course %(name)s? Every user will see it in Available courses and may enroll in it.', name=entry.course.name) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="button action small">{{ _('Offer') }}</button>
+                  </form>
 {%- endif %}
 {%- endcall %}
-            </li>
+              </li>
 {%- endfor %}
-          </ul>
+            </ul>
 {%- else %}
-          <p class="empty">{% if it.query %}{{ _('No course matches the search.') }}{% else %}{{ _('No prepared courses yet: clone a professor repository with courses.') }}{% endif %}</p>
+            <p class="empty">{% if it.query.prepared %}{{ _('No course matches the search.') }}{% else %}{{ _('No prepared courses yet: clone a professor repository with courses.') }}{% endif %}</p>
 {%- endif %}
+          </div>
         </details>
 {%- endif %}
         <details id="enrolled_courses" open>
           <summary><h2>{{ _('My enrolled courses') }}</h2></summary>
+{{- macros.course_search('enrolled', it.query.enrolled) }}
+          <div id="enrolled_results" class="results">
 {%- if it.enrolled_courses %}
-          {{ macros.course_columns() }}
-          <ul class="course_list">
+            {{ macros.course_columns() }}
+            <ul class="course_list">
 {%- for entry in it.enrolled_courses %}
-            <li>
+              <li>
 {%- call macros.course_entry(entry, it.progress[entry.course.name]) %}
-                <a class="enter" href="/course/{{ entry.course.name }}">{{ _('Enter') }} ›</a>
+                  <a class="enter" href="/course/{{ entry.course.name }}">{{ _('Enter') }} ›</a>
 {%- endcall %}
-            </li>
+              </li>
 {%- endfor %}
-          </ul>
+            </ul>
 {%- else %}
-          <p class="empty">{% if it.query %}{{ _('No course matches the search.') }}{% else %}{{ _('You are not enrolled in any course yet: enroll in one of the available courses.') }}{% endif %}</p>
+            <p class="empty">{% if it.query.enrolled %}{{ _('No course matches the search.') }}{% else %}{{ _('You are not enrolled in any course yet: enroll in one of the available courses.') }}{% endif %}</p>
 {%- endif %}
+          </div>
         </details>
-        {#- Courses offered by professors, where the user may enroll, hidden without them, so a
-            search may show it #}
-        <details id="available_courses" open{% if not it.available_courses %} hidden{% endif %}>
+        {#- Courses offered by professors, where the user may enroll, hidden without them, unless
+            its search found none #}
+        <details id="available_courses" open{% if not it.available_courses and not it.query.available %} hidden{% endif %}>
           <summary><h2>{{ _('Available courses') }}</h2></summary>
-          {{ macros.course_columns() }}
-          <ul class="course_list">
+{{- macros.course_search('available', it.query.available) }}
+          <div id="available_results" class="results">
+{%- if it.available_courses %}
+            {{ macros.course_columns() }}
+            <ul class="course_list">
 {%- for entry in it.available_courses %}
-            <li>
+              <li>
 {%- call macros.course_entry(entry) %}
-                <form class="enroll" method="post" action="{{ url_for('enroll_course', name=entry.course.name) }}">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                  <button type="submit" class="button confirm small">{{ _('Enroll') }}</button>
-                </form>
+                  <form class="enroll" method="post" action="{{ url_for('enroll_course', name=entry.course.name) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="button confirm small">{{ _('Enroll') }}</button>
+                  </form>
 {%- endcall %}
-            </li>
+              </li>
 {%- endfor %}
-          </ul>
+            </ul>
+{%- else %}
+            <p class="empty">{{ _('No course matches the search.') }}</p>
+{%- endif %}
+          </div>
         </details>
 {%- else %}
         <p>{{ _('Please login to see your courses.') }}</p>

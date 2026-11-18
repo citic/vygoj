@@ -19,7 +19,8 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
   of `macros.html`). `ListSearch` of `site.js` searches while the user types: it fetches the
   page of the search and replaces the elements of the results (the ids of the `aria-controls` of
   the form), so scripts that set up those elements listen in the `document` (e.g. the
-  confirmations of `admin.js`). Lists of cards may take `list_search` alone (the home page). Forms take the
+  confirmations of `admin.js`). Lists of cards may take `list_search` alone: each list of the home page has its own, whose
+  results are the element of its cards (`course_search` of `macros.html`). Forms take the
   `fieldset_columns` class of `form.css` to place their fieldsets of radio buttons or checkboxes
   side by side when the window has space for them (the preferences and the form of a user for
   administrators).

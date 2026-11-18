@@ -232,13 +232,13 @@
 }
 
 /* Sections of the home page (administration, repositories, and lists of courses), which fold
-   (site.css). A list without courses says why */
+   (site.css). A list of courses has its search below its title, and says why it has no courses */
 .courses > details {
   & > summary {
     margin-bottom: 1rem;
   }
 
-  & > .empty {
+  & > .results > .empty {
     color: var(--muted-text);
   }
 }
@@ -617,15 +617,5 @@
     & .deadline {
       display: none;
     }
-  }
-}
-
-/* Search of the courses (site.css): apart from the Repositories section above it, and close to
-   the lists of courses below it, which it filters */
-.courses > .list_search {
-  margin: 3rem 0 0;
-
-  & + details > summary > h2 {
-    margin-top: 0.25rem;
   }
 }

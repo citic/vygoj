@@ -7,7 +7,7 @@ without JavaScript:
     sort    the column that sorts the rows, with a '-' before it to sort them in descending order
     pin     columns pinned as the first sort keys, in the order they were pinned, e.g. 'roles,-id'
     page    the number of the page, from 1
-    size    rows per page, one of PAGE_SIZES
+    size    rows per page, from 1 to MAX_PAGE_SIZE
 
 Columns are found by their key or their header in the language of the interface, and only the
 columns of the table are searched or sorted, so the query is always made by SQLAlchemy with bound
@@ -19,8 +19,9 @@ import flask
 
 from db import db
 
-# Rows per page that users may choose, the first one by default
-PAGE_SIZES = (10, 25, 50, 100)
+# Rows per page by default, and most rows per page that users may ask for, so a page is not slow
+DEFAULT_PAGE_SIZE = 10
+MAX_PAGE_SIZE = 500
 # Longest search and most words that a search may have, so a long query cannot make a slow one
 MAX_QUERY_LENGTH = 200
 MAX_WORDS = 10
@@ -82,8 +83,8 @@ class Column:
 
 class DataTable:
     """ The page of rows of a SELECT that the parameters of the request ask for """
-    # Rows per page that the controls offer
-    page_sizes = PAGE_SIZES
+    # Most rows per page that the controls accept
+    max_size = MAX_PAGE_SIZE
 
     def __init__(self, select, columns: list, endpoint: str, default_sort: str):
         """ Run the select with the search, sort, and page of the request. endpoint is the route
@@ -93,9 +94,9 @@ class DataTable:
         self.columns = { column.key: column for column in columns }
         self.endpoint = endpoint
         self.query = args.get('q', '')[:MAX_QUERY_LENGTH].strip()
-        # Numbers that are not valid, or too long for int(), are None
+        # Numbers that are not valid, or too long for int(), are None. Others are kept in range
         size = args.get('size', type=int)
-        self.size = size if size in PAGE_SIZES else PAGE_SIZES[0]
+        self.size = min(max(size, 1), MAX_PAGE_SIZE) if size else DEFAULT_PAGE_SIZE
         self.pins = self.parse_keys(args.get('pin', ''))
         self.default_sort = self.parse_keys(default_sort)[0]
         self.sort = (self.parse_keys(args.get('sort', '')) or [self.default_sort])[0]
@@ -164,7 +165,7 @@ class DataTable:
         and default values are left out, and the page is kept only if it is a change, so other
         changes go back to the first page """
         params = { 'q': self.query, **self.kept_params(), 'size': self.size, **changes }
-        if params['size'] == PAGE_SIZES[0]:
+        if params['size'] == DEFAULT_PAGE_SIZE:
             params['size'] = ''
         if params.get('page') == 1:
             params['page'] = ''

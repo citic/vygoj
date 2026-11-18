@@ -46,14 +46,23 @@
 
 {#- Field of a search above a list or a data table, with a magnifier inside it as its label: query
     is the text searched, hint an example of a search, and clear_url the page without the search,
-    which the X at the end of the field opens while there is a search. Enter sends the form, which
-    has no other text field. site.js searches while the user types (ListSearch) #}
-{%- macro search_field(query, hint, clear_url) %}
+    which the X at the end of the field opens while there is a search, and name its parameter of the
+    URL. Enter sends the form. site.js searches while the user types (ListSearch) #}
+{%- macro search_field(query, hint, clear_url, name='q') %}
             <p class="search">
-              <label for="search_query" title="{{ _('Filter') }}"><span class="symbol material-symbols-outlined" aria-hidden="true">search</span></label>
-              <input type="search" id="search_query" name="q" value="{{ query }}" maxlength="200" placeholder="{{ hint }}" aria-label="{{ _('Filter') }}">
+              <label for="{{ name }}_search" title="{{ _('Filter') }}"><span class="symbol material-symbols-outlined" aria-hidden="true">search</span></label>
+              <input type="search" id="{{ name }}_search" name="{{ name }}" value="{{ query }}" maxlength="200" placeholder="{{ hint }}" aria-label="{{ _('Filter') }}">
               <a class="clear" href="{{ clear_url }}" title="{{ _('Clear the search') }}" aria-label="{{ _('Clear the search') }}"{% if not query %} hidden{% endif %}><span class="symbol material-symbols-outlined" aria-hidden="true">close</span></a>
             </p>
+{%- endmacro %}
+
+{#- Search below the title of a list of courses of the home page, a GET form to it. name is its
+    parameter of the URL (prepared, enrolled, or available) and names the element of the cards,
+    which site.js replaces with the one of the page of the search while the user types #}
+{%- macro course_search(name, query) %}
+          <form class="list_search" method="get" action="{{ url_for('get_index') }}" role="search" aria-controls="{{ name }}_results">
+{{- search_field(query, _('Search courses, e.g. CI0112'), url_for('get_index'), name) }}
+          </form>
 {%- endmacro %}
 
 {#- Controls above a data table of data_table.py: the rows per page and the search, a GET form to
@@ -63,16 +72,14 @@
 {%- macro list_search(table, hint, results) %}
           <form class="list_search" method="get" action="{{ url_for(table.endpoint) }}" role="search" aria-controls="{{ results }}">
             <label class="size">{{ _('Show') }}
-              <select name="size">
-{%- for size in table.page_sizes %}
-                <option{% if size == table.size %} selected{% endif %}>{{ size }}</option>
-{%- endfor %}
-              </select>
+              <input type="number" name="size" value="{{ table.size }}" min="1" max="{{ table.max_size }}">
               {{ _('records') }}</label>
 {%- for name, value in table.kept_params().items() %}
             <input type="hidden" name="{{ name }}" value="{{ value }}">
 {%- endfor %}
 {{- search_field(table.query, hint, table.url(q='')) }}
+            {#- Enter sends a form of two fields only if it has a submit button #}
+            <button type="submit" hidden>{{ _('Filter') }}</button>
           </form>
 {%- endmacro %}
 

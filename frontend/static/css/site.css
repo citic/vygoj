@@ -347,12 +347,14 @@ details:not([open]) > summary > :is(h2, h3, h4, h5, h6)::before {
   font-size: 0.875rem;
   color: var(--muted-text);
 
-  & select {
+  & input[type="number"] {
+    width: 4.5rem;
     border: 1px solid var(--toolbar-border);
     border-radius: 999px;
     padding: 0.125rem 0.375rem;
     background-color: var(--surface);
     font: inherit;
+    text-align: center;
   }
 
   & .search {

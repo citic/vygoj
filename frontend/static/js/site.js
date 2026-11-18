@@ -74,7 +74,8 @@ class ListSearch {
   }
 
   setup() {
-    this.input.addEventListener('input', () => {
+    // The search, and the rows per page of a table
+    this.form.addEventListener('input', () => {
       this.clearLink.hidden = this.input.value === '';
       window.clearTimeout(this.timer);
       this.timer = window.setTimeout(() => this.search(), SEARCH_DELAY);
@@ -83,8 +84,6 @@ class ListSearch {
       event.preventDefault();
       this.search();
     });
-    // The rows per page of a table
-    this.form.querySelector('select')?.addEventListener('change', () => this.search());
     this.clearLink.addEventListener('click', (event) => {
       event.preventDefault();
       this.input.value = '';
@@ -99,8 +98,10 @@ class ListSearch {
     window.clearTimeout(this.timer);
     this.controller?.abort();
     this.controller = new AbortController();
-    // The parameters of the form, without the empty ones, as the links of the page
-    const params = new URLSearchParams([...new FormData(this.form)].filter(([, value]) => value));
+    // The parameters of every search of the page, so each list of the home page keeps its own,
+    // without the empty ones, as the links of the page
+    const params = new URLSearchParams([...document.querySelectorAll('.list_search')]
+      .flatMap((form) => [...new FormData(form)]).filter(([, value]) => value));
     const url = params.size ? `${this.form.action}?${params}` : this.form.action;
     try {
       const signal = AbortSignal.any([this.controller.signal, AbortSignal.timeout(SEARCH_TIMEOUT)]);

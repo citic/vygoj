@@ -114,14 +114,18 @@ class CourseController:
         ones where they are enrolled, and the offered ones where they may enroll """
         user = flask.session.get('user')
         user_id = User.logged_id()
-        # The search of the courses, a parameter of the URL (GET)
-        query = flask.request.args.get('q', '')[:MAX_QUERY_LENGTH].strip()
+        # The search of each list, a parameter of the URL (GET) named as the list
+        query = { name: flask.request.args.get(name, '')[:MAX_QUERY_LENGTH].strip()
+            for name in ('prepared', 'enrolled', 'available') }
         prepared = enrolled = available = []
         if user_id:
             if has_role('professor'):
-                prepared = CourseController.entries(CourseOffer.prepared_by(user_id), query)
-            enrolled = CourseController.entries(CourseOffer.enrolled_by(user_id), query)
-            available = CourseController.entries(CourseOffer.available_to(user_id), query)
+                prepared = CourseController.entries(CourseOffer.prepared_by(user_id),
+                    query['prepared'])
+            enrolled = CourseController.entries(CourseOffer.enrolled_by(user_id),
+                query['enrolled'])
+            available = CourseController.entries(CourseOffer.available_to(user_id),
+                query['available'])
         it = {
             'user': user if user_id else None,
             'query': query,
