@@ -25,9 +25,10 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
   issuer and subject of the ID tokens of each user), `SsoController` (login and callback, which
   finds, links, or creates the user), and `SsoAdminController` (provider forms).
 - `src/admin.py`: `UserAdminController`, the users page of administrators (`/admin/users`): edit
-  the student ID, full name, email, role, and status of users, and suspend, activate, or delete
-  them (never the logged administrator, who cannot change their own role nor status either), and
-  import users from a CSV or TSV file (`import_users()`). Suspended users (`status` column of `users`) cannot log in, and
+  the student ID, full name, email, roles, and status of users, and suspend, activate, or delete
+  them (never the logged administrator, who cannot remove their own administrator role nor change
+  their status either), and import users from a CSV or TSV file (`import_users()`). Suspended
+  users (`status` column of `users`) cannot log in, and
   `refresh_session()` in `users.py` logs out suspended and deleted users at their next request.
   Tables with data of users declare their foreign key with `ondelete='CASCADE'`, so deleting a
   user deletes it (`manage.py` updates the keys of older databases), and the folder of the user

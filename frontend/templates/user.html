@@ -2,7 +2,7 @@
 {%- block main %}
   {%- if it.user %}
       <main class="user_preferences">
-        <h2>{{ _('Preferences for %(role)s user %(email)s', role=it.user.role, email=it.user.email) }}</h2>
+        <h2>{{ _('Preferences for %(role)s user %(email)s', role=it.user.roles|join(' '), email=it.user.email) }}</h2>
         <form method="post" class="fieldset_columns">
           {{ it.form.hidden_tag() }}
           <fieldset class="user_information">

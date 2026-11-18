@@ -105,7 +105,7 @@ data/log/
   code/<hash>.c         # code of each judged submission, named by the SHA-256 of its language and code
 ----
 
-The frontend sends a `context` object with each submission, besides the `problem` and the `solution`: the id of the run in its activity log, the user, their role and address, the course, the material and its type, and the commit of the course repo. The backend does not use it to judge, it only logs it; a submission without context is judged and logged with empty cells. A context that is not an object of up to 32 fields with names of up to 64 characters, and values that are texts of up to 256 characters, numbers, booleans, or null, is rejected with HTTP 400.
+The frontend sends a `context` object with each submission, besides the `problem` and the `solution`: the id of the run in its activity log, the user, their roles (separated by spaces) and address, the course, the material and its type, and the commit of the course repo. The backend does not use it to judge, it only logs it; a submission without context is judged and logged with empty cells. A context that is not an object of up to 32 fields with names of up to 64 characters, and values that are texts of up to 256 characters, numbers, booleans, or null, is rejected with HTTP 400.
 
 [cols="1,4",options="header"]
 |===

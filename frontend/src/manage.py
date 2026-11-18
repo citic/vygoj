@@ -24,7 +24,7 @@ from activity_log import write_archive, log_event
 from courses import CourseController
 from main import app
 from repos.repo_jobs import JOB_KINDS, RepoJob
-from users import MAX_PASSWORD_LENGTH, MAX_USERNAME_LENGTH, LoginAttempt, User
+from users import MAX_PASSWORD_LENGTH, MAX_USERNAME_LENGTH, LoginAttempt, User, sorted_roles
 
 USAGE = ('Usage: python manage.py admin [username] | import | log output.zip'
     ' | submissions output.zip | repo-job kind username')
@@ -67,20 +67,21 @@ def manage_admin(username: str = None) -> int:
     user = db.session.scalar(db.select(User).filter_by(username=username))
     event = 'user_admin' if user else 'user_create'
     if user:
-        print(f'User {username} exists with role {user.role}: its password will be reset, '
-            'and its role will be admin')
+        print(f'User {username} exists with roles {" ".join(user.roles)}: its password will be '
+            'reset, and it will be admin too')
     else:
         print(f'User {username} does not exist: it will be created with role admin')
-        user = User(username=username, fullname=ask_text('Full name: ', 128))
+        user = User(username=username, fullname=ask_text('Full name: ', 128), roles=[])
         db.session.add(user)
     user.password = generate_password_hash(ask_password())
-    user.role = 'admin'
+    # The other roles are kept, e.g. a director who is also administrator
+    user.roles = sorted_roles({ *user.roles, 'admin' })
     # A suspended user made administrator must be able to log in
     user.status = 'active'
     # A forgotten password may have blocked the logins of the administrator
     db.session.execute(db.delete(LoginAttempt).filter(LoginAttempt.username == username))
     db.session.commit()
-    log_event(event, { 'source': 'make admin' }, user=username, role='admin')
+    log_event(event, { 'source': 'make admin' }, user=username, role=' '.join(user.roles))
     print(f'Administrator {username} is ready, log in at /user')
     return 0
 
@@ -104,19 +105,26 @@ def update_database():
 
 def update_users_table():
     """ Add the columns that older users tables lack (existing rows get their default value),
-    widen the usernames, and make passwords optional, for the users of single sign-on """
+    turn the role of each user into a list of roles, widen the usernames, and make passwords
+    optional, for the users of single sign-on """
     columns = {column['name'] for column in db.inspect(db.engine).get_columns('users')}
     # The color scheme column was first named interface_mode, rename it to keep its values
     if 'interface_mode' in columns and 'color_scheme' not in columns:
         db.session.execute(db.text(
             "ALTER TABLE users RENAME COLUMN interface_mode TO color_scheme"))
+    # Users had a single role, each one keeps it as their list of roles
+    if 'role' in columns and 'roles' not in columns:
+        db.session.execute(db.text("ALTER TABLE users ALTER COLUMN role DROP DEFAULT,"
+            " ALTER COLUMN role TYPE VARCHAR(16)[] USING ARRAY[role]"))
+        db.session.execute(db.text("ALTER TABLE users RENAME COLUMN role TO roles"))
     db.session.execute(db.text("ALTER TABLE users"
-        " ADD COLUMN IF NOT EXISTS role VARCHAR(16) NOT NULL DEFAULT 'student',"
+        " ADD COLUMN IF NOT EXISTS roles VARCHAR(16)[] NOT NULL DEFAULT '{student}',"
         " ADD COLUMN IF NOT EXISTS color_scheme VARCHAR(8) NOT NULL DEFAULT 'default',"
         " ADD COLUMN IF NOT EXISTS font VARCHAR(16) NOT NULL DEFAULT 'anaheim',"
         " ADD COLUMN IF NOT EXISTS language VARCHAR(8) NOT NULL DEFAULT 'default',"
         " ADD COLUMN IF NOT EXISTS status VARCHAR(16) NOT NULL DEFAULT 'active',"
         f" ALTER COLUMN username TYPE VARCHAR({MAX_USERNAME_LENGTH}),"
+        " ALTER COLUMN roles SET DEFAULT '{student}',"
         " ALTER COLUMN password DROP NOT NULL"))
     db.session.commit()
 

@@ -51,7 +51,8 @@ LOG_FOLDER = 'log'
 # Columns of the events files, in order. Empty cells are values that do not apply to the event:
 #   time: date and time in UTC, ISO 8601 with milliseconds, e.g. 2026-11-08T14:03:12.345+00:00
 #   id: random identifier of the event, to join the tables of the log archive
-#   user, role: logged user and their role, or the typed username of a failed login
+#   user, role: logged user and their roles separated by spaces, or the typed username of a failed
+#   login
 #   address: network address of the client (see TRUSTED_PROXIES in config.py)
 #   event: what happened, see EVENTS
 #   path: page of the request, e.g. /problem/CI0112/hello
@@ -97,7 +98,7 @@ def request_cells() -> dict:
     user = flask.session.get('user') or {}
     return {
         'user': user.get('email'),
-        'role': user.get('role'),
+        'role': ' '.join(user.get('roles', ())),
         'address': flask.request.remote_addr,
         'path': flask.request.path,
     }
@@ -454,7 +455,7 @@ class LogController:
         administrator, with the courses that load_courses() returns. It is built in a temporary
         file, not in memory, because the log grows with the use of the judge """
         user = flask.session.get('user')
-        if not user or user.get('role') != 'admin':
+        if not user or 'admin' not in user.get('roles', ()):
             flask.abort(403)
         log_event('log_download', { 'archive': kind })
         archive = tempfile.TemporaryFile()

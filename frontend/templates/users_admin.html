@@ -96,7 +96,7 @@
                 <th scope="col">{{ _('Username') }}</th>
                 <th scope="col">{{ _('Full name') }}</th>
                 <th scope="col">{{ _('Email') }}</th>
-                <th scope="col">{{ _('Role') }}</th>
+                <th scope="col">{{ _('Roles') }}</th>
                 <th scope="col">{{ _('SSO') }}</th>
                 <th scope="col">{{ _('Status') }}</th>
                 <th scope="col">{{ _('Actions') }}</th>
@@ -109,7 +109,7 @@
                 <td class="username">{{ user.username }}</td>
                 <td class="fullname">{{ user.fullname }}</td>
                 <td class="email">{{ user.email or '' }}</td>
-                <td class="role">{{ it.roles.get(user.role, user.role) }}</td>
+                <td class="roles">{% for role in user.roles %}{{ it.roles.get(role, role) }}{{ ', ' if not loop.last }}{% endfor %}</td>
                 <td class="providers">{{ user.identities|map(attribute='provider')|unique|join(', ') }}</td>
                 <td class="status">{{ it.user_statuses.get(user.status, user.status) }}</td>
                 <td class="actions">

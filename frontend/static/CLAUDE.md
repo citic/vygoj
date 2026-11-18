@@ -13,8 +13,9 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
   Tables of data take the `data_table` class of `site.css` (headers of columns with the color
   of the site, headers of rows marked with `<th scope="row">`, rows of alternate background),
   which problem statements share for the tables of their authors. Forms take the
-  `fieldset_columns` class of `form.css` to place their fieldsets of radio buttons side by side
-  when the window has space for them (the preferences and the form of a user for administrators).
+  `fieldset_columns` class of `form.css` to place their fieldsets of radio buttons or checkboxes
+  side by side when the window has space for them (the preferences and the form of a user for
+  administrators).
   Fields that users cannot edit take the `readonly` attribute, which `form.css` shows with the
   `--readonly-bg` background of `site.css`; no class is needed. Buttons of actions take the color
   of the effect of their action (`form.css`, backgrounds in `site.css`): `confirm` (blue) saves,
@@ -40,8 +41,8 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
   of the Material Symbols font (`<span class="material-symbols-outlined">person</span>`), which
   `base.html` loads in every page with one subset of the icons that the site uses: two subsets in
   a page would hide the icons of each other, so pages do not load their own. Add new icons to
-  its `icon_names`, in alphabetical order. The user link of the header shows the role of the user
-  (`data-role`) with its icon and color.
+  its `icon_names`, in alphabetical order. The user link of the header shows the highest role of the
+  user (`data-role`) with its icon and color.
 - `initial/`: default code of each language (`solution.c`, `Solution.java`...). The server reads
   it (`ProblemLoader.default_code()`) and sends it in the `initialCodeFor` of problems without
   initial code for an enabled language.
