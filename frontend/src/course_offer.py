@@ -3,11 +3,11 @@ in the clone of a professor repo (repos/professor_repo.py). Its offer is the ins
 in the judge, which keeps which repo has it and its state, and later will have groups (sections)
 with their students:
 
-- Prepared: found in the vygoj.json of a repo by its last clone or pull, but not offered yet. Only
-  the professor who owns the repo sees it, in the home page, and enters it to review it.
+- Prepared: found in the configuration file of a repo by its last clone or pull, but not offered
+  yet. Only the professor who owns the repo sees it, in the home page, and enters it to review it.
 - Offered: the professor offered it, so every user sees it in Available courses and may enroll.
-- Hidden: an offered course that is not in the vygoj.json of its repo anymore. Nobody sees it, but
-  it keeps its enrollments, until a pull finds it again.
+- Hidden: an offered course that is not in the configuration file of its repo anymore. Nobody
+  sees it, but it keeps its enrollments, until a pull finds it again.
 
 Course names are unique in the judge, because routes (/course/<name>), progress, and student repos
 identify courses by name. A course whose name another repo has already is skipped """
@@ -134,7 +134,7 @@ class Enrollment(db.Model):
     enrolled_at = db.Column(db.DateTime(timezone=True), nullable=False, default=now)
 
 def parse_courses(catalog: dict, folder: str) -> tuple:
-    """ Return the valid courses of the catalog of a repo (the JSON object of its vygoj.json),
+    """ Return the valid courses of the catalog of a repo (the object of its configuration file),
     with the files in the folder, as {name: vyg.Course}, and the number of courses that are not
     valid: their contents are not a valid tree of materials, or their names are not valid or
     repeated """

@@ -68,6 +68,13 @@ class CourseController:
         return CourseController.load_course(offer)
 
     @staticmethod
+    def is_owner(name: str) -> bool:
+        """ True if the course of the given name is in a repo of the logged user """
+        offer = CourseOffer.find(name)
+        user_id = User.logged_id()
+        return bool(offer and user_id and offer.owned_by(user_id))
+
+    @staticmethod
     def can_see(offer: CourseOffer, to_enter: bool) -> bool:
         """ True if the logged user may enter the course of the offer (to_enter), or see its
         card: administrators and the professor of the course always, students enrolled in it, and

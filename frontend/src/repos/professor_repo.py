@@ -1,8 +1,9 @@
 """ Professor repos: the git repos where professors write their courses, with external tools (e.g.
 their editor and a Git host). A professor may have several repos, each one with one or more
-courses listed in the vygoj.json file of its root. VygOJ only reads them: the professor asks for a
-clone of the main branch of each repo, and later for its changes (pull), in the Repositories
-section of the home page. The courses found become prepared course offers (course_offer.py).
+courses listed in the configuration file of its root (vygoj.json, vygoj.yaml, info.json, or
+info.yaml, see course_config.py). VygOJ only reads them: the professor asks for a clone of the main
+branch of each repo, and later for its changes (pull), in the Repositories section of the home
+page. The courses found become prepared course offers (course_offer.py).
 
 The clone of a repo is in DATA_FOLDER/user/<username>/<repo>, where <repo> is the last part of the
 path of its URL, without .git (e.g. pexercises for git@github.com:jhc/pexercises.git). Its URL and
@@ -10,7 +11,6 @@ folder are rows of the professor_repos table. Clones and pulls run in background
 (repo_jobs.py), over SSH only, with the key of the user (ssh_key.py) """
 
 import glob
-import json
 import os
 import re
 import shutil
@@ -18,6 +18,8 @@ import tempfile
 
 from flask import current_app as app
 
+from config_file import ConfigError
+from course_config import CourseConfig
 from db import db
 from repos.git_repo import (JOBS_FOLDER, MAX_URL_LENGTH, GitRepo, check_ssh_url, user_folder)
 from repos.ssh_key import SSH_FOLDER
@@ -31,9 +33,6 @@ FOLDER_PATTERN = re.compile(r'[A-Za-z0-9_][A-Za-z0-9._-]{0,63}')
 # Branch of the repos that VygOJ clones and pulls, and ref of its copy from the remote
 MAIN_BRANCH = 'main'
 REMOTE_REF = f'refs/remotes/origin/{MAIN_BRANCH}'
-# File in the root of a repo that lists its courses, and its largest size in bytes
-CATALOG = 'vygoj.json'
-MAX_CATALOG_SIZE = 1024 * 1024
 # Prefix of the temporary folders of the clones, next to the folder of the repo
 CLONE_PREFIX = '.clone-'
 # Commands that reach a remote: only SSH (no local paths, file://, nor ext::), no submodules, and
@@ -177,20 +176,15 @@ class CourseRepo(GitRepo):
         shutil.rmtree(self.path)
 
     def read_catalog(self) -> dict:
-        """ Return the courses of vygoj.json, as {key: course}. Raise CloneError if it is missing
-        (no_catalog), too big, or not a JSON object (invalid_catalog) """
-        path = os.path.join(self.path, CATALOG)
-        if os.path.islink(path) or not os.path.isfile(path):
-            raise CloneError('no_catalog')
-        if os.path.getsize(path) > MAX_CATALOG_SIZE:
-            raise CloneError('invalid_catalog')
+        """ Return the courses of the configuration file of the root (course_config.py), as
+        {key: course}. Raise CloneError if it has none (no_catalog), or the file is too big or not
+        a valid object (invalid_catalog) """
         try:
-            with open(path, encoding='utf-8') as file:
-                catalog = json.load(file)
-        except (OSError, ValueError) as error:
+            catalog = CourseConfig(self.path).load(self.path)
+        except ConfigError as error:
             raise CloneError('invalid_catalog') from error
-        if not isinstance(catalog, dict):
-            raise CloneError('invalid_catalog')
+        if catalog is None:
+            raise CloneError('no_catalog')
         return catalog
 
 def check_url(url: str) -> str:

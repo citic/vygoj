@@ -16,12 +16,22 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
 - `src/course_offer.py`: courses are in version control, and the database has their offers, which
   later will have groups (sections): `CourseOffer` (`course_offers` table: name, professor repo,
   commit, offered, hidden; prepared courses are offers not offered yet) and `Enrollment`
-  (`enrollments`), and `parse_courses()`/`sync_offers()`, which turn the `vygoj.json` of a clone
-  into offers after each clone or pull (see "Professor repositories and courses" in
+  (`enrollments`), and `parse_courses()`/`sync_offers()`, which turn the configuration file of a
+  clone into offers after each clone or pull (see "Professor repositories and courses" in
   `readme.adoc`).
-- `src/problem_loader.py`: fills a `vyg.Problem` from its folder in a course repo (`vygoj.json`,
-  statement rendered from HTML, Asciidoc with `asciidoctor`, or Markdown, initial code, and test
-  cases).
+- `src/problem_loader.py`: fills a `vyg.Problem` from its folder in a course repo (configuration
+  file, statement rendered from HTML, Asciidoc with `asciidoctor`, or Markdown, initial code, and
+  test cases).
+- `src/config_file.py`: `ConfigFile`, the base class of the configuration files of course repos:
+  `load()` finds the first of `vygoj.json`, `vygoj.yaml`, `info.json`, and `info.yaml` in a
+  folder, reads it bounded and inside the repo, parses it as JSON or as YAML without aliases
+  (only JSON values), and gives the object to `interpret()`, which each subclass implements; the
+  values it skips are kept in `warnings`. `src/course_config.py`: `CourseConfig`, the file of the
+  root with the courses. `src/problem_config.py`: `ProblemConfig`, the file of a problem folder:
+  checked fields of `vyg.Problem`, settings of the test cases of files, and languages, combined
+  with the ones of the course by `ProblemLoader.choose_languages()`. The problem page shows the
+  warnings (`Material.get_warnings()`) only to the professor who owns the repo. Questions will
+  get their own subclass.
 - `src/sanitize.py`: `sanitize_html()` cleans HTML of course authors (statements, and content pages
   in the future) with `nh3` (allow lists of tags, attributes, CSS properties, and URL schemes;
   only videos of the content folder). It rewrites relative URLs to the files route of the content.
@@ -60,8 +70,8 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
   - `professor_repo.py`: `ProfessorRepo` (`professor_repos` table: URL and folder of each repo of
     a professor) and `CourseRepo(GitRepo)`, its clone in `DATA_FOLDER/user/<username>/<repo>`
     with `main` in its working tree, which the judge only reads: clone and pull over SSH only,
-    without the git config of the server, symbolic links as plain files, and `vygoj.json`
-    bounded.
+    without the git config of the server, symbolic links as plain files, and its
+    configuration file bounded.
   - `repo_controller.py`: `RepoController`, the routes of the Repositories section of the home
     page (`/user/repo...`, script `static/js/user/repos.js`), the professor repos only for
     professors.

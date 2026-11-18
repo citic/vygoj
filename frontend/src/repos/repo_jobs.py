@@ -274,7 +274,8 @@ class RepoJob:
         try:
             courses, invalid = parse_courses(clone.read_catalog(), clone.path)
         except CloneError:
-            # Without a valid vygoj.json, the repo has no courses: the offered ones are hidden
+            # Without a valid configuration file, the repo has no courses: the offered ones are
+            # hidden
             sync_offers(repo, [], clone.head())
             raise
         skipped = sync_offers(repo, list(courses), clone.head())
