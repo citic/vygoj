@@ -1,7 +1,8 @@
 """ Configuration files of course repos: the file in the root of a repo that lists its courses
-(course_config.py), and the file of each problem folder (problem_config.py), later of questions
-too. Each one may be written in JSON or YAML, with any of the names of CONFIG_FILES. ConfigFile
-finds, reads, and parses them, and each subclass interprets the object of its kind of file.
+(courses/course_config.py), and the file of each problem folder (problems/problem_config.py),
+later of questions too. Each one may be written in JSON or YAML, with any of the names of
+CONFIG_FILES. ConfigFile finds, reads, and parses them, and each subclass interprets the object of
+its kind of file.
 
 Repos are written by professors, so the files are untrusted: they are read only inside the repo
 and up to MAX_SIZE, YAML is read without aliases nor custom tags, and both formats give only JSON

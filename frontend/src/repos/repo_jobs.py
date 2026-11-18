@@ -29,7 +29,7 @@ import zipfile
 
 from flask import current_app as app
 
-from course_offer import parse_courses, sync_offers
+from courses.course_offer import parse_courses, sync_offers
 from repos.git_repo import JOBS_FOLDER, USERS_FOLDER, GitError, user_folder
 from repos.professor_repo import CloneError, ProfessorRepo
 from repos.ssh_key import UserKey

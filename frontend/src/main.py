@@ -9,9 +9,9 @@ from flask_talisman import Talisman
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from admin import UserAdminController
-from courses import CourseController
+from courses.course_controller import CourseController
 from limits import BACKEND_CONNECT_TIMEOUT, Limits
-from problems import BACKEND_STATUS_TIMEOUT, ProblemController
+from problems.problem_controller import BACKEND_STATUS_TIMEOUT, ProblemController
 from repos.repo_controller import RepoController
 from repos.repo_jobs import check_config as check_repo_config
 from sso import SsoAdminController, SsoController, SsoProvider

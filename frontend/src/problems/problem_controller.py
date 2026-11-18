@@ -11,11 +11,11 @@ from werkzeug.security import safe_join
 
 import vyg
 from activity_log import log_event, log_run, repo_commit, save_code
-from courses import CourseController
+from courses.course_controller import CourseController
 from repos.git_repo import GitError
 from repos.student_repo import StudentRepo, solution_filename
 from limits import CONSTRAINED_FIELDS, Limits
-from problem_loader import ProblemLoader
+from problems.problem_loader import ProblemLoader
 from runs import Run, RunRejected
 from users import Progress
 

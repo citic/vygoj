@@ -43,7 +43,7 @@ import flask
 from flask import current_app as app
 
 import vyg
-from problem_loader import MAX_FILE_SIZE, ProblemLoader
+from problems.problem_loader import MAX_FILE_SIZE, ProblemLoader
 
 # Folder inside DATA_FOLDER where the activity log is written
 LOG_FOLDER = 'log'

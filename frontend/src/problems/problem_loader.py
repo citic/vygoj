@@ -13,7 +13,7 @@ import markdown
 
 import vyg
 from config_file import ConfigError, is_inside
-from problem_config import ProblemConfig
+from problems.problem_config import ProblemConfig
 from sanitize import sanitize_html
 
 # Maximum seconds that asciidoctor may spend converting a problem statement to HTML
@@ -25,8 +25,10 @@ MAX_FILE_SIZE = 16 * 2**20
 
 # Folder with the default code of each language, shown when a problem has no initial code for it.
 # Each file is named after the source file of the backend, e.g. solution.c, Solution.java. It is in
-# static/, so browsers may also get the files, e.g. /initial/Solution.java
-DEFAULT_CODE_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+# static/ of the frontend, two folders above this one (src/problems/), so browsers may also get
+# the files, e.g. /initial/Solution.java
+DEFAULT_CODE_FOLDER = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
     'static', 'initial')
 
 # The heading that starts a statement, which is its title, after the tags that open before it,

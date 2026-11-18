@@ -22,7 +22,7 @@ from werkzeug.security import generate_password_hash
 
 from db import db
 from activity_log import write_archive, log_event
-from courses import CourseController
+from courses.course_controller import CourseController
 from main import app
 from repos.repo_jobs import RepoJob
 from users import MAX_PASSWORD_LENGTH, MAX_USERNAME_LENGTH, LoginAttempt, User, sorted_roles

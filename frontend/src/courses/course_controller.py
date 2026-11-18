@@ -6,7 +6,7 @@ from flask import current_app as app
 from flask_babel import gettext
 import vyg
 from activity_log import log_event
-from course_offer import CourseOffer, parse_courses
+from courses.course_offer import CourseOffer, parse_courses
 from repos.git_repo import GitError
 from repos.professor_repo import CloneError
 from repos.student_repo import StudentRepo

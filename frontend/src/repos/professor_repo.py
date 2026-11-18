@@ -1,9 +1,9 @@
 """ Professor repos: the git repos where professors write their courses, with external tools (e.g.
 their editor and a Git host). A professor may have several repos, each one with one or more
 courses listed in the configuration file of its root (vygoj.json, vygoj.yaml, info.json, or
-info.yaml, see course_config.py). VygOJ only reads them: the professor asks for a clone of the main
-branch of each repo, and later for its changes (pull), in the Repositories section of the home
-page. The courses found become prepared course offers (course_offer.py).
+info.yaml, see courses/course_config.py). VygOJ only reads them: the professor asks for a clone of
+the main branch of each repo, and later for its changes (pull), in the Repositories section of the
+home page. The courses found become prepared course offers (courses/course_offer.py).
 
 The clone of a repo is in DATA_FOLDER/user/<username>/<repo>, where <repo> is the last part of the
 path of its URL, without .git (e.g. pexercises for git@github.com:jhc/pexercises.git). Its URL and
@@ -19,7 +19,7 @@ import tempfile
 from flask import current_app as app
 
 from config_file import ConfigError
-from course_config import CourseConfig
+from courses.course_config import CourseConfig
 from db import db
 from repos.git_repo import (JOBS_FOLDER, MAX_URL_LENGTH, GitRepo, check_ssh_url, user_folder)
 from repos.ssh_key import SSH_FOLDER
@@ -52,7 +52,7 @@ class CloneError(Exception):
 
 class ProfessorRepo(db.Model):
     """ A repo of a professor: its URL and the folder of its clone. Deleting the user deletes their
-    repos, and the offers of their courses with them (course_offer.py) """
+    repos, and the offers of their courses with them (courses/course_offer.py) """
     __tablename__ = 'professor_repos'
     # Two repos of a user never share the folder of their clones
     __table_args__ = (db.UniqueConstraint('user_id', 'folder'),)
@@ -176,7 +176,7 @@ class CourseRepo(GitRepo):
         shutil.rmtree(self.path)
 
     def read_catalog(self) -> dict:
-        """ Return the courses of the configuration file of the root (course_config.py), as
+        """ Return the courses of the configuration file of the root (courses/course_config.py), as
         {key: course}. Raise CloneError if it has none (no_catalog), or the file is too big or not
         a valid object (invalid_catalog) """
         try:

@@ -9,29 +9,37 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
 ## Layout
 
 - `src/main.py`: Flask app, security headers (Talisman CSP), config, database setup, routes.
-- `src/courses.py`, `src/problems.py`, `src/users.py`: controllers for each area. `CourseController`
-  lists the courses of the home page (prepared, enrolled, available), offers and enrolls them,
-  lets only the professor, students, and administrators enter a course (`find_course()`), and
-  caches each course by the commit of its offer.
-- `src/course_offer.py`: courses are in version control, and the database has their offers, which
-  later will have groups (sections): `CourseOffer` (`course_offers` table: name, professor repo,
-  commit, offered, hidden; prepared courses are offers not offered yet) and `Enrollment`
-  (`enrollments`), and `parse_courses()`/`sync_offers()`, which turn the configuration file of a
-  clone into offers after each clone or pull (see "Professor repositories and courses" in
-  `readme.adoc`).
-- `src/problem_loader.py`: fills a `vyg.Problem` from its folder in a course repo (configuration
-  file, statement rendered from HTML, Asciidoc with `asciidoctor`, or Markdown, initial code, and
-  test cases).
+- `src/users.py`: users (`User`, their roles, `has_role()`), their progress (`Progress`), the
+  limits of login attempts (`LoginAttempt`), and the language of the interface.
 - `src/config_file.py`: `ConfigFile`, the base class of the configuration files of course repos:
   `load()` finds the first of `vygoj.json`, `vygoj.yaml`, `info.json`, and `info.yaml` in a
   folder, reads it bounded and inside the repo, parses it as JSON or as YAML without aliases
   (only JSON values), and gives the object to `interpret()`, which each subclass implements; the
-  values it skips are kept in `warnings`. `src/course_config.py`: `CourseConfig`, the file of the
-  root with the courses. `src/problem_config.py`: `ProblemConfig`, the file of a problem folder:
-  checked fields of `vyg.Problem`, settings of the test cases of files, and languages, combined
-  with the ones of the course by `ProblemLoader.choose_languages()`. The problem page shows the
-  warnings (`Material.get_warnings()`) only to the professor who owns the repo. Questions will
-  get their own subclass.
+  values it skips are kept in `warnings`. Questions will get their own subclass.
+- `src/courses/`: package with the courses (imported as `courses.course_offer`...).
+  - `course_controller.py`: `CourseController` lists the courses of the home page (prepared,
+    enrolled, available), offers and enrolls them, lets only the professor, students, and
+    administrators enter a course (`find_course()`), and caches each course by the commit of its
+    offer.
+  - `course_offer.py`: courses are in version control, and the database has their offers, which
+    later will have groups (sections): `CourseOffer` (`course_offers` table: name, professor repo,
+    commit, offered, hidden; prepared courses are offers not offered yet) and `Enrollment`
+    (`enrollments`), and `parse_courses()`/`sync_offers()`, which turn the configuration file of a
+    clone into offers after each clone or pull (see "Professor repositories and courses" in
+    `readme.adoc`).
+  - `course_config.py`: `CourseConfig(ConfigFile)`, the file of the root of a repo with its
+    courses.
+- `src/problems/`: package with the programming problems (imported as
+  `problems.problem_loader`...).
+  - `problem_controller.py`: `ProblemController`, the problem page: statement, runs of solutions
+    in a backend, and the files of problem folders.
+  - `problem_loader.py`: fills a `vyg.Problem` from its folder in a course repo (configuration
+    file, statement rendered from HTML, Asciidoc with `asciidoctor`, or Markdown, initial code, and
+    test cases).
+  - `problem_config.py`: `ProblemConfig(ConfigFile)`, the file of a problem folder: checked fields
+    of `vyg.Problem`, settings of the test cases of files, and languages, combined with the ones of
+    the course by `ProblemLoader.choose_languages()`. The problem page shows the warnings
+    (`Material.get_warnings()`) only to the professor who owns the repo.
 - `src/sanitize.py`: `sanitize_html()` cleans HTML of course authors (statements, and content pages
   in the future) with `nh3` (allow lists of tags, attributes, CSS properties, and URL schemes;
   only videos of the content folder). It rewrites relative URLs to the files route of the content.
