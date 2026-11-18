@@ -1,4 +1,13 @@
-{%- macro course_entry(course, progress=none) %}
+{#- Names of the columns of the courses, once above a list on wide screens #}
+{%- macro course_columns() %}
+          <p class="course_columns" aria-hidden="true"><span class="name">{{ _('Course') }}</span><span class="description">{{ _('Description') }}</span><span class="instructors">{{ _('Author') }}</span><span class="statistics">{{ _('Statistics') }}</span></p>
+{%- endmacro %}
+
+{#- Card of a course in the lists of the home page. entry has the course, its offer, and the
+    number of its students. The actions of the card, such as Enter, Offer, or Enroll, come from
+    the call block, in the actions part at its right #}
+{%- macro course_entry(entry, progress=none) %}
+{%- set course = entry.course %}
             <article class="course_item">
 {%- if course.banner %}
               <img class="banner" src="{{ course.file_url(course.banner) }}" alt="">
@@ -14,8 +23,10 @@
                 <li><a href="/prof/{{ instructor }}">{{ instructor }}</a></li>
 {%- endfor %}
               </ul>
-              <p class="statistics">{# {{ course.statistics.students }} students, {{ course.statistics.sections }} sections, {{ course.statistics.problems }} problems, {{ course.statistics.questions }} questions. #}</p>
-              <a class="enter" href="/course/{{ course.name }}">Enter ›</a>
+              <p class="statistics">{{ ngettext('%(num)d student', '%(num)d students', entry.students) }}</p>
+              <div class="actions">
+{{- caller() }}
+              </div>
             </article>
 {%- endmacro %}
 

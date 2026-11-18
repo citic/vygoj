@@ -7,8 +7,8 @@
 }
 
 /* Card of a course in the lists: its image and progress at the left of its code and name,
-   description, and instructors, the Enter button below them, and its banner, if any, behind
-   them. The last row takes the height of the image that is left */
+   description, and instructors, its actions below them (Enter, Offer, or Enroll), and its banner,
+   if any, behind them. The last row takes the height of the image that is left */
 .course_item {
   position: relative;
   display: grid;
@@ -58,8 +58,7 @@
     color: gray;
   }
 
-  /* Statistics of the course, such as its students: an empty column for now, only on wide
-     screens */
+  /* Statistics of the course, such as its students, only on wide screens */
   & .statistics {
     display: none;
   }
@@ -122,9 +121,29 @@
     color: var(--label-color);
   }
 
+  /* Actions of the course, one below the other: Enter, and Offer or Enroll */
+  & .actions {
+    grid-column: 2;
+    display: grid;
+    gap: 0.5rem;
+    align-content: center;
+  }
+
+  /* The forms of the actions stay over the link of Enter */
+  & form {
+    z-index: 1;
+    display: grid;
+  }
+
+  /* An offered course says so instead of its Offer button */
+  & .offered {
+    color: var(--muted-text);
+    font-size: 0.9rem;
+    text-align: center;
+  }
+
   /* The link of the button covers the card, so any part of it enters the course */
   & .enter {
-    grid-column: 2;
     padding: 0.5rem;
     border-radius: 2rem;
     box-shadow: 0 2px 6px rgb(53 104 100 / 45%);
@@ -179,7 +198,7 @@
       grid-row: 1;
     }
 
-    & > :is(h3, .description, .instructors, .statistics, .enter) {
+    & > :is(h3, .description, .instructors, .statistics, .actions) {
       grid-row: 1 / span 2;
     }
 
@@ -206,23 +225,21 @@
       border-inline-start: 1px solid rgb(128 128 128 / 50%);
     }
 
-    & .enter {
+    & .actions {
       grid-column: auto;
     }
   }
 }
 
-/* Sections of the home page (administration and lists of courses), which fold (site.css). The
-   actions of a section, such as Add Course, go at the right below its title */
+/* Sections of the home page (administration, repositories, and lists of courses), which fold
+   (site.css). A list without courses says why */
 .courses > details {
   & > summary {
     margin-bottom: 1rem;
   }
 
-  & > a {
-    display: block;
-    width: fit-content;
-    margin: 0 0 1rem auto;
+  & > .empty {
+    color: var(--muted-text);
   }
 }
 
@@ -266,12 +283,9 @@
   }
 }
 
-/* Student repo of the Repositories section of the home page (static/js/user/repos.js): a line
-   with its info and the buttons of its zips, a line with its origin and Push, a line with the
-   SSH key of the user and its Copy button, and the messages of its jobs. Lines wrap on narrow screens */
-.repo {
-  gap: 0.75rem;
-
+/* Repositories section of the home page (static/js/user/repos.js): the SSH key of the user with
+   its Copy button, and the fieldsets of the repos. Lines wrap on narrow screens */
+.repositories {
   & .repo_line {
     display: flex;
     flex-wrap: wrap;
@@ -324,6 +338,30 @@
   /* A zip ready to download delivers a result, so its button takes the action color */
   & button[data-state="download"] {
     background: var(--action-bg);
+  }
+
+  & > .repo_line {
+    margin-bottom: 1rem;
+  }
+}
+
+/* A repo of the Repositories section: the student repo (a line with its info and the buttons of
+   its zips, a line with its origin and Push, and the messages of its jobs), or the professor repos
+   (a line per repo with its URL and its Clone or Pull button, the Add repository button, and the
+   messages of their jobs) */
+.repo {
+  gap: 0.75rem;
+
+  & .repo_list {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  & .repo_list:empty {
+    display: none;
   }
 }
 

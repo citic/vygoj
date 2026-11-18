@@ -25,6 +25,12 @@ msgid "%(commits)s versions of %(problems)s problems, the last one on %(time)s."
 msgstr "%(commits)s versiones de %(problems)s problemas, la última el %(time)s."
 
 #, python-format
+msgid "%(num)d student"
+msgid_plural "%(num)d students"
+msgstr[0] "%(num)d estudiante"
+msgstr[1] "%(num)d estudiantes"
+
+#, python-format
 msgid "%(number)s of %(count)s, %(time)s"
 msgstr "%(number)s de %(count)s, %(time)s"
 
@@ -90,22 +96,28 @@ msgstr "Bitácora"
 msgid "Add"
 msgstr "Agregar"
 
-msgid "Add Course"
-msgstr "Agregar curso"
-
 msgid "Add SSO provider"
 msgstr "Agregar proveedor de SSO"
 
+msgid "Add repository"
+msgstr "Agregar repositorio"
+
 msgid ""
-"Add this public key to your repo in your Git host with write access (e.g."
-" a deploy key in GitHub), set the SSH URL of the repo as origin, and "
-"press Push. Each Push sends your new solutions; nothing is brought from "
-"the origin."
+"Add this public key to the origin of your student repository in your Git "
+"host with write access (e.g. a deploy key in GitHub)."
 msgstr ""
-"Agregue esta clave pública a su repositorio en su servicio de Git con "
-"permiso de escritura (p. ej. una deploy key en GitHub), establezca la URL"
-" SSH del repositorio como origen y presione Enviar. Cada envío manda sus "
-"soluciones nuevas; no se trae nada del origen."
+"Agregue esta clave pública con acceso de escritura al origen de su "
+"repositorio de estudiante en su servicio de Git (p. ej. una deploy key en"
+" GitHub)."
+
+msgid ""
+"Add this public key to your repositories in your Git host (e.g. a deploy "
+"key in GitHub): with write access to the origin of your student "
+"repository, and read access to your professor repositories."
+msgstr ""
+"Agregue esta clave pública a sus repositorios en su servicio de Git (p. "
+"ej. una deploy key en GitHub): con acceso de escritura al origen de su "
+"repositorio de estudiante, y de lectura a sus repositorios de docente."
 
 msgid "Administration"
 msgstr "Administración"
@@ -141,6 +153,9 @@ msgstr "Argumentos, uno por línea"
 msgid "Assistant"
 msgstr "Asistente"
 
+msgid "Author"
+msgstr "Autor"
+
 msgid "Available courses"
 msgstr "Cursos disponibles"
 
@@ -175,6 +190,16 @@ msgstr "ID de cliente"
 
 msgid "Client secret"
 msgstr "Secreto de cliente"
+
+msgid "Clone"
+msgstr "Clonar"
+
+#, python-format
+msgid "Cloned %(repo)s on %(time)s. Courses found: %(courses)s."
+msgstr "Se clonó %(repo)s el %(time)s. Cursos encontrados: %(courses)s."
+
+msgid "Cloning..."
+msgstr "Clonando..."
 
 msgid "Close"
 msgstr "Cerrar"
@@ -216,6 +241,10 @@ msgid "Copy the SSH key"
 msgstr "Copiar la clave SSH"
 
 #, python-format
+msgid "Could not clone %(repo)s: %(reason)s."
+msgstr "No se pudo clonar %(repo)s: %(reason)s."
+
+#, python-format
 msgid "Could not connect with %(provider)s. Try again later."
 msgstr "No se pudo conectar con %(provider)s. Intente más tarde."
 
@@ -236,6 +265,10 @@ msgid "Could not make the zip of your solution history: %(reason)s."
 msgstr "No se pudo generar el zip del historial de sus soluciones: %(reason)s."
 
 #, python-format
+msgid "Could not pull %(repo)s: %(reason)s."
+msgstr "No se pudo actualizar %(repo)s: %(reason)s."
+
+#, python-format
 msgid "Could not push to the origin: %(reason)s."
 msgstr "No se pudo enviar al origen: %(reason)s."
 
@@ -245,6 +278,13 @@ msgstr "No se pudo leer su repositorio de estudiante."
 #, python-format
 msgid "Could not run the solution: %(error)s"
 msgstr "No se pudo ejecutar la solución: %(error)s"
+
+msgid "Course"
+msgstr "Curso"
+
+#, python-format
+msgid "Course %(name)s offered."
+msgstr "Curso %(name)s ofrecido."
 
 msgid "Create an account for users who are not registered in VygOJ"
 msgstr "Crear una cuenta a los usuarios que no están registrados en VygOJ"
@@ -298,6 +338,9 @@ msgstr ""
 msgid "Deleted"
 msgstr "Eliminado"
 
+msgid "Description"
+msgstr "Descripción"
+
 msgid "Diagnostics"
 msgstr "Diagnósticos"
 
@@ -344,6 +387,12 @@ msgstr "Correo"
 
 msgid "Email claim"
 msgstr "Claim del correo"
+
+msgid "Enroll"
+msgstr "Matricular"
+
+msgid "Enter"
+msgstr "Entrar"
 
 msgid "Error"
 msgstr "Error"
@@ -454,8 +503,11 @@ msgstr "Ingreso cancelado."
 msgid "Logout"
 msgstr "Cerrar sesión"
 
-msgid "My courses"
-msgstr "Mis cursos"
+msgid "My enrolled courses"
+msgstr "Mis cursos matriculados"
+
+msgid "My prepared courses"
+msgstr "Mis cursos preparados"
 
 msgid "Name"
 msgstr "Nombre"
@@ -471,6 +523,9 @@ msgstr "Sin errores"
 
 msgid "No network connection"
 msgstr "Sin conexión a la red"
+
+msgid "No prepared courses yet: clone a professor repository with courses."
+msgstr "Aún no hay cursos preparados: clone un repositorio de docente con cursos."
 
 msgid ""
 "No solutions yet: each run of a problem saves a version in this "
@@ -492,12 +547,26 @@ msgstr "Sin conexión con el backend"
 msgid "Not found"
 msgstr "No encontrado"
 
+msgid "Offer"
+msgstr "Ofrecer"
+
+#, python-format
+msgid ""
+"Offer the course %(name)s? Every user will see it in Available courses "
+"and may enroll in it."
+msgstr ""
+"¿Ofrecer el curso %(name)s? Todos los usuarios lo verán en Cursos "
+"disponibles y podrán matricularlo."
+
+msgid "Offered"
+msgstr "Ofrecido"
+
 msgid ""
 "Optional. Claim that tells professors from students, e.g. groups or "
 "realm_access.roles"
 msgstr ""
-"Opcional. Claim que distingue a los profesores de los estudiantes, p. ej."
-" groups o realm_access.roles"
+"Opcional. Claim que distingue a docentes de estudiantes, p. ej. groups o "
+"realm_access.roles"
 
 msgid ""
 "Optional. Single sign-on links the accounts of providers with this email "
@@ -553,13 +622,16 @@ msgid "Problems of the course"
 msgstr "Problemas del curso"
 
 msgid "Professor"
-msgstr "Profesor"
+msgstr "Docente"
 
 msgid "Professor claim"
-msgstr "Claim de profesor"
+msgstr "Claim de docente"
+
+msgid "Professor repositories"
+msgstr "Repositorios de docente"
 
 msgid "Professor values"
-msgstr "Valores de profesor"
+msgstr "Valores de docente"
 
 msgid "Programming language"
 msgstr "Lenguaje de programación"
@@ -577,6 +649,16 @@ msgstr "Proveedor %(provider)s eliminado."
 #, python-format
 msgid "Provider %(provider)s saved."
 msgstr "Proveedor %(provider)s guardado."
+
+msgid "Pull"
+msgstr "Actualizar"
+
+#, python-format
+msgid "Pulled %(repo)s on %(time)s. Courses found: %(courses)s."
+msgstr "Se actualizó %(repo)s el %(time)s. Cursos encontrados: %(courses)s."
+
+msgid "Pulling..."
+msgstr "Actualizando..."
 
 msgid "Push"
 msgstr "Enviar"
@@ -599,6 +681,9 @@ msgstr "Rechazado"
 
 msgid "Repositories"
 msgstr "Repositorios"
+
+msgid "Repository"
+msgstr "Repositorio"
 
 msgid "Result"
 msgstr "Resultado"
@@ -648,6 +733,14 @@ msgid "Set origin"
 msgstr "Establecer origen"
 
 msgid ""
+"Set the SSH URL of an empty repo of yours as origin, and press Push. Each"
+" Push sends your new solutions; nothing is brought from the origin."
+msgstr ""
+"Establezca como origen el URL SSH de un repositorio vacío suyo, y "
+"presione Enviar. Cada envío manda sus soluciones nuevas; nada se trae del"
+" origen."
+
+msgid ""
 "Short name chosen in VygOJ for URLs and for SSO_CLIENT_SECRETS in "
 "config.py, e.g. ucr. It is not the client ID. It cannot be changed later."
 msgstr ""
@@ -660,6 +753,18 @@ msgstr "Se muestra en el botón de ingreso, p. ej. Universidad de Costa Rica"
 msgid "Site logo"
 msgstr "Logo del sitio"
 
+#, python-format
+msgid "Skipped courses of %(repo)s that are not valid in vygoj.json: %(count)s."
+msgstr "Cursos de %(repo)s omitidos por no ser válidos en vygoj.json: %(count)s."
+
+#, python-format
+msgid ""
+"Skipped courses of %(repo)s, because other repositories have courses with"
+" the same names: %(names)s. Rename them in vygoj.json."
+msgstr ""
+"Se omitieron cursos de %(repo)s porque otros repositorios tienen cursos "
+"con los mismos nombres: %(names)s. Renómbrelos en vygoj.json."
+
 msgid "Standard input"
 msgstr "Entrada estándar"
 
@@ -671,6 +776,9 @@ msgstr "Enunciado a la derecha"
 
 msgid "Statement on top"
 msgstr "Enunciado arriba"
+
+msgid "Statistics"
+msgstr "Estadísticas"
 
 msgid "Status"
 msgstr "Estado"
@@ -763,6 +871,14 @@ msgstr ""
 msgid "The origin was up to date on %(time)s."
 msgstr "El origen estaba actualizado el %(time)s."
 
+#, python-format
+msgid ""
+"The repository must be the SSH URL of a repo in %(hosts)s, e.g. "
+"git@github.com:user/courses.git"
+msgstr ""
+"El repositorio debe ser el URL SSH de un repositorio en %(hosts)s, p. ej."
+" git@github.com:usuario/cursos.git"
+
 msgid "The requested resource was not found in this site."
 msgstr "El recurso solicitado no se encontró en este sitio."
 
@@ -815,12 +931,6 @@ msgid "User %(username)s deleted."
 msgstr "Usuario %(username)s eliminado."
 
 #, python-format
-msgid "User %(username)s has the courses in their folder and cannot be deleted."
-msgstr ""
-"El usuario %(username)s tiene los cursos en su carpeta y no se puede "
-"eliminar."
-
-#, python-format
 msgid "User %(username)s saved."
 msgstr "Usuario %(username)s guardado."
 
@@ -866,8 +976,8 @@ msgid ""
 "Values of that claim that mean professor, separated by commas. Other new "
 "users are students."
 msgstr ""
-"Valores de ese claim que indican profesor, separados por comas. Los demás"
-" usuarios nuevos son estudiantes."
+"Valores de ese claim que indican docente, separados por comas. Los demás "
+"usuarios nuevos son estudiantes."
 
 msgid "Version of your solution"
 msgstr "Versión de su solución"
@@ -895,6 +1005,28 @@ msgstr "Escriba un URL https://"
 
 msgid "Write scopes separated by spaces, including openid"
 msgstr "Escriba scopes separados por espacios, incluido openid"
+
+msgid ""
+"Write the SSH URL of each repository with courses, and press Clone. The "
+"judge reads the courses listed in the vygoj.json file of its main branch,"
+" which appear in My prepared courses. After you change the repository, "
+"press Pull."
+msgstr ""
+"Escriba el URL SSH de cada repositorio con cursos, y presione Clonar. El "
+"juez lee los cursos listados en el archivo vygoj.json de su rama main, "
+"que aparecen en Mis cursos preparados. Después de cambiar el repositorio,"
+" presione Actualizar."
+
+#, python-format
+msgid "You are enrolled in %(name)s."
+msgstr "Está matriculado en %(name)s."
+
+msgid ""
+"You are not enrolled in any course yet: enroll in one of the available "
+"courses."
+msgstr ""
+"Aún no está matriculado en ningún curso: matricule uno de los cursos "
+"disponibles."
 
 msgid "You cannot remove your own administrator role."
 msgstr "No puede quitar su propio rol de administrador."
@@ -942,6 +1074,9 @@ msgstr "ocurrió un error, intente de nuevo más tarde"
 msgid "could not connect to the host of the origin"
 msgstr "no se pudo conectar con el servidor del origen"
 
+msgid "could not connect to the host of the repository"
+msgstr "no se pudo conectar con el servidor del repositorio"
+
 msgid "could not connect to the server"
 msgstr "no se pudo conectar con el servidor"
 
@@ -985,6 +1120,28 @@ msgstr "el correo pertenece al usuario %(username)s"
 msgid "the identity of the host of the origin changed"
 msgstr "cambió la identidad del servidor del origen"
 
+msgid "the identity of the host of the repository changed"
+msgstr "la identidad del servidor del repositorio cambió"
+
+msgid ""
+"the judge has a folder with the name of the repository that is not a "
+"clone: ask the administrator"
+msgstr ""
+"el juez tiene una carpeta con el nombre del repositorio que no es un "
+"clon: consulte al administrador"
+
+msgid "the name of the repository is reserved by the judge: rename the repository"
+msgstr ""
+"el nombre del repositorio está reservado por el juez: renombre el "
+"repositorio"
+
+msgid ""
+"the name of the repository may only have letters, digits, dots, hyphens, "
+"and underscores"
+msgstr ""
+"el nombre del repositorio sólo puede tener letras, dígitos, puntos, "
+"guiones y guiones bajos"
+
 msgid ""
 "the origin did not accept the SSH key: add it to the repo with write "
 "access"
@@ -1001,6 +1158,25 @@ msgstr ""
 
 msgid "the origin repo does not exist, or the SSH key cannot access it"
 msgstr "el repositorio de origen no existe o la clave SSH no tiene acceso"
+
+msgid ""
+"the repository did not accept the SSH key: add it to the repository with "
+"read access"
+msgstr ""
+"el repositorio no aceptó la clave SSH: agréguela al repositorio con "
+"acceso de lectura"
+
+msgid "the repository does not exist, or the SSH key cannot access it"
+msgstr "el repositorio no existe, o la clave SSH no tiene acceso a él"
+
+msgid "the repository has no main branch"
+msgstr "el repositorio no tiene una rama main"
+
+msgid "the repository has no vygoj.json file in its root"
+msgstr "el repositorio no tiene un archivo vygoj.json en su raíz"
+
+msgid "the repository is bigger than the judge accepts"
+msgstr "el repositorio es más grande de lo que el juez acepta"
 
 #, python-format
 msgid "the server answered %(status)s"
@@ -1020,8 +1196,17 @@ msgstr "el servidor está ejecutando otras tareas, intente de nuevo en unos minu
 msgid "the username or the email is repeated in the file"
 msgstr "el nombre de usuario o el correo se repite en el archivo"
 
+msgid "the vygoj.json file of the repository is not a valid JSON object"
+msgstr "el archivo vygoj.json del repositorio no es un objeto JSON válido"
+
 msgid "wait a minute after the last request, and try again"
 msgstr "espere un minuto después de la última solicitud e intente de nuevo"
+
+msgid "you cannot add more repositories"
+msgstr "no puede agregar más repositorios"
+
+msgid "you have another repository with the same name: rename one of them"
+msgstr "tiene otro repositorio con el mismo nombre: renombre uno de ellos"
 
 msgid ""
 "your student repo has no solutions yet: each run of a problem saves a "
@@ -1033,6 +1218,30 @@ msgstr ""
 msgid "your student repo is too big"
 msgstr "su repositorio de estudiante es demasiado grande"
 
+#~ msgid "Add Course"
+#~ msgstr "Agregar curso"
+
+#~ msgid ""
+#~ "Add this public key to your repo"
+#~ " in your Git host with write "
+#~ "access (e.g. a deploy key in "
+#~ "GitHub), set the SSH URL of the"
+#~ " repo as origin, and press Push. "
+#~ "Each Push sends your new solutions; "
+#~ "nothing is brought from the origin."
+#~ msgstr ""
+#~ "Agregue esta clave pública a su "
+#~ "repositorio en su servicio de Git "
+#~ "con permiso de escritura (p. ej. "
+#~ "una deploy key en GitHub), establezca"
+#~ " la URL SSH del repositorio como "
+#~ "origen y presione Enviar. Cada envío "
+#~ "manda sus soluciones nuevas; no se "
+#~ "trae nada del origen."
+
+#~ msgid "Admin Users"
+#~ msgstr "Administrar usuarios"
+
 #~ msgid "Administrators are created and recovered in the server with make admin."
 #~ msgstr "Los administradores se crean y recuperan en el servidor con make admin."
 
@@ -1041,6 +1250,24 @@ msgstr "su repositorio de estudiante es demasiado grande"
 #~ "Los administradores inician sesión con "
 #~ "su contraseña, nunca con inicio de "
 #~ "sesión único."
+
+#~ msgid ""
+#~ "Delete the user %(username)s and their"
+#~ " data, such as their preferences and"
+#~ " progress? Their activity stays in "
+#~ "the log. This cannot be undone."
+#~ msgstr ""
+#~ "¿Eliminar al usuario %(username)s y sus"
+#~ " datos, como sus preferencias y "
+#~ "progreso? Su actividad se mantiene en"
+#~ " la bitácora. Esto no se puede "
+#~ "deshacer."
+
+#~ msgid "Download my solutions"
+#~ msgstr "Descargar mis soluciones"
+
+#~ msgid "My courses"
+#~ msgstr "Mis cursos"
 
 #~ msgid ""
 #~ "Optional. The ID of the student in"
@@ -1068,25 +1295,19 @@ msgstr "su repositorio de estudiante es demasiado grande"
 #~ "servidor con make admin."
 
 #~ msgid ""
-#~ "Delete the user %(username)s and their"
-#~ " data, such as their preferences and"
-#~ " progress? Their activity stays in "
-#~ "the log. This cannot be undone."
+#~ "User %(username)s has the courses in "
+#~ "their folder and cannot be deleted."
 #~ msgstr ""
-#~ "¿Eliminar al usuario %(username)s y sus"
-#~ " datos, como sus preferencias y "
-#~ "progreso? Su actividad se mantiene en"
-#~ " la bitácora. Esto no se puede "
-#~ "deshacer."
-
-#~ msgid "Download my solutions"
-#~ msgstr "Descargar mis soluciones"
-
-#~ msgid "Admin Users"
-#~ msgstr "Administrar usuarios"
+#~ "El usuario %(username)s tiene los cursos"
+#~ " en su carpeta y no se puede"
+#~ " eliminar."
 
 #~ msgid "User control"
 #~ msgstr "Control de usuario"
 
 #~ msgid "Standard error output"
 #~ msgstr "Salida de error estándar"
+
+#~ msgid "clone"
+#~ msgstr ""
+

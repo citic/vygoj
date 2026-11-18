@@ -52,18 +52,24 @@ def select_language() -> str:
 def client_translations(language: str) -> dict:
     """ Return the translations of the interface to the given language as {text: translation},
     for the texts written by JavaScript. English and unknown languages have none. The language is
-    checked against LANGUAGES before building the path of its file """
+    checked against LANGUAGES before building the path of its file. Texts with plural forms
+    (ngettext) have a list of ids and translations: they are left out, because the _() of
+    static/js/i18n.js has no plurals """
     path = os.path.join(TRANSLATIONS_FOLDER, language, 'LC_MESSAGES', 'messages.mo')
     if language not in LANGUAGES or not os.path.isfile(path):
         return {}
     with open(path, 'rb') as file:
         return {message.id: message.string for message in read_mo(file)
-            if message.id and message.string}
+            if isinstance(message.id, str) and message.id and message.string}
+
+def has_role(role: str) -> bool:
+    """ True if the logged user has the given role (a key of ROLES), among others """
+    user = flask.session.get('user')
+    return bool(user) and role in user.get('roles', ())
 
 def is_admin() -> bool:
     """ True if the logged user is an administrator """
-    user = flask.session.get('user')
-    return bool(user) and 'admin' in user.get('roles', ())
+    return has_role('admin')
 
 def require_admin():
     """ Stop the request if the logged user is not an administrator """
@@ -134,6 +140,14 @@ class User(db.Model):
     def __repr__(self):
         """ Readable string representation for debugging/testing """
         return f'<User {self.username}>'
+
+    @staticmethod
+    def logged_id() -> int | None:
+        """ Return the id of the logged user, or None if nobody is logged in """
+        user = flask.session.get('user')
+        if not user:
+            return None
+        return db.session.scalar(db.select(User.id).filter_by(username=user.get('email')))
 
     @staticmethod
     def find(user_id: int) -> 'User | None':

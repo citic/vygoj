@@ -90,6 +90,9 @@ make clean     # remove .venv
 
 ## Workflow
 
+- Before changing the code, make a plan and confirm it with the developer; apply it only after
+  their approval.
+- Ask questions in the same language that the developer used in the prompt.
 - Ask the developer before applying important design decisions to the code: changes to the
   architecture, the HTTP/JSON protocol, the shared model, the database schema, file formats or
   the layout of stored data, and new dependencies. Propose the options with a recommendation, and

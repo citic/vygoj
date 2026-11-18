@@ -9,7 +9,16 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
 ## Layout
 
 - `src/main.py`: Flask app, security headers (Talisman CSP), config, database setup, routes.
-- `src/courses.py`, `src/problems.py`, `src/users.py`: controllers for each area.
+- `src/courses.py`, `src/problems.py`, `src/users.py`: controllers for each area. `CourseController`
+  lists the courses of the home page (prepared, enrolled, available), offers and enrolls them,
+  lets only the professor, students, and administrators enter a course (`find_course()`), and
+  caches each course by the commit of its offer.
+- `src/course_offer.py`: courses are in version control, and the database has their offers, which
+  later will have groups (sections): `CourseOffer` (`course_offers` table: name, professor repo,
+  commit, offered, hidden; prepared courses are offers not offered yet) and `Enrollment`
+  (`enrollments`), and `parse_courses()`/`sync_offers()`, which turn the `vygoj.json` of a clone
+  into offers after each clone or pull (see "Professor repositories and courses" in
+  `readme.adoc`).
 - `src/problem_loader.py`: fills a `vyg.Problem` from its folder in a course repo (`vygoj.json`,
   statement rendered from HTML, Asciidoc with `asciidoctor`, or Markdown, initial code, and test
   cases).
@@ -32,10 +41,10 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
   `refresh_session()` in `users.py` logs out suspended and deleted users at their next request.
   Tables with data of users declare their foreign key with `ondelete='CASCADE'`, so deleting a
   user deletes it (`manage.py` updates the keys of older databases), and the folder of the user
-  in `DATA_FOLDER` is deleted after the commit, unless it holds the course repo (`COURSES_REPO`).
+  in `DATA_FOLDER` is deleted after the commit, with the clones of their professor repos.
 - `src/repos/`: package with the git repos of the users (imported as `repos.git_repo`...).
-  - `git_repo.py`: `GitRepo`, the operations on git repos shared by student repos and, later,
-    professor repos (commit a file at the end of a branch, versions, read, archive, merge
+  - `git_repo.py`: `GitRepo`, the operations on git repos shared by student repos and professor
+    repos (commit a file at the end of a branch, versions, read, archive, merge
     branches, copy with a working tree, push over SSH only), `check_ssh_url()` for the remotes of
     users, and `user_folder()`, the folder `DATA_FOLDER/user/<username>` with the repos of each
     user.
@@ -48,11 +57,18 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
     runs git through `subprocess` with plumbing commands and a timeout, and validates names of
     courses, problems, files, and commits before they become refs or paths (see "Student repos"
     in `readme.adoc`).
+  - `professor_repo.py`: `ProfessorRepo` (`professor_repos` table: URL and folder of each repo of
+    a professor) and `CourseRepo(GitRepo)`, its clone in `DATA_FOLDER/user/<username>/<repo>`
+    with `main` in its working tree, which the judge only reads: clone and pull over SSH only,
+    without the git config of the server, symbolic links as plain files, and `vygoj.json`
+    bounded.
   - `repo_controller.py`: `RepoController`, the routes of the Repositories section of the home
-    page (`/user/repo...`, script `static/js/user/repos.js`).
+    page (`/user/repo...`, script `static/js/user/repos.js`), the professor repos only for
+    professors.
   - `repo_jobs.py`: `RepoJob`, the background jobs of a student repo (zip of the last solutions,
-    zip of a copy with history, push): started as `manage.py repo-job` processes with `nice` 19
-    and a time limit, with their state in `DATA_FOLDER/user/<username>/jobs/` and a lock per job.
+    zip of a copy with history, push) and of each professor repo (`pull_<id>`: clone or pull,
+    and sync its courses): started as `manage.py repo-job` processes with `nice` 19 and a time
+    limit, with their state in `DATA_FOLDER/user/<username>/jobs/` and a lock per job.
   - `ssh_key.py`: `UserKey`, the SSH key pair of each user, never shared between users (see
     "Repositories section" in `readme.adoc`).
 - `src/runs.py`: `Run` model (`runs` table) that limits the code runs of each user: one at a
@@ -75,8 +91,9 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
   updates the users table; `make`, `make release`, and `make server` run it before starting,
   because gunicorn workers creating tables at the same time fail. `main.py` never changes the
   schema. Administrators import users from CSV or TSV files in `/admin/users` (`admin.py`).
-  `log output.zip` and `submissions output.zip` write the archives of the activity log. Their
-  logic is in `users.py` and `activity_log.py`, so the web application can reuse it.
+  `log output.zip` and `submissions output.zip` write the archives of the activity log.
+  `repo-job kind username [repo_id]` runs a background job of `repo_jobs.py`. Their logic is in
+  `users.py`, `activity_log.py`, and `repo_jobs.py`, so the web application can reuse it.
 - `templates/`: Jinja2 templates. `base.html` is the layout; pages extend it and fill blocks.
   Views pass data to templates in a single `it` object.
 - `config/defaults.py`: default value and explanation of every setting. `main.py` loads it, and

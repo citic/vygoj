@@ -1,10 +1,10 @@
 """ Manage the frontend from the command line of the server:
 
-    python manage.py admin [username]          # make admin
-    python manage.py import                    # make users
-    python manage.py log output.zip            # the activity log and its analysis tables
-    python manage.py submissions output.zip    # the code of the runs, a folder per submission
-    python manage.py repo-job kind username    # a background job of a student repo
+    python manage.py admin [username]                    # make admin
+    python manage.py import                              # make users
+    python manage.py log output.zip                      # the activity log and its analysis tables
+    python manage.py submissions output.zip              # the code of the runs, by submission
+    python manage.py repo-job kind username [repo_id]    # a background job of a repo of a user
 
 admin creates an administrator, or resets the password of a user and makes it administrator. It
 runs in the server, so the first administrator, and one who lost their password, never depend on
@@ -12,8 +12,9 @@ the web application, where administrators give and take the role of the others, 
 users from files. import creates and updates the tables of the database; make runs it before
 starting the servers. log and submissions write the archives that administrators download from
 the web application. repo-job runs a job on the student repo of a user (solutions, history, or
-push); the web application starts it in the background (see repo_jobs.py). Their logic lives in
-users.py, activity_log.py, and repo_jobs.py, so the web application may reuse it """
+push), or on one of their professor repos, given by its id (pull); the web application starts it
+in the background (see repo_jobs.py). Their logic lives in users.py, activity_log.py, and
+repo_jobs.py, so the web application may reuse it """
 import getpass
 import sys
 
@@ -23,11 +24,11 @@ from db import db
 from activity_log import write_archive, log_event
 from courses import CourseController
 from main import app
-from repos.repo_jobs import JOB_KINDS, RepoJob
+from repos.repo_jobs import RepoJob
 from users import MAX_PASSWORD_LENGTH, MAX_USERNAME_LENGTH, LoginAttempt, User, sorted_roles
 
 USAGE = ('Usage: python manage.py admin [username] | import | log output.zip'
-    ' | submissions output.zip | repo-job kind username')
+    ' | submissions output.zip | repo-job kind username [repo_id]')
 
 # Administrators can do everything, so their passwords must not be easy to guess
 MIN_PASSWORD_LENGTH = 12
@@ -160,18 +161,23 @@ def export_archive(kind: str, output: str = None) -> int:
         print(USAGE, file=sys.stderr)
         return 2
     with open(output, 'wb') as file:
-        write_archive(kind, file, CourseController.cache_courses)
+        write_archive(kind, file, CourseController.load_all_courses)
     print(f'manage: {kind} archive written to {output}')
     return 0
 
-# Student repos -----------------------------------------------------------------------------------
+# Repos of the users -------------------------------------------------------------------------------
 
-def run_repo_job(kind: str = None, username: str = None) -> int:
-    """ Run the job of the kind on the student repo of the user. Return the exit status """
-    if kind not in JOB_KINDS or not username:
+def run_repo_job(kind: str = None, username: str = None, repo_id: str = None) -> int:
+    """ Run the job of the kind on the student repo of the user, or on their professor repo of
+    the given id. Return the exit status """
+    try:
+        job = RepoJob(username, kind, int(repo_id) if repo_id is not None else None)
+    except ValueError:
+        job = None
+    if not job or not username:
         print(USAGE, file=sys.stderr)
         return 2
-    return RepoJob(username, kind).run()
+    return job.run()
 
 # Main --------------------------------------------------------------------------------------------
 
@@ -184,7 +190,7 @@ COMMANDS = {
     'submissions': lambda output=None: export_archive('submissions', output),
     'repo-job': run_repo_job,
 }
-MAX_ARGUMENTS = { 'repo-job': 2 }
+MAX_ARGUMENTS = { 'repo-job': 3 }
 
 def main() -> int:
     """ Run the subcommand of the command line. Return the exit status: 0 on success """

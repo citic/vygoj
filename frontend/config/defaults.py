@@ -18,9 +18,17 @@ REPO_JOB_TIMEOUT = 300
 REPO_MAX_JOBS = 4
 REPO_ZIP_RETENTION = 24 * 60 * 60
 STUDENT_REPO_MAX_SIZE = 100 * 1024 * 1024
-# Hosts where users may push their student repos, over SSH only (e.g. git@github.com:user/repo.git).
-# Other hosts are refused, so users cannot make the server connect to other computers
-REPO_ORIGIN_HOSTS = ['github.com', 'gitlab.com', 'bitbucket.org']
+# Professor repos with courses (Repositories section of the home page, only for professors), which
+# background jobs clone into DATA_FOLDER/user/<username>/<repo> and pull from the main branch.
+# Seconds that a clone may take (repos of courses may have many materials) and that a pull may
+# take, and bytes of a clone: a bigger clone is removed, and a pull that makes it bigger is undone
+PROFESSOR_REPO_CLONE_TIMEOUT = 15 * 60
+PROFESSOR_REPO_PULL_TIMEOUT = 5 * 60
+PROFESSOR_REPO_MAX_SIZE = 1024 * 1024 * 1024
+# Hosts where users may push their student repos and clone their professor repos, over SSH only
+# (e.g. git@github.com:user/repo.git). Other hosts are refused, so users cannot make the server
+# connect to other computers
+REPO_ORIGIN_HOSTS = ['github.com', 'gitlab.com', 'ssh.bitbucket.org', 'git.ucr.ac.cr']
 # Database URI for SQLAlchemy. Without user and password, PostgreSQL uses the system user
 SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg:///vygoj'
 # Frontend network port to listen on

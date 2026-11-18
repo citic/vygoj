@@ -1,7 +1,8 @@
 """ Git repos of the users, kept in their folders of DATA_FOLDER:
 
     user/<username>/<STUDENT_REPO_NAME>    # student repo, see student_repo.py
-    user/<username>/<repo>                 # repos of professors, with their courses
+    user/<username>/<repo>                 # clones of the repos of professors with their
+                                           # courses, see professor_repo.py
 
 GitRepo runs git on a repo with a timeout, and offers the operations that every kind of repo
 needs: commit a file at the end of a branch, list the versions of a file, read a version, archive
@@ -22,8 +23,10 @@ from flask import current_app as app
 
 # Seconds that a git command may take. Commands are local and their files small
 GIT_TIMEOUT = 5
-# Folder of DATA_FOLDER with a folder per user
+# Folder of DATA_FOLDER with a folder per user, and folder of the background jobs in the folder of
+# each user (repo_jobs.py)
 USERS_FOLDER = 'user'
+JOBS_FOLDER = 'jobs'
 # A commit given by the client, as the full hash of git
 COMMIT_PATTERN = re.compile(r'[0-9a-f]{40}')
 # Value of a ref that does not exist yet, for update-ref

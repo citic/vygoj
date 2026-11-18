@@ -19,7 +19,6 @@ from werkzeug.security import generate_password_hash
 
 from db import db
 from activity_log import log_event
-from courses import COURSES_REPO
 from repos.git_repo import user_folder
 from sso import STATUSES, SsoProvider
 from users import (FONTS, LANGUAGES, MAX_PASSWORD_LENGTH, MAX_USERNAME_LENGTH, ROLES,
@@ -260,18 +259,11 @@ class UserAdminController:
     @staticmethod
     def delete(db_user: User):
         """ Remove the given user and their data from the database: identities of single sign-on,
-        progress, and runs, which the database deletes in cascade, and their folder in DATA_FOLDER
-        with their student repo. The activity log keeps what they did. The number of the user is
-        never given again """
+        progress, runs, enrollments, and professor repos with their courses and the enrollments in
+        them, which the database deletes in cascade, and their folder in DATA_FOLDER with their
+        student repo and the clones of their professor repos. The activity log keeps what they
+        did. The number of the user is never given again """
         username, folder = db_user.username, user_folder(db_user.username)
-        # The folder of a user may hold the course repo that lists the courses (e.g.
-        # user/jhc/pexercises) until courses are in the database. Deleting it would remove every
-        # course
-        courses_repo = os.path.join(flask.current_app.config['DATA_FOLDER'], COURSES_REPO)
-        if os.path.commonpath([folder, courses_repo]) == folder:
-            flask.flash(gettext('User %(username)s has the courses in their folder and cannot be '
-                'deleted.', username=username), 'error')
-            return flask.redirect(flask.url_for('get_users_admin'))
         db.session.delete(db_user)
         db.session.commit()
         # After the commit, so the folder is kept if the database did not delete the user. Only
