@@ -48,10 +48,11 @@ def with_role(role: str):
 
 # Columns of the table of users that are searched or sorted (data_table.py). Users are sorted by
 # their highest role, so the ones of each role are together. A user may have several providers, so
-# that column is searched, but not sorted. A number of more than 9 digits is not an id
+# that column is searched, but not sorted. A number of more than 9 digits is not an id, and only
+# decimal digits make a number: isdigit() is also true for '²', which int() rejects
 USER_COLUMNS = [
     Column('id', '#', User.id,
-        lambda text: User.id == int(text) if text.isdigit() and len(text) < 10 else db.false()),
+        lambda text: User.id == int(text) if text.isdecimal() and len(text) < 10 else db.false()),
     Column('username', lazy_gettext('Username'), User.username, text_match(User.username)),
     Column('fullname', lazy_gettext('Full name'), User.fullname, text_match(User.fullname)),
     Column('email', lazy_gettext('Email'), User.email, text_match(User.email)),

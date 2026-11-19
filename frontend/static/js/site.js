@@ -84,6 +84,15 @@ class ListSearch {
       event.preventDefault();
       this.search();
     });
+    // A number of rows out of its range, or with decimals, becomes the nearest valid one when the
+    // user leaves the field, as the server takes it, and the rows follow it
+    this.form.addEventListener('change', ({ target }) => {
+      if (target.type === 'number' && target.value !== '' && !target.checkValidity()) {
+        const rounded = Math.round(Number(target.value));
+        target.value = Math.min(Math.max(rounded, Number(target.min)), Number(target.max));
+        this.search();
+      }
+    });
     this.clearLink.addEventListener('click', (event) => {
       event.preventDefault();
       this.input.value = '';
@@ -93,16 +102,24 @@ class ListSearch {
     });
   }
 
+  // The URL of the search: the fields of the form, with the text of every search field of the page,
+  // so each list of the home page keeps its own (its form has the others as hidden fields, for the
+  // page without scripts, but they keep the text of when the page was made), and without the empty
+  // ones, as the links of the page
+  url() {
+    const params = new URLSearchParams(new FormData(this.form));
+    document.querySelectorAll('.list_search[action] input[type="search"]')
+      .forEach(({ name, value }) => params.set(name, value));
+    const filled = new URLSearchParams([...params].filter(([, value]) => value));
+    return filled.size ? `${this.form.action}?${filled}` : this.form.action;
+  }
+
   // Ask for the page of the search and show its results
   async search() {
     window.clearTimeout(this.timer);
     this.controller?.abort();
     this.controller = new AbortController();
-    // The parameters of every search of the page, so each list of the home page keeps its own,
-    // without the empty ones, as the links of the page
-    const params = new URLSearchParams([...document.querySelectorAll('.list_search')]
-      .flatMap((form) => [...new FormData(form)]).filter(([, value]) => value));
-    const url = params.size ? `${this.form.action}?${params}` : this.form.action;
+    const url = this.url();
     try {
       const signal = AbortSignal.any([this.controller.signal, AbortSignal.timeout(SEARCH_TIMEOUT)]);
       const response = await fetch(url, { signal });
@@ -119,7 +136,8 @@ class ListSearch {
           element.querySelectorAll('img').forEach(showImageOrFallback);
         }
       });
-      window.history.replaceState(null, '', url);
+      // Made now, not with the request: the search of another list may have changed meanwhile
+      window.history.replaceState(null, '', this.url());
     } catch (error) {
       // A newer search cancelled this one
       if (error.name !== 'AbortError') {
@@ -166,8 +184,9 @@ class Site {
     this.setupFlashMessages();
     // No image of the page is shown broken
     document.querySelectorAll('img').forEach(showImageOrFallback);
-    // Lists and tables of data are searched while the user types
-    document.querySelectorAll('.list_search').forEach((form) => new ListSearch(form).setup());
+    // Lists and tables of data are searched in the server while the user types. A search without
+    // action filters in the page (the contents of a course, course.js)
+    document.querySelectorAll('.list_search[action]').forEach((form) => new ListSearch(form).setup());
   }
 
   // Ask the server for the backend status, then schedule the next check
@@ -261,4 +280,6 @@ class Site {
   }
 }
 
-window.addEventListener('load', Site.main);
+// Not on the load event: the page may load while i18n.js waits for the translations, and then this
+// listener would never run. base.html puts this module at the end of the body, after the elements
+Site.main();

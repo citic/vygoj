@@ -58,10 +58,16 @@
 
 {#- Search below the title of a list of courses of the home page, a GET form to it. name is its
     parameter of the URL (prepared, enrolled, or available) and names the element of the cards,
-    which site.js replaces with the one of the page of the search while the user types #}
-{%- macro course_search(name, query) %}
+    which site.js replaces with the one of the page of the search while the user types. queries
+    are the searches of every list, as {name: text}: the form sends the ones of the other lists
+    again, and its X keeps them, so a search does not empty the others #}
+{%- macro course_search(name, queries) %}
+{%- set others = dict(queries|dictsort|rejectattr(0, 'eq', name)|selectattr(1)) %}
           <form class="list_search" method="get" action="{{ url_for('get_index') }}" role="search" aria-controls="{{ name }}_results">
-{{- search_field(query, _('Search courses, e.g. CI0112'), url_for('get_index'), name) }}
+{%- for other, query in others.items() %}
+            <input type="hidden" name="{{ other }}" value="{{ query }}">
+{%- endfor %}
+{{- search_field(queries[name], _('Search courses, e.g. CI0112'), url_for('get_index', **others), name) }}
           </form>
 {%- endmacro %}
 

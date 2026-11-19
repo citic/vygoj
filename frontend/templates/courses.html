@@ -88,7 +88,7 @@
         {#- The courses of the repos of the professor: only they see them, until they offer them #}
         <details id="prepared_courses" open>
           <summary><h2>{{ _('My prepared courses') }}</h2></summary>
-{{- macros.course_search('prepared', it.query.prepared) }}
+{{- macros.course_search('prepared', it.query) }}
           <div id="prepared_results" class="results">
 {%- if it.prepared_courses %}
             {{ macros.course_columns() }}
@@ -118,7 +118,7 @@
 {%- endif %}
         <details id="enrolled_courses" open>
           <summary><h2>{{ _('My enrolled courses') }}</h2></summary>
-{{- macros.course_search('enrolled', it.query.enrolled) }}
+{{- macros.course_search('enrolled', it.query) }}
           <div id="enrolled_results" class="results">
 {%- if it.enrolled_courses %}
             {{ macros.course_columns() }}
@@ -140,7 +140,7 @@
             its search found none #}
         <details id="available_courses" open{% if not it.available_courses and not it.query.available %} hidden{% endif %}>
           <summary><h2>{{ _('Available courses') }}</h2></summary>
-{{- macros.course_search('available', it.query.available) }}
+{{- macros.course_search('available', it.query) }}
           <div id="available_results" class="results">
 {%- if it.available_courses %}
             {{ macros.course_columns() }}

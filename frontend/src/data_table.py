@@ -94,9 +94,10 @@ class DataTable:
         self.columns = { column.key: column for column in columns }
         self.endpoint = endpoint
         self.query = args.get('q', '')[:MAX_QUERY_LENGTH].strip()
-        # Numbers that are not valid, or too long for int(), are None. Others are kept in range
+        # Numbers that are not valid, or too long for int(), are None. Others are kept in range,
+        # also 0, which shows one row
         size = args.get('size', type=int)
-        self.size = min(max(size, 1), MAX_PAGE_SIZE) if size else DEFAULT_PAGE_SIZE
+        self.size = min(max(size, 1), MAX_PAGE_SIZE) if size is not None else DEFAULT_PAGE_SIZE
         self.pins = self.parse_keys(args.get('pin', ''))
         self.default_sort = self.parse_keys(default_sort)[0]
         self.sort = (self.parse_keys(args.get('sort', '')) or [self.default_sort])[0]
