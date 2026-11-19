@@ -42,8 +42,9 @@ translations: install
 # keep their POT-Creation-Date, so branches that run this rule do not conflict on that date when
 # they are merged (git tells when their texts changed)
 update-translations: install
-	$(ACT) && pybabel extract -F babel.cfg -k lazy_gettext -o $(TRANSLATIONS)/messages.pot \
-		--no-location --sort-output . && pybabel update -i $(TRANSLATIONS)/messages.pot \
+	$(ACT) && pybabel extract -F babel.cfg -k lazy_gettext -k lazy_ngettext:1,2 \
+		-o $(TRANSLATIONS)/messages.pot --no-location --sort-output . \
+		&& pybabel update -i $(TRANSLATIONS)/messages.pot \
 		-d $(TRANSLATIONS) --no-fuzzy-matching --ignore-pot-creation-date
 
 node_modules:
