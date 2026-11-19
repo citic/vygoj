@@ -553,6 +553,9 @@ msgstr "Cargando..."
 msgid "Log in to run"
 msgstr "Inicie sesión para ejecutar"
 
+msgid "Log in to run code"
+msgstr "Inicie sesión para ejecutar código"
+
 msgid "Log in with"
 msgstr "Ingresar con"
 
@@ -1064,6 +1067,12 @@ msgstr "Vista"
 msgid "Vygotsky Online Judge"
 msgstr "Juez en línea Vygotsky"
 
+#, python-format
+msgid "Wait %(num)d second before running again."
+msgid_plural "Wait %(num)d seconds before running again."
+msgstr[0] "Espere %(num)d segundo antes de ejecutar de nuevo."
+msgstr[1] "Espere %(num)d segundos antes de ejecutar de nuevo."
+
 msgid "Warning"
 msgstr "Advertencia"
 
@@ -1110,6 +1119,16 @@ msgstr "No puede quitar su propio rol de administrador."
 msgid "You cannot suspend nor delete yourself."
 msgstr "No puede suspenderse ni eliminarse a sí mismo."
 
+#, python-format
+msgid "You reached %(runs)d runs in an hour. Try again in %(num)d minute."
+msgid_plural "You reached %(runs)d runs in an hour. Try again in %(num)d minutes."
+msgstr[0] ""
+"Alcanzó %(runs)d ejecuciones en una hora. Intente de nuevo en %(num)d "
+"minuto."
+msgstr[1] ""
+"Alcanzó %(runs)d ejecuciones en una hora. Intente de nuevo en %(num)d "
+"minutos."
+
 msgid "Your account is suspended. Ask the administrator."
 msgstr "Su cuenta está suspendida. Consulte al administrador."
 
@@ -1133,6 +1152,9 @@ msgstr "Su error"
 
 msgid "Your output"
 msgstr "Su salida"
+
+msgid "Your previous run has not finished yet. Wait for its result."
+msgstr "Su ejecución anterior aún no ha terminado. Espere su resultado."
 
 msgid ""
 "Your session expired or the request was not valid. Reload the page and "
@@ -1194,9 +1216,15 @@ msgstr ""
 "p. ej. https://sso.ucr.ac.cr/realms/UCR o su URL /.well-known/openid-"
 "configuration"
 
+msgid "internal error, try again later"
+msgstr "error interno, intente de nuevo más tarde"
+
 #, python-format
 msgid "invalid %(column)s"
 msgstr "%(column)s no válido"
+
+msgid "invalid message"
+msgstr "mensaje no válido"
 
 msgid "it needs a username and a valid email"
 msgstr "necesita un nombre de usuario y un correo válido"
@@ -1206,6 +1234,9 @@ msgstr "tardó demasiado"
 
 msgid "it was interrupted, try again"
 msgstr "se interrumpió, intente de nuevo"
+
+msgid "language not enabled"
+msgstr "lenguaje no habilitado"
 
 msgid "or with your VygOJ password"
 msgstr "o con su contraseña de VygOJ"
@@ -1233,12 +1264,18 @@ msgstr "cambió la identidad del servidor del origen"
 msgid "the identity of the host of the repository changed"
 msgstr "la identidad del servidor del repositorio cambió"
 
+msgid "the judge cannot run this problem, tell your professor"
+msgstr "el juez no puede ejecutar este problema, avísele a su profesor"
+
 msgid ""
 "the judge has a folder with the name of the repository that is not a "
 "clone: ask the administrator"
 msgstr ""
 "el juez tiene una carpeta con el nombre del repositorio que no es un "
 "clon: consulte al administrador"
+
+msgid "the judge is not available, try again later"
+msgstr "el juez no está disponible, intente de nuevo más tarde"
 
 msgid "the name of the repository is reserved by the judge: rename the repository"
 msgstr ""
