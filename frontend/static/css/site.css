@@ -347,6 +347,11 @@ details:not([open]) > summary > :is(h2, h3, h4, h5, h6)::before {
   font-size: 0.875rem;
   color: var(--muted-text);
 
+  /* display: flex would show a search hidden until its script works (the contents of a course) */
+  &[hidden] {
+    display: none;
+  }
+
   & input[type="number"] {
     width: 4.5rem;
     border: 1px solid var(--toolbar-border);

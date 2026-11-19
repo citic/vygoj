@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% import 'macros.html' as macros %}
 {%- block styles %}
     <link rel="stylesheet" href="/css/courses.css">
 {%- endblock %}
@@ -55,6 +56,11 @@
               <dd id="course_progress"></dd>
             </dl>
           </header>
+          {#- Filter of the contents, which course.js applies while the user types, and shows: the
+              server does not filter them, so without scripts it would do nothing #}
+          <form class="list_search" role="search" aria-controls="contents_rows" hidden>
+{{- macros.search_field('', _('Search the contents, e.g. 2.3'), url_for('get_course', name=it.course.name)) }}
+          </form>
           <table class="contents" data-course="{{ it.course.name }}"{% if it.last_problem %} data-last-problem="{{ it.last_problem }}"{% endif %}>
             <thead>
               <tr>
@@ -63,10 +69,11 @@
                 <th scope="col" class="progress">{{ _('Progress') }}</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody id="contents_rows">
 {{- course_rows(it.course.contents, 3) }}
             </tbody>
           </table>
+          <p class="empty" id="contents_empty" hidden>{{ _('Nothing in the contents matches the search.') }}</p>
         </article>
       </main>
 {%- endblock %}

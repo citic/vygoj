@@ -270,6 +270,8 @@ The toolbar of the code editor has a slider with the versions of the solution in
 
 The course page scrolls to the problem whose solution got a version last (`StudentRepo.last_problem()`, the branch of the course with the newest commit), and _Return to the course_ in a problem page scrolls to that problem, named after `#` in its link. `static/js/course/course.js` expands the sections that hide the problem.
 
+The _Filter_ field above the contents of a course keeps, while the user types, the rows whose number and title contain every word of the search, ignoring case and accents, with the sections that contain them, and every row of a section whose title matches (`filter()` of `static/js/course/course.js`). It filters in the browser, which has every row of the course, so the numbers of the rows and the progress of the sections stay the same, and the field is hidden without scripts. A search starts with every section expanded; a section collapsed during the search hides only its rows of the search, and is not saved. Emptying the field shows the contents again with the sections that the user had collapsed.
+
 [[repositories]]
 === Repositories section
 

@@ -627,6 +627,9 @@ msgstr "Sin conexión con el backend"
 msgid "Not found"
 msgstr "No encontrado"
 
+msgid "Nothing in the contents matches the search."
+msgstr "Nada del contenido coincide con la búsqueda."
+
 msgid "Offer"
 msgstr "Ofrecer"
 
@@ -822,6 +825,9 @@ msgstr "Ámbitos"
 
 msgid "Search courses, e.g. CI0112"
 msgstr "Buscar cursos, p. ej. CI0112"
+
+msgid "Search the contents, e.g. 2.3"
+msgstr "Buscar en el contenido, p. ej. 2.3"
 
 msgid "Separated by spaces, e.g. openid profile email"
 msgstr "Separados por espacios, p. ej. openid profile email"
