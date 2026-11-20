@@ -61,7 +61,7 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
 - The code editor and diff view use Monaco through the `<monaco-editor>` element in
   `js/components/monaco-editor.js`, which imports Monaco from the esm.sh CDN. Monaco does not
   know Alecci: `js/components/alecci-language.js` registers its highlighting (a Monarch port of
-  the grammar of its VS Code extension).
+  the grammar of its VS Code extension) and the suggestions of its keywords.
   `js/components/lang-client.js` (`LanguageClient`) adds the suggestions and parameter hints of
   the language server (`frontend/lang-srv/`) for the languages in its `LANGUAGES`: `problem.js`
   creates one for the chosen language with a key from the frontend, and it talks LSP through a
