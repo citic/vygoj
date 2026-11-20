@@ -2,7 +2,7 @@
 
 The language server gives the code editor of the problem page the suggestions and parameter hints of a real language server, such as `clangd` for C: typing `fge` suggests `fgets` with its parameters and documentation, typing `fgets(line, ` highlights its parameter `int n`, and choosing a function of a header that the code does not include adds its `#include`. Without it, the editor only suggests the words already written in the code.
 
-It serves C and C++ with `clangd`, with the language standards that the backend compiles them with (`image/clangd.yaml`), and Python with `pylsp`.
+It serves C and C++ with `clangd`, with the language standards that the backend compiles them with (`image/clangd.yaml`), Python with `pylsp`, and Java with `jdtls` of Eclipse (options in `image/jdtls`). `jdtls` gives its first suggestions about 20 seconds after the editor connects, while it indexes the library of Java, and runs with Java 25, which it needs, so it may suggest some classes and methods newer than the Java 21 of the backend.
 
 It is a process of its own, besides the frontend and the backend:
 

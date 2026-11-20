@@ -9,6 +9,7 @@ const LANGUAGES = {
   C: { file: 'solution.c', id: 'c' },
   'C++': { file: 'solution.cpp', id: 'cpp' },
   Python: { file: 'solution.py', id: 'python' },
+  Java: { file: 'Solution.java', id: 'java' },
 };
 // Folder of the solution files in the containers of the language server
 const ROOT = 'file:///home/student';

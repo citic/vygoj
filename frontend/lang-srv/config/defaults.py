@@ -23,10 +23,17 @@ LANGUAGES = {
     'C': ['clangd', '--log=error', '--header-insertion-decorators=false'],
     'C++': ['clangd', '--log=error', '--header-insertion-decorators=false'],
     'Python': ['pylsp'],
+    # Script of the image (image/jdtls) with the options of Java and Eclipse
+    'Java': ['jdtls'],
 }
 # Options of the language server of each language, sent in the initializationOptions of its
 # initialize request in place of the ones of the editor
-INITIALIZATION_OPTIONS = {}
+INITIALIZATION_OPTIONS = {
+    # jdtls does not give parameter hints unless they are enabled, and suggests the internal classes
+    # of the JDK (e.g. com.sun.tools.jdeprscan.scan.Scan for "new Scan") unless they are filtered
+    'Java': {'settings': {'java': {'signatureHelp': {'enabled': True}, 'completion': {
+        'filteredTypes': ['com.sun.*', 'sun.*', 'jdk.*', 'java.awt.*', 'org.graalvm.*']}}}},
+}
 # Limits of each container: memory (without swap), CPUs, and processes and threads
 CONTAINER_MEMORY = '512m'
 CONTAINER_CPUS = 1
