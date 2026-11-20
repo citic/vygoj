@@ -2,6 +2,8 @@
 
 The language server gives the code editor of the problem page the suggestions and parameter hints of a real language server, such as `clangd` for C: typing `fge` suggests `fgets` with its parameters and documentation, typing `fgets(line, ` highlights its parameter `int n`, and choosing a function of a header that the code does not include adds its `#include`. Without it, the editor only suggests the words already written in the code.
 
+It serves C and C++ with `clangd`, with the language standards that the backend compiles them with (`image/clangd.yaml`).
+
 It is a process of its own, besides the frontend and the backend:
 
 ----

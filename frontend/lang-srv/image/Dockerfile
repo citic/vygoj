@@ -9,6 +9,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     clangd \
     libc6-dev \
+    libstdc++-14-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Folder of the solution files, as in the engine of the backend. Editors send the code in their

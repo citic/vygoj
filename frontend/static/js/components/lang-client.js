@@ -7,6 +7,7 @@ import * as monaco from 'https://esm.sh/monaco-editor';
 // the language in LSP, which the editor may not know (Monaco does not highlight every language)
 const LANGUAGES = {
   C: { file: 'solution.c', id: 'c' },
+  'C++': { file: 'solution.cpp', id: 'cpp' },
 };
 // Folder of the solution files in the containers of the language server
 const ROOT = 'file:///home/student';
