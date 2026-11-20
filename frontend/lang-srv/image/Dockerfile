@@ -10,6 +10,7 @@ RUN apt-get update && \
     clangd \
     libc6-dev \
     libstdc++-14-dev \
+    python3-pylsp \
     && rm -rf /var/lib/apt/lists/*
 
 # Folder of the solution files, as in the engine of the backend. Editors send the code in their

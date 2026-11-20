@@ -22,6 +22,7 @@ LANGUAGES = {
     # Suggestions of functions of other headers add their #include, without marking them
     'C': ['clangd', '--log=error', '--header-insertion-decorators=false'],
     'C++': ['clangd', '--log=error', '--header-insertion-decorators=false'],
+    'Python': ['pylsp'],
 }
 # Options of the language server of each language, sent in the initializationOptions of its
 # initialize request in place of the ones of the editor
