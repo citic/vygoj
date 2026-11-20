@@ -1,0 +1,6 @@
+# Configuration of clangd for the solutions, with the language standard that the backend compiles
+# them with (LANGUAGE_DEFAULTS in backend/src/execution.py)
+If:
+  PathMatch: .*\.c
+CompileFlags:
+  Add: [-std=gnu17]

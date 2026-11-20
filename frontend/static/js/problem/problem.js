@@ -4,6 +4,7 @@ import {
 import { CHECK_EVENT, STATUS_EVENT } from '../site.js';
 import _ from '../i18n.js';
 import '../components/monaco-editor.js';
+import LanguageClient from '../components/lang-client.js';
 import '../components/editor-toolbar.js';
 import '../components/tab-control.js';
 
@@ -121,6 +122,8 @@ class ProblemManager {
     // Code in the editor while the slider shows a version, shown again at the end of the slider.
     // Null while the editor shows it
     this.currentCode = null; // string
+    // Suggestions of the language server for the chosen language, null if it has none
+    this.languageClient = null; // LanguageClient
   }
 
   static main() {
@@ -224,8 +227,17 @@ class ProblemManager {
       languageList.selectedIndex = 0;
     }
     const setLanguage = () => {
-      saveConfig('language', languageList.value);
-      codeEditor.setAttribute('language', monacoLanguageFor[languageList.value.toLowerCase()] || 'plaintext');
+      const language = languageList.value;
+      saveConfig('language', language);
+      codeEditor.setAttribute('language', monacoLanguageFor[language.toLowerCase()] || 'plaintext');
+      this.languageClient?.close();
+      this.languageClient = null;
+      if (LanguageClient.supports(language)) {
+        const message = { action: 'lang_server', language }; // Message object
+        const getKey = () => ProblemManager.sendJson(message, FETCH_TIMEOUT);
+        this.languageClient = new LanguageClient(editor, language, getKey);
+        this.languageClient.start();
+      }
     };
     setLanguage();
     // Only a choice of the user becomes the last language, not the one a problem starts with

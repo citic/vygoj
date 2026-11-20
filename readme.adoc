@@ -33,6 +33,8 @@ For security reasons, the _Code Execution Service_ must run non-trusted code wit
 
 The results of each executed program are fetched from the _frontend_ module and shown to the users. The _frontend_ module is not only an online judge, it is an educative tool that helps students to learn computer programming and teachers to manage their courses, monitor their students' progress, and more.
 
+The code editor of the web application gets suggestions and parameter hints from the *Language Server*, a process in the `frontend/lang-srv/` directory. Browsers connect to it with a WebSocket, and it runs a language server (e.g. `clangd`) for each editor in a container without network, with the code of the editor. It never runs that code. The frontend works without it, and then the editor only suggests the words of the code.
+
 The _backend_ uses Docker containers as _code executions engines_. Currently it is not designed for efficiency, but for providing correctness and security of testing of concurrent programs. Efficiency may be addressed in future work.
 
 ////
@@ -133,6 +135,8 @@ make admin
 ----
 
 Optionally, let users log in with the account of their institution (single sign-on with OpenID Connect, e.g. the SSO of the Universidad de Costa Rica). Administrators add the providers in the users page of the web application, and the client secrets go in `SSO_CLIENT_SECRETS` of `config.py` (see the single sign-on section of `frontend/readme.adoc`).
+
+Optionally, install the language server, which gives the code editor suggestions and parameter hints, and set its address and secret in `LANG_SERVER` and `LANG_SERVER_SECRET` of `config.py` (see `frontend/lang-srv/readme.adoc`).
 
 Fourth, run the frontend as a production server:
 

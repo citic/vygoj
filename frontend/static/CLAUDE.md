@@ -62,6 +62,10 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
   `js/components/monaco-editor.js`, which imports Monaco from the esm.sh CDN. Monaco does not
   know Alecci: `js/components/alecci-language.js` registers its highlighting (a Monarch port of
   the grammar of its VS Code extension).
+  `js/components/lang-client.js` (`LanguageClient`) adds the suggestions and parameter hints of
+  the language server (`frontend/lang-srv/`) for the languages in its `LANGUAGES`: `problem.js`
+  creates one for the chosen language with a key from the frontend, and it talks LSP through a
+  WebSocket.
 - Formulas in problem statements (Asciidoctor `stem`) are typeset by MathJax from the jsDelivr
   CDN, configured in `js/problem/mathjax-config.js`.
 - The `<editor-toolbar for="code_editor">` element in `js/components/editor-toolbar.js` adds the
