@@ -52,12 +52,14 @@ function showImageOrFallback(image) {
 }
 
 /**
- * Search of a list or a table of data while the user types (list_search of macros.html). It asks
- * the server for the page of the search, the same one that the form opens without scripts, and
- * puts the contents of the elements of the results (the ids of the aria-controls of the form) of
- * that page in the ones of this page, so the field keeps its focus and what the user types, and
- * folding sections stay open or closed. The URL of the page becomes the one of the search, so a
- * reload keeps it. If the request fails, or the session ended (a redirect), the browser opens it
+ * Search of a table of data split in pages in the server while the user types (list_search of
+ * macros.html, data_table.py). It asks the server for the page of the search, the same one that the
+ * form opens without scripts, and puts the contents of the elements of the results (the ids of the
+ * aria-controls of the form) of that page in the ones of this page, so the field keeps its focus
+ * and what the user types. The URL of the page becomes the one of the search, so a reload keeps
+ * it. If the session ended (a redirect), the browser opens the search, which goes to the login. If
+ * the request fails or takes too long, the field says so, and the next key tries again: opening
+ * the search would only ask a busy server for it again
  */
 class ListSearch {
   constructor(form) {
@@ -84,6 +86,9 @@ class ListSearch {
       event.preventDefault();
       this.search();
     });
+    // The error of a failed search is cleared by any key, before Enter sends the form: an invalid
+    // field would stop it
+    this.input.addEventListener('keydown', () => this.input.setCustomValidity(''));
     // A number of rows out of its range, or with decimals, becomes the nearest valid one when the
     // user leaves the field, as the server takes it, and the rows follow it
     this.form.addEventListener('change', ({ target }) => {
@@ -102,14 +107,9 @@ class ListSearch {
     });
   }
 
-  // The URL of the search: the fields of the form, with the text of every search field of the page,
-  // so each list of the home page keeps its own (its form has the others as hidden fields, for the
-  // page without scripts, but they keep the text of when the page was made), and without the empty
-  // ones, as the links of the page
+  // The URL of the search: the fields of the form without the empty ones, as the links of the page
   url() {
     const params = new URLSearchParams(new FormData(this.form));
-    document.querySelectorAll('.list_search[action] input[type="search"]')
-      .forEach(({ name, value }) => params.set(name, value));
     const filled = new URLSearchParams([...params].filter(([, value]) => value));
     return filled.size ? `${this.form.action}?${filled}` : this.form.action;
   }
@@ -117,13 +117,18 @@ class ListSearch {
   // Ask for the page of the search and show its results
   async search() {
     window.clearTimeout(this.timer);
+    this.input.setCustomValidity('');
     this.controller?.abort();
     this.controller = new AbortController();
     const url = this.url();
     try {
       const signal = AbortSignal.any([this.controller.signal, AbortSignal.timeout(SEARCH_TIMEOUT)]);
       const response = await fetch(url, { signal });
-      if (!response.ok || response.redirected) {
+      if (response.redirected) {
+        window.location.assign(url);
+        return;
+      }
+      if (!response.ok) {
         throw new Error(response.statusText);
       }
       const page = new DOMParser().parseFromString(await response.text(), 'text/html');
@@ -136,12 +141,13 @@ class ListSearch {
           element.querySelectorAll('img').forEach(showImageOrFallback);
         }
       });
-      // Made now, not with the request: the search of another list may have changed meanwhile
-      window.history.replaceState(null, '', this.url());
+      window.history.replaceState(null, '', url);
     } catch (error) {
-      // A newer search cancelled this one
+      // A newer search cancelled this one, which is not a failure (a timeout is a TimeoutError)
       if (error.name !== 'AbortError') {
-        window.location.assign(url);
+        console.error(`search failed: ${error.message}`);
+        this.input.setCustomValidity(_('The search failed. Try again later.'));
+        this.input.reportValidity();
       }
     }
   }
@@ -184,8 +190,8 @@ class Site {
     this.setupFlashMessages();
     // No image of the page is shown broken
     document.querySelectorAll('img').forEach(showImageOrFallback);
-    // Lists and tables of data are searched in the server while the user types. A search without
-    // action filters in the page (the contents of a course, course.js)
+    // Tables of data split in pages are searched in the server while the user types. A search
+    // without action filters the rows of the page instead (filter.js)
     document.querySelectorAll('.list_search[action]').forEach((form) => new ListSearch(form).setup());
   }
 

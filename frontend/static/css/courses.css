@@ -232,13 +232,18 @@
 }
 
 /* Sections of the home page (administration, repositories, and lists of courses), which fold
-   (site.css). A list of courses has its search below its title, and says why it has no courses */
+   (site.css). A list of courses has its search below its title, and says why it has no courses,
+   or that none matches the search, without the names of the columns */
 .courses > details {
   & > summary {
     margin-bottom: 1rem;
   }
 
-  & > .results > .empty {
+  &:has(> .empty:not([hidden])) > .course_columns {
+    display: none;
+  }
+
+  & > .empty {
     color: var(--muted-text);
   }
 }

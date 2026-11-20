@@ -1001,6 +1001,9 @@ msgstr ""
 msgid "The requested resource was not found in this site."
 msgstr "El recurso solicitado no se encontró en este sitio."
 
+msgid "The search failed. Try again later."
+msgstr "La búsqueda falló. Intente más tarde."
+
 #, python-format
 msgid ""
 "The zip of your last solutions is ready until %(time)s, or until you save"

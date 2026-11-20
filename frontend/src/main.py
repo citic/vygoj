@@ -179,8 +179,8 @@ def check_session():
     refresh_session()
 
 def log_visit():
-    """ Log the visit to a page of lists, unless a script of the page asked for it (fetch() sends
-    Sec-Fetch-Dest: empty), such as a search while the user types, which is not a visit """
+    """ Log the visit to a page of data tables, unless a script of the page asked for it (fetch()
+    sends Sec-Fetch-Dest: empty), such as a search while the user types, which is not a visit """
     if flask.request.headers.get('Sec-Fetch-Dest') != 'empty':
         log_event('visit')
 
@@ -190,7 +190,7 @@ def log_visit():
 def get_index():
     """ Homepage: list of my courses and available courses """
     # The return value of a view function is the response to the client
-    log_visit()
+    log_event('visit')
     return CourseController.get_index()
 
 @app.route('/course/<name>')

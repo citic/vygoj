@@ -8,6 +8,7 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
 
 - `js/vyg.js`: client copy of the shared model (see "Shared model" in the root `CLAUDE.md`).
 - `js/site.js`: behavior common to all pages (loaded from `base.html`).
+- `js/filter.js`: searches that filter the rows of a list in the page, without asking the server.
 - `js/<page>/<page>.js`: one module per page (`problem/`, `course/`, `courses/` for the home page,
   `user/`).
 - `css/site.css`: global layout and variables; `css/<page>.css` for page-specific styles.
@@ -19,9 +20,11 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
   of `macros.html`). `ListSearch` of `site.js` searches while the user types: it fetches the
   page of the search and replaces the elements of the results (the ids of the `aria-controls` of
   the form), so scripts that set up those elements listen in the `document` (e.g. the
-  confirmations of `admin.js`). Lists of cards may take `list_search` alone: each list of the home page has its own, whose
-  results are the element of its cards (`course_search` of `macros.html`). A `list_search` without `action`
-  filters in the page instead (the contents of a course in `course.js`). Forms take the
+  confirmations of `admin.js`). A `list_search` without `action` filters the rows of the page
+  instead, with `setupPageFilter()`, `searchWords()`, and `fold()` of `js/filter.js`, for lists
+  that the page has whole: the contents of a course (`course.js`) and each list of courses of the
+  home page (`courses.js`, `course_search` of `macros.html`). Search in the server only what is
+  split in pages: each search there is a query. Forms take the
   `fieldset_columns` class of `form.css` to place their fieldsets of radio buttons or checkboxes
   side by side when the window has space for them (the preferences and the form of a user for
   administrators).

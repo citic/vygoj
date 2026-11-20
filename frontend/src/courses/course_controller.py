@@ -7,7 +7,6 @@ from flask_babel import gettext
 import vyg
 from activity_log import log_event
 from courses.course_offer import CourseOffer, parse_courses
-from data_table import MAX_QUERY_LENGTH, MAX_WORDS, fold
 from repos.git_repo import GitError
 from repos.professor_repo import CloneError
 from repos.student_repo import StudentRepo
@@ -89,21 +88,14 @@ class CourseController:
         return offer.has_student(user_id) or (not to_enter and offer.is_offered())
 
     @staticmethod
-    def entries(offers: list, query: str) -> list:
+    def entries(offers: list) -> list:
         """ Return the cards of the courses of the offers that can be loaded, as dictionaries
-        with the course, its offer, and the number of its students. Only the courses whose name,
-        title, description, or authors contain every word of the query are kept, ignoring case
-        and accents """
+        with the course, its offer, and the number of its students """
         counts = CourseOffer.student_counts(offers)
-        words = fold(query).split()[:MAX_WORDS]
         entries = []
         for offer in offers:
             course = CourseController.load_course(offer)
-            if not course:
-                continue
-            text = fold(' '.join(str(value or '') for value in
-                (course.name, course.title, course.description, *course.authors)))
-            if all(word in text for word in words):
+            if course:
                 entries.append({ 'course': course, 'offer': offer,
                     'students': counts.get(offer.id, 0) })
         return entries
@@ -114,21 +106,14 @@ class CourseController:
         ones where they are enrolled, and the offered ones where they may enroll """
         user = flask.session.get('user')
         user_id = User.logged_id()
-        # The search of each list, a parameter of the URL (GET) named as the list
-        query = { name: flask.request.args.get(name, '')[:MAX_QUERY_LENGTH].strip()
-            for name in ('prepared', 'enrolled', 'available') }
         prepared = enrolled = available = []
         if user_id:
             if has_role('professor'):
-                prepared = CourseController.entries(CourseOffer.prepared_by(user_id),
-                    query['prepared'])
-            enrolled = CourseController.entries(CourseOffer.enrolled_by(user_id),
-                query['enrolled'])
-            available = CourseController.entries(CourseOffer.available_to(user_id),
-                query['available'])
+                prepared = CourseController.entries(CourseOffer.prepared_by(user_id))
+            enrolled = CourseController.entries(CourseOffer.enrolled_by(user_id))
+            available = CourseController.entries(CourseOffer.available_to(user_id))
         it = {
             'user': user if user_id else None,
-            'query': query,
             'breadcrumbs': [
             ],
             # Cards of the courses of the repos of the professor, None for other users

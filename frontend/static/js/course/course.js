@@ -1,3 +1,5 @@
+import { fold, searchWords, setupPageFilter } from '../filter.js';
+
 // Shows the progress of each problem as a percentage and a bar. The grade stored in the database
 // for the logged user wins; otherwise the one that the problem page saved in localStorage is used.
 // Sections and the whole course show the average of the problems they contain
@@ -41,26 +43,14 @@ class CourseManager {
     CourseManager.setupSearch();
   }
 
-  // The filter of the contents applies while the user types, and the X clears it. The search is
-  // hidden until this script works
+  // The filter of the contents applies while the user types (filter.js)
   static setupSearch() {
-    const form = document.querySelector('.course .list_search');
-    const input = form.querySelector('input[type="search"]');
-    form.addEventListener('input', CourseManager.filter);
-    form.addEventListener('submit', (event) => event.preventDefault());
-    form.querySelector('.clear').addEventListener('click', (event) => {
-      event.preventDefault();
-      input.value = '';
-      input.focus();
-      CourseManager.filter();
-    });
-    form.hidden = false;
+    setupPageFilter(document.querySelector('.course .list_search'), CourseManager.filter);
   }
 
   // The folded words of the search of the contents, none if there is no search
   static words() {
-    const { value } = document.querySelector('.course .list_search input[type="search"]');
-    return CourseManager.fold(value).split(/\s+/).filter(Boolean);
+    return searchWords(document.querySelector('.course .list_search'));
   }
 
   // Shows only the rows whose number and title contain every word of the search, ignoring case and
@@ -93,7 +83,7 @@ class CourseManager {
       while (open.at(-1)?.level >= level) {
         open.pop();
       }
-      const title = CourseManager.fold(row.querySelector('.name').textContent);
+      const title = fold(row.querySelector('.name').textContent);
       const matched = open.some((section) => section.matched)
         || words.every((word) => title.includes(word));
       const inside = open.at(-1)?.closed ?? false;
@@ -111,11 +101,6 @@ class CourseManager {
     });
     document.getElementById('contents_empty').hidden = found;
     CourseManager.showToggleAll();
-  }
-
-  // The text in lowercase and without accents, e.g. 'Introducción' is 'introduccion'
-  static fold(text) {
-    return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
   }
 
   // Clicking a section title hides or shows every row inside that section

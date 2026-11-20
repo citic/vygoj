@@ -47,7 +47,8 @@
 {#- Field of a search above a list or a data table, with a magnifier inside it as its label: query
     is the text searched, hint an example of a search, and clear_url the page without the search,
     which the X at the end of the field opens while there is a search, and name its parameter of the
-    URL. Enter sends the form. site.js searches while the user types (ListSearch) #}
+    URL. Enter sends the form. site.js searches while the user types (ListSearch), or the script of
+    the page filters its rows if the form has no action (setupPageFilter() of site.js) #}
 {%- macro search_field(query, hint, clear_url, name='q') %}
             <p class="search">
               <label for="{{ name }}_search" title="{{ _('Filter') }}"><span class="symbol material-symbols-outlined" aria-hidden="true">search</span></label>
@@ -56,18 +57,12 @@
             </p>
 {%- endmacro %}
 
-{#- Search below the title of a list of courses of the home page, a GET form to it. name is its
-    parameter of the URL (prepared, enrolled, or available) and names the element of the cards,
-    which site.js replaces with the one of the page of the search while the user types. queries
-    are the searches of every list, as {name: text}: the form sends the ones of the other lists
-    again, and its X keeps them, so a search does not empty the others #}
-{%- macro course_search(name, queries) %}
-{%- set others = dict(queries|dictsort|rejectattr(0, 'eq', name)|selectattr(1)) %}
-          <form class="list_search" method="get" action="{{ url_for('get_index') }}" role="search" aria-controls="{{ name }}_results">
-{%- for other, query in others.items() %}
-            <input type="hidden" name="{{ other }}" value="{{ query }}">
-{%- endfor %}
-{{- search_field(queries[name], _('Search courses, e.g. CI0112'), url_for('get_index', **others), name) }}
+{#- Search below the title of a list of courses of the home page, which courses.js applies in the
+    page while the user types, and shows: the server does not filter the courses, so without
+    scripts it would do nothing. name tells the list (prepared, enrolled, or available) #}
+{%- macro course_search(name) %}
+          <form class="list_search" role="search" hidden>
+{{- search_field('', _('Search courses, e.g. CI0112'), url_for('get_index'), name) }}
           </form>
 {%- endmacro %}
 
