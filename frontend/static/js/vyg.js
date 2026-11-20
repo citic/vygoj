@@ -36,7 +36,7 @@ class Enum {
 
 export class Message {
   constructor(action, error = '', language = '', code = '', stdin = '', args = '') {
-    // Action to perform: 'run', 'fetch_problem'
+    // Action to perform: 'run', 'fetch_problem', 'lang_server'
     this.action = action;
     // Error message if any
     this.error = error;

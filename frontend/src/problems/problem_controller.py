@@ -6,6 +6,7 @@ import requests
 import flask
 from flask import current_app as app
 from flask_babel import gettext, lazy_gettext
+from itsdangerous import URLSafeTimedSerializer
 from werkzeug.exceptions import HTTPException
 from werkzeug.security import safe_join
 
@@ -30,7 +31,7 @@ BACKEND_FIELDS = ('allowIndeterminism', 'languages', 'maxThreads', 'minThreads',
     'name', 'tools') + tuple(CONSTRAINED_FIELDS)
 
 # Actions that the client JavaScript may ask with a POST to a problem
-VALID_ACTIONS = ('fetch_problem', 'run')
+VALID_ACTIONS = ('fetch_problem', 'lang_server', 'run')
 
 # Characters of the command line arguments that the backend accepts (MAX_ARGS_LENGTH)
 MAX_ARGS_LENGTH = 4096
@@ -222,13 +223,16 @@ class ProblemController:
 
     @staticmethod
     def do_action(course_name: str, problem_name: str, message: vyg.Message):
-        """ Answer the valid message of the client: send the problem, or judge the solution """
+        """ Answer the valid message of the client: send the problem, a key for the language
+        server, or judge the solution """
         problem = ProblemController.fetch_problem(course_name, problem_name)
         if message.action == 'fetch_problem':
             return ProblemController.to_client_json(problem)
         # Only the languages enabled for the problem may be sent to the judge
         if message.language not in problem.languages:
             return ProblemController.error_response('language not enabled', 400)
+        if message.action == 'lang_server':
+            return lang_server_key(message.language)
         return ProblemController.judge_solution(problem, message)
 
     @staticmethod
@@ -467,3 +471,16 @@ class ProblemController:
         """ Choose a random URI from the configuration BACKENDS array. main.py checks that it is
         not empty """
         return random.choice(app.config['BACKENDS'])
+
+def lang_server_key(language: str):
+    """ Answer the address of the language server and a key to connect to it with the code editor
+    of a problem in the language. Only the users who may open the problem get it (do_action()
+    calls fetch_problem() before), and the language server accepts it for a minute (KEY_MAX_AGE),
+    so a suspended user cannot connect again. The key is signed with the secret shared with the
+    language server, which checks it with the same salt. Without a language server it answers an
+    empty object, and the editor only suggests the words of the code """
+    if not app.config['LANG_SERVER']:
+        return flask.jsonify({})
+    keys = URLSafeTimedSerializer(app.config['LANG_SERVER_SECRET'], salt='lang-srv')
+    key = keys.dumps({'user': flask.session['user'].get('email'), 'language': language})
+    return flask.jsonify({'url': app.config['LANG_SERVER'], 'key': key})

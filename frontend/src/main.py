@@ -141,6 +141,19 @@ if (not isinstance(backends, list) or not backends
         or not all(isinstance(uri, str) for uri in backends)):
     raise RuntimeError(f'BACKENDS in {config_file} must be a list of at least one URI')
 
+# The code editor connects to the language server with keys signed with the secret shared with it,
+# so the secret must be hard to guess, and the pages may connect to its address, besides the ones
+# of default-src, which connect-src followed
+if not isinstance(app.config['LANG_SERVER'], str):
+    raise RuntimeError(f'LANG_SERVER in {config_file} must be a string')
+if app.config['LANG_SERVER']:
+    if (not isinstance(app.config['LANG_SERVER_SECRET'], str)
+            or len(app.config['LANG_SERVER_SECRET']) < MIN_SECRET_KEY_LENGTH):
+        raise RuntimeError(f'LANG_SERVER_SECRET in {config_file} must be a random string of at '
+            f'least {MIN_SECRET_KEY_LENGTH} characters, the same of the language server')
+    talisman.content_security_policy['connect-src'] = (
+        f"{cdn['default-src']} {app.config['LANG_SERVER']}")
+
 # Single sign-on providers send users back to callback URLs of SITE_URL, and use their secrets
 if not isinstance(app.config['SITE_URL'], str):
     raise RuntimeError(f'SITE_URL in {config_file} must be a string')

@@ -10,10 +10,14 @@ with its specific layout, commands, and rules; this file holds what is common to
 | Frontend client | `frontend/static/` | Vanilla HTML, CSS, JavaScript |
 | Backend (code execution web service) | `backend/` | Python, Flask, `docker` SDK |
 | Engine (isolated execution environment) | `backend/engine/` | Docker image (Debian) |
+| Language server (suggestions of the code editor) | `frontend/lang-srv/` | Python, Flask, `flask-sock`, Docker |
 
 Flow: the browser talks to the frontend; the frontend sends a problem and a solution to a backend
 (`BACKENDS` in `frontend/config/config.py`, port 9090 by default); the backend runs the solution
-inside a disposable engine container and returns an `ExecutionResult`. Other folders: `common/`
+inside a disposable engine container and returns an `ExecutionResult`. The code editor of the
+problem page connects with a WebSocket to the language server (`LANG_SERVER`, port 7070 by
+default), which runs a language server such as `clangd` in a container for each editor (see
+`frontend/lang-srv/readme.adoc`). Other folders: `common/`
 (shared `Makefile` and `vyg` Python package), `docs/` (analysis and design, in Spanish), `cli/`
 (legacy Node.js tool).
 
@@ -59,7 +63,8 @@ The owner controls every frontend and backend in production and updates them tog
 
 ## Commands and testing
 
-The Python layers include `common/Makefile`, so these rules work in `frontend/` and `backend/`
+The Python layers include `common/Makefile`, so these rules work in `frontend/`, `backend/`, and
+`frontend/lang-srv/`
 (ports and extra rules are in each layer's `CLAUDE.md`):
 
 ```sh

@@ -47,6 +47,8 @@ class MonacoEditor extends HTMLElement {
       minimap: { enabled: false },
       scrollBeyondLastLine: false,
       automaticLayout: true,
+      // Suggestions and parameter hints may extend beyond the editor, e.g. when its code is short
+      fixedOverflowWidgets: true,
       // A diff always shows its two sides, even when narrow, as the labels above it say. Without
       // the overview ruler and the dragging of their border, both sides are equally wide
       useInlineViewWhenSpaceIsLimited: false,
