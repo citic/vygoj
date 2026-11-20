@@ -1,3 +1,4 @@
+{% import 'macros.html' as macros %}
 {% extends 'base.html' %}
 {%- block styles %}
     <link rel="stylesheet" href="/css/admin.css">
@@ -85,25 +86,28 @@
 {%- endif %}
         </details>
         <details id="user_list" open>
-          <summary><h2>{{ _('Users (%(count)d)', count=it.users|length) }}</h2></summary>
-          {#- The users with the providers that each user logged in with. Suspending, activating, and
-              deleting change data, so they are POSTs with the CSRF token, confirmed by admin.js.
-              Administrators do not suspend nor delete themselves #}
-          <table class="data_table">
+          <summary><h2 id="user_count">{{ _('Users (%(count)d)', count=it.users.total) }}</h2></summary>
+          {{ macros.list_search(it.users, _('e.g. role:professor'), 'user_count user_table user_pages') }}
+          {#- The page of users that the search asks for, with the providers that each user logged in
+              with. Suspending, activating, and deleting change data, so they are POSTs with the
+              CSRF token, confirmed by admin.js. Administrators do not suspend nor delete
+              themselves. The actions keep the search, sort, and page (it.params), so they go
+              back to the same users #}
+          <table class="data_table" id="user_table">
             <thead>
               <tr>
-                <th scope="col"><abbr title="{{ _('User identifier') }}">#</abbr></th>
-                <th scope="col">{{ _('Username') }}</th>
-                <th scope="col">{{ _('Full name') }}</th>
-                <th scope="col">{{ _('Email') }}</th>
-                <th scope="col">{{ _('Roles') }}</th>
-                <th scope="col">{{ _('SSO') }}</th>
-                <th scope="col">{{ _('Status') }}</th>
-                <th scope="col">{{ _('Actions') }}</th>
+{{- macros.column_header(it.users, 'id', _('User identifier')) }}
+{{- macros.column_header(it.users, 'username') }}
+{{- macros.column_header(it.users, 'fullname') }}
+{{- macros.column_header(it.users, 'email') }}
+{{- macros.column_header(it.users, 'roles') }}
+{{- macros.column_header(it.users, 'sso') }}
+{{- macros.column_header(it.users, 'status') }}
+                <th scope="col" class="actions">{{ _('Actions') }}</th>
               </tr>
             </thead>
             <tbody>
-{%- for user in it.users %}
+{%- for user in it.users.rows %}
               <tr class="user" data-status="{{ user.status }}">
                 <th scope="row" class="id">{{ user.id }}</th>
                 <td class="username">{{ user.username }}</td>
@@ -113,20 +117,20 @@
                 <td class="providers">{{ user.identities|map(attribute='provider')|unique|join(', ') }}</td>
                 <td class="status">{{ it.user_statuses.get(user.status, user.status) }}</td>
                 <td class="actions">
-                  <a class="button small confirm material-symbols-outlined" href="{{ url_for('edit_user', user_id=user.id) }}" title="{{ _('Edit') }}" aria-label="{{ _('Edit %(username)s', username=user.username) }}">edit</a>
+                  <a class="button small confirm material-symbols-outlined" href="{{ url_for('edit_user', user_id=user.id, **it.params) }}" title="{{ _('Edit') }}" aria-label="{{ _('Edit %(username)s', username=user.username) }}">edit</a>
 {%-   if user.username != it.user.email %}
 {%-     if user.status == 'suspended' %}
-                  <form method="post" action="{{ url_for('activate_user', user_id=user.id) }}" data-confirm="{{ _('Activate the user %(username)s? They will be able to log in again.', username=user.username) }}">
+                  <form method="post" action="{{ url_for('activate_user', user_id=user.id, **it.params) }}" data-confirm="{{ _('Activate the user %(username)s? They will be able to log in again.', username=user.username) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="small action material-symbols-outlined" title="{{ _('Activate') }}" aria-label="{{ _('Activate %(username)s', username=user.username) }}">play_arrow</button>
                   </form>
 {%-     else %}
-                  <form method="post" action="{{ url_for('suspend_user', user_id=user.id) }}" data-confirm="{{ _('Suspend the user %(username)s? They will not be able to log in until activated, and their data will be kept.', username=user.username) }}">
+                  <form method="post" action="{{ url_for('suspend_user', user_id=user.id, **it.params) }}" data-confirm="{{ _('Suspend the user %(username)s? They will not be able to log in until activated, and their data will be kept.', username=user.username) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="small reject material-symbols-outlined" title="{{ _('Suspend') }}" aria-label="{{ _('Suspend %(username)s', username=user.username) }}">pause</button>
                   </form>
 {%-     endif %}
-                  <form method="post" action="{{ url_for('delete_user', user_id=user.id) }}" data-confirm="{{ _('Delete the user %(username)s and their data, such as their preferences, progress, and solutions? Their activity stays in the log. Only backups can recover them.', username=user.username) }}">
+                  <form method="post" action="{{ url_for('delete_user', user_id=user.id, **it.params) }}" data-confirm="{{ _('Delete the user %(username)s and their data, such as their preferences, progress, and solutions? Their activity stays in the log. Only backups can recover them.', username=user.username) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="small danger material-symbols-outlined" title="{{ _('Delete') }}" aria-label="{{ _('Delete %(username)s', username=user.username) }}">close</button>
                   </form>
@@ -136,6 +140,7 @@
 {%- endfor %}
             </tbody>
           </table>
+          {{ macros.list_pages(it.users, _('No user matches the search.'), 'user_pages') }}
         </details>
       </main>
 {%- endblock %}

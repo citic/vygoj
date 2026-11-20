@@ -334,14 +334,215 @@ details:not([open]) > summary > :is(h2, h3, h4, h5, h6)::before {
   }
 }
 
+/* Search above a list or a data table (macros.html): the rows per page of a table at the start,
+   and the filter at the end, a rounded field with a magnifier inside, whose border and magnifier
+   take the color of the site while it has the focus, on a line that wraps on narrow screens. A
+   table below it spans the same width, so the controls stay at its edges */
+.list_search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin: 0.5rem 0;
+  font-size: 0.875rem;
+  color: var(--muted-text);
+
+  /* display: flex would show a search hidden until its script works (the contents of a course) */
+  &[hidden] {
+    display: none;
+  }
+
+  & input[type="number"] {
+    width: 4.5rem;
+    border: 1px solid var(--toolbar-border);
+    border-radius: 999px;
+    padding: 0.125rem 0.375rem;
+    background-color: var(--surface);
+    font: inherit;
+    text-align: center;
+  }
+
+  & .search {
+    position: relative;
+    flex: 0 1 20rem;
+    margin: 0;
+    margin-inline-start: auto;
+  }
+
+  /* The magnifier at the start of the field, and the X at its end */
+  & .search :is(label, .clear) {
+    position: absolute;
+    top: 50%;
+    translate: 0 -50%;
+    line-height: 1;
+  }
+
+  & .search label {
+    inset-inline-start: 0.75rem;
+  }
+
+  & .search:focus-within label {
+    color: var(--label-color);
+  }
+
+  /* The X that clears the search replaces the one of the browser, which differs in each one */
+  & .clear {
+    inset-inline-end: 0.5rem;
+    border-radius: 999px;
+    color: inherit;
+
+    &:is(:hover, :focus-visible) {
+      background-color: color-mix(in srgb, var(--label-color) 15%, transparent);
+      color: var(--label-color);
+    }
+  }
+
+  & input[type="search"]::-webkit-search-cancel-button {
+    appearance: none;
+  }
+
+  & .symbol {
+    font-size: 1.25rem;
+  }
+
+  & input[type="search"] {
+    box-sizing: border-box;
+    width: 100%;
+    border: 1px solid var(--toolbar-border);
+    border-radius: 999px;
+    padding: 0.375rem 2rem 0.375rem 2.25rem;
+    background-color: var(--surface);
+    box-shadow: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+
+    &:focus {
+      border-color: var(--label-color);
+      outline: none;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--label-color) 20%, transparent);
+    }
+  }
+}
+
+/* Pages below a data table (macros.html): how many rows it shows at the start, and the arrows and
+   number of the page at the end */
+.list_pages {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0.5rem 0;
+  font-size: 0.875rem;
+  color: var(--muted-text);
+
+  & p {
+    margin: 0;
+  }
+
+  & .summary {
+    margin-inline-end: auto;
+  }
+
+  & .symbol {
+    display: block;
+    border-radius: 4px;
+    font-size: 1.5rem;
+  }
+
+  & a {
+    color: var(--label-color);
+
+    &:is(:hover, :focus-visible) .symbol {
+      background-color: color-mix(in srgb, var(--label-color) 12%, transparent);
+    }
+  }
+
+  & > span.symbol {
+    opacity: 0.3;
+  }
+}
+
 /* Tables of data of the pages (format below): on narrow screens their cells wrap their text and
    grow downward instead of widening the page, and their headers start at the same edge as their
    data. Cells of long words without spaces (emails, codes) need overflow-wrap: anywhere */
 .data_table {
   max-width: 100%;
 
+  /* Below a search, the table spans its width (see .list_search) */
+  .list_search ~ & {
+    width: 100%;
+  }
+
   & th {
     text-align: start;
+  }
+
+  /* Headers of the columns that sort the rows (macros.html), on one line where the screen has
+     room (phones wrap them, so the table is narrower): the name sorts by the column, with the
+     triangle of its direction, which shows faint on the other columns under the pointer, so users
+     see that they sort; its place is kept, so nothing moves. The pin keeps the column as a sort
+     key: it shows when the pointer is on the header or the keyboard is in it (always on touch
+     screens, faint), and stays with its number among the pins once pinned */
+  @media (width >= 640px) {
+    & thead th:has(.sort) {
+      white-space: nowrap;
+    }
+  }
+
+  & thead a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  & thead .sort:is(:hover, :focus-visible) {
+    text-decoration: underline;
+  }
+
+  & thead .sort::after {
+    content: "▲" / "";
+    margin-inline-start: 0.25rem;
+    font-size: 0.75em;
+    opacity: 0;
+  }
+
+  & th:is(:hover, :focus-within) .sort::after {
+    opacity: 0.5;
+  }
+
+  & th[data-sort] .sort::after {
+    opacity: 1;
+  }
+
+  & th[data-sort="descending"] .sort::after {
+    content: "▼" / "";
+  }
+
+  & thead .pin {
+    margin-inline-start: 0.25rem;
+    opacity: 0;
+
+    & .symbol {
+      font-size: 1rem;
+      vertical-align: -0.2em;
+    }
+
+    & .number {
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+  }
+
+  & th:is(:hover, :focus-within) .pin {
+    opacity: 0.6;
+  }
+
+  & thead .pin:is(:hover, :focus-visible, [data-pinned]) {
+    opacity: 1;
+  }
+
+  @media (hover: none) {
+    & thead .pin {
+      opacity: 0.6;
+    }
   }
 }
 

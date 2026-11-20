@@ -33,6 +33,126 @@ class BackendStatus {
   }
 }
 
+// Milliseconds after the last key before a search asks for its results, and to wait for them
+const SEARCH_DELAY = 300;
+const SEARCH_TIMEOUT = 10000;
+
+// An image that does not load, e.g. by a wrong path in vygoj.json, shows its data-fallback image
+// instead, such as the gavel for courses, or hides if it has none or the fallback fails too
+function showImageOrFallback(image) {
+  image.decode().catch(() => {
+    const { fallback } = image.dataset;
+    if (fallback && image.getAttribute('src') !== fallback) {
+      image.src = fallback;
+      showImageOrFallback(image);
+    } else {
+      image.hidden = true;
+    }
+  });
+}
+
+/**
+ * Search of a table of data split in pages in the server while the user types (list_search of
+ * macros.html, data_table.py). It asks the server for the page of the search, the same one that the
+ * form opens without scripts, and puts the contents of the elements of the results (the ids of the
+ * aria-controls of the form) of that page in the ones of this page, so the field keeps its focus
+ * and what the user types. The URL of the page becomes the one of the search, so a reload keeps
+ * it. If the session ended (a redirect), the browser opens the search, which goes to the login. If
+ * the request fails or takes too long, the field says so, and the next key tries again: opening
+ * the search would only ask a busy server for it again
+ */
+class ListSearch {
+  constructor(form) {
+    // The GET form of the search, with the ids of the results in its aria-controls
+    this.form = form; // HTMLFormElement
+    // The field of the search
+    this.input = form.querySelector('input[type="search"]'); // HTMLInputElement
+    // The X that clears the search, shown while the field has text
+    this.clearLink = form.querySelector('.clear'); // HTMLAnchorElement
+    // The timer of the next search, while the user types
+    this.timer = 0; // number
+    // Cancels the request of the last search when another one starts
+    this.controller = null; // AbortController | null
+  }
+
+  setup() {
+    // The search, and the rows per page of a table
+    this.form.addEventListener('input', () => {
+      this.clearLink.hidden = this.input.value === '';
+      window.clearTimeout(this.timer);
+      this.timer = window.setTimeout(() => this.search(), SEARCH_DELAY);
+    });
+    this.form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      this.search();
+    });
+    // The error of a failed search is cleared by any key, before Enter sends the form: an invalid
+    // field would stop it
+    this.input.addEventListener('keydown', () => this.input.setCustomValidity(''));
+    // A number of rows out of its range, or with decimals, becomes the nearest valid one when the
+    // user leaves the field, as the server takes it, and the rows follow it
+    this.form.addEventListener('change', ({ target }) => {
+      if (target.type === 'number' && target.value !== '' && !target.checkValidity()) {
+        const rounded = Math.round(Number(target.value));
+        target.value = Math.min(Math.max(rounded, Number(target.min)), Number(target.max));
+        this.search();
+      }
+    });
+    this.clearLink.addEventListener('click', (event) => {
+      event.preventDefault();
+      this.input.value = '';
+      this.clearLink.hidden = true;
+      this.input.focus();
+      this.search();
+    });
+  }
+
+  // The URL of the search: the fields of the form without the empty ones, as the links of the page
+  url() {
+    const params = new URLSearchParams(new FormData(this.form));
+    const filled = new URLSearchParams([...params].filter(([, value]) => value));
+    return filled.size ? `${this.form.action}?${filled}` : this.form.action;
+  }
+
+  // Ask for the page of the search and show its results
+  async search() {
+    window.clearTimeout(this.timer);
+    this.input.setCustomValidity('');
+    this.controller?.abort();
+    this.controller = new AbortController();
+    const url = this.url();
+    try {
+      const signal = AbortSignal.any([this.controller.signal, AbortSignal.timeout(SEARCH_TIMEOUT)]);
+      const response = await fetch(url, { signal });
+      if (response.redirected) {
+        window.location.assign(url);
+        return;
+      }
+      if (!response.ok) {
+        throw new Error(response.statusText);
+      }
+      const page = new DOMParser().parseFromString(await response.text(), 'text/html');
+      this.form.getAttribute('aria-controls').split(' ').forEach((id) => {
+        const element = document.getElementById(id);
+        const fresh = page.getElementById(id);
+        if (element && fresh) {
+          element.hidden = fresh.hidden;
+          element.replaceChildren(...fresh.childNodes);
+          element.querySelectorAll('img').forEach(showImageOrFallback);
+        }
+      });
+      window.history.replaceState(null, '', url);
+    } catch (error) {
+      // A newer search cancelled this one, which is not a failure (a timeout is a TimeoutError)
+      if (error.name !== 'AbortError') {
+        console.error(`search failed: ${error.message}`);
+        this.input.setCustomValidity(_('The search failed. Try again later.'));
+        this.input.reportValidity();
+      }
+    }
+  }
+}
+
 /** Common behavior for all site pages */
 class Site {
   constructor() {
@@ -69,21 +189,10 @@ class Site {
     // Register event handlers for flash messages' close buttons
     this.setupFlashMessages();
     // No image of the page is shown broken
-    document.querySelectorAll('img').forEach((image) => Site.showImageOrFallback(image));
-  }
-
-  // An image that does not load, e.g. by a wrong path in vygoj.json, shows its data-fallback image
-  // instead, such as the gavel for courses, or hides if it has none or the fallback fails too
-  static showImageOrFallback(image) {
-    image.decode().catch(() => {
-      const { fallback } = image.dataset;
-      if (fallback && image.getAttribute('src') !== fallback) {
-        image.src = fallback;
-        Site.showImageOrFallback(image);
-      } else {
-        image.hidden = true;
-      }
-    });
+    document.querySelectorAll('img').forEach(showImageOrFallback);
+    // Tables of data split in pages are searched in the server while the user types. A search
+    // without action filters the rows of the page instead (filter.js)
+    document.querySelectorAll('.list_search[action]').forEach((form) => new ListSearch(form).setup());
   }
 
   // Ask the server for the backend status, then schedule the next check
@@ -177,4 +286,6 @@ class Site {
   }
 }
 
-window.addEventListener('load', Site.main);
+// Not on the load event: the page may load while i18n.js waits for the translations, and then this
+// listener would never run. base.html puts this module at the end of the body, after the elements
+Site.main();

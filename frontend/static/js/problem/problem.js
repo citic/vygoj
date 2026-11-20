@@ -927,4 +927,6 @@ class ProblemManager {
   }
 }
 
-window.addEventListener('load', ProblemManager.main);
+// Not on the load event: the page may load while i18n.js waits for the translations, and then this
+// listener would never run. base.html puts this module at the end of the body, after the elements
+ProblemManager.main();

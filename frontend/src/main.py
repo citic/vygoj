@@ -178,6 +178,12 @@ def check_session():
     """ Log out users that an administrator suspended or deleted after they logged in """
     refresh_session()
 
+def log_visit():
+    """ Log the visit to a page of data tables, unless a script of the page asked for it (fetch()
+    sends Sec-Fetch-Dest: empty), such as a search while the user types, which is not a visit """
+    if flask.request.headers.get('Sec-Fetch-Dest') != 'empty':
+        log_event('visit')
+
 # Courses -----------------------------------------------------------------------------------------
 
 @app.route('/')
@@ -299,7 +305,7 @@ def sso_callback(alias):
 @app.route('/admin/users')
 def get_users_admin():
     """ Administrator asked for the page of users: login methods and the list of users """
-    log_event('visit')
+    log_visit()
     return UserAdminController.get_users()
 
 @app.route('/admin/users/import', methods=['POST'])

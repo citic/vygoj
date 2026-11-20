@@ -1,3 +1,5 @@
+import { fold, searchWords, setupPageFilter } from '../filter.js';
+
 // Shows the progress of each problem as a percentage and a bar. The grade stored in the database
 // for the logged user wins; otherwise the one that the problem page saved in localStorage is used.
 // Sections and the whole course show the average of the problems they contain
@@ -38,13 +40,82 @@ class CourseManager {
     CourseManager.scrollToProblem();
     document.querySelector('.course .contents').addEventListener('click', CourseManager.toggle);
     document.getElementById('toggle_all').addEventListener('click', CourseManager.toggleAll);
+    CourseManager.setupSearch();
+  }
+
+  // The filter of the contents applies while the user types (filter.js)
+  static setupSearch() {
+    setupPageFilter(document.querySelector('.course .list_search'), CourseManager.filter);
+  }
+
+  // The folded words of the search of the contents, none if there is no search
+  static words() {
+    return searchWords(document.querySelector('.course .list_search'));
+  }
+
+  // Shows only the rows whose number and title contain every word of the search, ignoring case and
+  // accents, with the sections that contain them, and every row of a section whose title matches.
+  // A search starts with every section expanded, and the sections that the user collapses during
+  // it hide their rows of the search, without saving it. An empty search shows the contents again
+  // with the sections that the user had collapsed
+  static filter() {
+    const words = CourseManager.words();
+    const rows = document.querySelectorAll('.course tbody tr');
+    const buttons = document.querySelectorAll('[data-type="section"] button');
+    // The X is shown while there is a search, so a hidden X means that this search is new
+    const clearLink = document.querySelector('.course .list_search .clear');
+    if (clearLink.hidden || words.length === 0) {
+      buttons.forEach((button) => button.setAttribute('aria-expanded', true));
+    }
+    clearLink.hidden = words.length === 0;
+    document.getElementById('contents_empty').hidden = true;
+    if (words.length === 0) {
+      rows.forEach((row) => { row.hidden = false; });
+      CourseManager.restore();
+      return;
+    }
+    // Sections that contain the current row, as { row, level, matched, inside, closed }: inside if
+    // a section around it is collapsed, and closed if it is collapsed or inside
+    const open = [];
+    let found = false;
+    rows.forEach((row) => {
+      const level = Number(row.dataset.level);
+      while (open.at(-1)?.level >= level) {
+        open.pop();
+      }
+      const title = fold(row.querySelector('.name').textContent);
+      const matched = open.some((section) => section.matched)
+        || words.every((word) => title.includes(word));
+      const inside = open.at(-1)?.closed ?? false;
+      row.hidden = !matched || inside;
+      if (matched) {
+        open.forEach((section) => { section.row.hidden = section.inside; });
+        found = true;
+      }
+      if (row.dataset.type === 'section') {
+        const collapsed = row.querySelector('button').getAttribute('aria-expanded') === 'false';
+        open.push({
+          row, level, matched, inside, closed: inside || collapsed,
+        });
+      }
+    });
+    document.getElementById('contents_empty').hidden = found;
+    CourseManager.showToggleAll();
   }
 
   // Clicking a section title hides or shows every row inside that section
   static toggle({ target }) {
     const button = target.closest('[data-type="section"] button');
-    if (button) {
-      CourseManager.expand(button, button.getAttribute('aria-expanded') === 'false');
+    if (!button) {
+      return;
+    }
+    const expanded = button.getAttribute('aria-expanded') === 'false';
+    if (CourseManager.words().length) {
+      // During a search, the section shows or hides only its rows of the search
+      button.setAttribute('aria-expanded', expanded);
+      CourseManager.filter();
+    } else {
+      CourseManager.expand(button, expanded);
       CourseManager.save();
     }
   }
@@ -54,8 +125,13 @@ class CourseManager {
   static toggleAll() {
     const buttons = document.querySelectorAll('[data-type="section"][data-level="3"] button');
     const expanded = ![...buttons].some((button) => button.getAttribute('aria-expanded') === 'true');
-    buttons.forEach((button) => CourseManager.expand(button, expanded));
-    CourseManager.save();
+    if (CourseManager.words().length) {
+      buttons.forEach((button) => button.setAttribute('aria-expanded', expanded));
+      CourseManager.filter();
+    } else {
+      buttons.forEach((button) => CourseManager.expand(button, expanded));
+      CourseManager.save();
+    }
   }
 
   static expand(button, expanded) {
@@ -107,7 +183,11 @@ class CourseManager {
     const collapsed = document.querySelectorAll('[data-type="section"] [aria-expanded="false"]');
     const titles = [...collapsed].map((button) => button.textContent);
     window.localStorage.setItem(CourseManager.key(), titles.join('\n'));
-    // The Contents title shows its arrow expanded while any section is expanded
+    CourseManager.showToggleAll();
+  }
+
+  // The Contents title shows its arrow expanded while any section is expanded
+  static showToggleAll() {
     const expanded = document.querySelector('[data-type="section"] [aria-expanded="true"]') !== null;
     document.getElementById('toggle_all').setAttribute('aria-expanded', expanded);
   }

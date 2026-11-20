@@ -43,3 +43,86 @@
             <small class="field_error">{{ error }}</small>
 {%- endfor %}
 {%- endmacro %}
+
+{#- Field of a search above a list or a data table, with a magnifier inside it as its label: query
+    is the text searched, hint an example of a search, and clear_url the page without the search,
+    which the X at the end of the field opens while there is a search, and name its parameter of the
+    URL. Enter sends the form. site.js searches while the user types (ListSearch), or the script of
+    the page filters its rows if the form has no action (setupPageFilter() of site.js) #}
+{%- macro search_field(query, hint, clear_url, name='q') %}
+            <p class="search">
+              <label for="{{ name }}_search" title="{{ _('Filter') }}"><span class="symbol material-symbols-outlined" aria-hidden="true">search</span></label>
+              <input type="search" id="{{ name }}_search" name="{{ name }}" value="{{ query }}" maxlength="200" placeholder="{{ hint }}" aria-label="{{ _('Filter') }}">
+              <a class="clear" href="{{ clear_url }}" title="{{ _('Clear the search') }}" aria-label="{{ _('Clear the search') }}"{% if not query %} hidden{% endif %}><span class="symbol material-symbols-outlined" aria-hidden="true">close</span></a>
+            </p>
+{%- endmacro %}
+
+{#- Search below the title of a list of courses of the home page, which courses.js applies in the
+    page while the user types, and shows: the server does not filter the courses, so without
+    scripts it would do nothing. name tells the list (prepared, enrolled, or available) #}
+{%- macro course_search(name) %}
+          <form class="list_search" role="search" hidden>
+{{- search_field('', _('Search courses, e.g. CI0112'), url_for('get_index'), name) }}
+          </form>
+{%- endmacro %}
+
+{#- Controls above a data table of data_table.py: the rows per page and the search, a GET form to
+    the page that keeps its sort and pins. hint is an example of the search, e.g. a filter of a
+    column, and results the ids of the elements that show the rows, which site.js replaces with the
+    ones of the page of the search while the user types (aria-controls) #}
+{%- macro list_search(table, hint, results) %}
+          <form class="list_search" method="get" action="{{ url_for(table.endpoint) }}" role="search" aria-controls="{{ results }}">
+            <label class="size">{{ _('Show') }}
+              <input type="number" name="size" value="{{ table.size }}" min="1" max="{{ table.max_size }}">
+              {{ _('records') }}</label>
+{%- for name, value in table.kept_params().items() %}
+            <input type="hidden" name="{{ name }}" value="{{ value }}">
+{%- endfor %}
+{{- search_field(table.query, hint, table.url(q='')) }}
+            {#- Enter sends a form of two fields only if it has a submit button #}
+            <button type="submit" hidden>{{ _('Filter') }}</button>
+          </form>
+{%- endmacro %}
+
+{#- Header of the column of the given key of a data table of data_table.py. A column that sorts
+    the rows has the triangle of its direction (data-sort), the first one also for screen readers
+    (aria-sort). Its name sorts the rows by it, or reverses them, and its pin keeps it as a sort
+    key, numbered in the order of the pins. abbr is the full name of a short header #}
+{%- macro column_header(table, key, abbr=none) %}
+{%- set column = table.columns[key] %}
+{%- set label %}{% if abbr %}<abbr title="{{ abbr }}">{{ column.label }}</abbr>{% else %}{{ column.label }}{% endif %}{% endset %}
+{%- if column.sort is none %}
+                <th scope="col" class="{{ key }}">{{ label }}</th>
+{%- else %}
+{%-   set direction = table.direction(key) %}
+{%-   set pin = table.pin_number(key) %}
+{%-   set pin_label = _('Unpin %(column)s', column=column.label) if pin else _('Pin %(column)s', column=column.label) %}
+                <th scope="col" class="{{ key }}"{% if direction %} data-sort="{{ direction }}"{% if table.keys()[0][0] == key %} aria-sort="{{ direction }}"{% endif %}{% endif %}>
+                  <a class="sort" href="{{ table.sort_url(key) }}" title="{{ _('Sort by %(column)s', column=column.label) }}">{{ label }}</a>
+                  <a class="pin" href="{{ table.pin_url(key) }}"{% if pin %} data-pinned="{{ pin }}"{% endif %} title="{{ pin_label }}" aria-label="{{ pin_label }}"><span class="symbol material-symbols-outlined" aria-hidden="true">push_pin</span>{% if pin %}<span class="number">{{ pin }}</span>{% endif %}</a>
+                </th>
+{%- endif %}
+{%- endmacro %}
+
+{#- Pages below a data table of data_table.py: which rows it shows, and the arrows to the previous
+    and next pages around the number of the page. The first and last pages show their missing arrow
+    faint, so the arrows do not move. Screen readers read it when a search changes it (aria-live).
+    empty is the text when no row matches the search, and id the id of the navigation #}
+{%- macro list_pages(table, empty, id) %}
+          <nav class="list_pages" id="{{ id }}" aria-label="{{ _('Pages') }}" aria-live="polite">
+            <p class="summary">{% if table.total %}{{ _('Showing %(first)d to %(last)d of %(total)d', first=(table.page - 1) * table.size + 1, last=[table.page * table.size, table.total]|min, total=table.total) }}{% else %}{{ empty }}{% endif %}</p>
+{%- if table.pages > 1 %}
+{%-   if table.page > 1 %}
+            <a class="previous" rel="prev" href="{{ table.url(page=table.page - 1) }}" title="{{ _('Previous') }}" aria-label="{{ _('Previous') }}"><span class="symbol material-symbols-outlined" aria-hidden="true">chevron_left</span></a>
+{%-   else %}
+            <span class="previous symbol material-symbols-outlined" aria-hidden="true">chevron_left</span>
+{%-   endif %}
+            <p class="page">{{ _('Page %(page)d of %(pages)d', page=table.page, pages=table.pages) }}</p>
+{%-   if table.page < table.pages %}
+            <a class="next" rel="next" href="{{ table.url(page=table.page + 1) }}" title="{{ _('Next') }}" aria-label="{{ _('Next') }}"><span class="symbol material-symbols-outlined" aria-hidden="true">chevron_right</span></a>
+{%-   else %}
+            <span class="next symbol material-symbols-outlined" aria-hidden="true">chevron_right</span>
+{%-   endif %}
+{%- endif %}
+          </nav>
+{%- endmacro %}

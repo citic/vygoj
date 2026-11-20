@@ -253,6 +253,9 @@ msgstr ""
 msgid "Clear all"
 msgstr "Borrar todo"
 
+msgid "Clear the search"
+msgstr "Borrar la búsqueda"
+
 msgid "Client ID"
 msgstr "ID de cliente"
 
@@ -477,6 +480,9 @@ msgstr "Salida esperada"
 msgid "File"
 msgstr "Archivo"
 
+msgid "Filter"
+msgstr "Filtrar"
+
 msgid "Font"
 msgstr "Tipografía"
 
@@ -586,6 +592,9 @@ msgstr "Nuevo proveedor de SSO"
 msgid "Next"
 msgstr "Siguiente"
 
+msgid "No course matches the search."
+msgstr "Ningún curso coincide con la búsqueda."
+
 msgid "No errors"
 msgstr "Sin errores"
 
@@ -602,6 +611,9 @@ msgstr ""
 "Aún no hay soluciones: cada ejecución de un problema guarda una versión "
 "en este repositorio."
 
+msgid "No user matches the search."
+msgstr "Ningún usuario coincide con la búsqueda."
+
 msgid ""
 "Not configured: public client with PKCE only. Add it to "
 "SSO_CLIENT_SECRETS in config.py."
@@ -614,6 +626,9 @@ msgstr "Sin conexión con el backend"
 
 msgid "Not found"
 msgstr "No encontrado"
+
+msgid "Nothing in the contents matches the search."
+msgstr "Nada del contenido coincide con la búsqueda."
 
 msgid "Offer"
 msgstr "Ofrecer"
@@ -652,6 +667,13 @@ msgstr "Origen guardado."
 msgid "Output"
 msgstr "Salida"
 
+#, python-format
+msgid "Page %(page)d of %(pages)d"
+msgstr "Página %(page)d de %(pages)d"
+
+msgid "Pages"
+msgstr "Páginas"
+
 msgid "Parts of the test case"
 msgstr "Partes del caso de prueba"
 
@@ -663,6 +685,10 @@ msgstr "Las contraseñas deben coincidir"
 
 msgid "Paste"
 msgstr "Pegar"
+
+#, python-format
+msgid "Pin %(column)s"
+msgstr "Fijar %(column)s"
 
 msgid "Please login to see your courses."
 msgstr "Inicie sesión para ver sus cursos."
@@ -797,6 +823,12 @@ msgstr ""
 msgid "Scopes"
 msgstr "Ámbitos"
 
+msgid "Search courses, e.g. CI0112"
+msgstr "Buscar cursos, p. ej. CI0112"
+
+msgid "Search the contents, e.g. 2.3"
+msgstr "Buscar en el contenido, p. ej. 2.3"
+
 msgid "Separated by spaces, e.g. openid profile email"
 msgstr "Separados por espacios, p. ej. openid profile email"
 
@@ -817,6 +849,13 @@ msgid ""
 msgstr ""
 "Nombre corto elegido en VygOJ para los URL y para SSO_CLIENT_SECRETS en "
 "config.py, p. ej. ucr. No es el client ID. No se puede cambiar después."
+
+msgid "Show"
+msgstr "Mostrar"
+
+#, python-format
+msgid "Showing %(first)d to %(last)d of %(total)d"
+msgstr "Mostrando %(first)d a %(last)d de %(total)d"
 
 msgid "Shown in the login button, e.g. Universidad de Costa Rica"
 msgstr "Se muestra en el botón de ingreso, p. ej. Universidad de Costa Rica"
@@ -840,6 +879,10 @@ msgstr ""
 "Se omitieron cursos de %(repo)s porque otros repositorios tienen cursos "
 "con los mismos nombres: %(names)s. Renómbrelos en su archivo de "
 "configuración."
+
+#, python-format
+msgid "Sort by %(column)s"
+msgstr "Ordenar por %(column)s"
 
 msgid "Standard input"
 msgstr "Entrada estándar"
@@ -958,6 +1001,9 @@ msgstr ""
 msgid "The requested resource was not found in this site."
 msgstr "El recurso solicitado no se encontró en este sitio."
 
+msgid "The search failed. Try again later."
+msgstr "La búsqueda falló. Intente más tarde."
+
 #, python-format
 msgid ""
 "The zip of your last solutions is ready until %(time)s, or until you save"
@@ -990,6 +1036,10 @@ msgstr ""
 
 msgid "Undo"
 msgstr "Deshacer"
+
+#, python-format
+msgid "Unpin %(column)s"
+msgstr "Soltar %(column)s"
 
 msgid "Use up to 32 lowercase letters, digits, and hyphens"
 msgstr "Use hasta 32 letras minúsculas, dígitos y guiones"
@@ -1194,6 +1244,9 @@ msgstr ""
 "p. ej. https://sso.ucr.ac.cr/realms/UCR o su URL /.well-known/openid-"
 "configuration"
 
+msgid "e.g. role:professor"
+msgstr "p. ej. rol:docente"
+
 #, python-format
 msgid "invalid %(column)s"
 msgstr "%(column)s no válido"
@@ -1209,6 +1262,9 @@ msgstr "se interrumpió, intente de nuevo"
 
 msgid "or with your VygOJ password"
 msgstr "o con su contraseña de VygOJ"
+
+msgid "records"
+msgstr "registros"
 
 msgid "set the origin first"
 msgstr "establezca primero el origen"

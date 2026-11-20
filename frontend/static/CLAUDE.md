@@ -8,12 +8,23 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
 
 - `js/vyg.js`: client copy of the shared model (see "Shared model" in the root `CLAUDE.md`).
 - `js/site.js`: behavior common to all pages (loaded from `base.html`).
+- `js/filter.js`: searches that filter the rows of a list in the page, without asking the server.
 - `js/<page>/<page>.js`: one module per page (`problem/`, `course/`, `courses/` for the home page,
   `user/`).
 - `css/site.css`: global layout and variables; `css/<page>.css` for page-specific styles.
   Tables of data take the `data_table` class of `site.css` (headers of columns with the color
   of the site, headers of rows marked with `<th scope="row">`, rows of alternate background),
-  which problem statements share for the tables of their authors. Forms take the
+  which problem statements share for the tables of their authors. Tables of data that are
+  searched, sorted, and split in pages in the server (`src/data_table.py`) have the
+  `list_search` form above them and the `list_pages` navigation below them (`site.css`, macros
+  of `macros.html`). `ListSearch` of `site.js` searches while the user types: it fetches the
+  page of the search and replaces the elements of the results (the ids of the `aria-controls` of
+  the form), so scripts that set up those elements listen in the `document` (e.g. the
+  confirmations of `admin.js`). A `list_search` without `action` filters the rows of the page
+  instead, with `setupPageFilter()`, `searchWords()`, and `fold()` of `js/filter.js`, for lists
+  that the page has whole: the contents of a course (`course.js`) and each list of courses of the
+  home page (`courses.js`, `course_search` of `macros.html`). Search in the server only what is
+  split in pages: each search there is a query. Forms take the
   `fieldset_columns` class of `form.css` to place their fieldsets of radio buttons or checkboxes
   side by side when the window has space for them (the preferences and the form of a user for
   administrators).
@@ -146,8 +157,8 @@ errors and the layout at phone and desktop widths.
   - States are standard or `data-*`/`aria-*` attributes, not classes: `hidden`, `disabled`,
     `open`, `aria-expanded`, `aria-current="true"`, `data-status="passed"`,
     `data-category="error"`.
-  - The shared variants of buttons and the shared layouts `data_table` (`site.css`) and
-    `fieldset_columns` (`form.css`) are the only extra classes. Variants of buttons: `button` (a
+  - The shared variants of buttons and the shared layouts `data_table`, `list_search`, and
+    `list_pages` (`site.css`) and `fieldset_columns` (`form.css`) are the only extra classes. Variants of buttons: `button` (a
     link that looks like a button), `small`, and the colors `confirm`, `action`, `reject`,
     `danger`, and `neutral` (`form.css`).
   - Kebab-case only for classes of external libraries (`material-symbols-outlined`).
