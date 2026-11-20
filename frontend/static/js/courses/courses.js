@@ -35,3 +35,12 @@ document.querySelectorAll('.courses .list_search').forEach((form) => {
   setupPageFilter(form, () => filterCourses(form));
   filterCourses(form);
 });
+
+// Each section of the home page stays folded or unfolded as the user leaves it, by its id, because
+// its title changes with the language of the interface. Sections start unfolded, also when
+// localStorage has an invalid value
+document.querySelectorAll('.courses > details[id]').forEach((details) => {
+  const key = `home:${details.id}`;
+  details.open = window.localStorage.getItem(key) !== 'false';
+  details.addEventListener('toggle', () => window.localStorage.setItem(key, details.open));
+});

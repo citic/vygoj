@@ -212,9 +212,14 @@ class ProblemManager {
     const codeEditor = document.getElementById('code_editor');
     const { editor } = codeEditor;
     // The language chosen in the list of the toolbar is remembered for each problem, and the
-    // highlighting follows it. An invalid language in localStorage selects the first one
+    // highlighting follows it. A problem without a language of its own starts with the last one
+    // the user chose in any problem, if it offers it. Languages that the problem does not offer
+    // (or invalid ones in localStorage) leave the value empty, and the next choice is tried
     const languageList = document.getElementById('language');
     languageList.value = loadConfig('language');
+    if (languageList.selectedIndex < 0) {
+      languageList.value = window.localStorage.getItem('language');
+    }
     if (languageList.selectedIndex < 0) {
       languageList.selectedIndex = 0;
     }
@@ -223,7 +228,11 @@ class ProblemManager {
       codeEditor.setAttribute('language', monacoLanguageFor[languageList.value.toLowerCase()] || 'plaintext');
     };
     setLanguage();
-    languageList.addEventListener('change', setLanguage);
+    // Only a choice of the user becomes the last language, not the one a problem starts with
+    languageList.addEventListener('change', () => {
+      window.localStorage.setItem('language', languageList.value);
+      setLanguage();
+    });
     editor.getModel().updateOptions({ tabSize: 2 }); // Google code style
     this.editors.push(editor);
     // The editor is as tall as its code, between the min-height and max-height of the CSS, until
