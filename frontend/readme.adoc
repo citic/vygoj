@@ -479,7 +479,7 @@ Talisman also redirects HTTP to HTTPS (except in debug mode) and sends `Strict-T
 [[lang_server]]
 === Language server
 
-The code editor connects to the language server (`lang-srv/`, see link:lang-srv/readme.adoc[its documentation]) with a key that the problem page asks with a POST (`lang_server` action of `src/problems/problem_controller.py`). Only the users who may open the problem get it, for a language of the problem, and the language server accepts it for a minute. The key is signed with `LANG_SERVER_SECRET`, shared with the language server, and the frontend refuses to start with a `LANG_SERVER` and a secret of fewer than 32 characters. The CSP lets the pages connect to `LANG_SERVER` (`connect-src`, which otherwise follows `default-src`).
+The code editor connects to the language server (`langserv/`, see link:langserv/readme.adoc[its documentation]) with a key that the problem page asks with a POST (`lang_server` action of `src/problems/problem_controller.py`). Only the users who may open the problem get it, for a language of the problem, and the language server accepts it for a minute. The key is signed with `LANG_SERVER_SECRET`, shared with the language server, and the frontend refuses to start with a `LANG_SERVER` and a secret of fewer than 32 characters. The CSP lets the pages connect to `LANG_SERVER` (`connect-src`, which otherwise follows `default-src`).
 
 [[course_repos]]
 === Course repositories

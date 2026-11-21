@@ -123,11 +123,11 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
   then `config/config.py`: local, git-ignored settings that replace only the defaults that differ.
   Add new settings to `defaults.py` and read them with `app.config['NAME']`, without fallback
   values in the code.
-- `lang-srv/`: the language server, a process of its own with its `Makefile` (port 7070),
+- `langserv/`: the language server, a process of its own with its `Makefile` (port 7070),
   `config/`, and Docker image (`image/`). `src/main.py` accepts the WebSocket of each code editor
   with a key that `lang_server_key()` of `problem_controller.py` signs with `LANG_SERVER_SECRET`,
   and passes the LSP messages to a language server in a container without network (see
-  `lang-srv/readme.adoc`).
+  `langserv/readme.adoc`).
 - `vygdata/`, `data/`: runtime data (course repos, logs). Git-ignored.
 
 ## Commands

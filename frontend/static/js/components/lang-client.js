@@ -1,4 +1,4 @@
-// Suggestions and parameter hints of the language server of VygOJ (frontend/lang-srv) in a Monaco
+// Suggestions and parameter hints of the language server of VygOJ (frontend/langserv) in a Monaco
 // editor. It talks the Language Server Protocol (LSP) through a WebSocket: it sends the code of
 // the editor, and shows what the server answers. Without the server, the editor works as before
 import * as monaco from 'https://esm.sh/monaco-editor';
