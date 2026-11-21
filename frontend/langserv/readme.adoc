@@ -22,7 +22,7 @@ The editor (`static/js/components/lang-client.js`) talks the Language Server Pro
 
 == Installation
 
-The language server needs Docker, like the backend (see `backend/engine/readme.adoc` to install it), and the user that runs it must be able to use Docker (e.g. be in the `docker` group). Docker gives that user the powers of `root`, so use a user of its own for the language server, not the one of the frontend. It may run in the computer of the frontend or in another one that browsers reach.
+The language server needs Docker, like the backend (see `backend/engine/readme.adoc` to install it), and the user that runs it must be able to use Docker (e.g. be in the `docker` group). Docker gives that user the powers of `root`, so use a user of its own for the language server, not the one of the frontend. It may run in the computer of the frontend or in another one, which may have a private address (see <<several_servers>>).
 
 First, build the image of the containers, with the language servers and the headers of the libraries that solutions include. Rebuild it regularly to receive security updates:
 
@@ -49,11 +49,11 @@ echo "ORIGINS = ['https://vygoj.citic.ucr.ac.cr']" >> config.py
 chmod 600 config.py
 ----
 
-Fourth, tell the frontend where the language server is, in `frontend/config/config.py`: its address as browsers reach it (`LANG_SERVER`, with the IP or host name and the port, 7070 by default), and the same secret (`LANG_SERVER_SECRET`). Restart the frontend after changing them:
+Fourth, tell the frontend where the language servers are, in `frontend/config/config.py`: their addresses as browsers reach them (`LANG_SERVERS`, with the IP or host name and the port, 7070 by default), and the same secret (`LANG_SERVER_SECRET`). Restart the frontend after changing them:
 
 [source,python]
 ----
-LANG_SERVER = 'ws://localhost:7070'
+LANG_SERVERS = ['ws://localhost:7070']
 LANG_SERVER_SECRET = 'the same secret of frontend/langserv/config/config.py'
 ----
 
@@ -81,7 +81,25 @@ Behind Apache with HTTPS (see the reverse proxy section of `frontend/readme.adoc
 ProxyPass /lang-srv/ ws://127.0.0.1:7070/
 ----
 
-Then the frontend uses `LANG_SERVER = 'wss://vygoj.citic.ucr.ac.cr/lang-srv/'`, and the language server may listen only on `127.0.0.1` (`make server HOST=127.0.0.1`).
+Then the frontend uses `LANG_SERVERS = ['wss://vygoj.citic.ucr.ac.cr/lang-srv/']`, and the language server may listen only on `127.0.0.1` (`make server HOST=127.0.0.1`).
+
+[[several_servers]]
+=== Several language servers
+
+When the editors of the users at the same time do not fit in one computer (each one may use up to `CONTAINER_MEMORY`), run language servers in several computers, each one with the same `LANG_SERVER_SECRET` and `ORIGINS`, and list them in `LANG_SERVERS` of the frontend. The frontend gives each user always the same server, chosen by a hash of their email, because each server limits the editors of a user (`MAX_USER_SESSIONS`) in its own memory. If a server stops, its users get no suggestions until it starts again or leaves the list.
+
+Browsers only reach the frontend, so the other computers may have private addresses: the Apache of the frontend passes a path to each one. Each server listens on its private address, and a firewall lets only the computer of the frontend connect to its port. The connections between Apache and the servers are not encrypted (`ws://`), like the ones to the backends, so they must go through a private network:
+
+[source,config]
+----
+ProxyPass /lang-srv/1/ ws://10.0.0.11:7070/
+ProxyPass /lang-srv/2/ ws://10.0.0.12:7070/
+----
+
+[source,python]
+----
+LANG_SERVERS = ['wss://vygoj.citic.ucr.ac.cr/lang-srv/1/', 'wss://vygoj.citic.ucr.ac.cr/lang-srv/2/']
+----
 
 [[security]]
 == Security

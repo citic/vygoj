@@ -136,7 +136,7 @@ make admin
 
 Optionally, let users log in with the account of their institution (single sign-on with OpenID Connect, e.g. the SSO of the Universidad de Costa Rica). Administrators add the providers in the users page of the web application, and the client secrets go in `SSO_CLIENT_SECRETS` of `config.py` (see the single sign-on section of `frontend/readme.adoc`).
 
-Optionally, install the language server, which gives the code editor suggestions and parameter hints, and set its address and secret in `LANG_SERVER` and `LANG_SERVER_SECRET` of `config.py` (see `frontend/langserv/readme.adoc`).
+Optionally, install the language server, which gives the code editor suggestions and parameter hints, and set its address and secret in `LANG_SERVERS` and `LANG_SERVER_SECRET` of `config.py` (see `frontend/langserv/readme.adoc`).
 
 Fourth, run the frontend as a production server:
 

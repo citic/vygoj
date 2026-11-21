@@ -1,4 +1,5 @@
 """ Problem management module """
+import hashlib
 import json
 import os
 import random
@@ -473,14 +474,23 @@ class ProblemController:
         return random.choice(app.config['BACKENDS'])
 
 def lang_server_key(language: str):
-    """ Answer the address of the language server and a key to connect to it with the code editor
+    """ Answer the address of a language server and a key to connect to it with the code editor
     of a problem in the language. Only the users who may open the problem get it (do_action()
     calls fetch_problem() before), and the language server accepts it for a minute (KEY_MAX_AGE),
     so a suspended user cannot connect again. The key is signed with the secret shared with the
-    language server, which checks it with the same salt. Without a language server it answers an
+    language servers, which check it with the same salt. Without language servers it answers an
     empty object, and the editor only suggests the words of the code """
-    if not app.config['LANG_SERVER']:
+    if not app.config['LANG_SERVERS']:
         return flask.jsonify({})
+    user = flask.session['user'].get('email')
     keys = URLSafeTimedSerializer(app.config['LANG_SERVER_SECRET'], salt='lang-srv')
-    key = keys.dumps({'user': flask.session['user'].get('email'), 'language': language})
-    return flask.jsonify({'url': app.config['LANG_SERVER'], 'key': key})
+    key = keys.dumps({'user': user, 'language': language})
+    return flask.jsonify({'url': choose_lang_server(user), 'key': key})
+
+def choose_lang_server(user: str) -> str:
+    """ Choose the language server of the user among LANG_SERVERS, which main.py checks that is
+    not empty. Each server limits the editors of a user (MAX_USER_SESSIONS) in its own memory, so
+    a user always gets the same one. hash() is not used because it changes in each process """
+    servers = app.config['LANG_SERVERS']
+    digest = hashlib.sha256(str(user).encode()).digest()
+    return servers[int.from_bytes(digest[:8], 'big') % len(servers)]

@@ -35,14 +35,16 @@ SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg:///vygoj'
 PORT = 8080
 # Backend server URIs, at least one. A random one will be selected for each code run request
 BACKENDS = [ "http://localhost:9090" ]
-# Address of the language server (langserv/, see its readme.adoc), where the code editor of the
-# problem page connects to get suggestions and parameter hints, as browsers reach it: its IP or
-# host name and its port (7070 by default), e.g. 'ws://localhost:7070', or 'wss://...' behind a
-# reverse proxy with HTTPS. Empty disables it, and the editor only suggests the words of the code
-LANG_SERVER = ''
-# Secret shared with the language server, as LANG_SERVER_SECRET in langserv/config/config.py, to
-# sign the keys that let the users who may open a problem connect to it. Anyone who knows it can
-# use the language server, so with LANG_SERVER the frontend refuses to start without it or with
+# Addresses of the language servers (langserv/, see its readme.adoc), where the code editor of the
+# problem page connects to get suggestions and parameter hints, as browsers reach them, e.g.
+# 'ws://localhost:7070', or 'wss://vygoj.ucr.ac.cr/lang-srv/1/' through the reverse proxy of the
+# frontend, which lets them have private addresses. Each user always gets the same one (a hash of
+# their email chooses it), so the limit of editors per user of each server holds. Empty disables
+# them, and the editor only suggests the words of the code
+LANG_SERVERS = []
+# Secret shared with the language servers, as LANG_SERVER_SECRET in langserv/config/config.py, to
+# sign the keys that let the users who may open a problem connect to them. Anyone who knows it can
+# use the language servers, so with LANG_SERVERS the frontend refuses to start without it or with
 # fewer than 32 characters. Generate one with:
 # python3 -c 'import secrets; print(secrets.token_hex(32))'
 LANG_SERVER_SECRET = ''

@@ -15,7 +15,7 @@ with its specific layout, commands, and rules; this file holds what is common to
 Flow: the browser talks to the frontend; the frontend sends a problem and a solution to a backend
 (`BACKENDS` in `frontend/config/config.py`, port 9090 by default); the backend runs the solution
 inside a disposable engine container and returns an `ExecutionResult`. The code editor of the
-problem page connects with a WebSocket to the language server (`LANG_SERVER`, port 7070 by
+problem page connects with a WebSocket to a language server (`LANG_SERVERS`, port 7070 by
 default), which runs a language server such as `clangd` in a container for each editor (see
 `frontend/langserv/readme.adoc`). Other folders: `common/`
 (shared `Makefile` and `vyg` Python package), `docs/` (analysis and design, in Spanish), `cli/`

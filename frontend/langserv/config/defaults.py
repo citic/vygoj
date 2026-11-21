@@ -3,7 +3,7 @@
 # LANG_SERVER_SECRET, and usually ORIGINS. A setting in config.py replaces the whole value of this
 # file. Keep this file complete and valid: the code reads every setting from it without fallback
 # values. The address and port where the server listens are HOST and PORT in its Makefile
-# (0.0.0.0:7070), and the frontend connects to them as LANG_SERVER in frontend/config/config.py
+# (0.0.0.0:7070), and the frontend lists them in LANG_SERVERS of frontend/config/config.py
 
 # Secret shared with the frontend, as LANG_SERVER_SECRET in frontend/config/config.py. The frontend
 # signs with it the keys that let the users who may open a problem connect for KEY_MAX_AGE seconds.
