@@ -1,18 +1,15 @@
-IMAGE=debian-dev
+IMAGE=vygoj-engine# Docker image of the engines, IMAGE in ../src/execution.py
+CONTEXT=.# Folder of the Dockerfile of the image
 CONTAINER=$(IMAGE)-interactive
 
-.PHONY: image clean install official-install run stop remove-containers remove-image uninstall
+.PHONY: clean install official-install run uninstall
 
-# Run the Docker image
+# Run a container of the image interactively, the default rule. It is removed when it exits
 run:
-	docker run -it --name $(CONTAINER) $(IMAGE):latest
+	docker run -it --rm --name $(CONTAINER) $(IMAGE)
 
-# Create a Docker image from the Dockerfile. Docker Desktop and the official packages have the
-# buildx plugin. The docker.io package of Debian 12 (Docker 20.10) lacks it, but its docker build
-# works; newer versions deprecate docker build without buildx
-image:
-	if docker buildx version > /dev/null 2>&1; then docker buildx build -t $(IMAGE):latest .; \
-	else docker build -t $(IMAGE):latest .; fi
+# Rules image, rebuild, and remove-image, after run, which stays the default rule
+include ../../common/docker.mk
 
 # Install Docker client and server using standard Debian packages
 install:
@@ -48,19 +45,3 @@ official-install:
 
 # Stop and remove the Docker image and all its containers
 clean: remove-image
-
-# Containers created with the image, running or stopped. Docker fails if stop or rm get no
-# container, so the rules below run them only when there are some
-CONTAINERS=docker ps -aq --filter ancestor=$(IMAGE)
-
-# Stop all containers created with the image
-stop:
-	ids=$$($(CONTAINERS)); if [ -n "$$ids" ]; then docker stop $$ids; fi
-
-# Stop and remove all containers, but not the image
-remove-containers: stop
-	ids=$$($(CONTAINERS)); if [ -n "$$ids" ]; then docker rm $$ids; fi
-
-# Remove the image, if it exists. All its containers must be stopped and removed first
-remove-image: remove-containers
-	if docker image inspect $(IMAGE):latest > /dev/null 2>&1; then docker rmi $(IMAGE):latest; fi

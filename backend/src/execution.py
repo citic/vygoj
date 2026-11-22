@@ -13,8 +13,8 @@ import vyg
 
 logger = logging.getLogger(__name__)
 
-# Image built by the Makefile inside the engine/ subfolder (IMAGE=debian-dev). Change both together
-IMAGE = 'debian-dev:latest'
+# Image built by the Makefile of the engine/ subfolder (IMAGE=vygoj-engine). Change both together
+IMAGE = 'vygoj-engine'
 # Unprivileged user of the engine image and its numeric id (useradd -u in engine/Dockerfile)
 STUDENT_USER = 'student'
 STUDENT_UID = 1000

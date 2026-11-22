@@ -111,9 +111,10 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
   an administrator, or resets the password of a user and makes it administrator (`make admin`);
   the first administrator is created here, and then administrators give and take the role of
   others in the web (never their own). `import` creates the missing tables (`db.create_all()`) and
-  updates the users table; `make`, `make release`, and `make server` run it before starting,
-  because gunicorn workers creating tables at the same time fail. `main.py` never changes the
-  schema. Administrators import users from CSV or TSV files in `/admin/users` (`admin.py`).
+  updates the users table; `make`, `make release`, `make server`, and `make service` run it
+  before starting, because gunicorn workers creating tables at the same time fail. `main.py`
+  never changes the schema. Administrators import users from CSV or TSV files in `/admin/users`
+  (`admin.py`).
   `log output.zip` and `submissions output.zip` write the archives of the activity log.
   `repo-job kind username [repo_id]` runs a background job of `repo_jobs.py`. Their logic is in
   `users.py`, `activity_log.py`, and `repo_jobs.py`, so the web application can reuse it.
@@ -123,6 +124,11 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
   then `config/config.py`: local, git-ignored settings that replace only the defaults that differ.
   Add new settings to `defaults.py` and read them with `app.config['NAME']`, without fallback
   values in the code.
+- `langserv/`: the language server, a process of its own with its `Makefile` (port 7070),
+  `config/`, and Docker image (`image/`). `src/main.py` accepts the WebSocket of each code editor
+  with a key that `lang_server_key()` of `problem_controller.py` signs with `LANG_SERVER_SECRET`,
+  and passes the LSP messages to a language server in a container without network (see
+  `langserv/readme.adoc`).
 - `vygdata/`, `data/`: runtime data (course repos, logs). Git-ignored.
 
 ## Commands

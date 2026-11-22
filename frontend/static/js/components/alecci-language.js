@@ -85,9 +85,31 @@ const tokens = {
   },
 };
 
-// Lets the editors of the page highlight Alecci code with language="alecci"
+// Lets the editors of the page highlight and suggest Alecci code with language="alecci"
 export default function registerAlecci(monaco) {
   monaco.languages.register({ id: LANGUAGE_ID, extensions: ['.ale'], aliases: ['Alecci'] });
   monaco.languages.setLanguageConfiguration(LANGUAGE_ID, configuration);
   monaco.languages.setMonarchTokensProvider(LANGUAGE_ID, tokens);
+  // Alecci has no language server yet, so the editor suggests its keywords and functions. A
+  // provider hides the words of the code that Monaco suggests without one, so it suggests them too
+  monaco.languages.registerCompletionItemProvider(LANGUAGE_ID, {
+    provideCompletionItems: (model, position) => {
+      const word = model.getWordUntilPosition(position);
+      const { lineNumber } = position;
+      const range = new monaco.Range(lineNumber, word.startColumn, lineNumber, word.endColumn);
+      const { Keyword, Function, Text } = monaco.languages.CompletionItemKind;
+      const keywords = [...tokens.keywords, ...tokens.typeKeywords];
+      const kinds = new Map(keywords.map((keyword) => [keyword, Keyword]));
+      tokens.builtins.forEach((builtin) => kinds.set(builtin, Function));
+      (model.getValue().match(/[a-zA-Z_]\w*/g) ?? []).forEach((name) => {
+        if (!kinds.has(name) && name !== word.word) {
+          kinds.set(name, Text);
+        }
+      });
+      const suggestions = [...kinds].map(([label, kind]) => ({
+        label, kind, insertText: label, range,
+      }));
+      return { suggestions };
+    },
+  });
 }

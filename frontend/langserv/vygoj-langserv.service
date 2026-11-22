@@ -1,0 +1,32 @@
+# systemd unit of the VygOJ language server: it starts gunicorn at boot and restarts it if it
+# fails. It runs with the user vygoj-langserv, in the docker group, and its clone of VygOJ in
+# /home/vygoj-langserv/vygoj. See the production section of readme.adoc. Install it with:
+# sudo cp vygoj-langserv.service /etc/systemd/system/ && sudo systemctl enable --now vygoj-langserv
+
+[Unit]
+Description=VygOJ language server
+# Each code editor gets a container of Docker with its language server
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+User=vygoj-langserv
+WorkingDirectory=/home/vygoj-langserv/vygoj/frontend/langserv
+# Gunicorn in the foreground, with the worker and threads of the Makefile. Its log goes to the
+# journal: journalctl -u vygoj-langserv
+ExecStart=/usr/bin/make service
+# The containers belong to Docker, not to this service, so stopping it does not stop them. Remove
+# the ones of the editors that were connected (their label is LABEL in src/main.py)
+ExecStopPost=/bin/sh -c 'docker ps -aq --filter label=vygoj=lang-srv | xargs -r docker rm -f'
+Restart=on-failure
+RestartSec=5
+# Isolation: the service cannot gain privileges (e.g. with setuid programs), sees a /tmp of its
+# own, and writes only in the home of its user, where its clone is
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/home/vygoj-langserv
+
+[Install]
+WantedBy=multi-user.target

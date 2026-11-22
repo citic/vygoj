@@ -1,0 +1,128 @@
+= VygOJ language server
+
+The language server gives the code editor of the problem page the suggestions and parameter hints of a real language server, such as `clangd` for C: typing `fge` suggests `fgets` with its parameters and documentation, typing `fgets(line,` highlights its parameter `int n`, and choosing a function of a header that the code does not include adds its `#include`. Without it, the editor only suggests the words already written in the code.
+
+It serves C and C++ with `clangd`, with the language standards that the backend compiles them with (`image/clangd.yaml`), Python with `pylsp`, and Java with `jdtls` of Eclipse (options in `image/jdtls`). `jdtls` gives its first suggestions about 20 seconds after the editor connects, while it indexes the library of Java, and runs with Java 25, which it needs, so it may suggest some classes and methods newer than the Java 21 of the backend.
+Alecci has no language server yet: its editor suggests the keywords of Alecci and the words of the code (`static/js/components/alecci-language.js`).
+
+It is a process of its own, besides the frontend and the backend:
+
+----
+Browser (Monaco)                    Frontend (8080)                 Language server (7070)        Docker
+1. POST {action: 'lang_server'} ──► checks the session and that
+                                ◄── the user may open the problem:
+                                    {url, key valid for 60 s}
+2. WebSocket to url, sends key  ──────────────────────────────────► checks the origin and the key
+                                                                    starts a container ─────────► clangd
+3. ⇄ LSP messages (suggestions, parameter hints) ⇄ ────────────────── filters and passes them ⇄ ─── (no network)
+4. the page closes              ──────────────────────────────────► removes the container
+----
+
+The editor (`static/js/components/lang-client.js`) talks the Language Server Protocol (LSP) through a WebSocket. Each editor gets its own container, where the language server reads the code that the editor sends; it never runs that code. Its source code is in `src/main.py`, its settings in `config/`, and its Docker image in `image/`.
+
+== Installation
+
+The language server needs Docker, like the backend (see `backend/engine/readme.adoc` to install it), and the user that runs it must be able to use Docker (e.g. be in the `docker` group). Docker gives that user the powers of `root`, so use a user of its own for the language server, not the one of the frontend. It may run in the computer of the frontend or in another one, which may have a private address (see <<several_servers>>).
+
+First, build the image of the containers, with the language servers and the headers of the libraries that solutions include. Rebuild it regularly with `make rebuild` to receive security updates: running editors keep the old image, and new ones get the new image (rules of `common/docker.mk`, shared with the engine of the backend):
+
+[source,console]
+----
+cd frontend/langserv
+make image
+----
+
+Second, install the Python dependencies:
+
+[source,console]
+----
+make install
+----
+
+It also adds the secret shared with the frontend to `config/config.py` (`make config`): the one of `frontend/config/config.py` if the frontend is in this computer, or a random one. It never changes the settings that the file has.
+
+Third, configure the language server. It loads the default settings of `config/defaults.py`, which explains each one, and replaces them with the ones of `config/config.py` (git-ignored). At least, set the address of the frontend as browsers write it:
+
+[source,console]
+----
+echo "ORIGINS = ['https://vygoj.citic.ucr.ac.cr']" >> config/config.py
+----
+
+Fourth, tell the frontend where the language servers are, in `frontend/config/config.py`: their addresses as browsers reach them (`LANG_SERVERS`, with the IP or host name and the port, 7070 by default, which is the default value for development). Both must have the same `LANG_SERVER_SECRET`: in another computer than the frontend, copy the one of `frontend/config/config.py` to `config/config.py` of the language server. Restart the frontend after changing them:
+
+[source,python]
+----
+LANG_SERVERS = ['ws://localhost:7070']
+----
+
+== Running
+
+The rules of `common/Makefile` work here too. The language server listens on port 7070 of every address (`HOST` and `PORT` in its `Makefile`):
+
+[source,console]
+----
+make          # debug server
+make server   # gunicorn daemon, logs and pid file in data/
+make service  # gunicorn in the foreground, for systemd (vygoj-langserv.service)
+make stop     # stop the gunicorn daemon
+make lint     # Pylint
+----
+
+In production, run it as a systemd service with a user of its own (see the production section of the root `readme.adoc`).
+
+Each connection keeps a thread of gunicorn busy while the student edits code, so the `Makefile` gives gunicorn one worker of 120 threads for 100 editors at the same time (`MAX_SESSIONS` in `config/defaults.py`): the spare threads refuse the connections beyond it. The worker is only one because it counts the sessions of each user in its memory. Raise both together if needed, and the memory of the computer with them: each container may use up to `CONTAINER_MEMORY`.
+
+The debug server of Flask (`make`) writes an HTTP answer on a connection that the browser closed, and the console of the browser reports `Invalid frame header` when the editor changes its language. Gunicorn (`make server`) does not.
+
+Behind Apache with HTTPS (see the reverse proxy section of `frontend/readme.adoc`), pass the WebSocket connections of a path to the language server. Enable the module, and add the line before the `ProxyPass /` of the frontend, because Apache uses the first one that matches:
+
+[source,config]
+----
+# sudo a2enmod proxy_wstunnel
+ProxyPass /lang-srv/ ws://127.0.0.1:7070/
+----
+
+Then the frontend uses `LANG_SERVERS = ['wss://vygoj.citic.ucr.ac.cr/lang-srv/']`, and the language server may listen only on `127.0.0.1` (`make service HOST=127.0.0.1` in the `ExecStart` of its unit).
+
+[[several_servers]]
+=== Several language servers
+
+When the editors of the users at the same time do not fit in one computer (each one may use up to `CONTAINER_MEMORY`), run language servers in several computers, each one with the same `LANG_SERVER_SECRET` and `ORIGINS`, and list them in `LANG_SERVERS` of the frontend. The frontend gives each user always the same server, chosen by a hash of their email, because each server limits the editors of a user (`MAX_USER_SESSIONS`) in its own memory. If a server stops, its users get no suggestions until it starts again or leaves the list.
+
+Browsers only reach the frontend, so the other computers may have private addresses: the Apache of the frontend passes a path to each one. Each server listens on its private address, and a firewall lets only the computer of the frontend connect to its port. The connections between Apache and the servers are not encrypted (`ws://`), like the ones to the backends, so they must go through a private network:
+
+[source,config]
+----
+ProxyPass /lang-srv/1/ ws://10.0.0.11:7070/
+ProxyPass /lang-srv/2/ ws://10.0.0.12:7070/
+----
+
+[source,python]
+----
+LANG_SERVERS = ['wss://vygoj.citic.ucr.ac.cr/lang-srv/1/', 'wss://vygoj.citic.ucr.ac.cr/lang-srv/2/']
+----
+
+[[security]]
+== Security
+
+The language server reads code of untrusted users, and anyone in the Internet may try to connect to it:
+
+* *Only users who may open a problem connect.* The frontend gives a key only after checking the session in the database and that the user may enter the course of the problem (the professor, its students, and administrators), and only for a language of the problem. The key is signed with `LANG_SERVER_SECRET`, which only the frontend and the language server know, and it expires in a minute (`KEY_MAX_AGE`). The session cookie of the frontend is not used: it cannot be revoked, so a suspended user could keep using it. The server refuses to start without a secret of at least 32 characters.
+* *Pages of other sites cannot connect.* Browsers do not apply CORS to WebSockets, so the server checks the `Origin` header against `ORIGINS`, and the key is only given to a POST with the CSRF token of the session.
+* *The key travels in the first message*, not in the URL, so it is not written in the logs of proxies. A connection without it closes in 3 seconds (`KEY_TIMEOUT` in `src/main.py`), and one that sends a message longer than 1 MiB (`MAX_MESSAGE_SIZE`), even before the key, closes while it arrives. Connections without a key still keep a thread busy for those seconds, so behind Apache limit the connections of each IP address too (e.g. `mod_qos` or the firewall).
+* *Each editor gets a container* without network, capabilities, nor writable files but a small `/tmp` in memory, that runs as the user `nobody` without new privileges, with limits of memory, CPU, and processes (`CONTAINER_*`). A language server reads the files that the code includes (e.g. `#include "/etc/passwd"`), but it can only read the files of the image.
+* *Only some messages pass.* The editor may only open and change its code, and ask for suggestions and parameter hints (`CLIENT_METHODS` in `src/main.py`); other messages, e.g. commands of the server, are dropped, and a malformed one closes the connection. The server writes the parameters of the start of the language server: its folder is `/home/student` and its options are the ones of `INITIALIZATION_OPTIONS`, never the ones of the editor. Messages of the language server are limited to 16 MiB. The language server answers the requests of the language server itself, and drops its diagnostics: the backend reports the errors of the code.
+* *Sessions are bounded*: `MAX_SESSIONS` in total and `MAX_USER_SESSIONS` per user, even when a user opens many connections at the same time with one key. A connection closes after `IDLE_TIMEOUT` without messages, and the container stops by itself after `MAX_DURATION`, or when its language server reads the end of its input, even if the language server process was killed. The editor connects again with a new key when the student types after that.
+
+Containers have the label `vygoj=lang-srv`. To remove leaked ones:
+
+[source,console]
+----
+docker rm -f $(docker ps -aq --filter label=vygoj=lang-srv)
+----
+
+== Adding a language
+
+. Install its language server in `image/Dockerfile`, and its options in a configuration file of the image if it needs them (e.g. `image/clangd.yaml`, with the standard that the backend compiles with). Then run `make image`.
+. Add its command to `LANGUAGES` in `config/defaults.py`, by the name of the language in VygOJ (e.g. `'C'`), and its options to `INITIALIZATION_OPTIONS` if it needs them.
+. Add the name of its solution file to `LANGUAGES` in `static/js/components/lang-client.js`, as the backend names it (e.g. `solution.c`), with the name of the language in LSP (e.g. `c`).

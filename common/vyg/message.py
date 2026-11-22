@@ -7,7 +7,7 @@ class Message:
 
     def __init__(self, json_dict:dict):
         """ Construct this object getting values from the given dictionary """
-        # Valid actions: fetch_problem | run
+        # Valid actions: fetch_problem | lang_server | run
         self.action = json_dict.get('action', '')
         # Used when an error happens, and the rest of the message is invalid
         self.error = json_dict.get('error', '')

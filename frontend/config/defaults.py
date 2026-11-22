@@ -35,6 +35,20 @@ SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg:///vygoj'
 PORT = 8080
 # Backend server URIs, at least one. A random one will be selected for each code run request
 BACKENDS = [ "http://localhost:9090" ]
+# Addresses of the language servers (langserv/, see its readme.adoc), where the code editor of the
+# problem page connects to get suggestions and parameter hints, as browsers reach them, e.g.
+# 'ws://localhost:7070', or 'wss://vygoj.ucr.ac.cr/lang-srv/1/' through the reverse proxy of the
+# frontend, which lets them have private addresses. Each user always gets the same one (a hash of
+# their email chooses it), so the limit of editors per user of each server holds. The default is
+# the one of make in the root folder. Empty disables them, and the editor only suggests the words
+# of the code
+LANG_SERVERS = ['ws://localhost:7070']
+# Secret shared with the language servers, as LANG_SERVER_SECRET in langserv/config/config.py, to
+# sign the keys that let the users who may open a problem connect to them. Anyone who knows it can
+# use the language servers, so with LANG_SERVERS the frontend refuses to start without it or with
+# fewer than 32 characters. make config adds a random one to config.py, the same of the language
+# server if it is in this computer
+LANG_SERVER_SECRET = ''
 # Limits of the code runs. Each one has an absolute range [ABS_MIN_*, ABS_MAX_*] for this judge, and
 # a default DEF_* used when a problem does not choose a value. Professors may choose values in the
 # range in vygoj.json (minDuration, maxDuration, maxTotalDuration, maxOutputSize); values out of
@@ -65,7 +79,7 @@ ABS_MAX_OUTPUT_SIZE = 10 * 1024
 DEF_MAX_OUTPUT_SIZE = 10 * 1024
 # Secret key that signs the session cookies and the CSRF tokens. Anyone who knows it can log in as
 # any user, so it must be set in config.py: the frontend refuses to start without it or with fewer
-# than 32 characters. Generate one with: python3 -c 'import secrets; print(secrets.token_hex(32))'
+# than 32 characters. make config adds a random one to config.py
 SECRET_KEY = ''
 # Number of reverse proxies (e.g. Apache, see readme.adoc) between clients and this server. Login
 # limits and logs use the address of the client, which proxies send in X-Forwarded-For. Use 0 if

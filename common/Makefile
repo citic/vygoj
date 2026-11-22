@@ -1,4 +1,4 @@
-# Flask Makefile v1.3.0
+# Flask Makefile v1.4.0
 VENV=.venv# Folder where the virtual environment is installed
 ACT=. $(VENV)/bin/activate# Python command to activate the virtual environment
 SRC=src#Folder where web application source code is
@@ -19,7 +19,7 @@ PYLINT_SRC=$(SRC) $(SHARED)/vyg# Python code checked by lint: the layer and the 
 PYLINTRC=$(SHARED)/pylintrc# Pylint configuration shared by the layers
 
 # Phony targets
-.PHONY: clean debug deps install lint pylint release server stop
+.PHONY: clean debug deps install lint pylint release server service stop
 default: all
 
 debug: export FLASK_DEBUG=1
@@ -42,6 +42,13 @@ server: install | $(LOGDIR)
 		--worker-class gthread --threads $(THREADS) --bind $(HOST):$(PORT) --daemon \
 		--pid ../$(PIDFILE) --access-logfile ../$(LOGDIR)/access.log \
 		--error-logfile ../$(LOGDIR)/error.log $(GUNICORN_FLAGS) main:app
+
+# Run the web app with gunicorn in the foreground, for systemd (the vygoj-*.service of the layer),
+# which restarts it and keeps its logs: gunicorn writes requests and errors to its output (-)
+service: install
+	$(ACT) && cd $(SRC) && exec gunicorn -w $(WORKERS) \
+		--worker-class gthread --threads $(THREADS) --bind $(HOST):$(PORT) \
+		--access-logfile - --error-logfile - $(GUNICORN_FLAGS) main:app
 
 # Stop the gunicorn daemon started by server, without affecting other gunicorn processes
 stop:

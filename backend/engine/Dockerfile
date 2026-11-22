@@ -1,6 +1,8 @@
 # Inherit the official Debian image as the base. The release is pinned for reproducible builds;
-# rebuild the image regularly to receive security updates, also in execution.py
+# rebuild the image regularly (make rebuild) to receive security updates, also in execution.py
 FROM debian:trixie
+# make rebuild removes the old images with this label (common/docker.mk)
+LABEL vygoj=engine
 
 # Install development packages, and remove the package lists to reduce the image size
 RUN apt-get update && \

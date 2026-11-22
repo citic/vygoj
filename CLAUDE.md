@@ -10,10 +10,14 @@ with its specific layout, commands, and rules; this file holds what is common to
 | Frontend client | `frontend/static/` | Vanilla HTML, CSS, JavaScript |
 | Backend (code execution web service) | `backend/` | Python, Flask, `docker` SDK |
 | Engine (isolated execution environment) | `backend/engine/` | Docker image (Debian) |
+| Language server (suggestions of the code editor) | `frontend/langserv/` | Python, Flask, `flask-sock`, Docker |
 
 Flow: the browser talks to the frontend; the frontend sends a problem and a solution to a backend
 (`BACKENDS` in `frontend/config/config.py`, port 9090 by default); the backend runs the solution
-inside a disposable engine container and returns an `ExecutionResult`. Other folders: `common/`
+inside a disposable engine container and returns an `ExecutionResult`. The code editor of the
+problem page connects with a WebSocket to a language server (`LANG_SERVERS`, port 7070 by
+default), which runs a language server such as `clangd` in a container for each editor (see
+`frontend/langserv/readme.adoc`). Other folders: `common/`
 (shared `Makefile` and `vyg` Python package), `docs/` (analysis and design, in Spanish), `cli/`
 (legacy Node.js tool).
 
@@ -59,19 +63,30 @@ The owner controls every frontend and backend in production and updates them tog
 
 ## Commands and testing
 
-The Python layers include `common/Makefile`, so these rules work in `frontend/` and `backend/`
+The Python layers include `common/Makefile`, so these rules work in `frontend/`, `backend/`, and
+`frontend/langserv/`
 (ports and extra rules are in each layer's `CLAUDE.md`):
 
 ```sh
 make install   # create .venv and pip install the dependencies listed in DEPS
 make           # debug server (FLASK_DEBUG=1 flask run)
 make release   # run src/main.py without debug
-make server    # gunicorn daemon (production), logs and pid file in data/
+make server    # gunicorn daemon, logs and pid file in data/
+make service   # gunicorn in the foreground, for systemd (vygoj-*.service of the layer)
 make stop      # stop the gunicorn daemon started by make server
 make deps      # reinstall Python dependencies into .venv
 make lint      # Pylint on src/ and common/vyg/ (installs pylint into .venv the first time)
 make clean     # remove .venv
 ```
+
+The `Makefile` of the root folder is for development: it runs those rules in the three layers.
+`make` starts the three debug servers at once, `make install` also runs `make config`
+(`common/make_config.py`, which adds the missing secrets to the `config/config.py` of the
+frontend and the language server, the same `LANG_SERVER_SECRET` in both), `make image`,
+`make rebuild`, and `make remove-images` handle the Docker images of the engine and the language
+server (rules of `common/docker.mk`), and `make update` pulls the code and rebuilds them. In
+production each layer runs on its own, with a user of its own, as a systemd service
+(`vygoj-<layer>.service` in its folder, production section of `readme.adoc`).
 
 - `make lint` must pass with no messages. Its configuration is shared in `common/pylintrc`; fix the
   code rather than disabling a check, and when a disable is justified, put it on the line with a
@@ -83,9 +98,10 @@ make clean     # remove .venv
   `flask~=3.0` is `>=3.0,<4`. Packages in version 0.x may break in any minor version, so fix their
   minor version too: `nh3~=0.3.0` is `>=0.3.0,<0.4`. Do not use `<` or `>` in `DEPS`: the shell
   would read them as redirections.
-- There is no automated test suite. To test end to end: build the engine image
-  (`cd backend/engine && make image`, Docker running), start the backend (`cd backend && make`),
-  start the frontend (`cd frontend && make`), and run a problem from its page in the browser.
+- There is no automated test suite. To test end to end: build the images of the engine and the
+  language server (`make image` in the root folder, Docker running), start the three debug servers
+  (`make` in the root folder, or `make` in each layer), and run a problem from its page in the
+  browser.
   Report which of these steps were actually run.
 
 ## Workflow

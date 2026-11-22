@@ -1,0 +1,20 @@
+#!/bin/sh
+# Runs the language server of Java (LANGUAGES in config/defaults.py). The files of the image are
+# read-only, so Eclipse reads its configuration from /opt/jdtls and writes its state in /tmp. The
+# heap is limited below the memory of the container (CONTAINER_MEMORY)
+exec java \
+    -Declipse.application=org.eclipse.jdt.ls.core.id1 \
+    -Declipse.product=org.eclipse.jdt.ls.core.product \
+    -Dosgi.bundles.defaultStartLevel=4 \
+    -Dosgi.checkConfiguration=true \
+    -Dosgi.sharedConfiguration.area=/opt/jdtls/config_linux \
+    -Dosgi.sharedConfiguration.area.readOnly=true \
+    -Dosgi.configuration.cascaded=true \
+    -Dlog.level=ERROR \
+    -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xmx256m \
+    --add-modules=ALL-SYSTEM \
+    --add-opens java.base/java.util=ALL-UNNAMED \
+    --add-opens java.base/java.lang=ALL-UNNAMED \
+    -jar /opt/jdtls/launcher.jar \
+    -configuration /tmp/jdtls/config \
+    -data /tmp/jdtls/workspace

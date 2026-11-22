@@ -12,21 +12,21 @@ afterwards. The parent `backend/CLAUDE.md` also applies here.
   `python3`...), the Alecci compiler from PyPI in a venv (`/opt/alecci`, linked as
   `/usr/local/bin/alecci`), and an unprivileged `student` user whose home `/home/student` is the
   working directory.
-- `Makefile`: Docker install, image build, and cleanup rules.
+- `Makefile`: Docker install rules, and the image rules of `common/docker.mk`.
 
-The image name `debian-dev:latest` is a contract between this `Makefile` (`IMAGE=debian-dev`) and
-`create_container()` in `../src/execution.py`. Change both together.
+The image name `vygoj-engine` is a contract between this `Makefile` (`IMAGE=vygoj-engine`) and
+`IMAGE` in `../src/execution.py`. Change both together. The `LABEL vygoj=engine` of the
+`Dockerfile` lets `make rebuild` remove only the old images of VygOJ.
 
 ## Commands
 
 ```sh
 sudo make install           # install Docker (Debian packages); on macOS: make install (Homebrew)
 sudo make official-install  # Debian: install Docker from Docker's official repositories
-make image                  # build debian-dev:latest from the Dockerfile
+make image                  # build vygoj-engine from the Dockerfile
+make rebuild                # build it again with the updates of Debian, remove the old image
 make run                    # open an interactive container to try tools manually (default rule)
-make stop                   # stop all containers created from the image
-make remove-containers      # stop and remove them
-make clean                  # remove containers and the image
+make remove-image           # remove the containers of the image and the image (also make clean)
 ```
 
 After changing the `Dockerfile`, rebuild with `make image`, then try the tool in `make run` and
