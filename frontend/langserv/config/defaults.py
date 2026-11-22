@@ -8,8 +8,8 @@
 # Secret shared with the frontend, as LANG_SERVER_SECRET in frontend/config/config.py. The frontend
 # signs with it the keys that let the users who may open a problem connect for KEY_MAX_AGE seconds.
 # Anyone who knows it can use the language server, so it must be set in config.py: the server
-# refuses to start without it or with fewer than 32 characters. Generate one with:
-# python3 -c 'import secrets; print(secrets.token_hex(32))'
+# refuses to start without it or with fewer than 32 characters. make config adds the one of the
+# frontend to config.py if the frontend is in this computer, or a random one
 LANG_SERVER_SECRET = ''
 # Addresses of the frontend, as browsers send them in the Origin header of the connections, e.g.
 # 'https://vygoj.ucr.ac.cr'. Pages of other sites cannot connect, even with a valid key

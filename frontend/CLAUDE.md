@@ -111,9 +111,10 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
   an administrator, or resets the password of a user and makes it administrator (`make admin`);
   the first administrator is created here, and then administrators give and take the role of
   others in the web (never their own). `import` creates the missing tables (`db.create_all()`) and
-  updates the users table; `make`, `make release`, and `make server` run it before starting,
-  because gunicorn workers creating tables at the same time fail. `main.py` never changes the
-  schema. Administrators import users from CSV or TSV files in `/admin/users` (`admin.py`).
+  updates the users table; `make`, `make release`, `make server`, and `make service` run it
+  before starting, because gunicorn workers creating tables at the same time fail. `main.py`
+  never changes the schema. Administrators import users from CSV or TSV files in `/admin/users`
+  (`admin.py`).
   `log output.zip` and `submissions output.zip` write the archives of the activity log.
   `repo-job kind username [repo_id]` runs a background job of `repo_jobs.py`. Their logic is in
   `users.py`, `activity_log.py`, and `repo_jobs.py`, so the web application can reuse it.

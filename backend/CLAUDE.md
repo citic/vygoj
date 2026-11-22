@@ -26,8 +26,8 @@ JSON. It must assume that every submitted program is malicious.
 The common `make` rules (root `CLAUDE.md`) serve the backend on `0.0.0.0:9090`. This `Makefile`
 adds `docker` to `DEPS`, uses 8 single-threaded workers (which bound concurrent executions), and
 appends `--capture-output` to `GUNICORN_FLAGS` so `print` output goes to `data/error.log`.
-`make server` first runs `docker-check`, which imports `execution.py` to stop before starting the
-daemon without Docker.
+`make server` and `make service` first run `docker-check`, which imports `execution.py` to stop
+before starting gunicorn without Docker.
 
 The engine image must exist and Docker must be running before `/run` works
 (`cd engine && make image`). Without Docker, `execution.py` logs that Docker is required and

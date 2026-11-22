@@ -1,0 +1,32 @@
+# systemd unit of the VygOJ backend: it starts gunicorn at boot and restarts it if it fails. It
+# runs with the user vygoj-backend, in the docker group, and its clone of VygOJ in
+# /home/vygoj-backend/vygoj. See the production section of readme.adoc. Install it with:
+# sudo cp vygoj-backend.service /etc/systemd/system/ && sudo systemctl enable --now vygoj-backend
+
+[Unit]
+Description=VygOJ backend
+# The backend runs each solution in a container of Docker
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+User=vygoj-backend
+WorkingDirectory=/home/vygoj-backend/vygoj/backend
+# Gunicorn in the foreground, with the workers of the Makefile. Its log goes to the journal:
+# journalctl -u vygoj-backend
+ExecStart=/usr/bin/make service
+# The containers belong to Docker, not to this service, so stopping it does not stop them. Remove
+# the ones that a stopped run left (their label is CONTAINER_LABELS in src/execution.py)
+ExecStopPost=/bin/sh -c 'docker ps -aq --filter label=vygoj=engine | xargs -r docker rm -f'
+Restart=on-failure
+RestartSec=5
+# Isolation: the service cannot gain privileges (e.g. with setuid programs), sees a /tmp of its
+# own, and writes only in the home of its user, where its clone and its run log are
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/home/vygoj-backend
+
+[Install]
+WantedBy=multi-user.target

@@ -35,8 +35,7 @@ MIN_SECRET_LENGTH = 32
 if not isinstance(config['LANG_SERVER_SECRET'], str) or len(
         config['LANG_SERVER_SECRET']) < MIN_SECRET_LENGTH:
     raise RuntimeError(f'LANG_SERVER_SECRET in {config_file} must be the random string of at least '
-        f'{MIN_SECRET_LENGTH} characters of the frontend, generate one with: '
-        "python3 -c 'import secrets; print(secrets.token_hex(32))'")
+        f'{MIN_SECRET_LENGTH} characters of the frontend, make config adds it')
 # Keys signed by the frontend (lang_server_key() in problem_controller.py) with the same secret
 keys = URLSafeTimedSerializer(config['LANG_SERVER_SECRET'], salt='lang-srv')
 

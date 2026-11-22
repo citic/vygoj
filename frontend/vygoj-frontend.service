@@ -1,0 +1,28 @@
+# systemd unit of the VygOJ frontend: it starts gunicorn at boot and restarts it if it fails. It
+# runs with the user vygoj-frontend, which must not be in the docker group, and its clone of VygOJ
+# in /home/vygoj-frontend/vygoj. See the production section of readme.adoc. Install it with:
+# sudo cp vygoj-frontend.service /etc/systemd/system/ && sudo systemctl enable --now vygoj-frontend
+
+[Unit]
+Description=VygOJ frontend
+# The frontend creates and updates its tables before starting (make service runs make users)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+User=vygoj-frontend
+WorkingDirectory=/home/vygoj-frontend/vygoj/frontend
+# Gunicorn in the foreground, with the workers and threads of the Makefile. Its log goes to the
+# journal: journalctl -u vygoj-frontend
+ExecStart=/usr/bin/make service
+Restart=on-failure
+RestartSec=5
+# Isolation: the service cannot gain privileges (e.g. with setuid programs), sees a /tmp of its
+# own, and writes only in the home of its user, where its clone, DATA_FOLDER, and ~/.ssh are
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/home/vygoj-frontend
+
+[Install]
+WantedBy=multi-user.target

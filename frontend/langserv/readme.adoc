@@ -24,11 +24,11 @@ The editor (`static/js/components/lang-client.js`) talks the Language Server Pro
 
 The language server needs Docker, like the backend (see `backend/engine/readme.adoc` to install it), and the user that runs it must be able to use Docker (e.g. be in the `docker` group). Docker gives that user the powers of `root`, so use a user of its own for the language server, not the one of the frontend. It may run in the computer of the frontend or in another one, which may have a private address (see <<several_servers>>).
 
-First, build the image of the containers, with the language servers and the headers of the libraries that solutions include. Rebuild it regularly to receive security updates:
+First, build the image of the containers, with the language servers and the headers of the libraries that solutions include. Rebuild it regularly with `make rebuild` to receive security updates: running editors keep the old image, and new ones get the new image (rules of `common/docker.mk`, shared with the engine of the backend):
 
 [source,console]
 ----
-cd vygoj/frontend/langserv
+cd frontend/langserv
 make image
 ----
 
@@ -39,22 +39,20 @@ Second, install the Python dependencies:
 make install
 ----
 
-Third, configure the language server. It loads the default settings of `config/defaults.py`, which explains each one, and replaces them with the ones of `config/config.py` (git-ignored). At least, set the secret shared with the frontend, and the address of the frontend as browsers write it:
+It also adds the secret shared with the frontend to `config/config.py` (`make config`): the one of `frontend/config/config.py` if the frontend is in this computer, or a random one. It never changes the settings that the file has.
+
+Third, configure the language server. It loads the default settings of `config/defaults.py`, which explains each one, and replaces them with the ones of `config/config.py` (git-ignored). At least, set the address of the frontend as browsers write it:
 
 [source,console]
 ----
-cd config
-echo "LANG_SERVER_SECRET = '$(python3 -c 'import secrets; print(secrets.token_hex(32))')'" >> config.py
-echo "ORIGINS = ['https://vygoj.citic.ucr.ac.cr']" >> config.py
-chmod 600 config.py
+echo "ORIGINS = ['https://vygoj.citic.ucr.ac.cr']" >> config/config.py
 ----
 
-Fourth, tell the frontend where the language servers are, in `frontend/config/config.py`: their addresses as browsers reach them (`LANG_SERVERS`, with the IP or host name and the port, 7070 by default), and the same secret (`LANG_SERVER_SECRET`). Restart the frontend after changing them:
+Fourth, tell the frontend where the language servers are, in `frontend/config/config.py`: their addresses as browsers reach them (`LANG_SERVERS`, with the IP or host name and the port, 7070 by default, which is the default value for development). Both must have the same `LANG_SERVER_SECRET`: in another computer than the frontend, copy the one of `frontend/config/config.py` to `config/config.py` of the language server. Restart the frontend after changing them:
 
 [source,python]
 ----
 LANG_SERVERS = ['ws://localhost:7070']
-LANG_SERVER_SECRET = 'the same secret of frontend/langserv/config/config.py'
 ----
 
 == Running
@@ -65,9 +63,12 @@ The rules of `common/Makefile` work here too. The language server listens on por
 ----
 make          # debug server
 make server   # gunicorn daemon, logs and pid file in data/
+make service  # gunicorn in the foreground, for systemd (vygoj-langserv.service)
 make stop     # stop the gunicorn daemon
 make lint     # Pylint
 ----
+
+In production, run it as a systemd service with a user of its own (see the production section of the root `readme.adoc`).
 
 Each connection keeps a thread of gunicorn busy while the student edits code, so the `Makefile` gives gunicorn one worker of 120 threads for 100 editors at the same time (`MAX_SESSIONS` in `config/defaults.py`): the spare threads refuse the connections beyond it. The worker is only one because it counts the sessions of each user in its memory. Raise both together if needed, and the memory of the computer with them: each container may use up to `CONTAINER_MEMORY`.
 
@@ -81,7 +82,7 @@ Behind Apache with HTTPS (see the reverse proxy section of `frontend/readme.adoc
 ProxyPass /lang-srv/ ws://127.0.0.1:7070/
 ----
 
-Then the frontend uses `LANG_SERVERS = ['wss://vygoj.citic.ucr.ac.cr/lang-srv/']`, and the language server may listen only on `127.0.0.1` (`make server HOST=127.0.0.1`).
+Then the frontend uses `LANG_SERVERS = ['wss://vygoj.citic.ucr.ac.cr/lang-srv/']`, and the language server may listen only on `127.0.0.1` (`make service HOST=127.0.0.1` in the `ExecStart` of its unit).
 
 [[several_servers]]
 === Several language servers

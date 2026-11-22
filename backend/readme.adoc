@@ -20,7 +20,7 @@ $ make release
 [user_manual]
 == User manual
 
-NOTE: A running Docker server is needed before running the backend. Read link:engine/readme.adoc[VygOJ Engine's documentation] to install and run the Docker server before continuing. Without it, the backend prints that Docker is required and stops with exit status 4; `make server` checks it before starting the gunicorn daemon.
+NOTE: A running Docker server is needed before running the backend. Read link:engine/readme.adoc[VygOJ Engine's documentation] to install and run the Docker server before continuing. Without it, the backend prints that Docker is required and stops with exit status 4; `make server` and `make service` check it before starting gunicorn.
 
 The backend is developed in Python and requires Flask. A `Makefile` is provided to ease this process on Debian-based distributions. The default rule creates a Python virtual environment, installs dependencies, and run the backend for debugging:
 
@@ -43,7 +43,7 @@ For keeping the backend server running in background even after logging out from
 $ make server
 ----
 
-The server writes its logs (`access.log`, `error.log`) and its process id (`gunicorn.pid`) in the `data/` folder, which is ignored by Git. Stop the server with `make stop`.
+The server writes its logs (`access.log`, `error.log`) and its process id (`gunicorn.pid`) in the `data/` folder, which is ignored by Git. Stop the server with `make stop`. In production, run it as a systemd service instead (`make service`, see the production section of the root `readme.adoc`).
 
 You can remove the virtual environment when it is no longer needed:
 

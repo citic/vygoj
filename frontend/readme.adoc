@@ -19,7 +19,7 @@ You need command-line access to the machine where the app will be installed. The
 [[setup]]
 == Setup
 
-Run `make install` to create the Python virtual environment and install the required dependencies. You can run a local instance of the frontend for development (`make`), local production (`make run`), or production server (`make server`):
+Run `make install` to create the Python virtual environment, install the required dependencies, and add the missing secrets to `config/config.py` (`make config`). You can run a local instance of the frontend for development (`make`), local production (`make release`), or production server (`make server`, or `make service` for systemd, see the production section of the root `readme.adoc`):
 
 [source,sh]
 ----
@@ -87,15 +87,7 @@ When a problem has no initial code for one of its languages (in its `initial/` o
 
 You may want to run the VygOJ frontend on port 80 (HTTP) and 443 (HTTPS). However, for security reasons, the Flask server should run on a port greater than 1024. A reverse proxy using Apache or Nginx helps to reach both goals. The following instructions are for Apache2.
 
-Run the frontend in a non-privileged port, for example, 8080. Use a process manager such as Gunicorn, that keeps the frontend running even if it crashes. For example:
-
-[source,sh]
-----
-gunicorn --bind 127.0.0.1:8080 main:app
-----
-
-// TODO(jhc): find real command
-// gunicorn -w 4 --bind 0.0.0.0:8080 main:app --daemon
+Run the frontend in a non-privileged port, for example, 8080, as a systemd service that keeps it running even if it crashes (see the production section of the root `readme.adoc`). Behind the proxy, it may listen only on `127.0.0.1` (`make service HOST=127.0.0.1`, in the `ExecStart` of its unit).
 
 Install Apache and Let's Encrypt. Enable the Apache proxy modules using root privileges:
 
@@ -231,7 +223,7 @@ At each login, the user is found by the issuer and subject (`sub`) of the ID tok
 * Otherwise, if the provider creates accounts, a user is created with the email as username, the name of the token as full name, no password, and the role of the professor rule. These users only log in with the provider, and their preferences do not show the password fields.
 * Otherwise, the login is rejected, and the user is asked to contact their professor.
 
-The username of users created by a provider is their email, so usernames have up to 128 characters. `make users` (`manage.py import`) widens the column of older databases and makes passwords optional; `make`, `make release`, and `make server` run it before starting.
+The username of users created by a provider is their email, so usernames have up to 128 characters. `make users` (`manage.py import`) widens the column of older databases and makes passwords optional; `make`, `make release`, `make server`, and `make service` run it before starting.
 
 
 [[student_repos]]
@@ -437,7 +429,7 @@ tests = pandas.read_csv('analysis/tests.tsv', sep='\t', quoting=3, dtype=str)
 verdicts = runs.merge(tests, left_on='id', right_on='run')
 ----
 
-Cells never contain tabs or new lines: control characters sent by clients become spaces (JSON escapes them in `data`), and texts longer than 256 characters are truncated. Cells that start with `=`, `+`, `-`, or `@` get a leading apostrophe, so spreadsheets do not run a username typed in the login as a formula; the archives remove it when they parse the log. The gunicorn workers append each event in one system call, so their rows do not mix, and the file of a new month is created with its row of columns atomically. The files are readable only by the user that runs the frontend, because they have personal data. The HTTP requests are logged by gunicorn in `data/access.log` (`make server`).
+Cells never contain tabs or new lines: control characters sent by clients become spaces (JSON escapes them in `data`), and texts longer than 256 characters are truncated. Cells that start with `=`, `+`, `-`, or `@` get a leading apostrophe, so spreadsheets do not run a username typed in the login as a formula; the archives remove it when they parse the log. The gunicorn workers append each event in one system call, so their rows do not mix, and the file of a new month is created with its row of columns atomically. The files are readable only by the user that runs the frontend, because they have personal data. The HTTP requests are logged by gunicorn in `data/access.log` (`make server`), or in the journal of systemd (`make service`).
 
 
 [[security]]
@@ -448,7 +440,7 @@ The frontend is exposed to the Internet and receives untrusted data from student
 [[secret_key]]
 === Session key
 
-Flask signs the session cookie with `SECRET_KEY` of `config/config.py`. The session stores the logged user and their roles, so anyone who knows the key can forge a session of any user, including administrators. The frontend refuses to start if the key is missing (it is empty in `config/defaults.py`), is the public example key of an old configuration file, or has fewer than 32 characters. Generate a random key with:
+Flask signs the session cookie with `SECRET_KEY` of `config/config.py`. The session stores the logged user and their roles, so anyone who knows the key can forge a session of any user, including administrators. The frontend refuses to start if the key is missing (it is empty in `config/defaults.py`), is the public example key of an old configuration file, or has fewer than 32 characters. `make config` (run by `make install`) adds a random key to `config/config.py` if it has none, and never changes an existing one (`common/make_config.py`). To change the key, replace it with another random one:
 
 [source,sh]
 ----

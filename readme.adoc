@@ -104,12 +104,11 @@ cd vygoj/frontend
 make install
 ----
 
-Second, configure the frontend. It loads the default settings of `config/defaults.py`, which explains each one, and replaces them with the ones of `config/config.py`. Create that file with only the settings that differ in your server. At least, you must provide a random `SECRET_KEY`, and usually an existing folder to store data (`DATA_FOLDER`) and a list of backend servers (`BACKENDS`). Do not edit `defaults.py`, it is part of the repository.
+Second, configure the frontend. It loads the default settings of `config/defaults.py`, which explains each one, and replaces them with the ones of `config/config.py`. That file has only the settings that differ in your server. `make install` already created it with the random secrets that the frontend needs to start (`SECRET_KEY` and `LANG_SERVER_SECRET`, added by `make config`, which never changes the settings that the file has). Usually you set an existing folder to store data (`DATA_FOLDER`) and a list of backend servers (`BACKENDS`). Do not edit `defaults.py`, it is part of the repository.
 
 [source,console]
 ----
 cd vygoj/frontend/config
-echo "SECRET_KEY = '$(python3 -c 'import secrets; print(secrets.token_hex(32))')'" >> config.py
 nano config.py
 ----
 
@@ -124,7 +123,7 @@ cd vygoj/frontend/src
 ../.venv/bin/python manage.py import
 ----
 
-The script creates the tables of the database that do not exist yet, and updates the ones of older versions. `make`, `make release`, and `make server` run it before starting the frontend, in a single process: the gunicorn workers do not create tables, because they start at the same time.
+The script creates the tables of the database that do not exist yet, and updates the ones of older versions. `make`, `make release`, `make server`, and `make service` run it before starting the frontend, in a single process: the gunicorn workers do not create tables, because they start at the same time.
 
 Create the administrator in the server. The command asks the username, the full name, and the password (at least 12 characters, not shown while typed). Run it again to reset the password of an administrator who forgot it; the username can be given as `make admin ADMIN=name`:
 
@@ -136,9 +135,9 @@ make admin
 
 Optionally, let users log in with the account of their institution (single sign-on with OpenID Connect, e.g. the SSO of the Universidad de Costa Rica). Administrators add the providers in the users page of the web application, and the client secrets go in `SSO_CLIENT_SECRETS` of `config.py` (see the single sign-on section of `frontend/readme.adoc`).
 
-Optionally, install the language server, which gives the code editor suggestions and parameter hints, and set its address and secret in `LANG_SERVERS` and `LANG_SERVER_SECRET` of `config.py` (see `frontend/langserv/readme.adoc`).
+Optionally, install the language server, which gives the code editor suggestions and parameter hints, and set its addresses in `LANG_SERVERS` of `config.py` (see `frontend/langserv/readme.adoc`). Without it, set `LANG_SERVERS = []`, and the editor only suggests the words of the code.
 
-Fourth, run the frontend as a production server:
+Fourth, run the frontend as a production server, preferably as a systemd service (<<production>>), or as a gunicorn daemon:
 
 [source,console]
 ----
@@ -146,8 +145,99 @@ cd vygoj/frontend
 make server
 ----
 
-If you need to stop the server, call `make stop`. Logs are written to `frontend/data/` and `backend/data/`. The activity of the users (logins, page visits, runs) is logged for statistical analysis in the `log/` folder of `DATA_FOLDER`, and administrators download it from the home page (see the activity log section of `frontend/readme.adoc`). The solutions that each user submits as a student are kept in their student repo, a git repo in `DATA_FOLDER/user/<username>/student_repo`, which users download or push to a Git host from the home page (see the student repos section of `frontend/readme.adoc`). Professors write their courses in git repos of their own, which the frontend clones in `DATA_FOLDER/user/<username>/<repo>` and pulls when they ask for it in the home page (see the professor repositories section of `frontend/readme.adoc`).
+If you need to stop the daemon, call `make stop`. Logs are written to `frontend/data/` and `backend/data/`. The activity of the users (logins, page visits, runs) is logged for statistical analysis in the `log/` folder of `DATA_FOLDER`, and administrators download it from the home page (see the activity log section of `frontend/readme.adoc`). The solutions that each user submits as a student are kept in their student repo, a git repo in `DATA_FOLDER/user/<username>/student_repo`, which users download or push to a Git host from the home page (see the student repos section of `frontend/readme.adoc`). Professors write their courses in git repos of their own, which the frontend clones in `DATA_FOLDER/user/<username>/<repo>` and pulls when they ask for it in the home page (see the professor repositories section of `frontend/readme.adoc`).
 
+
+
+[[development]]
+== Development
+
+The `Makefile` of the root folder runs the rules of the frontend, the backend, and the language server together, to develop all of them in one computer. It needs Docker (see `backend/engine/readme.adoc`) and the PostgreSQL database of the frontend (<<frontend_install>>), which need `sudo` to install; the rules do not:
+
+[source,sh]
+----
+make install        # virtual environments of the three layers, and make config
+make image          # Docker images of the engine and the language server
+make                # the three debug servers: frontend 8080, backend 9090, language server 7070
+----
+
+Ctrl+C stops the three servers, and their outputs are mixed in the console. The default settings connect them to each other in `localhost`. Other rules:
+
+[cols="1,3"]
+|===
+| `make config`
+| Add the missing secrets to `config/config.py` of the frontend and of the language server with random values, the same `LANG_SERVER_SECRET` in both (`common/make_config.py`). It creates the files that do not exist, only readable by their owner, and never changes the settings that they have. `make install` runs it, also in each layer.
+
+| `make deps`
+| Install the Python dependencies of the three layers again.
+
+| `make rebuild`
+| Build the images again with the security updates of Debian and its packages. Running servers keep working, and the old images are removed (`common/docker.mk`).
+
+| `make remove-images`
+| Remove the images and their containers.
+
+| `make update`
+| `git pull`, refusing to merge local changes, and then `make deps rebuild`. Restart the servers after it.
+
+| `make lint`
+| Check the code of the three layers.
+
+| `make clean`
+| Remove the virtual environments.
+|===
+
+The root `Makefile` has no rules to run the servers in production: there, each one runs with a user of its own (<<production>>).
+
+
+[[production]]
+== Production deployment
+
+The backend and the language server create Docker containers, and a user that can use Docker can get the powers of `root` (it can run a container that mounts any folder of the computer). Therefore, each module runs with a user of its own, and only the users of the backend and the language server are in the `docker` group. The frontend, which the whole Internet reaches, cannot use Docker: whoever breaks into it gets no `root` powers.
+
+Each module runs as a systemd service. systemd is the program that starts and watches the services of Linux (Apache, PostgreSQL, and Docker run this way): it starts the module when the computer boots, starts it again if it fails, keeps its logs, and isolates it. A unit file describes each service; the one of each module is in its folder: `frontend/vygoj-frontend.service`, `backend/vygoj-backend.service`, and `frontend/langserv/vygoj-langserv.service`. Each one runs `make service`: gunicorn in the foreground, which serves the requests with several processes and threads, while systemd watches it.
+
+The same steps work with the three modules in one computer or in several ones; in each computer, do them only for the modules that it runs. For example, for the backend:
+
+[source,sh]
+----
+# A user for the module, in the docker group only for the backend and the language server
+sudo adduser --disabled-password vygoj-backend
+sudo usermod -aG docker vygoj-backend
+
+# Its own clone, installed and configured with its user (see <<install>>)
+sudo -iu vygoj-backend
+git clone https://git.ucr.ac.cr/ecci/vygoj.git
+cd vygoj/backend/engine && make image && cd .. && make install
+exit
+
+# The service: start it now and at every boot
+sudo cp ~vygoj-backend/vygoj/backend/vygoj-backend.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now vygoj-backend
+----
+
+The frontend uses the user `vygoj-frontend`, not in the `docker` group, with its `DATA_FOLDER` inside its home (e.g. `/home/vygoj-frontend/vygdata`) and its PostgreSQL user (`sudo -u postgres createuser vygoj-frontend`). The language server uses the user `vygoj-langserv`, and `make image` in `frontend/langserv/`. The units allow each service to write only in the home of its user; change their paths if the clones are in other folders.
+
+Manage the services with:
+
+[source,sh]
+----
+systemctl status vygoj-backend           # is it running? its last log lines
+journalctl -u vygoj-backend -f           # follow its log
+sudo systemctl restart vygoj-backend     # after updating its code
+sudo systemctl stop vygoj-backend        # stop it, and remove the containers that it left
+----
+
+To update a module, pull the code with its user, install the dependencies again, rebuild its image if it has one, and restart its service:
+
+[source,sh]
+----
+sudo -iu vygoj-backend sh -c 'cd vygoj && git pull --ff-only && make -C backend deps && make -C backend/engine rebuild'
+sudo systemctl restart vygoj-backend
+----
+
+Rebuild the images regularly (e.g. once a month), even without new versions of VygOJ, to receive the security updates of Debian. When the language server runs in another computer than the frontend, copy the `LANG_SERVER_SECRET` of the frontend to its `config/config.py`, and pass it a path of the reverse proxy of the frontend (see `frontend/langserv/readme.adoc`).
 
 
 [[docs]]

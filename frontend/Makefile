@@ -16,15 +16,22 @@ DEPS+=authlib~=1.0 flask-babel~=4.0 flask-squeeze~=5.0 flask-sqlalchemy~=3.0 fla
 # Create and update the tables of the database, and add the new users of the TSV file set in
 # config.py, if it exists, before running the web app. It runs once, before gunicorn starts its
 # workers, which would otherwise create the same tables at the same time and fail
-run release server: users
+run release server service: users
 
 # The servers show the interface in the languages of translations/, compiled from their .po files
-run release server: translations
+run release server service: translations
 
 # Folder with a subfolder for each language of the interface, e.g. translations/es/LC_MESSAGES
 TRANSLATIONS=translations
 
-.PHONY: admin lint-static translations update-translations users
+.PHONY: admin config lint-static translations update-translations users
+
+# Add the missing secrets to config/config.py with random values (common/make_config.py), so the
+# servers start with the minimal security. It never changes the settings that the file has
+install: config
+config:
+	$(PY) $(SHARED)/make_config.py frontend
+
 users: install
 	$(ACT) && cd $(SRC) && python manage.py import
 

@@ -1,6 +1,6 @@
 # Image of the containers where the language servers run, one container for each code editor.
-# The release is pinned for reproducible builds; rebuild the image regularly (make image) to receive
-# security updates
+# The release is pinned for reproducible builds; rebuild the image regularly (make rebuild) to
+# receive security updates
 
 # Download the language server of Java from Eclipse, which Debian does not package, in a stage of
 # its own, so the image does not keep the archive. Its version is fixed and its download checked
@@ -13,6 +13,8 @@ ADD --checksum=sha256:$JDTLS_SHA256 https://download.eclipse.org/jdtls/milestone
 RUN mkdir /opt/jdtls && tar -xzf /tmp/jdtls.tar.gz -C /opt/jdtls
 
 FROM debian:trixie
+# make rebuild removes the old images with this label (common/docker.mk)
+LABEL vygoj=lang-srv
 
 # Install the language servers, the headers of the libraries that solutions include, and the Java
 # that jdtls needs, and remove the package lists to reduce the image size

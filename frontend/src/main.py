@@ -118,8 +118,7 @@ def check_secret_key(secret_key):
     if (not isinstance(secret_key, str) or secret_key == EXAMPLE_SECRET_KEY
             or len(secret_key) < MIN_SECRET_KEY_LENGTH):
         raise RuntimeError(f'SECRET_KEY in {config_file} must be a random string of at least '
-            f'{MIN_SECRET_KEY_LENGTH} characters, generate one with: '
-            "python3 -c 'import secrets; print(secrets.token_hex(32))'")
+            f'{MIN_SECRET_KEY_LENGTH} characters, make config adds one')
 
 check_secret_key(app.config['SECRET_KEY'])
 # Invalid limits of runs would fail every run, so the server does not start with them
