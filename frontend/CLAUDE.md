@@ -26,7 +26,7 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
     commit, offered, hidden; prepared courses are offers not offered yet) and `Enrollment`
     (`enrollments`), and `parse_courses()`/`sync_offers()`, which turn the configuration file of a
     clone into offers after each clone or pull (see "Professor repositories and courses" in
-    `readme.adoc`).
+    `design/readme.adoc`).
   - `course_config.py`: `CourseConfig(ConfigFile)`, the file of the root of a repo with its
     courses.
 - `src/problems/`: package with the programming problems (imported as
@@ -74,7 +74,7 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
     problems for copies and pushes, and the origin of the user. It
     runs git through `subprocess` with plumbing commands and a timeout, and validates names of
     courses, problems, files, and commits before they become refs or paths (see "Student repos"
-    in `readme.adoc`).
+    in `design/readme.adoc`).
   - `professor_repo.py`: `ProfessorRepo` (`professor_repos` table: URL and folder of each repo of
     a professor) and `CourseRepo(GitRepo)`, its clone in `DATA_FOLDER/user/<username>/<repo>`
     with `main` in its working tree, which the judge only reads: clone and pull over SSH only,
@@ -88,7 +88,7 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
     and sync its courses): started as `manage.py repo-job` processes with `nice` 19 and a time
     limit, with their state in `DATA_FOLDER/user/<username>/jobs/` and a lock per job.
   - `ssh_key.py`: `UserKey`, the SSH key pair of each user, never shared between users (see
-    "Repositories section" in `readme.adoc`).
+    "Repositories section" in `design/readme.adoc`).
 - `src/data_table.py`: `DataTable`, a page of the rows of a SELECT searched, filtered
   (`column:value`), sorted (with pinned columns as the first sort keys), and split in pages in the
   server with the parameters of the URL (`q`, `sort`, `pin`, `page`, `size`), and `Column`, each
@@ -100,8 +100,8 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
 - `src/activity_log.py`: activity log: `log_event(event, data, **cells)` appends a row to a
   monthly TSV in `DATA_FOLDER/log/` with fixed columns (`COLUMNS`) and the fields of each event as
   JSON in `data`, and `save_code()` saves the code of a run by its hash. Events are in `EVENTS`;
-  document new events and data fields in `readme.adoc`. New kinds of materials add data fields,
-  not columns. It also makes the zip archives of the log on demand: the log with tables for
+  document new events and data fields in `design/readme.adoc`. New kinds of materials add data
+  fields, not columns. It also makes the zip archives of the log on demand: the log with tables for
   statistical software (`TABLES`), and the submissions in a folder per user, course, material,
   and time, with the statement, initial code, and test cases of the problem taken from the course
   repo in the commit of each run (`git archive`, `ProblemFiles`). `LogController` serves them to administrators (`/admin/log`, `/admin/submissions`).
@@ -128,7 +128,7 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
   `config/`, and Docker image (`image/`). `src/main.py` accepts the WebSocket of each code editor
   with a key that `lang_server_key()` of `problem_controller.py` signs with `LANG_SERVER_SECRET`,
   and passes the LSP messages to a language server in a container without network (see
-  `langserv/readme.adoc`).
+  `langserv/design/readme.adoc`).
 - `vygdata/`, `data/`: runtime data (course repos, logs). Git-ignored.
 
 ## Commands
@@ -175,7 +175,8 @@ to the general rules in the root `CLAUDE.md`:
   CSP forbids inline scripts, so templates have no `<script>` blocks.
 - Course repos are untrusted: read problem files only through `ProblemLoader.read_file()`, which
   keeps them inside the course repo. Answer errors with generic messages and log the details.
-- The "Security" section of `readme.adoc` explains these controls; update it when they change.
+- The "Security" section of `design/readme.adoc` explains these controls; update it when they
+  change.
 - Keep `SESSION_COOKIE_SECURE` and `SESSION_COOKIE_HTTPONLY`. Store only minimal data in the
   session. Hash passwords; never log or display them.
 - Limits per client (e.g. `LoginAttempt` in `users.py`) are stored in the database, because

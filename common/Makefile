@@ -1,4 +1,4 @@
-# Flask Makefile v1.4.0
+# Flask Makefile v1.5.0
 VENV=.venv# Folder where the virtual environment is installed
 ACT=. $(VENV)/bin/activate# Python command to activate the virtual environment
 SRC=src#Folder where web application source code is
@@ -19,7 +19,7 @@ PYLINT_SRC=$(SRC) $(SHARED)/vyg# Python code checked by lint: the layer and the 
 PYLINTRC=$(SHARED)/pylintrc# Pylint configuration shared by the layers
 
 # Phony targets
-.PHONY: clean debug deps install lint pylint release server service stop
+.PHONY: clean debug deps install lint pylint post-pull release server service stop update
 default: all
 
 debug: export FLASK_DEBUG=1
@@ -68,6 +68,17 @@ $(VENV):
 # The shared package is installed in editable mode, so changes to it apply without reinstalling
 deps: $(VENV)
 	$(ACT) && pip install $(DEPS) && pip install -e $(SHARED)
+
+# Update the copy of VygOJ of this user: pull the new code, refusing to merge local changes, then
+# run post-pull. make runs again after the pull, so post-pull comes from the Makefiles of the new
+# version. The server must be restarted to run the new code
+update:
+	git pull --ff-only
+	$(MAKE) post-pull
+
+# Steps after pulling new code: reinstall the dependencies. Layers with a Docker image add its
+# rebuild as a prerequisite
+post-pull: deps
 
 # Check the Python code with Pylint. Layers may add more checks to lint, e.g. for client code
 lint: pylint

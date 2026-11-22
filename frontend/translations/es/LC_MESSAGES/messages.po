@@ -1,6 +1,6 @@
 # Spanish translations of the interface of VygOJ. Update them with
 # make update-translations and fill the empty msgstr, see "Translations"
-# in readme.adoc
+# in design/readme.adoc
 msgid ""
 msgstr ""
 "Project-Id-Version: VygOJ \n"

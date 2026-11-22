@@ -1,0 +1,11 @@
+%% Layers of isolation around the code of a student
+flowchart LR
+    service["vygoj-backend service<br>systemd: NoNewPrivileges,<br>ProtectSystem=strict<br>gunicorn, 8 workers"]
+    docker["Docker daemon"]
+    subgraph container["Engine container, one per submission"]
+        student["solution, run as the user student<br>time limit per command<br>output cut at 1 MiB per stream"]
+    end
+    limits["No network<br>all capabilities dropped<br>no-new-privileges, seccomp<br>512 MiB without swap<br>512 processes and threads, 2 CPUs<br>files of 64 MiB, 4096 open files<br>/tmp of 64 MiB in memory"]
+    service -- "docker SDK: create, put_archive,<br>exec, remove" --> docker
+    docker -- "creates and destroys" --> container
+    limits -.- container

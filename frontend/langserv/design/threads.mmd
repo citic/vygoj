@@ -1,0 +1,16 @@
+%% Threads of one connection: the gunicorn thread of the WebSocket relays the messages of the
+%% editor, and a thread of its own relays the messages of the language server
+flowchart LR
+    editor["Code editor<br>lang-client.js"]
+    subgraph worker["gunicorn worker: 1 process, 120 threads"]
+        relay["relay()<br>thread of the WebSocket<br>filters CLIENT_METHODS"]
+        answer["answer_server()<br>reader thread<br>drops diagnostics,<br>answers server requests"]
+        sessions[("session counts<br>MAX_SESSIONS,<br>MAX_USER_SESSIONS")]
+    end
+    container["Container<br>language server<br>stdin / stdout"]
+
+    editor -- "WebSocket" --> relay
+    relay -- "write_message()" --> container
+    container -- "read_message()" --> answer
+    answer -- "WebSocket" --> editor
+    relay -.- sessions

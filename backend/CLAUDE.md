@@ -18,7 +18,7 @@ JSON. It must assume that every submitted program is malicious.
   `FailedSolution` stops the run as soon as a verdict is known.
 - `src/run_log.py`: log of every submission received and its verdict (`data/log/runs-*.tsv`, a
   `vyg.TsvLog`), with the context the frontend sends (user, course, material, id of its run).
-  Document new columns and data fields in the "Run log" section of `readme.adoc`.
+  Document new columns and data fields in the "Run log" section of `design/readme.adoc`.
 - `tests/`: manual scripts. `tests001.sh` targets an old Judge0 API (port 2358) and is stale.
 
 ## Commands

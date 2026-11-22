@@ -12,7 +12,9 @@ afterwards. The parent `backend/CLAUDE.md` also applies here.
   `python3`...), the Alecci compiler from PyPI in a venv (`/opt/alecci`, linked as
   `/usr/local/bin/alecci`), and an unprivileged `student` user whose home `/home/student` is the
   working directory.
-- `Makefile`: Docker install rules, and the image rules of `common/docker.mk`.
+- `Makefile`: the image rules of `common/docker.mk`, and `run` to try the image. It never installs
+  packages of the host: Docker is installed with the package manager of the distribution (see
+  "Dependencies" in the root `readme.adoc`), so the rules never need `sudo`.
 
 The image name `vygoj-engine` is a contract between this `Makefile` (`IMAGE=vygoj-engine`) and
 `IMAGE` in `../src/execution.py`. Change both together. The `LABEL vygoj=engine` of the
@@ -21,8 +23,6 @@ The image name `vygoj-engine` is a contract between this `Makefile` (`IMAGE=vygo
 ## Commands
 
 ```sh
-sudo make install           # install Docker (Debian packages); on macOS: make install (Homebrew)
-sudo make official-install  # Debian: install Docker from Docker's official repositories
 make image                  # build vygoj-engine from the Dockerfile
 make rebuild                # build it again with the updates of Debian, remove the old image
 make run                    # open an interactive container to try tools manually (default rule)

@@ -1,6 +1,6 @@
 # systemd unit of the VygOJ frontend: it starts gunicorn at boot and restarts it if it fails. It
 # runs with the user vygoj-frontend, which must not be in the docker group, and its clone of VygOJ
-# in /home/vygoj-frontend/vygoj. See the production section of readme.adoc. Install it with:
+# in /home/vygoj-frontend/vygoj. See the running section of readme.adoc. Install it with:
 # sudo cp vygoj-frontend.service /etc/systemd/system/ && sudo systemctl enable --now vygoj-frontend
 
 [Unit]

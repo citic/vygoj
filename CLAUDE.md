@@ -17,7 +17,7 @@ Flow: the browser talks to the frontend; the frontend sends a problem and a solu
 inside a disposable engine container and returns an `ExecutionResult`. The code editor of the
 problem page connects with a WebSocket to a language server (`LANG_SERVERS`, port 7070 by
 default), which runs a language server such as `clangd` in a container for each editor (see
-`frontend/langserv/readme.adoc`). Other folders: `common/`
+`frontend/langserv/design/readme.adoc`). Other folders: `common/`
 (shared `Makefile` and `vyg` Python package), `docs/` (analysis and design, in Spanish), `cli/`
 (legacy Node.js tool).
 
@@ -75,6 +75,7 @@ make server    # gunicorn daemon, logs and pid file in data/
 make service   # gunicorn in the foreground, for systemd (vygoj-*.service of the layer)
 make stop      # stop the gunicorn daemon started by make server
 make deps      # reinstall Python dependencies into .venv
+make update    # git pull --ff-only, then post-pull: deps, and the rebuild of the layer's image
 make lint      # Pylint on src/ and common/vyg/ (installs pylint into .venv the first time)
 make clean     # remove .venv
 ```
@@ -86,12 +87,17 @@ frontend and the language server, the same `LANG_SERVER_SECRET` in both), `make 
 `make rebuild`, and `make remove-images` handle the Docker images of the engine and the language
 server (rules of `common/docker.mk`), and `make update` pulls the code and rebuilds them. In
 production each layer runs on its own, with a user of its own, as a systemd service
-(`vygoj-<layer>.service` in its folder, production section of `readme.adoc`).
+(`vygoj-<layer>.service` in its folder, running section of `readme.adoc` and production section
+of `design/readme.adoc`).
 
 - `make lint` must pass with no messages. Its configuration is shared in `common/pylintrc`; fix the
   code rather than disabling a check, and when a disable is justified, put it on the line with a
   comment explaining why (e.g. `# pylint: disable=broad-exception-caught`).
 
+- The `Makefile` rules run without `sudo`, with the user of each layer, and never install packages
+  of the system (Docker, PostgreSQL, Apache...). The "Dependencies" section of the root
+  `readme.adoc` gives those commands for each family of distributions (Debian, Fedora/RHEL, Arch)
+  and macOS; update every family when adding a system dependency.
 - Add Python dependencies to `DEPS` in the layer's `Makefile` (there are no requirements files),
   then run `make deps`. Fix only their major version with `~=`, so they get the fixes of their
   authors, but a new major version, which may break the code, needs a manual update:
@@ -149,9 +155,18 @@ that enables attacks or system crashes.
 
 ## Documentation
 
+- Each layer (and the root folder) has two documents. Its `readme.adoc` is the analysis, for end
+  users (IT administrators, directors, professors, and students): what it offers, and how to
+  install, configure, run, stop, and update it, in plain language. Its `design/readme.adoc` is the
+  design, for developers: how it works, data formats, protocols, security controls, and design
+  decisions, with diagrams. Diagrams are Mermaid files (`.mmd`) next to the document that shows
+  them in a `[mermaid]` block with `include::`, followed by a link to the `.mmd` file (GitHub
+  does not render them in AsciiDoc yet), or SVG files for the kinds of diagrams that Mermaid does
+  not draw, such as UML component diagrams. The diagrams of the root `readme.adoc` are in
+  `docs/img/`.
 - When a change alters documented behavior, update the affected documentation in the same change:
-  docstrings and comments of the modified code, the layer's `readme.adoc`, and the root
-  `readme.adoc` if commands, setup, or architecture change.
+  docstrings and comments of the modified code, the layer's `readme.adoc` and
+  `design/readme.adoc`, and the root ones if commands, setup, or architecture change.
 - Only update what the change makes inaccurate; do not rewrite unrelated sections.
 - Keep each document in its existing language and AsciiDoc style.
 - If a change contradicts `docs/analysis.es.adoc` or `docs/design.es.adoc`, point it out instead

@@ -37,7 +37,7 @@ app.jinja_env.globals.update(FONTS=FONTS, DEFAULT_FONT=DEFAULT_FONT, font_url=fo
     ROLES=ROLES)
 
 # Texts of the interface marked with _() are shown in the language chosen by the user or by the
-# browser. Their translations are in translations/ (see "Translations" in readme.adoc), and
+# browser. Their translations are in translations/ (see "Translations" in design/readme.adoc), and
 # base.html writes the language in <html lang>, which static/js/i18n.js reads
 babel = Babel(app, locale_selector=select_language,
     default_translation_directories=TRANSLATIONS_FOLDER)

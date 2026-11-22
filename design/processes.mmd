@@ -1,0 +1,28 @@
+%% Processes of VygOJ and the protocol of each connection. The shared vyg package (common/vyg/)
+%% defines the objects that travel as JSON between the frontend and the backend
+flowchart TB
+    browser["Browser<br>static/ (vanilla JS, Monaco)"]
+    subgraph frontend_host["vygoj-frontend user, no Docker"]
+        frontend["Frontend<br>Flask + gunicorn gthread<br>4 workers x 16 threads"]
+        jobs["manage.py repo-job<br>background processes, nice 19"]
+    end
+    subgraph langserv_host["vygoj-langserv user, docker group"]
+        langserv["Language server<br>Flask + flask-sock<br>1 worker x 120 threads"]
+        lsp["vygoj-lang-srv containers"]
+    end
+    subgraph backend_host["vygoj-backend user, docker group"]
+        backend["Backend<br>Flask + gunicorn<br>8 workers x 1 thread"]
+        engine["vygoj-engine containers"]
+    end
+    database[("PostgreSQL")]
+    vyg[["common/vyg<br>Problem, TestCase, ExecutionResult,<br>Status, TsvLog"]]
+
+    browser -- "HTTP/JSON, HTML, CSRF token" --> frontend
+    browser -- "WebSocket, LSP, signed key" --> langserv
+    frontend -- "SQLAlchemy, psycopg" --> database
+    frontend -- "subprocess" --> jobs
+    frontend -- "POST /run, compact JSON" --> backend
+    langserv -- "docker run -i, stdin/stdout" --> lsp
+    backend -- "docker exec, put_archive" --> engine
+    frontend -.- vyg
+    backend -.- vyg

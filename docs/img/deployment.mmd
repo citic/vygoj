@@ -1,0 +1,18 @@
+%% Example installation in five computers of a private network. Only the frontend computer is
+%% reachable from the Internet; arrows show who opens each connection and its port
+flowchart LR
+    internet(("Internet<br>browsers"))
+
+    subgraph private["Private network 10.0.0.0/24"]
+        frontend["10.0.0.1 frontend<br>Apache or nginx 80, 443<br>frontend 127.0.0.1:8080"]
+        database[("10.0.0.2 database<br>PostgreSQL 5432")]
+        langserv["10.0.0.3 language server<br>7070"]
+        backend1["10.0.0.4 backend 1<br>9090"]
+        backend2["10.0.0.5 backend 2<br>9090"]
+    end
+
+    internet -- "HTTPS 443<br>pages and /lang-srv/" --> frontend
+    frontend -- "SQL 5432" --> database
+    frontend -- "WebSocket 7070" --> langserv
+    frontend -- "HTTP 9090" --> backend1
+    frontend -- "HTTP 9090" --> backend2

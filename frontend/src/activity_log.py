@@ -29,7 +29,7 @@ the course repo of the run, to run the submissions again:
         <YYYYMMDD_HHMMSS>/solution.cpp              # code, with the extension of its language
                          /result.tsv                # verdict of each test case
 
-See "Activity log" in readme.adoc """
+See "Activity log" in design/readme.adoc """
 import datetime
 import os
 import re
@@ -62,8 +62,8 @@ LOG_FOLDER = 'log'
 COLUMNS = ('time', 'id', 'user', 'role', 'address', 'event', 'path', 'course', 'material', 'type',
     'data')
 
-# Events logged, as documented in readme.adoc. log_event() rejects others, so the values of the
-# event column are always known by the analysis scripts
+# Events logged, as documented in design/readme.adoc. log_event() rejects others, so the values of
+# the event column are always known by the analysis scripts
 EVENTS = ('visit', 'login', 'login_failed', 'login_blocked', 'logout', 'preferences',
     'user_create', 'user_admin', 'run', 'run_repeated', 'run_rejected', 'run_failed',
     'log_download', 'sso_provider', 'user_update', 'user_suspend', 'user_activate', 'user_delete',

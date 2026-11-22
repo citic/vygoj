@@ -1,0 +1,19 @@
+%% The frontend receives a run of a solution (judge_solution() in
+%% src/problems/problem_controller.py, Run in src/runs.py)
+flowchart TD
+    post["POST /problem/course/problem<br>action run"] --> logged{"logged user?"}
+    logged -- no --> e401["HTTP 401"]
+    logged -- yes --> valid{"valid language,<br>arguments, size?"}
+    valid -- no --> e400["HTTP 400"]
+    valid -- yes --> hash["hash of problem, language, and code"]
+    hash --> repeated{"same hash as the last run<br>of this problem?"}
+    repeated -- yes --> stored["answer the stored result<br>log run_repeated"]
+    repeated -- no --> lock["lock the row of the user<br>SELECT ... FOR UPDATE"]
+    lock --> limits{"a run unfinished, one less than<br>5 s ago, or 120 in the last hour?"}
+    limits -- yes --> e429["HTTP 429 + Retry-After<br>log run_rejected"]
+    limits -- no --> start["store the new run"]
+    start --> save["save the code by its hash<br>commit it to the student repo"]
+    save --> backend["POST /run to a random backend"]
+    backend --> answer{"valid result?"}
+    answer -- yes --> grade["store the result and the grade<br>log run"]
+    answer -- no --> failed["error message<br>log run_failed"]

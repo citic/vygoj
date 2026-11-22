@@ -1,0 +1,129 @@
+= VygOJ design
+:experimental:
+:nofooter:
+:source-highlighter: pygments
+:sectnums:
+:toc:
+:xrefstyle: short
+
+This document explains how the programs of VygOJ work together, and the design decisions common to all of them. It is written for developers. The installation, configuration, and operation of VygOJ are in the link:../readme.adoc[root readme], and the design of each program in its own document: link:../frontend/design/readme.adoc[frontend], link:../backend/design/readme.adoc[backend], and link:../frontend/langserv/design/readme.adoc[language server]. The global decisions of the research project are in link:../docs/design.es.adoc[docs/design.es.adoc] (Spanish).
+
+
+[[processes]]
+== Processes
+
+VygOJ is made of independent processes that communicate by message passing through HTTP/JSON (and a WebSocket for the code editor), following the modular architecture recommended by link:https://ieeexplore.ieee.org/document/9245310[Došilović and Mekterović (2020)^]. Each process may run in its own computer, with a Linux user of its own:
+
+[#fig_processes]
+.Processes, users, and protocols (link:processes.mmd[diagram source])
+[mermaid]
+....
+include::processes.mmd[]
+....
+
+[cols="1,1,3",options="header"]
+|===
+| Process | Folder | Responsibility
+
+| Frontend | `frontend/` | Flask web application and vanilla JavaScript client (`frontend/static/`). Authenticates users, serves courses and problems from the clones of the repos of professors, keeps the student repos and the activity log, and forwards solutions to a backend. It never runs user code.
+| Backend | `backend/` | Flask web service. Receives a problem and a solution, runs the solution in a disposable engine container, and answers an `ExecutionResult`.
+| Engine | `backend/engine/` | Docker image (Debian) with the compilers and analysis tools, from which the backend creates a container per submission.
+| Language server | `frontend/langserv/` | Flask web service with a WebSocket per code editor, which it connects to a language server (e.g. `clangd`) in a container per editor.
+| Database | — | PostgreSQL, used only by the frontend.
+|===
+
+The backend and the language server create containers, which gives their users the powers of `root`. So they run with users of their own in the `docker` group, and the frontend, the only process exposed to the Internet, runs with a user that cannot use Docker. A compromised frontend can ask the backend to run code, but only inside the restrictions of an engine container.
+
+
+[[run_flow]]
+== Running a solution
+
+The main flow of the judge crosses every process except the language server:
+
+[#fig_run]
+.A student runs a solution (link:run.mmd[diagram source])
+[mermaid]
+....
+include::run.mmd[]
+....
+
+* The frontend chooses a backend at random among `BACKENDS` for each run (`select_random_backend()` in `frontend/src/problems/problem_controller.py`). Backends keep no state between runs, so any one may judge any run, and adding a backend adds capacity. Each backend bounds its concurrent runs by its gunicorn workers (8).
+* The frontend applies the limits of runs per user (one at a time, 5 seconds between runs, 120 per hour) before sending a run, in the database, because its gunicorn workers share no memory. Backends have no authentication: they trust the frontend, and the network must only let the frontend reach them.
+* The frontend sends only the fields of the problem that judge it (test cases, languages, effective limits), and a `context` with the id of the run event of its activity log, which the backend writes in its own run log, so both logs join by that id.
+* Every request has a time limit, and every wait is bounded: the backend stops the submission at its `maxTotalDuration`, the frontend waits for the backend that time plus 30 seconds, and the browser waits for the frontend 10 seconds more.
+
+The code editor connects to the language server independently, with a key that the frontend signs (see the link:../frontend/langserv/design/readme.adoc[design of the language server]).
+
+
+[[shared_model]]
+== Shared model and protocol
+
+The `vyg` Python package (`common/vyg/`) holds the data model shared by the frontend and the backend: the materials of courses (`Course`, `Section`, `Problem`, `TestCase`...), `ExecutionResult` and `TestCaseResult`, the `Status` enumeration (`constants.py`), and `TsvLog`, the writer of the activity log of the frontend and the run log of the backend. `make deps` installs it in editable mode (`pip install -e ../common`) in the virtual environment of each layer, so a change applies to both without reinstalling. It has no Flask code, file loading, or rendering. `frontend/static/js/vyg.js` mirrors the model on the client.
+
+Objects travel as compact JSON (`vyg.to_json()`): the names of the attributes are the keys, and empty values are omitted, because readers use the same defaults. Texts travel as JSON strings, which carry any Unicode character, without another encoding such as base64.
+
+VygOJ is in development, and the owner updates every frontend and backend together. So the protocol, the model, the database schema, and the formats of stored data change without keeping backward compatibility: old formats and code paths are removed instead of supported.
+
+
+[[logs]]
+== Logs
+
+Both logs are monthly TSV files with fixed columns and a `data` column with the fields of each kind of event as a JSON object, so new kinds of events add fields, not columns, and statistical software reads them as tables. `vyg.TsvLog` writes them: each gunicorn worker appends a row in one system call, so the rows of several workers do not mix, cells never contain tabs or new lines, and cells that a spreadsheet would read as a formula get a leading apostrophe.
+
+* The activity log of the frontend (`DATA_FOLDER/log/events-<month>.tsv`) has the events of the users (see the link:../frontend/design/readme.adoc#activity_log[frontend design]).
+* The run log of the backend (`backend/data/log/runs-<month>.tsv`) has each submission with the resources that its test cases used (see the link:../backend/design/readme.adoc#run_log[backend design]).
+
+
+[[development]]
+== Development environment
+
+The `Makefile` of the root folder runs the rules of the frontend, the backend, and the language server together, to develop all of them in one computer. It needs Docker (see link:../backend/readme.adoc[the backend]) and the PostgreSQL database of the frontend (see link:../frontend/readme.adoc[the frontend]), which need `sudo` to install; the rules do not:
+
+[source,sh]
+----
+make install        # virtual environments of the three layers, and make config
+make image          # Docker images of the engine and the language server
+make                # the three debug servers: frontend 8080, backend 9090, language server 7070
+----
+
+kbd:[Ctrl+C] stops the three servers, and their outputs are mixed in the console. The default settings connect them to each other in `localhost`. Other rules:
+
+[cols="1,3"]
+|===
+| `make config`
+| Add the missing secrets to `config/config.py` of the frontend and of the language server with random values, the same `LANG_SERVER_SECRET` in both (`common/make_config.py`). It creates the files that do not exist, only readable by their owner, and never changes the settings that they have. `make install` runs it, also in each layer.
+
+| `make deps`
+| Install the Python dependencies of the three layers again.
+
+| `make rebuild`
+| Build the images again with the security updates of Debian and its packages. Running servers keep working, and the old images are removed (`common/docker.mk`).
+
+| `make remove-images`
+| Remove the images and their containers.
+
+| `make update`
+| `git pull`, refusing to merge local changes, and then `make deps rebuild`. Restart the servers after it.
+
+| `make lint`
+| Check the code of the three layers.
+
+| `make clean`
+| Remove the virtual environments.
+|===
+
+The root `Makefile` has no rules to run the servers in production: there, each one runs with a user of its own (<<production>>). The Python layers include `common/Makefile`, which has the rules `install`, `deps`, `lint`, `server`, `service`, `stop`, and `update` of each layer, and the layers with a Docker image include `common/docker.mk`, which has the rules `image`, `rebuild`, and `remove-image`.
+
+There is no automated test suite. To test end to end, build the images, start the three debug servers, and run a problem from its page in the browser.
+
+
+[[production]]
+== Production
+
+Each process runs as a systemd service, with the unit file of its folder (`vygoj-frontend.service`, `vygoj-backend.service`, and `vygoj-langserv.service`). Each unit runs `make service`: gunicorn in the foreground, whose output goes to the journal, while systemd starts it at boot and restarts it when it fails. The units isolate the services: `NoNewPrivileges` (no setuid programs), a `/tmp` of their own, and `ProtectSystem=strict` with write access only to the home of their user, where their clone, data, and logs are. The units of the backend and the language server require `docker.service`, and remove the containers that their process left when they stop (`ExecStopPost`, by the `vygoj=engine` and `vygoj=lang-srv` labels), because the containers belong to Docker, not to the service.
+
+The address where each server listens is the `HOST` of its `Makefile` (`0.0.0.0`), which an override of its unit changes (`ExecStart=/usr/bin/make service HOST=...`), e.g. `127.0.0.1` for a frontend behind a reverse proxy, or the private address of a backend.
+
+Each layer updates with `make update` in its folder, run by its user: `git pull --ff-only`, then `make post-pull`, a new run of make that reads the Makefiles of the new version. `post-pull` reinstalls the dependencies (`deps`), and the layers with a Docker image add its `rebuild` as a prerequisite (`engine-rebuild` in the backend). The administrator restarts the service after it; the frontend updates the database tables when it starts.
+
+The Docker images use a fixed release of Debian (`debian:trixie`), and `make rebuild` builds them again with `--pull --no-cache` to get its security updates. The image name moves to the new image when it is built, so running containers end with the old one, new ones use the new one, and the service never pauses. Then `docker image prune --filter label=vygoj` removes the old images of VygOJ only.

@@ -1,0 +1,88 @@
+%% Tables of the frontend in PostgreSQL. Tables with data of users delete it with the user
+%% (ON DELETE CASCADE). Courses are in git repos; the database only has their offers
+erDiagram
+    users ||--o{ progress : "has"
+    users ||--o{ runs : "starts"
+    users ||--o{ user_identities : "logs in with"
+    users ||--o{ professor_repos : "owns"
+    users ||--o{ enrollments : "enrolls in"
+    professor_repos ||--o{ course_offers : "has courses"
+    course_offers ||--o{ enrollments : "has students"
+    sso_providers ||..o{ user_identities : "alias"
+
+    users {
+        int id PK
+        string username UK "login name, email for SSO"
+        string password "hash, empty for SSO only"
+        string email UK
+        string fullname
+        array roles "student ... admin"
+        string status "active or suspended"
+        string color_scheme
+        string font
+        string language
+    }
+    progress {
+        int id PK
+        int user_id FK
+        string course
+        string evaluation
+        float grade
+    }
+    runs {
+        int id PK
+        int user_id FK
+        string course
+        string problem
+        string code_hash "SHA-256"
+        datetime started
+        datetime finished
+        text result "last result, for repeated runs"
+    }
+    login_attempts {
+        int id PK
+        string username
+        string address
+        datetime time
+    }
+    sso_providers {
+        int id PK
+        string alias UK
+        string name
+        string status "disabled, testing, active"
+        string discovery_url
+        string client_id
+        string scopes
+        string email_claim
+        bool trust_emails
+        bool allow_new_users
+        string professor_claim
+        string professor_values
+    }
+    user_identities {
+        int id PK
+        int user_id FK
+        string provider
+        string issuer
+        string subject
+    }
+    professor_repos {
+        int id PK
+        int user_id FK
+        string url
+        string folder
+    }
+    course_offers {
+        int id PK
+        string name UK
+        int repo_id FK
+        string commit
+        datetime offered_at "empty while prepared"
+        bool hidden
+    }
+    enrollments {
+        int id PK
+        int user_id FK
+        int offer_id FK
+        datetime enrolled_at
+    }

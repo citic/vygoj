@@ -1,6 +1,6 @@
 # Development rules of VygOJ: they run the rules of the same name of the frontend, the backend,
 # and the language server, in one computer. In production each one runs on its own with its own
-# user, as a systemd service (vygoj-*.service of each layer, see the production section of
+# user, as a systemd service (vygoj-*.service of each layer, see the running section of
 # readme.adoc)
 
 # Folders of the layers with a Python web server, and of the Docker images

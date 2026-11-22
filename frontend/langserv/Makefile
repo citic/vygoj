@@ -26,3 +26,6 @@ config:
 # Rules image, rebuild, and remove-image of the image of the containers where the language servers
 # run, from image/Dockerfile
 include ../../common/docker.mk
+
+# make update also rebuilds the image, for the security updates of its packages
+post-pull: rebuild

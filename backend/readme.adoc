@@ -1,132 +1,186 @@
-= Vygoj Backend
+= VygOJ backend
+:experimental:
+:nofooter:
+:source-highlighter: pygments
+:sectnums:
+:toc:
+:xrefstyle: short
 
-The Vygoj Backend is a Code Execution Service because provides a web service to allow web applications to run source code into a sandboxed environment. It supports tests for concurrent programming. Distributed programming may be supported in the future. The following steps run it on a Debian-based distribution:
+The backend is the code execution service of VygOJ. The frontend sends it the solution of a student with the test cases of the problem; the backend compiles the solution, runs it with each test case, and answers the verdicts: whether the outputs are the expected ones, how long each test case took, how much memory it used, and, for concurrent programs, how many threads it created. Students never reach the backend: only the frontend does.
 
-[source,bash]
-----
-# Install Docker and create a Debian image
-$ cd engine
-$ sudo make install  # If Docker is not already installed
-$ make image
-$ cd ..
+Each solution runs in a disposable container of Docker, the *engine*, which isolates it from the computer and from the other solutions, and is destroyed after the run. This document explains how to install, configure, run, stop, and update the backend. Developers find how it works in link:design/readme.adoc[design/readme.adoc].
 
-# Install dependencies and run the backend. Requires Python 3
-$ sudo apt install python3
-$ make release
-----
-
-
-
-[user_manual]
-== User manual
-
-NOTE: A running Docker server is needed before running the backend. Read link:engine/readme.adoc[VygOJ Engine's documentation] to install and run the Docker server before continuing. Without it, the backend prints that Docker is required and stops with exit status 4; `make server` and `make service` check it before starting gunicorn.
-
-The backend is developed in Python and requires Flask. A `Makefile` is provided to ease this process on Debian-based distributions. The default rule creates a Python virtual environment, installs dependencies, and run the backend for debugging:
-
-[source,bash]
-----
-$ make
-----
-
-In production server, you can run the backend with no debug reporting:
-
-[source,bash]
-----
-$ make release
-----
-
-For keeping the backend server running in background even after logging out from the terminal, you can use `gunicorn`:
-
-[source,bash]
-----
-$ make server
-----
-
-The server writes its logs (`access.log`, `error.log`) and its process id (`gunicorn.pid`) in the `data/` folder, which is ignored by Git. Stop the server with `make stop`. In production, run it as a systemd service instead (`make service`, see the production section of the root `readme.adoc`).
-
-You can remove the virtual environment when it is no longer needed:
-
-[source,bash]
-----
-$ make clean
-----
 
 [[languages]]
 == Programming languages
 
-The backend runs solutions in C, C++, Java, Python, and Alecci (`LANGUAGE_DEFAULTS` in `src/execution.py`). Each language has a fixed source file name, its compiler command and compile time limit, and the command that runs the solution. Python is interpreted, so its "compiler" only checks the syntax, and students get their syntax errors as compiler errors before any test case runs:
+The backend runs solutions in these languages, with these compilers:
 
-[cols="1,2,3,1,2"]
+[cols="1,2,3",options="header"]
 |===
-| Language | Source file | Compiler | Compile limit | Run
+| Language | Source file | Compiler
 
-| C | `solution.c` | `gcc -g -Wall -Wextra -std=gnu17 -pthread` | 2 s | `./solution`
-| C++ | `solution.cpp` | `g++ -g -Wall -Wextra -std=gnu++20 -pthread` | 2 s | `./solution`
-| Java | `Solution.java` | `javac -g -encoding UTF-8 -Xlint:all -d .` (the default JDK of Debian trixie) | 10 s | `java -ea -cp . Solution`
-| Python | `solution.py` | `python3 -m py_compile` (Python 3 of Debian trixie) | 2 s | `python3 solution.py`
-| Alecci | `solution.ale` | `alecci --no-tsan` (https://pypi.org/project/alecci/[alecci] 1.x, which links with clang) | 5 s | `./solution`
-|===
-
-Java requires a public class to be in a file of its name, so the main class of a Java solution must be the public class `Solution`, as in the default code of the frontend. Java solutions run with assertions enabled (`-ea`). The sanitizers (`asan`, `tsan`, `ubsan`) and valgrind (`memcheck`, `helgrind`) work only on native executables, so they are ignored for Java and Python, as is `lint`, which runs `cpplint` on C and C++ only. `gdb` counts the threads of C, C++, and Python solutions (the threads of Python are threads of the operating system), but not of Java, whose virtual machine creates threads of its own.
-
-Alecci is a pseudo-language for teaching concurrent programming. Its compiler translates the solution to LLVM IR and links it with clang into a native executable, so `gdb` counts its threads, and valgrind works on it. The compiler enables ThreadSanitizer by default, but TSan creates a thread of its own, which `gdb` would count, so the backend passes `--no-tsan` unless the problem asks for `tsan`; `asan` becomes `--use-asan`, and `ubsan` and `lint` are ignored. The compiler writes status lines on every compilation (`Compiling with thread sanitizer support`, `Compilation successful! ...`), which the backend removes from the compiler output, and it exits with status 0 even when clang fails, so the backend checks that the executable exists after compiling (for every language that creates a file). The engine installs it from PyPI in a virtual environment (`/opt/alecci`), with its major version fixed (`alecci~=1.8`); rebuild the image to get its fixes.
-
-
-The backend runs code written by untrusted users, so each submission runs in a disposable container created with restrictions (see `_create_container()` in `src/execution.py`):
-
-* Unprivileged `student` user, all Linux capabilities dropped, `no-new-privileges`, and the default seccomp profile of Docker. The container never runs in privileged mode.
-* No network.
-* Limits of memory (512 MiB without swap), processes and threads (512), CPUs (2), file size (64 MiB), open files (4096), and a 64 MiB `/tmp` kept in memory.
-* Every command has a time limit, its output is truncated to 1 MiB per stream, and student processes left in background are killed after each test case. The whole submission is killed after 100 seconds.
-* Command line arguments of test cases are split as a shell would, but they are never interpreted by a shell.
-
-`/run` answers an `ExecutionResult` in compact JSON. A test case marked `custom` was written by the user (e.g. the input of a problem without test cases): it runs as any other, but its outputs are not compared and its standard error is not a failure. Each test case reports its wall time, its CPU time (all threads added up), its maximum memory, measured with `/usr/bin/time -v`, and, when the problem asks for a minimum of threads, the secondary threads it created, counted with `gdb` in another run with the same arguments and input. The time limits and the thread counts are checked for each test case on its own. Outputs are compared complete, but the answer carries only the first `maxOutputSize` bytes of the problem (at most 1 MiB) of the standard output and error of each visible test case, and of the compiler output, followed by `(truncated)`. Hidden test cases carry no output.
-
-The frontend sends the effective limits in the problem; the backend only clamps them to its own ranges (`MAX_DURATION`, 30 seconds per test case, and `MAX_TOTAL_DURATION`, 120 seconds per submission, in `src/execution.py`), which must contain the ranges of its frontends. Each test case runs at most its `maxDuration` (2 seconds if missing), enforced by `timeout` with a resolution of nanoseconds. A `minDuration` of 0 or missing means no minimum. `/usr/bin/time -v` measures the wall time in hundredths of a second, so a run shorter than 10 ms is reported as 0 seconds, and a `minDuration` below 0.01 seconds only rejects the runs measured as 0. Wall time varies some milliseconds between runs of the same program (scheduling, load of other submissions), so minimums of a few tenths of a second give stable verdicts. Test cases do not start after the `maxTotalDuration` of the submission (30 seconds if missing): the run ends with a `timeout` status and says how many test cases were not run. The running test case is cut at that time, and the container is killed if the submission lasts 20 seconds more (`DEADLINE_GRACE`).
-
-Requests to `/run` larger than 16 MiB, or with invalid JSON, types, languages, or sizes, are rejected with a 4xx status. The backend has no authentication: it must not be reachable from the Internet, only from the frontend.
-
-Containers have the label `vygoj=engine`. If a backend process is killed during a submission, its container may remain; remove it with:
-
-[source,bash]
-----
-$ docker rm -f $(docker ps -aq --filter label=vygoj=engine)
-----
-
-[[run_log]]
-== Run log
-
-The backend logs every submission it receives in `/run`, with its verdict (`src/run_log.py`), in the same format as the activity log of the frontend (see `frontend/readme.adoc`), which statistical software reads as a table. It is written in `data/log/`, next to the logs of gunicorn:
-
-----
-data/log/
-  runs-2026-11.tsv      # one row per submission of November 2026 (UTC); the first row names the columns
-  code/<hash>.c         # code of each judged submission, named by the SHA-256 of its language and code
-----
-
-The frontend sends a `context` object with each submission, besides the `problem` and the `solution`: the id of the run in its activity log, the user, their roles (separated by spaces) and address, the course, the material and its type, and the commit of the course repo. The backend does not use it to judge, it only logs it; a submission without context is judged and logged with empty cells. A context that is not an object of up to 32 fields with names of up to 64 characters, and values that are texts of up to 256 characters, numbers, booleans, or null, is rejected with HTTP 400.
-
-[cols="1,4",options="header"]
-|===
-| Column | Meaning
-| `time` | Date and time in UTC, ISO 8601 with milliseconds, e.g. `2026-11-08T14:03:12.345+00:00`
-| `id` | The `run` of the context: the `id` of the run event in the activity log of the frontend, which joins both logs. A random id if the frontend did not send it
-| `frontend` | Network address of the frontend that sent the submission
-| `event` | `run` if the submission was judged, or `run_invalid` if it was rejected with HTTP 400
-| `user`, `role`, `address`, `course`, `material`, `type` | Fields of the context
-| `data` | JSON object. For `run`: `language`; `code`, the hash of its file; `duration`, seconds the submission took; `status` and `passed` (test cases) of the result; and `tests`, with the `status`, `wallTime`, `cpuTime`, `memory` (bytes), `threadCount`, and `exitCode` of each test case, omitted when they are 0. For `run_invalid`: `reason`. Other fields of the context (e.g. `commit`) go in `context`
+| C | `solution.c` | GCC, standard C17 with GNU extensions
+| C++ | `solution.cpp` | G++, standard C++20 with GNU extensions
+| Java | `Solution.java` | The default JDK of Debian trixie. The main class must be the public class `Solution`
+| Python | `solution.py` | Python 3 of Debian trixie
+| Alecci | `solution.ale` | https://pypi.org/project/alecci/[alecci] 1.x, a pseudo-language for teaching concurrent programming
 |===
 
-The log keeps no test cases or outputs. Cells never contain tabs or new lines, texts are truncated to 256 characters, and the files are readable only by the user that runs the backend. Several gunicorn workers write the same log safely (see `vyg.TsvLog` in `common/vyg/tsv_log.py`, shared with the frontend).
+Problems may also check C and C++ solutions with sanitizers (`asan`, `tsan`, `ubsan`), valgrind (`memcheck`, `helgrind`), and `cpplint` (`lint`).
 
 
-[[development]]
-== Development
+[[install]]
+== Installation
 
-Check the Python code of `src/` and of the shared `vyg` package with Pylint. The first run installs Pylint in the virtual environment. The configuration, shared with the frontend, is in `common/pylintrc`:
+The backend runs on Linux (see the distributions in the link:../readme.adoc#packages[root readme]), and on macOS for development. In production, install it with a user of its own in the `docker` group, e.g. `vygoj-backend`, in its own copy of VygOJ (see the link:../readme.adoc[root readme]).
 
-[source,bash]
+[[install_docker]]
+=== Docker
+
+The backend needs Docker. If the computer does not have it, install it with the package manager of the distribution, as the link:../readme.adoc#packages[dependencies] of the root readme show. For example, in Debian and Ubuntu:
+
+[source,sh]
 ----
-$ make lint
+sudo apt install docker.io
 ----
+
+The user that runs the backend must be in the `docker` group. In production it is the user of the backend (see the link:../readme.adoc#users[users of the programs]). To develop with your own user, add it to the group, and log in again so the change applies:
+
+[source,sh]
+----
+sudo usermod -aG docker $USER
+----
+
+[[install_image]]
+=== Engine image
+
+Build the image of the containers, `vygoj-engine`, which has the compilers and tools of the supported languages. It takes some minutes:
+
+[source,sh]
+----
+cd backend/engine
+make image
+----
+
+[[install_backend]]
+=== Backend
+
+Install the Python dependencies of the backend in a virtual environment (`.venv`):
+
+[source,sh]
+----
+cd backend
+make install
+----
+
+
+[[configuration]]
+== Configuration
+
+The backend has no configuration file. These values are in its `Makefile`, and can be changed in the command line, e.g. `make service HOST=10.0.0.4`:
+
+[cols="1,1,3",options="header"]
+|===
+| Setting | Default | Meaning
+
+| `HOST` | `0.0.0.0` | Address where the backend listens. `0.0.0.0` accepts connections in every address of the computer
+| `PORT` | `9090` | Port where the backend listens
+| `WORKERS` | `8` | Solutions that the backend runs at the same time. Each one may use up to 2 CPUs and 512 MiB of memory
+|===
+
+The backend has no passwords: whoever reaches its port can run code in it. It must not be reachable from the Internet, only from the frontend. Let it listen on a private address, and let the firewall accept only the frontend (see the configuration in several computers of the link:../readme.adoc#configuration[root readme]).
+
+The frontend finds its backends in the `BACKENDS` setting of `frontend/config/config.py`, e.g. `BACKENDS = ['http://10.0.0.4:9090', 'http://10.0.0.5:9090']`.
+
+
+[[running]]
+== Running the server
+
+Docker must be running before the backend starts. Without it, the backend says that Docker is required and stops.
+
+In production, run the backend as a systemd service, which starts it when the computer boots and starts it again if it fails (see the link:../readme.adoc#running[root readme]):
+
+[source,sh]
+----
+sudo cp ~vygoj-backend/vygoj/backend/vygoj-backend.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now vygoj-backend
+----
+
+Other ways to run it, from the `backend/` folder:
+
+[source,sh]
+----
+make            # debug server, for development; Ctrl+C stops it
+make release    # without debug messages; Ctrl+C stops it
+make server     # in the background, keeps running after logging out
+----
+
+Check that the backend answers, from its computer or from the frontend:
+
+[source,sh]
+----
+curl http://localhost:9090/status
+----
+
+The service writes its log in the journal of systemd (`journalctl -u vygoj-backend -f`), and `make server` in the `data/` folder (`access.log` and `error.log`). The backend also logs every solution that it runs in `data/log/`, without the test cases or outputs.
+
+
+[[stopping]]
+== Stopping the server
+
+[source,sh]
+----
+sudo systemctl stop vygoj-backend     # the service
+make stop                             # a server started with make server
+----
+
+Before stopping a backend in production, remove it from `BACKENDS` of the frontend and restart the frontend, so no runs are sent to it.
+
+If the backend stops during a run, its container may remain. The service removes them when it stops; otherwise, remove them with:
+
+[source,sh]
+----
+docker rm -f $(docker ps -aq --filter label=vygoj=engine)
+----
+
+
+[[updating]]
+== Updating the server
+
+Get the new code, install the dependencies again, and rebuild the image, all with `make update`, then restart the service:
+
+[source,sh]
+----
+sudo -iu vygoj-backend make -C vygoj/backend update
+sudo systemctl restart vygoj-backend
+----
+
+Rebuild the image regularly (e.g. once a month), even without new versions of VygOJ, to receive the security updates of Debian:
+
+[source,sh]
+----
+cd backend/engine
+make rebuild
+----
+
+The solutions that are running finish with the old image, and the new ones use the new image, so the backend does not need to stop. The old image is removed.
+
+
+[[engine]]
+== Trying the engine
+
+Professors and developers may open a container of the engine and try its compilers and tools by hand. The container is removed when its shell ends:
+
+[source,sh]
+----
+cd backend/engine
+make run
+----
+
+
+[[uninstall]]
+== Uninstalling
+
+Remove the image and its containers with `make remove-image` in `backend/engine/` (stop the backend first), and the virtual environment with `make clean` in `backend/`. Docker is removed with the package manager of the distribution, e.g. `sudo apt remove docker.io` in Debian, if no other program uses it.

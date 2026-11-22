@@ -1,0 +1,11 @@
+%% States of a background job of a repo (src/repos/repo_jobs.py), kept in
+%% DATA_FOLDER/user/<username>/jobs/<kind>.json, with a lock file while it runs
+stateDiagram-v2
+    [*] --> none
+    none --> running: POST /user/repo/kind
+    running --> done: zip ready, push or pull ended
+    running --> failed: error, REPO_JOB_TIMEOUT, size limit
+    running --> failed: process ended without its lock (interrupted)
+    done --> running: started again after JOB_INTERVAL
+    failed --> running: started again after JOB_INTERVAL
+    done --> none: zip expired (REPO_ZIP_RETENTION) or new version of the repo

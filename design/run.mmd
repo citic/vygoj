@@ -1,0 +1,30 @@
+%% A student runs a solution: messages between the processes of VygOJ
+sequenceDiagram
+    autonumber
+    actor Student
+    participant Browser
+    participant Frontend
+    participant Database as PostgreSQL
+    participant Backend
+    participant Engine as Engine container
+
+    Student->>Browser: presses Run
+    Browser->>Frontend: POST /problem/course/problem<br>{action: run, language, code}
+    Frontend->>Database: check the limits of runs (row of the user locked)
+    alt same code as the last run
+        Database-->>Frontend: stored result
+    else new code
+        Frontend->>Frontend: save the code, commit it to the student repo
+        Frontend->>Backend: POST /run {problem, solution, context}<br>to a random backend of BACKENDS
+        Backend->>Engine: create a container without network
+        loop compile, then each test case
+            Backend->>Engine: docker exec with time limit
+            Engine-->>Backend: outputs, time, memory
+        end
+        Backend->>Engine: remove the container
+        Backend-->>Frontend: ExecutionResult (compact JSON)
+        Frontend->>Database: store the result and the grade
+        Frontend->>Frontend: log the run event
+    end
+    Frontend-->>Browser: ExecutionResult
+    Browser-->>Student: verdict of each test case

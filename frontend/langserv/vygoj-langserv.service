@@ -1,6 +1,6 @@
 # systemd unit of the VygOJ language server: it starts gunicorn at boot and restarts it if it
 # fails. It runs with the user vygoj-langserv, in the docker group, and its clone of VygOJ in
-# /home/vygoj-langserv/vygoj. See the production section of readme.adoc. Install it with:
+# /home/vygoj-langserv/vygoj. See the running section of readme.adoc. Install it with:
 # sudo cp vygoj-langserv.service /etc/systemd/system/ && sudo systemctl enable --now vygoj-langserv
 
 [Unit]

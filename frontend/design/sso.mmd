@@ -1,0 +1,31 @@
+%% Login with a single sign-on provider: Authorization Code Flow with PKCE (src/sso.py, Authlib)
+sequenceDiagram
+    autonumber
+    actor User
+    participant Browser
+    participant Frontend
+    participant Provider as OIDC provider
+    participant Database as PostgreSQL
+
+    User->>Browser: clicks the button of the provider
+    Browser->>Frontend: GET /login/sso/alias
+    Frontend->>Provider: discovery document (timeout 5 s + 10 s)
+    Frontend-->>Browser: redirect to the provider<br>state, nonce, PKCE challenge kept in the session
+    Browser->>Provider: the user logs in
+    Provider-->>Browser: redirect to /login/sso/alias/callback?code&state
+    Browser->>Frontend: GET callback
+    Frontend->>Provider: exchange the code (PKCE verifier, client secret)
+    Provider-->>Frontend: ID token
+    Frontend->>Frontend: check state, nonce, signature, issuer, audience, expiration
+    Frontend->>Database: find the identity by issuer and subject
+    alt identity found
+        Database-->>Frontend: user
+    else verified or trusted email of an existing user (never an administrator)
+        Frontend->>Database: link the identity to that user
+    else the provider creates accounts
+        Frontend->>Database: create the user and its identity
+    else
+        Frontend-->>Browser: login rejected
+    end
+    Frontend->>Frontend: new session, log login
+    Frontend-->>Browser: redirect to the next page (safe_next_url)

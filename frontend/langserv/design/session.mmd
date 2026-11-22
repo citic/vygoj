@@ -1,0 +1,23 @@
+%% A code editor gets suggestions from a language server in a container of its own
+sequenceDiagram
+    autonumber
+    participant Browser as Browser (Monaco)
+    participant Frontend as Frontend (8080)
+    participant LangServ as Language server (7070)
+    participant Container as Container (no network)
+
+    Browser->>Frontend: POST {action: 'lang_server'} with the CSRF token
+    Frontend->>Frontend: check the session and that the user may open the problem
+    Frontend-->>Browser: {url, key valid for 60 s}
+    Browser->>LangServ: WebSocket to url, first message: the key
+    LangServ->>LangServ: check the Origin header, the key, and the limits of sessions
+    LangServ->>Container: docker run -i (clangd, pylsp, or jdtls)
+    loop while the student edits
+        Browser->>LangServ: LSP message (open, change, completion, signature help)
+        LangServ->>LangServ: drop the methods that are not allowed
+        LangServ->>Container: LSP message (stdin)
+        Container-->>LangServ: LSP answer (stdout)
+        LangServ-->>Browser: answer, without diagnostics
+    end
+    Browser->>LangServ: the page closes, or idle timeout
+    LangServ->>Container: stop and remove

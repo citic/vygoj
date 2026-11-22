@@ -1,0 +1,33 @@
+%% The backend judges a submission (Execution.execute() in src/execution.py). Any failure stops
+%% the run with its verdict (FailedSolution), and the container is always removed
+sequenceDiagram
+    autonumber
+    participant Frontend
+    participant Main as main.py
+    participant Execution as Execution
+    participant Docker
+    participant Container as Engine container
+    participant Log as run_log.py
+
+    Frontend->>Main: POST /run {problem, solution, context}
+    Main->>Main: check content type, size, JSON, context
+    Main->>Execution: Execution(problem, solution)
+    Note over Execution: validate types, sizes, language,<br>clamp limits, set the deadline
+    Execution->>Execution: static checks (mustContain)
+    Execution->>Docker: create container (no network, no capabilities,<br>limits of memory, processes, CPUs, files)
+    Execution->>Container: put_archive: solution and test case inputs
+    Execution->>Container: exec compiler (time limit)
+    loop each test case, while the deadline allows
+        Execution->>Container: exec timeout + /usr/bin/time -v solution
+        Container-->>Execution: stdout, stderr, exit code, time, memory
+        Execution->>Execution: compare outputs, check time range
+        opt problem asks for minThreads
+            Execution->>Container: run again under gdb to count threads
+        end
+        Execution->>Container: kill processes left in background
+    end
+    Execution->>Container: after run proofs (lint)
+    Execution->>Docker: remove container (finally)
+    Execution-->>Main: ExecutionResult (compact JSON)
+    Main->>Log: log_run(context, language, code, result, duration)
+    Main-->>Frontend: 200 ExecutionResult
