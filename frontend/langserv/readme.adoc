@@ -18,7 +18,7 @@ The language server never runs the code of students: it only reads it to suggest
 
 The language server needs Docker, like the backend (see the link:../../readme.adoc#packages[dependencies] of the root readme to install it). The user that runs it must be in the `docker` group, which gives it the powers of `root`, so use a user of its own, e.g. `vygoj-langserv`, not the one of the frontend (see the link:../../readme.adoc[root readme]). It may run in the computer of the frontend or in another one, which may have a private address (<<several_servers>>).
 
-First, build the image of the containers, `vygoj-lang-srv`, with the language servers and the libraries that solutions include. It takes some minutes:
+First, build the image of the containers, `vygoj-langserv`, with the language servers and the libraries that solutions include. It takes some minutes:
 
 [source,sh]
 ----
@@ -65,14 +65,14 @@ In production, browsers connect to the language server through the reverse proxy
 
 [source,config]
 ----
-ProxyPass /lang-srv/ ws://127.0.0.1:7070/
+ProxyPass /langserv/ ws://127.0.0.1:7070/
 ----
 
 In nginx, add this block to the `server` of port 443, next to the `location /` of the frontend. nginx closes connections without messages after 60 seconds by default, so the block waits longer than the language server, which closes the editors without messages after 15 minutes (`IDLE_TIMEOUT`):
 
 [source,config]
 ----
-location /lang-srv/ {
+location /langserv/ {
     proxy_pass http://127.0.0.1:7070/;
     proxy_http_version 1.1;
     proxy_set_header Upgrade $http_upgrade;
@@ -83,7 +83,7 @@ location /lang-srv/ {
 }
 ----
 
-Then the frontend uses `LANG_SERVERS = ['wss://vygoj.citic.ucr.ac.cr/lang-srv/']`, and the language server, in the same computer, may listen only on `127.0.0.1`. In another computer, write its private address instead of `127.0.0.1` (see the configuration in several computers of the link:../../readme.adoc#configuration[root readme]).
+Then the frontend uses `LANG_SERVERS = ['wss://vygoj.citic.ucr.ac.cr/langserv/']`, and the language server, in the same computer, may listen only on `127.0.0.1`. In another computer, write its private address instead of `127.0.0.1` (see the configuration in several computers of the link:../../readme.adoc#configuration[root readme]).
 
 [[several_servers]]
 === Several language servers
@@ -94,17 +94,17 @@ Browsers only reach the frontend, so the other computers may have private addres
 
 [source,config]
 ----
-ProxyPass /lang-srv/1/ ws://10.0.0.11:7070/
-ProxyPass /lang-srv/2/ ws://10.0.0.12:7070/
+ProxyPass /langserv/1/ ws://10.0.0.11:7070/
+ProxyPass /langserv/2/ ws://10.0.0.12:7070/
 ----
 
-In nginx, one `location` block for each server, like the one above, with its path and its address: `location /lang-srv/1/` with `proxy_pass http://10.0.0.11:7070/;`, and so on.
+In nginx, one `location` block for each server, like the one above, with its path and its address: `location /langserv/1/` with `proxy_pass http://10.0.0.11:7070/;`, and so on.
 
 The frontend lists the paths:
 
 [source,python]
 ----
-LANG_SERVERS = ['wss://vygoj.citic.ucr.ac.cr/lang-srv/1/', 'wss://vygoj.citic.ucr.ac.cr/lang-srv/2/']
+LANG_SERVERS = ['wss://vygoj.citic.ucr.ac.cr/langserv/1/', 'wss://vygoj.citic.ucr.ac.cr/langserv/2/']
 ----
 
 
@@ -144,7 +144,7 @@ Students keep editing and running their code; they only lose the suggestions. Th
 
 [source,sh]
 ----
-docker rm -f $(docker ps -aq --filter label=vygoj=lang-srv)
+docker rm -f $(docker ps -aq --filter label=vygoj=langserv)
 ----
 
 

@@ -15,7 +15,7 @@ LANG_SERVER_SECRET = ''
 # 'https://vygoj.ucr.ac.cr'. Pages of other sites cannot connect, even with a valid key
 ORIGINS = ['http://localhost:8080']
 # Docker image of the containers where the language servers run, built by make image
-IMAGE = 'vygoj-lang-srv'
+IMAGE = 'vygoj-langserv'
 # Command of the language server of each programming language of VygOJ, run in the image. Code
 # editors of other languages get no connection
 LANGUAGES = {

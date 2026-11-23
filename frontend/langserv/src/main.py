@@ -37,7 +37,7 @@ if not isinstance(config['LANG_SERVER_SECRET'], str) or len(
     raise RuntimeError(f'LANG_SERVER_SECRET in {config_file} must be the random string of at least '
         f'{MIN_SECRET_LENGTH} characters of the frontend, make config adds it')
 # Keys signed by the frontend (lang_server_key() in problem_controller.py) with the same secret
-keys = URLSafeTimedSerializer(config['LANG_SERVER_SECRET'], salt='lang-srv')
+keys = URLSafeTimedSerializer(config['LANG_SERVER_SECRET'], salt='langserv')
 
 # Sessions -----------------------------------------------------------------------------------------
 
@@ -71,7 +71,7 @@ def open_session(ws) -> tuple[str, str] | None:
 # Containers --------------------------------------------------------------------------------------
 
 # Label of the containers of this server, e.g. to remove leaked ones
-LABEL = 'vygoj=lang-srv'
+LABEL = 'vygoj=langserv'
 # Seconds that a container may take to stop, and that docker kill may take
 DOCKER_TIMEOUT = 10
 
@@ -80,7 +80,7 @@ def start_container(language: str) -> subprocess.Popen:
     process, whose stdin and stdout are the ones of the server. The container has no network,
     capabilities, nor writable files but /tmp, runs as nobody, and stops by itself at the end of
     MAX_DURATION or when its stdin closes """
-    name = f'lang-srv-{secrets.token_hex(8)}'
+    name = f'langserv-{secrets.token_hex(8)}'
     command = ['docker', 'run', '--rm', '--interactive', '--name', name, '--label', LABEL,
         '--network', 'none', '--read-only', '--tmpfs', '/tmp:size=64m',
         '--user', '65534:65534', '--env', 'HOME=/tmp', '--cap-drop', 'ALL',

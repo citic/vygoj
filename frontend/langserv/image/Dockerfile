@@ -14,7 +14,7 @@ RUN mkdir /opt/jdtls && tar -xzf /tmp/jdtls.tar.gz -C /opt/jdtls
 
 FROM debian:trixie
 # make rebuild removes the old images with this label (common/docker.mk)
-LABEL vygoj=lang-srv
+LABEL vygoj=langserv
 
 # Install the language servers, the headers of the libraries that solutions include, and the Java
 # that jdtls needs, and remove the package lists to reduce the image size

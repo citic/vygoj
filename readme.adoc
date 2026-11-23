@@ -376,7 +376,7 @@ SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg://vygoj-frontend:the-password@10.0
 # Backends: each solution goes to one of them, chosen at random
 BACKENDS = ['http://10.0.0.4:9090', 'http://10.0.0.5:9090']
 # Language server, through the reverse proxy of this computer (see below)
-LANG_SERVERS = ['wss://vygoj.citic.ucr.ac.cr/lang-srv/']
+LANG_SERVERS = ['wss://vygoj.citic.ucr.ac.cr/langserv/']
 # Address of the site, and the reverse proxy between the users and the frontend
 SITE_URL = 'https://vygoj.citic.ucr.ac.cr'
 TRUSTED_PROXIES = 1
@@ -391,11 +391,11 @@ curl http://10.0.0.5:9090/status
 cd ~/vygoj/frontend && make users
 ----
 
-Configure Apache or nginx as the link:frontend/readme.adoc#reverse_proxy[reverse proxy] of the frontend, and make it pass the connections of the code editors to the language server, as the link:frontend/langserv/readme.adoc#reverse_proxy[language server] shows, with its address: in Apache, this line before its `ProxyPass /`; in nginx, a `location /lang-srv/` block with `proxy_pass http://10.0.0.3:7070/;`.
+Configure Apache or nginx as the link:frontend/readme.adoc#reverse_proxy[reverse proxy] of the frontend, and make it pass the connections of the code editors to the language server, as the link:frontend/langserv/readme.adoc#reverse_proxy[language server] shows, with its address: in Apache, this line before its `ProxyPass /`; in nginx, a `location /langserv/` block with `proxy_pass http://10.0.0.3:7070/;`.
 
 [source,config]
 ----
-ProxyPass /lang-srv/ ws://10.0.0.3:7070/
+ProxyPass /langserv/ ws://10.0.0.3:7070/
 ----
 
 The frontend listens only on `127.0.0.1`, because the reverse proxy is in the same computer (`sudo systemctl edit vygoj-frontend`). The firewall accepts the Internet only in the ports of the reverse proxy:

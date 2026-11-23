@@ -11,7 +11,7 @@ flowchart LR
         backend2["10.0.0.5 backend 2<br>9090"]
     end
 
-    internet -- "HTTPS 443<br>pages and /lang-srv/" --> frontend
+    internet -- "HTTPS 443<br>pages and /langserv/" --> frontend
     frontend -- "SQL 5432" --> database
     frontend -- "WebSocket 7070" --> langserv
     frontend -- "HTTP 9090" --> backend1

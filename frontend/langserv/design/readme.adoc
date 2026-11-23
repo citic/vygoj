@@ -56,13 +56,13 @@ The language server reads code of untrusted users, and anyone in the Internet ma
 * *Sessions are bounded*: `MAX_SESSIONS` in total and `MAX_USER_SESSIONS` per user, even when a user opens many connections at the same time with one key. A connection closes after `IDLE_TIMEOUT` without messages, and the container stops by itself after `MAX_DURATION`, or when its language server reads the end of its input, even if the language server process was killed.
 * *Connections between the reverse proxy and the servers are not encrypted* (`ws://`), like the ones to the backends, so they must go through a private network, and a firewall lets only the frontend reach the port of each server.
 
-Containers have the label `vygoj=lang-srv`, by which the systemd unit removes them when the service stops.
+Containers have the label `vygoj=langserv`, by which the systemd unit removes them when the service stops.
 
 
 [[image]]
 == Image
 
-The image `vygoj-lang-srv` (`image/Dockerfile`) has the language servers and the headers of the libraries that solutions include. Its name is a contract between `IMAGE` of the `Makefile` and `IMAGE` of `config/defaults.py`. Its rules (`image`, `rebuild`, `remove-image`) are shared with the engine of the backend in `common/docker.mk`: running editors keep the old image after a `make rebuild`, and new ones get the new image.
+The image `vygoj-langserv` (`image/Dockerfile`) has the language servers and the headers of the libraries that solutions include. Its name is a contract between `IMAGE` of the `Makefile` and `IMAGE` of `config/defaults.py`. Its rules (`image`, `rebuild`, `remove-image`) are shared with the engine of the backend in `common/docker.mk`: running editors keep the old image after a `make rebuild`, and new ones get the new image.
 
 
 [[adding_language]]

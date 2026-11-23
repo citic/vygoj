@@ -37,7 +37,7 @@ PORT = 8080
 BACKENDS = [ "http://localhost:9090" ]
 # Addresses of the language servers (langserv/, see its readme.adoc), where the code editor of the
 # problem page connects to get suggestions and parameter hints, as browsers reach them, e.g.
-# 'ws://localhost:7070', or 'wss://vygoj.ucr.ac.cr/lang-srv/1/' through the reverse proxy of the
+# 'ws://localhost:7070', or 'wss://vygoj.ucr.ac.cr/langserv/1/' through the reverse proxy of the
 # frontend, which lets them have private addresses. Each user always gets the same one (a hash of
 # their email chooses it), so the limit of editors per user of each server holds. The default is
 # the one of make in the root folder. Empty disables them, and the editor only suggests the words

@@ -311,7 +311,7 @@ server {
 }
 ----
 
-The language server is reached through the same nginx, with a `location /lang-srv/` block (see link:langserv/readme.adoc#reverse_proxy[the language server]). Enable the configuration, test it, and reload nginx with the commands of the table above. In Debian and Ubuntu:
+The language server is reached through the same nginx, with a `location /langserv/` block (see link:langserv/readme.adoc#reverse_proxy[the language server]). Enable the configuration, test it, and reload nginx with the commands of the table above. In Debian and Ubuntu:
 
 [source,sh]
 ----

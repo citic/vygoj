@@ -10,7 +10,7 @@ WORKERS=1# Number of gunicorn worker processes
 THREADS=120# Number of threads of the worker
 # Send the print() output of the language server to the error log
 GUNICORN_FLAGS+=--capture-output
-IMAGE=vygoj-lang-srv# Docker image of the language servers, IMAGE in config/defaults.py
+IMAGE=vygoj-langserv# Docker image of the language servers, IMAGE in config/defaults.py
 CONTEXT=image# Folder of the Dockerfile of the image
 
 .PHONY: all config

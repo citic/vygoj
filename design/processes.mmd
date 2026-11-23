@@ -8,7 +8,7 @@ flowchart TB
     end
     subgraph langserv_host["vygoj-langserv user, docker group"]
         langserv["Language server<br>Flask + flask-sock<br>1 worker x 120 threads"]
-        lsp["vygoj-lang-srv containers"]
+        lsp["vygoj-langserv containers"]
     end
     subgraph backend_host["vygoj-backend user, docker group"]
         backend["Backend<br>Flask + gunicorn<br>8 workers x 1 thread"]

@@ -18,7 +18,7 @@ WorkingDirectory=/home/vygoj-langserv/vygoj/frontend/langserv
 ExecStart=/usr/bin/make service
 # The containers belong to Docker, not to this service, so stopping it does not stop them. Remove
 # the ones of the editors that were connected (their label is LABEL in src/main.py)
-ExecStopPost=/bin/sh -c 'docker ps -aq --filter label=vygoj=lang-srv | xargs -r docker rm -f'
+ExecStopPost=/bin/sh -c 'docker ps -aq --filter label=vygoj=langserv | xargs -r docker rm -f'
 Restart=on-failure
 RestartSec=5
 # Isolation: the service cannot gain privileges (e.g. with setuid programs), sees a /tmp of its

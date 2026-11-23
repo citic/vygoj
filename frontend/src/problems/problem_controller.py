@@ -483,7 +483,7 @@ def lang_server_key(language: str):
     if not app.config['LANG_SERVERS']:
         return flask.jsonify({})
     user = flask.session['user'].get('email')
-    keys = URLSafeTimedSerializer(app.config['LANG_SERVER_SECRET'], salt='lang-srv')
+    keys = URLSafeTimedSerializer(app.config['LANG_SERVER_SECRET'], salt='langserv')
     key = keys.dumps({'user': user, 'language': language})
     return flask.jsonify({'url': choose_lang_server(user), 'key': key})
 
