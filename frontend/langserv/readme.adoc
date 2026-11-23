@@ -47,7 +47,7 @@ LANG_SERVER_SECRET = '...'
 ORIGINS = ['https://vygoj.citic.ucr.ac.cr']
 ----
 
-If the frontend is in another computer, copy its `LANG_SERVER_SECRET` here. Other settings limit the editors open at the same time (`MAX_SESSIONS`, 100), the editors of a user (`MAX_USER_SESSIONS`, 3), and the memory of each one (`CONTAINER_MEMORY`, 512 MiB).
+If the frontend is in another computer, both must have the same `LANG_SERVER_SECRET`: copy the one of either into the other, and restart the one that changed. Other settings limit the editors open at the same time (`MAX_SESSIONS`, 100), the editors of a user (`MAX_USER_SESSIONS`, 3), and the memory of each one (`CONTAINER_MEMORY`, 512 MiB).
 
 Then tell the frontend where the language server is, in `LANG_SERVERS` of `frontend/config/config.py`, as browsers reach it, and restart the frontend. In development, the default value is the address of the language server in the same computer:
 

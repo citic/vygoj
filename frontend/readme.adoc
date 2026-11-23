@@ -141,7 +141,7 @@ Back up the database (`pg_dump vygoj`) and the `DATA_FOLDER` regularly, and befo
 
 Users reach the site with HTTPS, on the standard ports 80 and 443, but the frontend should run on a port greater than 1024 for security reasons. A web server in front of it, a reverse proxy, reaches both goals: it receives the connections of the browsers, encrypts them with the certificate of the site, and passes them to the frontend and to the language server. These instructions are for Apache and for nginx; choose one of them, and install it with the dependencies of the frontend (see the link:../readme.adoc#packages[root readme]).
 
-Run the frontend in port 8080, as a systemd service, listening only on `127.0.0.1`, because the reverse proxy is in the same computer: `sudo systemctl edit vygoj-frontend`, and write:
+Run the frontend in port 8080, as a systemd service (<<running>>), listening only on `127.0.0.1`, because the reverse proxy is in the same computer. `sudo systemctl edit vygoj-frontend` opens an editor: write these three lines in the empty space at the top, above the comment `### Edits below this comment will be discarded`, and do not change the service file shown below that comment, because the editor discards those lines. The empty `ExecStart=` removes the command of the service file, because a service has only one, and the next line gives the new one:
 
 [source,config]
 ----
@@ -149,6 +149,8 @@ Run the frontend in port 8080, as a systemd service, listening only on `127.0.0.
 ExecStart=
 ExecStart=/usr/bin/make service HOST=127.0.0.1
 ----
+
+Save, and restart the frontend with `sudo systemctl restart vygoj-frontend`.
 
 In Fedora and RHEL, SELinux does not let the reverse proxy connect to other programs until `httpd_can_network_connect` is enabled, for Apache and for nginx:
 

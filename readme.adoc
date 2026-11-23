@@ -254,24 +254,32 @@ By default, the programs look for each other in the same computer (`localhost`).
 include::docs/img/deployment.mmd[]
 ....
 
-The examples use the `ufw` firewall, of Debian, Ubuntu, and Arch (`sudo apt install ufw` or `sudo pacman -S ufw`, and `sudo systemctl enable --now ufw` in Arch). Fedora and RHEL use `firewalld` instead, which already accepts SSH. These are the equivalents of `sudo ufw allow from 10.0.0.1 to any port 5432 proto tcp` (change the port for each computer) and of `sudo ufw allow 80,443/tcp`:
+Each of the five computers, the frontend included, has a firewall that accepts only the connections of the table, and SSH for its administration. The firewall filters only the connections that other computers open: those that the computer opens itself, and their answers, are accepted, so `apt`, `dnf`, `pacman`, `git pull`, `pip`, and Docker still download from the Internet.
+
+Debian, Ubuntu, and Arch use the `ufw` firewall, and Fedora and RHEL use `firewalld`, which is already installed and enabled, and accepts SSH. Install `ufw` in each computer before configuring it:
 
 [source,sh]
 ----
-sudo firewall-cmd --permanent --add-rich-rule='rule family=ipv4 source address=10.0.0.1 port port=5432 protocol=tcp accept'
-sudo firewall-cmd --permanent --add-service=http --add-service=https
-sudo firewall-cmd --reload
+# Debian (Ubuntu already includes ufw, disabled until "sudo ufw enable")
+sudo apt install ufw
+
+# Arch
+sudo pacman -S --needed ufw
+sudo systemctl enable ufw    # Start it at boot; "sudo ufw enable" starts it now
 ----
+
+The section of each computer, below, gives its own firewall rules, for `ufw` and for `firewalld`: run only the ones of its distribution.
 
 Browsers only connect to the frontend computer. Its web server, Apache or nginx, serves the pages of the frontend and passes the connections of the code editors to the language server, so the language server keeps a private address. The connections inside the private network are not encrypted, so it must be a network that only these computers use. Configure the computers in this order, because each one needs the previous ones.
 
 [[config_database]]
 === Database: 10.0.0.2
 
-Install and start PostgreSQL with the commands of _Database_ of the distribution (<<packages>>). Then create the user of the frontend, with a password, and its database. Use a long random password of letters and digits (other characters must be escaped in the address of the database):
+Install and start PostgreSQL with the commands of _Database_ of the distribution (<<packages>>). Then create the user of the frontend, with a password, and its database. Use a long random password of letters and digits (other characters must be escaped in the address of the database). Nobody types it to log in: it is copied once, to the address of the database in the configuration of the frontend (<<config_frontend>>), so it does not need to be easy to remember:
 
 [source,sh]
 ----
+openssl rand -hex 32    # Generate a random password; paste it when createuser asks for it
 sudo -u postgres createuser --pwprompt vygoj-frontend
 sudo -u postgres createdb -O vygoj-frontend vygoj
 ----
@@ -307,24 +315,47 @@ Restart PostgreSQL, and let the firewall accept only the frontend in its port:
 [source,sh]
 ----
 sudo systemctl restart postgresql
+
+# Debian, Ubuntu, and Arch: accept SSH, and the port 5432 only from the frontend
 sudo ufw allow ssh
 sudo ufw allow from 10.0.0.1 to any port 5432 proto tcp
 sudo ufw enable
+
+# Fedora and RHEL: accept the port 5432 only from the frontend (SSH is already accepted);
+# --permanent saves the rule, and --reload applies it
+sudo firewall-cmd --permanent --add-rich-rule='rule family=ipv4 source address=10.0.0.1 port port=5432 protocol=tcp accept'
+sudo firewall-cmd --reload
 ----
 
 [[config_backends]]
 === Backends: 10.0.0.4 and 10.0.0.5
 
-Install the backend in both computers (see link:backend/readme.adoc[its document]). The backend has no passwords: whoever reaches its port can run code in it. So it listens only on its private address, and the firewall accepts only the frontend. In 10.0.0.4 (use 10.0.0.5 in the second backend):
+The backend has no passwords: whoever reaches its port can run code in it. So it listens only on its private address, and the firewall accepts only the frontend. Follow these steps in 10.0.0.4, and then in 10.0.0.5 with its own address.
+
+First, install the backend with its user, `vygoj-backend`: the image of the engine and `make install` (see link:backend/readme.adoc[its document]). Then, with an administrator user, let the firewall accept only the frontend:
 
 [source,sh]
 ----
+# Debian, Ubuntu, and Arch: accept SSH, and the port 9090 only from the frontend
 sudo ufw allow ssh
 sudo ufw allow from 10.0.0.1 to any port 9090 proto tcp
 sudo ufw enable
+
+# Fedora and RHEL: accept the port 9090 only from the frontend (SSH is already accepted)
+sudo firewall-cmd --permanent --add-rich-rule='rule family=ipv4 source address=10.0.0.1 port port=9090 protocol=tcp accept'
+sudo firewall-cmd --reload
 ----
 
-Install its service (<<running>>), and change the address where it listens with `sudo systemctl edit vygoj-backend`, which keeps the change apart from the file of VygOJ, so updates do not undo it:
+Install the service of the backend, which runs it when the computer boots (<<running>>), and open the editor of its changes:
+
+[source,sh]
+----
+sudo cp ~vygoj-backend/vygoj/backend/vygoj-backend.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl edit vygoj-backend
+----
+
+The editor shows two parts. At the top there is an empty space, above the comment `\### Edits/Lines below this comment will be discarded`: write there these three lines, which make the backend listen only on its private address. Below that comment, the whole service file of VygOJ is shown commented out, only for reference: do not change it, because the editor discards those lines.
 
 [source,config]
 ----
@@ -333,20 +364,50 @@ ExecStart=
 ExecStart=/usr/bin/make service HOST=10.0.0.4
 ----
 
+The empty `ExecStart=` is needed: it removes the command of the service file, because a service has only one, and the next line gives the new one. Save and close the editor. The change is kept apart from the file of VygOJ, in `/etc/systemd/system/vygoj-backend.service.d/override.conf`, so updates do not undo it. Then start the service, and check that it listens on its private address:
+
+[source,sh]
+----
+sudo systemctl enable --now vygoj-backend
+systemctl status vygoj-backend      # active (running)
+ss -tln | grep 9090                 # 10.0.0.4:9090, not 0.0.0.0:9090
+----
+
 [[config_langserv]]
 === Language server: 10.0.0.3
 
-Install the language server (see link:frontend/langserv/readme.adoc[its document]). It needs two settings in `frontend/langserv/config/config.py` of the user `vygoj-langserv`:
+The language server listens only on its private address, and the firewall accepts only the frontend. First, install it with its user, `vygoj-langserv`: the image of its containers and `make install` (see link:frontend/langserv/readme.adoc[its document]). `make install` writes a random `LANG_SERVER_SECRET` in `frontend/langserv/config/config.py`; keep it, because the frontend will copy it (<<config_frontend>>). Add the address of the site to that file:
 
 [source,python]
 ----
-# The same secret as in the configuration of the frontend (10.0.0.1)
-LANG_SERVER_SECRET = 'copy here the LANG_SERVER_SECRET of the frontend'
 # The address of the site, as users type it in their browsers
 ORIGINS = ['https://vygoj.citic.ucr.ac.cr']
 ----
 
-`make install` writes a random secret there, because the frontend is in another computer. Replace it with the one of the frontend after installing the frontend (<<config_frontend>>), and restart the language server. Then let it listen only on its private address (`sudo systemctl edit vygoj-langserv`), and let the firewall accept only the frontend:
+Then, with an administrator user, let the firewall accept only the frontend:
+
+[source,sh]
+----
+# Debian, Ubuntu, and Arch: accept SSH, and the port 7070 only from the frontend
+sudo ufw allow ssh
+sudo ufw allow from 10.0.0.1 to any port 7070 proto tcp
+sudo ufw enable
+
+# Fedora and RHEL: accept the port 7070 only from the frontend (SSH is already accepted)
+sudo firewall-cmd --permanent --add-rich-rule='rule family=ipv4 source address=10.0.0.1 port port=7070 protocol=tcp accept'
+sudo firewall-cmd --reload
+----
+
+Install its service, and open the editor of its changes:
+
+[source,sh]
+----
+sudo cp ~vygoj-langserv/vygoj/frontend/langserv/vygoj-langserv.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl edit vygoj-langserv
+----
+
+As in the backends, write these three lines in the empty space at the top of the editor, above the comment `### Edits below this comment will be discarded`, and save:
 
 [source,config]
 ----
@@ -355,17 +416,19 @@ ExecStart=
 ExecStart=/usr/bin/make service HOST=10.0.0.3
 ----
 
+Then start the service, and check that it listens on its private address:
+
 [source,sh]
 ----
-sudo ufw allow ssh
-sudo ufw allow from 10.0.0.1 to any port 7070 proto tcp
-sudo ufw enable
+sudo systemctl enable --now vygoj-langserv
+systemctl status vygoj-langserv     # active (running)
+ss -tln | grep 7070                 # 10.0.0.3:7070, not 0.0.0.0:7070
 ----
 
 [[config_frontend]]
 === Frontend: 10.0.0.1
 
-Install the frontend (see link:frontend/readme.adoc[its document]), and skip the installation of PostgreSQL, which is in another computer. These are the settings of `frontend/config/config.py` of the user `vygoj-frontend` that connect it to the other computers. `make install` already wrote the secrets in that file; keep them:
+First, install the frontend with its user, `vygoj-frontend` (see link:frontend/readme.adoc[its document]), and skip the installation of PostgreSQL, which is in another computer. These are the settings of `frontend/config/config.py` that connect it to the other computers. `make install` already wrote the secrets in that file: keep `SECRET_KEY`, and replace `LANG_SERVER_SECRET` with the one of the language server:
 
 [source,python]
 ----
@@ -377,6 +440,8 @@ SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg://vygoj-frontend:the-password@10.0
 BACKENDS = ['http://10.0.0.4:9090', 'http://10.0.0.5:9090']
 # Language server, through the reverse proxy of this computer (see below)
 LANG_SERVERS = ['wss://vygoj.citic.ucr.ac.cr/langserv/']
+# The same secret as in frontend/langserv/config/config.py of the language server (10.0.0.3)
+LANG_SERVER_SECRET = 'copy here the LANG_SERVER_SECRET of the language server'
 # Address of the site, and the reverse proxy between the users and the frontend
 SITE_URL = 'https://vygoj.citic.ucr.ac.cr'
 TRUSTED_PROXIES = 1
@@ -391,14 +456,30 @@ curl http://10.0.0.5:9090/status
 cd ~/vygoj/frontend && make users
 ----
 
-Configure Apache or nginx as the link:frontend/readme.adoc#reverse_proxy[reverse proxy] of the frontend, and make it pass the connections of the code editors to the language server, as the link:frontend/langserv/readme.adoc#reverse_proxy[language server] shows, with its address: in Apache, this line before its `ProxyPass /`; in nginx, a `location /langserv/` block with `proxy_pass http://10.0.0.3:7070/;`.
+Then, with an administrator user, let the firewall accept the Internet only in the ports of the reverse proxy:
 
-[source,config]
+[source,sh]
 ----
-ProxyPass /langserv/ ws://10.0.0.3:7070/
+# Debian, Ubuntu, and Arch: accept SSH, and HTTP and HTTPS from anywhere
+sudo ufw allow ssh
+sudo ufw allow 80,443/tcp
+sudo ufw enable
+
+# Fedora and RHEL: accept HTTP and HTTPS from anywhere (SSH is already accepted)
+sudo firewall-cmd --permanent --add-service=http --add-service=https
+sudo firewall-cmd --reload
 ----
 
-The frontend listens only on `127.0.0.1`, because the reverse proxy is in the same computer (`sudo systemctl edit vygoj-frontend`). The firewall accepts the Internet only in the ports of the reverse proxy:
+Install its service, and open the editor of its changes:
+
+[source,sh]
+----
+sudo cp ~vygoj-frontend/vygoj/frontend/vygoj-frontend.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl edit vygoj-frontend
+----
+
+The frontend listens only on `127.0.0.1`, because the reverse proxy is in the same computer. As in the backends, write these three lines in the empty space at the top of the editor, above the comment `### Edits below this comment will be discarded`, and save:
 
 [source,config]
 ----
@@ -407,11 +488,20 @@ ExecStart=
 ExecStart=/usr/bin/make service HOST=127.0.0.1
 ----
 
+Then start the service, and check that it listens on `127.0.0.1`:
+
 [source,sh]
 ----
-sudo ufw allow ssh
-sudo ufw allow 80,443/tcp
-sudo ufw enable
+sudo systemctl enable --now vygoj-frontend
+systemctl status vygoj-frontend     # active (running)
+ss -tln | grep 8080                 # 127.0.0.1:8080, not 0.0.0.0:8080
+----
+
+Last, configure Apache or nginx as the link:frontend/readme.adoc#reverse_proxy[reverse proxy] of the frontend, with its certificate, and make it pass the connections of the code editors to the language server, as the link:frontend/langserv/readme.adoc#reverse_proxy[language server] shows, with its address: in Apache, this line before its `ProxyPass /`; in nginx, a `location /langserv/` block with `proxy_pass http://10.0.0.3:7070/;`.
+
+[source,config]
+----
+ProxyPass /langserv/ ws://10.0.0.3:7070/
 ----
 
 The frontend also connects to the Internet: to the Git hosts of the repositories of professors and students (SSH, port 22), and to the single sign-on provider, if any (HTTPS). The backends and the language server only need the Internet to build or update their images.
@@ -424,7 +514,7 @@ To add a backend later, install it as the others, add its address to `BACKENDS`,
 
 In production, each program runs as a system service of systemd, which starts it when the computer boots, starts it again if it fails, and keeps its log. The service of each program is described in a file of its folder: `frontend/vygoj-frontend.service`, `backend/vygoj-backend.service`, and `frontend/langserv/vygoj-langserv.service`. They expect the copy of VygOJ in the home folder of the user of the program (e.g. `/home/vygoj-backend/vygoj`); change their paths if it is in another folder.
 
-Install and start the service of each program in its computer. For example, for the backend:
+Install and start the service of each program in its computer (the sections of <<configuration>> already include these steps, for several computers). For example, for the backend:
 
 [source,sh]
 ----
