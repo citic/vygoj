@@ -182,6 +182,24 @@ def relay(ws, process: subprocess.Popen, language: str):
 
 # Routes ------------------------------------------------------------------------------------------
 
+# Software version of the language server (e.g. '0.1.0'), and its commit (e.g. 'ce271b1
+# 2026-11-23'): the make rules that run the server set them (APP_VERSION and APP_COMMIT in
+# common/Makefile)
+VERSION = os.environ.get('VYGOJ_VERSION', '')
+COMMIT = os.environ.get('VYGOJ_COMMIT', '')
+
+@app.route('/status')
+def status():
+    """ Tell whether the language server is running, its version, and its commit, for the footer of
+    the pages of the frontend. It omits the sessions: the reverse proxy may publish this route.
+    Pages of the frontend in another origin (e.g. in development) may read the answer """
+    response = flask.jsonify(status='online', version=VERSION, commit=COMMIT)
+    origin = flask.request.headers.get('Origin')
+    if origin in config['ORIGINS']:
+        response.headers['Access-Control-Allow-Origin'] = origin
+    response.vary.add('Origin')
+    return response
+
 @sock.route('/')
 def lang_server(ws):
     """ An editor connected: its first message is the key from the frontend, and the next ones are

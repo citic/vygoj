@@ -93,6 +93,10 @@ msgstr ""
 " así que tiene los del curso: %(languages)s"
 
 #, python-format
+msgid "%(jobs)s running"
+msgstr "%(jobs)s en ejecución"
+
+#, python-format
 msgid "%(num)d student"
 msgid_plural "%(num)d students"
 msgstr[0] "%(num)d estudiante"
@@ -226,6 +230,9 @@ msgstr "Autor"
 
 msgid "Available courses"
 msgstr "Cursos disponibles"
+
+msgid "Backend"
+msgstr "Backend"
 
 msgid ""
 "By pressing the button below you are accepting the use of cookies in this"
@@ -486,6 +493,9 @@ msgstr "Filtrar"
 msgid "Font"
 msgstr "Tipografía"
 
+msgid "Frontend"
+msgstr "Frontend"
+
 msgid "Full name"
 msgstr "Nombre completo"
 
@@ -543,6 +553,9 @@ msgstr "Tardó %(seconds)s s"
 
 msgid "Language"
 msgstr "Idioma"
+
+msgid "Language server"
+msgstr "Servidor de lenguaje"
 
 msgid "Layout"
 msgstr "Distribución"
@@ -1108,6 +1121,9 @@ msgstr ""
 msgid "Version of your solution"
 msgstr "Versión de su solución"
 
+msgid "Versions"
+msgstr "Versiones"
+
 msgid "View"
 msgstr "Vista"
 
@@ -1259,6 +1275,9 @@ msgstr "tardó demasiado"
 
 msgid "it was interrupted, try again"
 msgstr "se interrumpió, intente de nuevo"
+
+msgid "offline"
+msgstr "sin conexión"
 
 msgid "or with your VygOJ password"
 msgstr "o con su contraseña de VygOJ"

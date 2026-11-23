@@ -3,6 +3,8 @@ dev: node_modules
 
 include ../common/Makefile
 
+LAYER=frontend# Name of the layer in its release tags, e.g. frontend-v0.2.0
+
 # Submissions wait for a backend, so threads keep the frontend responsive meanwhile
 THREADS=16# Number of threads per gunicorn worker
 

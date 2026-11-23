@@ -3,6 +3,7 @@ import hashlib
 import json
 import os
 import random
+import re
 import requests
 import flask
 from flask import current_app as app
@@ -486,6 +487,19 @@ def lang_server_key(language: str):
     keys = URLSafeTimedSerializer(app.config['LANG_SERVER_SECRET'], salt='langserv')
     key = keys.dumps({'user': user, 'language': language})
     return flask.jsonify({'url': choose_lang_server(user), 'key': key})
+
+def lang_server_status_url() -> str:
+    """ Answer the address of the status of the language server of the logged user, which the
+    footer of the pages shows, or an empty string for visitors and without language servers """
+    user = flask.session.get('user')
+    if not user or not app.config['LANG_SERVERS']:
+        return ''
+    return lang_server_http_url(choose_lang_server(user.get('email'))).rstrip('/') + '/status'
+
+def lang_server_http_url(url: str) -> str:
+    """ Answer the HTTP address of a language server from the WebSocket one of LANG_SERVERS, e.g.
+    https://vygoj.ucr.ac.cr/langserv/ from wss://vygoj.ucr.ac.cr/langserv/ """
+    return re.sub(r'^ws', 'http', url)
 
 def choose_lang_server(user: str) -> str:
     """ Choose the language server of the user among LANG_SERVERS, which main.py checks that is

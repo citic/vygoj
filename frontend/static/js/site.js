@@ -25,12 +25,23 @@ class BackendStatus {
   constructor() {
     // The status of the backend: 'online', 'offline', 'maintenance'
     this.status = 'offline';
-    // The version of the backend software, e.g: '1.0.7'
-    this.version = '0.0.0';
+    // The version of the backend software, e.g. '0.1.0', and its commit, e.g. 'ce271b1 2026-11-23'
+    this.version = '';
+    this.commit = '';
     // The number of submissions running in the backend in the last update
     this.jobs = 0;
     // workers?: Queue[];
   }
+}
+
+// Show the version and the commit of a process in its row of the versions table of the footer, and
+// its state: the given text if it answered its status, or that it is offline. The texts come from
+// other servers, so they are written as text, never as HTML
+function showVersion(row, status, state = '') {
+  const online = status?.status === 'online';
+  row.querySelector('.version').textContent = online ? String(status.version ?? '') : '';
+  row.querySelector('.commit').textContent = online ? String(status.commit ?? '') : '';
+  row.querySelector('.state').textContent = online ? state : _('offline');
 }
 
 // Milliseconds after the last key before a search asks for its results, and to wait for them
@@ -160,8 +171,6 @@ class Site {
     this.backendOfflineElement = document.getElementById('backend_offline');
     // The SVG shown when the backend is online and user connected
     this.backendOnlineElement = document.getElementById('backend_online');
-    // True if show backend state instead of app version
-    this.wantsBackendDetails = true;
     // A copy of the last status received
     this.backendStatus = new BackendStatus();
     // True if the last check reached an online backend, null before the first check
@@ -186,6 +195,8 @@ class Site {
     window.addEventListener('offline', () => this.setOnline(false, _('No network connection'), false));
     window.addEventListener('online', () => this.checkBackendStatus());
     window.addEventListener(CHECK_EVENT, () => this.checkBackendStatus());
+    // The icon of the connection opens the versions of the processes
+    this.setupVersions();
     // Register event handlers for flash messages' close buttons
     this.setupFlashMessages();
     // No image of the page is shown broken
@@ -204,6 +215,8 @@ class Site {
       const response = await fetch('/status', { signal: AbortSignal.timeout(STATUS_TIMEOUT) });
       this.updateBackendStatus(await response.json());
     } catch (error) {
+      this.backendStatus = new BackendStatus();
+      this.showBackendVersion();
       this.setOnline(false, _('Disconnected: %(error)s', { error: error.message }), true);
     }
     const interval = this.online ? STATUS_INTERVAL_ONLINE : STATUS_INTERVAL_OFFLINE;
@@ -213,9 +226,7 @@ class Site {
   // Called when the backend status arrived to update the UI
   updateBackendStatus(json) {
     this.backendStatus = json;
-    if (this.wantsBackendDetails) {
-      this.showBackendDetails();
-    }
+    this.showBackendVersion();
     if (json?.status === 'online') {
       this.setOnline(true, _('Connected'), false);
     } else {
@@ -241,16 +252,34 @@ class Site {
     }
   }
 
-  showBackendDetails() {
-    const element = document.getElementById('backend_version');
-    element.textContent = this.buildBackendDetails();
+  // The versions table of the footer has the rows of the frontend, written by the server, of the
+  // backend, from its last status, and of the language server of the user, if any, which is asked
+  // for its status each time that the table opens
+  setupVersions() {
+    const versions = document.getElementById('versions');
+    versions.addEventListener('toggle', (event) => {
+      if (event.newState === 'open' && versions.dataset.langServer) {
+        this.checkLangServerStatus(versions.dataset.langServer);
+      }
+    });
   }
 
-  buildBackendDetails() {
-    let message = '';
-    message += this.backendStatus.version ? (` b${this.backendStatus.version}`) : '';
-    message += this.backendStatus.jobs ? (` J=${this.backendStatus.jobs}`) : '';
-    return message;
+  // Show the version of the backend of the last status, and the submissions running in it
+  showBackendVersion() {
+    const { jobs } = this.backendStatus;
+    const state = Number.isInteger(jobs) && jobs > 0 ? _('%(jobs)s running', { jobs }) : '';
+    showVersion(document.getElementById('backend_version'), this.backendStatus, state);
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async checkLangServerStatus(url) {
+    const row = document.getElementById('langserv_version');
+    try {
+      const response = await fetch(url, { signal: AbortSignal.timeout(STATUS_TIMEOUT) });
+      showVersion(row, await response.json());
+    } catch {
+      showVersion(row, null);
+    }
   }
 
   showBackendOffline(message, log) {

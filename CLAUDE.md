@@ -77,6 +77,7 @@ make stop      # stop the gunicorn daemon started by make server
 make deps      # reinstall Python dependencies into .venv
 make update    # git pull --ff-only, then post-pull: deps, and the rebuild of the layer's image
 make lint      # Pylint on src/ and common/vyg/ (installs pylint into .venv the first time)
+make version   # show the version of the layer; PART=major|minor|patch releases one, only in main
 make clean     # remove .venv
 ```
 
@@ -121,6 +122,8 @@ of `design/readme.adoc`).
   wait for the answer.
 - Leave changes in the working directory, without committing them, unless the prompt asks for a
   commit.
+- Never change the `VERSION` file of a layer in a change: versions are released in `main` with
+  `make version PART=...`, only when the developer asks (see "Versions" in `design/readme.adoc`).
 
 ## Coding conventions
 

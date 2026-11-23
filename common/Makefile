@@ -17,10 +17,20 @@ GUNICORN_FLAGS=# Extra gunicorn options, layers may append to it with +=
 LINT_DEPS=pylint~=4.0# Development tools, installed only by lint, not needed to run the servers
 PYLINT_SRC=$(SRC) $(SHARED)/vyg# Python code checked by lint: the layer and the shared package
 PYLINTRC=$(SHARED)/pylintrc# Pylint configuration shared by the layers
+# LAYER, the name of the layer in its release tags (e.g. frontend-v0.2.0), is set by its Makefile
+
+# Version of the code that the server shows: the major.minor.patch of the VERSION file of the
+# layer, and its commit, the short hash and the date (e.g. 0.2.0, and ce271b1 2026-11-23)
+APP_VERSION=$(shell cat VERSION)
+APP_COMMIT=$(shell git log -1 --format='%h %cs')
 
 # Phony targets
-.PHONY: clean debug deps install lint pylint post-pull release server service stop update
+.PHONY: clean debug deps install lint pylint post-pull release server service stop update version
 default: all
+
+# The servers read their version and commit from the environment (src/main.py of each layer)
+run release server service: export VYGOJ_VERSION=$(APP_VERSION)
+run release server service: export VYGOJ_COMMIT=$(APP_COMMIT)
 
 debug: export FLASK_DEBUG=1
 debug: run
@@ -88,6 +98,31 @@ pylint: $(VENV)/bin/pylint
 # Pylint is installed the first time lint runs, so servers in production do not need it
 $(VENV)/bin/pylint: | $(VENV)
 	$(ACT) && pip install $(LINT_DEPS)
+
+# Show the version of the layer, or release a new one with PART=major, minor, or patch: increment
+# that part of VERSION (and reset the following ones), commit only that file, and tag the commit
+# (e.g. frontend-v0.3.0). Branches never change VERSION, so their merges do not conflict on it:
+# releases are made in main, after merging the changes that they publish
+version:
+ifeq ($(PART),)
+	@echo '$(APP_VERSION) $(APP_COMMIT)'
+else
+	@case "$(PART)" in major|minor|patch) ;; \
+		*) echo 'PART must be major, minor, or patch' >&2; exit 1 ;; esac
+	@test "$$(git branch --show-current)" = main || { echo 'Releases are made in main' >&2; exit 1; }
+	@git diff --quiet HEAD -- VERSION || { echo 'VERSION has uncommitted changes' >&2; exit 1; }
+	@IFS=. read -r major minor patch < VERSION; \
+	case "$(PART)" in \
+		major) major=$$((major + 1)); minor=0; patch=0 ;; \
+		minor) minor=$$((minor + 1)); patch=0 ;; \
+		patch) patch=$$((patch + 1)) ;; \
+	esac; \
+	number="$$major.$$minor.$$patch"; \
+	echo "$$number" > VERSION && \
+	git commit -q -m "Release $(LAYER) $$number" -- VERSION && \
+	git tag -a "$(LAYER)-v$$number" -m "$(LAYER) $$number" && \
+	echo "Released $(LAYER)-v$$number. Publish it: git push origin main $(LAYER)-v$$number"
+endif
 
 # Remove installation
 clean:

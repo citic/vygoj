@@ -76,17 +76,43 @@
 {%- endblock %}
     </div>
     <footer class="site_footer">
-      <span id="software_version"> VygOJ
-        <span id="frontend_version">f0.2.0</span>
-        <span id="backend_version">b</span>
-      </span>
+      <span class="site_name">VygOJ</span>
+      {#- The icon of the connection with the judge opens the versions of the processes: the
+          frontend, the backend of the last status (site.js), and the language server of the user,
+          which site.js asks for when it opens #}
       <span id="backend_status">
-        <span id="backend_offline" hidden>
-          <img src="/icon/cloud_offline.svg" width="22" height="22" alt="{{ _('Not connected to backend') }}">
-        </span>
-        <span id="backend_online" hidden>
-          <img src="/icon/cloud_online.svg" width="22" height="22" alt="{{ _('Connected to backend') }}">
-        </span>
+        <button type="button" popovertarget="versions">
+          <span id="backend_offline" hidden>
+            <img src="/icon/cloud_offline.svg" width="22" height="22" alt="{{ _('Not connected to backend') }}">
+          </span>
+          <span id="backend_online" hidden>
+            <img src="/icon/cloud_online.svg" width="22" height="22" alt="{{ _('Connected to backend') }}">
+          </span>
+        </button>
+        {%- set lang_server_status = lang_server_status_url() %}
+        <table id="versions" class="versions" popover data-lang-server="{{ lang_server_status }}">
+          <caption>{{ _('Versions') }}</caption>
+          <tbody>
+            <tr id="frontend_version">
+              <th scope="row" title="{{ _('Frontend') }}">F</th>
+              <td class="version">{{ VERSION }}</td>
+              <td class="commit">{{ COMMIT }}</td>
+              <td class="state"></td>
+            </tr>
+            <tr id="backend_version">
+              <th scope="row" title="{{ _('Backend') }}">B</th>
+              <td class="version"></td>
+              <td class="commit"></td>
+              <td class="state"></td>
+            </tr>
+            <tr id="langserv_version"{% if not lang_server_status %} hidden{% endif %}>
+              <th scope="row" title="{{ _('Language server') }}">L</th>
+              <td class="version"></td>
+              <td class="commit"></td>
+              <td class="state"></td>
+            </tr>
+          </tbody>
+        </table>
       </span>
       <span class="help"><a href="/help" target="_blank">{{ _('Help') }}</a></span>
     </footer>

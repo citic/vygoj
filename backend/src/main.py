@@ -1,6 +1,7 @@
 """ Start backend execution """
 import json
 import logging
+import os
 import time
 import flask
 
@@ -12,8 +13,10 @@ MAX_REQUEST_BYTES = 16 * 1024 * 1024
 
 class Backend:
     """ Backend general controller object """
-    # Software version of the backend
-    VERSION = '0.1.0'
+    # Software version of the backend (e.g. '0.1.0'), and its commit (e.g. 'ce271b1 2026-11-23'):
+    # the make rules that run the server set them (APP_VERSION and APP_COMMIT in common/Makefile)
+    VERSION = os.environ.get('VYGOJ_VERSION', '')
+    COMMIT = os.environ.get('VYGOJ_COMMIT', '')
     # Number of concurrent execution jobs
     job_count = 0
 
@@ -23,6 +26,7 @@ class Backend:
         return {
             'status': 'online',
             'version': Backend.VERSION,
+            'commit': Backend.COMMIT,
             'jobs': Backend.job_count,
         }
 

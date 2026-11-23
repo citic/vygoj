@@ -12,7 +12,8 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from admin import UserAdminController
 from courses.course_controller import CourseController
 from limits import BACKEND_CONNECT_TIMEOUT, Limits
-from problems.problem_controller import BACKEND_STATUS_TIMEOUT, ProblemController
+from problems.problem_controller import (BACKEND_STATUS_TIMEOUT, ProblemController,
+    lang_server_http_url, lang_server_status_url)
 from repos.repo_controller import RepoController
 from repos.repo_jobs import check_config as check_repo_config
 from sso import SsoAdminController, SsoController, SsoProvider
@@ -35,6 +36,12 @@ app = flask.Flask(__name__, template_folder=template_path,
 # Every page uses the font chosen by the user, base.html loads it with these names
 app.jinja_env.globals.update(FONTS=FONTS, DEFAULT_FONT=DEFAULT_FONT, font_url=font_url,
     ROLES=ROLES)
+
+# The footer of every page shows the version of the frontend (e.g. '0.2.0') and its commit (e.g.
+# 'ce271b1 2026-11-23'), which the make rules that run the server set (APP_VERSION and APP_COMMIT
+# in common/Makefile), and the ones of the language server of the user, which site.js asks for
+app.jinja_env.globals.update(VERSION=os.environ.get('VYGOJ_VERSION', ''),
+    COMMIT=os.environ.get('VYGOJ_COMMIT', ''), lang_server_status_url=lang_server_status_url)
 
 # Texts of the interface marked with _() are shown in the language chosen by the user or by the
 # browser. Their translations are in translations/ (see "Translations" in design/readme.adoc), and
@@ -143,8 +150,9 @@ if (not isinstance(backends, list) or not backends
 
 # The code editor connects to a language server with keys signed with the secret shared with them,
 # so the secret must be hard to guess, and the pages may connect to their addresses, besides the
-# ones of default-src, which connect-src followed. Addresses with spaces, commas, or semicolons
-# would add other sources or directives to the CSP
+# ones of default-src, which connect-src followed: the WebSocket of the editor, and the HTTP one of
+# the status that the footer shows. Addresses with spaces, commas, or semicolons would add other
+# sources or directives to the CSP
 lang_servers = app.config['LANG_SERVERS']
 if (not isinstance(lang_servers, list) or not all(
         isinstance(url, str) and url and not re.search(r'[\s,;]', url) for url in lang_servers)):
@@ -154,7 +162,8 @@ if lang_servers:
             or len(app.config['LANG_SERVER_SECRET']) < MIN_SECRET_KEY_LENGTH):
         raise RuntimeError(f'LANG_SERVER_SECRET in {config_file} must be a random string of at '
             f'least {MIN_SECRET_KEY_LENGTH} characters, the same of the language servers')
-    talisman.content_security_policy['connect-src'] = ' '.join([cdn['default-src'], *lang_servers])
+    talisman.content_security_policy['connect-src'] = ' '.join([cdn['default-src'], *lang_servers,
+        *map(lang_server_http_url, lang_servers)])
 
 # Single sign-on providers send users back to callback URLs of SITE_URL, and use their secrets
 if not isinstance(app.config['SITE_URL'], str):

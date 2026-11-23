@@ -8,7 +8,7 @@
 
 This document explains how the backend judges a submission, and why. It is written for developers. The installation and operation of the backend are in link:../readme.adoc[its readme], and the processes of VygOJ in the link:../../design/readme.adoc[root design].
 
-The backend is a Flask web service (`src/main.py`) with two endpoints: `GET /status`, with its health and the count of running jobs, and `POST /run`, which receives a problem and a solution and answers an `ExecutionResult` (`common/vyg/`). `src/execution.py` drives each submission (`Execution`), and `src/run_log.py` logs it. Gunicorn serves it with 8 single-threaded workers, which bound the submissions that run at the same time.
+The backend is a Flask web service (`src/main.py`) with two endpoints: `GET /status`, with its health, its version and commit (see link:../../design/readme.adoc#versions[versions]), and the count of running jobs, and `POST /run`, which receives a problem and a solution and answers an `ExecutionResult` (`common/vyg/`). `src/execution.py` drives each submission (`Execution`), and `src/run_log.py` logs it. Gunicorn serves it with 8 single-threaded workers, which bound the submissions that run at the same time.
 
 
 [[execution]]

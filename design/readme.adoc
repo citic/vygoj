@@ -108,6 +108,9 @@ kbd:[Ctrl+C] stops the three servers, and their outputs are mixed in the console
 | `make lint`
 | Check the code of the three layers.
 
+| `make version`
+| Not in the root folder: in the folder of a layer, show its version, or release a new one (<<versions>>).
+
 | `make clean`
 | Remove the virtual environments.
 |===
@@ -115,6 +118,26 @@ kbd:[Ctrl+C] stops the three servers, and their outputs are mixed in the console
 The root `Makefile` has no rules to run the servers in production: there, each one runs with a user of its own (<<production>>). The Python layers include `common/Makefile`, which has the rules `install`, `deps`, `lint`, `server`, `service`, `stop`, and `update` of each layer, and the layers with a Docker image include `common/docker.mk`, which has the rules `image`, `rebuild`, and `remove-image`.
 
 There is no automated test suite. To test end to end, build the images, start the three debug servers, and run a problem from its page in the browser.
+
+[[versions]]
+=== Versions
+
+The frontend, the backend, and the language server have a version each, in the `VERSION` file of their folder: one line with its `major.minor.patch`, following https://semver.org/[semantic versioning]. A release increments the major part when it breaks something that worked (e.g. a change of the protocol that needs a coordinated deploy), the minor part when it adds features, and the patch part when it only fixes errors.
+
+The servers tell the version and the commit of their code. The rules that run them (`run`, `release`, `server`, and `service` of `common/Makefile`) pass them in two environment variables: `VYGOJ_VERSION`, the number of `VERSION` (e.g. `0.2.0`), and `VYGOJ_COMMIT`, the short hash and the date of the last commit of the code (e.g. `ce271b1 2026-11-23`). So the test servers, which run code between releases, tell exactly which code they run. The backend and the language server answer both in their `GET /status` (`version` and `commit`).
+
+The icon of the connection with the judge, in the footer of the pages, opens a table with the versions of the three processes, in a monospace font that aligns their columns: F, the frontend, written by the server in the page; B, the backend, from the last status that the page asked (with the submissions running in it); and L, the language server of the logged user, which the browser asks for its status each time that the table opens, through the same reverse proxy as the code editor. A process that does not answer shows `offline`.
+
+Branches never change `VERSION`, so merging them does not conflict on it, and two branches never take the same number. A release is made in `main`, after merging the changes that it publishes, with a rule in the folder of the layer:
+
+[source,sh]
+----
+make version                # show the version and commit of this layer, e.g. 0.2.0 ce271b1 2026-11-23
+make version PART=minor     # release: 0.2.0 becomes 0.3.0 (PART=major, minor, or patch)
+git push origin main frontend-v0.3.0
+----
+
+The release increments that part of `VERSION`, resets the following ones, commits only that file (`Release frontend 0.3.0`), and tags the commit with the name of the layer and the version (`frontend-v0.3.0`, `backend-v...`, `langserv-v...`, by `LAYER` of its `Makefile`). It refuses to run outside `main`, or with uncommitted changes in `VERSION`. The shared package (`common/pyproject.toml`) keeps its own version, which pip requires.
 
 
 [[production]]

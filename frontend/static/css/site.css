@@ -546,6 +546,32 @@ details:not([open]) > summary > :is(h2, h3, h4, h5, h6)::before {
   }
 }
 
+/* Versions of the processes, above the footer, in a monospace font that aligns their columns */
+.versions {
+  inset: auto 0 2.5rem;
+  margin: 0 auto;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+
+  /* The text of the footer is white, but the table is on the surface of the page */
+  color: var(--label-color);
+  background-color: var(--surface);
+  box-shadow: 0 3px 5px grey;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: smaller;
+
+  & caption {
+    font-weight: bold;
+    text-align: left;
+  }
+
+  & th, & td {
+    padding: 0 0.5rem 0 0;
+    text-align: left;
+    white-space: nowrap;
+  }
+}
+
 /* Tables of data of every page: headers of columns with the color of the site, headers of rows on
    a gray surface, and data rows that alternate their background, so the eye can follow a row.
    Pages mark their tables with the data_table class; tables of problem statements, written by
@@ -687,7 +713,7 @@ details:not([open]) > summary > :is(h2, h3, h4, h5, h6)::before {
   }
 }
 
-/* Footer of every page: versions, connection to the backend, and help */
+/* Footer of every page: name of the site, connection to the backend, and help */
 .site_footer {
   min-height: 1.5rem;
   margin-top: 1rem;
@@ -714,6 +740,16 @@ details:not([open]) > summary > :is(h2, h3, h4, h5, h6)::before {
   & #backend_offline {
     color: orangered;
     fill: currentcolor;
+  }
+
+  /* The icon of the connection opens the versions: a button without a look of its own */
+  & #backend_status button {
+    padding: 0;
+    border: none;
+    background: none;
+    box-shadow: none;
+    line-height: 0;
+    cursor: pointer;
   }
 }
 

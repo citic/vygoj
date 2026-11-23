@@ -1,5 +1,7 @@
 include ../common/Makefile
 
+LAYER=backend# Name of the layer in its release tags, e.g. backend-v0.1.0
+
 DEPS+=docker~=7.0# Python dependencies for pip install, each one with its major version
 PORT=9090# Port where the backend will listen for connections
 WORKERS=8# Number of gunicorn workers, it also bounds the number of concurrent executions

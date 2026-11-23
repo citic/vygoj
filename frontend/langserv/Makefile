@@ -1,5 +1,7 @@
 include ../../common/Makefile
 
+LAYER=langserv# Name of the layer in its release tags, e.g. langserv-v0.1.0
+
 SHARED=../../common# Folder of the vyg package and the configuration shared by the layers
 DEPS+=flask-sock~=0.7.0# Python dependencies for pip install, each one with its major version
 PORT=7070# Port where the language server will listen for connections
