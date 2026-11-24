@@ -61,6 +61,8 @@ class MonacoEditor extends HTMLElement {
     } else {
       this.editor = monaco.editor.create(this, options);
       this.editor.onDidChangeModelContent(() => this.moveDiagnostics());
+      // Another file may have changed while it was not shown, e.g. by the slider of versions
+      this.editor.onDidChangeModel(() => this.moveDiagnostics());
     }
   }
 
@@ -70,19 +72,29 @@ class MonacoEditor extends HTMLElement {
     }
   }
 
-  // Underlines the diagnostics of the compiler in the code: [{ line, column, severity, message }],
-  // with the columns as the compiler counts them. It underlines the word at the column, or the
-  // rest of the line when there is no word or column
+  // Underlines the diagnostics of the compiler in the code: [{ line, column, severity, message,
+  // model }], with the columns as the compiler counts them, and the model of the file of each one
+  // (the one of the editor if none). It underlines the word at the column, or the rest of the
+  // line when there is no word or column
   showDiagnostics(diagnostics) {
-    const model = this.editor.getModel();
     const severities = {
       error: monaco.MarkerSeverity.Error,
       warning: monaco.MarkerSeverity.Warning,
       note: monaco.MarkerSeverity.Info,
     };
+    // The diagnostics of the last run go away, also from the other files
+    this.diagnosed?.forEach(({ decorations }, model) => {
+      if (!model.isDisposed()) {
+        model.deltaDecorations(decorations, []);
+        monaco.editor.setModelMarkers(model, 'diagnostics', []);
+      }
+    });
+    // Markers and decorations of each model with diagnostics, Map of ITextModel to { markers,
+    // decorations }
+    this.diagnosed = new Map();
     // The compiler output is untrusted: a line out of the code goes to the nearest one
-    this.markers = diagnostics.map(({
-      line, column, severity, message,
+    const placed = diagnostics.map(({
+      line, column, severity, message, model = this.editor.getModel(),
     }) => {
       const lineNumber = Math.min(Math.max(line, 1), model.getLineCount());
       const text = model.getLineContent(lineNumber);
@@ -92,7 +104,7 @@ class MonacoEditor extends HTMLElement {
       const first = character || model.getLineFirstNonWhitespaceColumn(lineNumber) || 1;
       // At the end of a line, e.g. a missing semicolon, the last character is underlined
       const start = Math.min(word ? word.startColumn : first, Math.max(end - 1, 1));
-      return {
+      const marker = {
         startLineNumber: lineNumber,
         endLineNumber: lineNumber,
         startColumn: start,
@@ -100,33 +112,47 @@ class MonacoEditor extends HTMLElement {
         severity: severities[severity] ?? monaco.MarkerSeverity.Warning,
         message,
       };
+      if (!this.diagnosed.has(model)) {
+        this.diagnosed.set(model, { markers: [], decorations: [] });
+      }
+      const { markers } = this.diagnosed.get(model);
+      markers.push(marker);
+      return { model, index: markers.length - 1 };
     });
     // Monaco keeps markers where they are when the code changes, but it moves decorations with
     // their text. A decoration for each marker moves it
     const stickiness = monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges;
-    const decorations = this.markers.map((range) => ({ range, options: { stickiness } }));
-    this.decorations = model.deltaDecorations(this.decorations ?? [], decorations);
-    monaco.editor.setModelMarkers(model, 'diagnostics', this.markers);
+    this.diagnosed.forEach((entry, model) => {
+      const decorations = entry.markers.map((range) => ({ range, options: { stickiness } }));
+      Object.assign(entry, { decorations: model.deltaDecorations([], decorations) });
+      monaco.editor.setModelMarkers(model, 'diagnostics', entry.markers);
+    });
+    // The model and the decoration of each diagnostic, to go to its code, Array of { model, id }
+    this.targets = placed.map(({ model, index }) => ({
+      model, id: this.diagnosed.get(model).decorations[index],
+    }));
   }
 
   // Moves the underlines with their text when the code changes. The ones of deleted text, e.g. a
-  // fixed error or code of another language, disappear
+  // fixed error, disappear
   moveDiagnostics() {
-    if (!this.markers?.length) {
+    const model = this.editor.getModel();
+    const entry = this.diagnosed?.get(model);
+    if (!entry) {
       return;
     }
-    const model = this.editor.getModel();
-    const markers = this.markers.map((marker, index) => {
-      const range = model.getDecorationRange(this.decorations[index]);
+    const markers = entry.markers.map((marker, index) => {
+      const range = model.getDecorationRange(entry.decorations[index]);
       return range && !range.isEmpty() && { ...marker, ...range };
     }).filter((marker) => marker);
     monaco.editor.setModelMarkers(model, 'diagnostics', markers);
   }
 
-  // Moves the cursor to the start of the code of a diagnostic, in the middle of the editor
+  // Moves the cursor to the start of the code of a diagnostic, in the middle of the editor, if
+  // the editor shows its file
   goToDiagnostic(index) {
-    const id = this.decorations?.[index];
-    const range = id && this.editor.getModel().getDecorationRange(id);
+    const { model, id } = this.targets?.[index] ?? {};
+    const range = model === this.editor.getModel() && model.getDecorationRange(id);
     if (range) {
       this.editor.setPosition(range.getStartPosition());
       this.editor.revealLineInCenter(range.startLineNumber);

@@ -34,16 +34,40 @@ class Enum {
   }
 }
 
+// Main file of a solution in each language, its first file, named as the backend names it. Java
+// needs the public class Solution in Solution.java
+export const MAIN_FILES = {
+  Alecci: 'solution.ale',
+  C: 'solution.c',
+  'C++': 'solution.cpp',
+  Java: 'Solution.java',
+  Python: 'solution.py',
+};
+// Extensions of the files that students may add to the main file in each language (none in
+// Alecci, whose compiler takes one file), the most files of a solution, and the names of its
+// files (SOLUTION_EXTENSIONS, MAX_SOLUTION_FILES, and SOLUTION_FILE_PATTERN in vyg)
+export const SOLUTION_EXTENSIONS = {
+  Alecci: [],
+  C: ['c', 'h'],
+  'C++': ['cpp', 'hpp'],
+  Java: ['java'],
+  Python: ['py'],
+};
+export const MAX_SOLUTION_FILES = 32;
+// Most bytes of all the files of a solution in UTF-8 (MAX_SOLUTION_BYTES in vyg)
+export const MAX_SOLUTION_BYTES = 256 * 1024;
+export const SOLUTION_FILE_PATTERN = /^[A-Za-z0-9_][A-Za-z0-9_-]{0,63}\.([a-z]{1,8})$/;
+
 export class Message {
-  constructor(action, error = '', language = '', code = '', stdin = '', args = '') {
+  constructor(action, error = '', language = '', files = {}, stdin = '', args = '') {
     // Action to perform: 'run', 'fetch_problem', 'lang_server'
     this.action = action;
     // Error message if any
     this.error = error;
     // Programming language to use, e.g. 'cpp', 'python'
     this.language = language;
-    // Source code to run or submit
-    this.code = code;
+    // Files of the solution to run, as { name: code }, the main file first
+    this.files = files;
     // Standard input and command line arguments that the user wrote to run the code, in
     // problems without test cases
     this.stdin = stdin;

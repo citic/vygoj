@@ -48,7 +48,7 @@ class EditorToolbar extends HTMLElement {
       redo: () => editor.trigger('toolbar', 'redo'),
       // The native dialogs of the browser are enough for a simple confirmation
       // eslint-disable-next-line no-alert
-      clear: () => window.confirm(_('Do you want to clear all the code?')) && write('', model.getFullModelRange()),
+      clear: () => window.confirm(_('Do you want to clear all the code of this file?')) && write('', model.getFullModelRange()),
       // Fullscreen for the parent, so the toolbar and the editor stay together
       fullscreen: () => (document.fullscreenElement
         ? document.exitFullscreen() : this.parentElement.requestFullscreen()),

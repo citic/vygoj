@@ -192,13 +192,8 @@ editor-toolbar {
     background: var(--toolbar-border);
   }
 
-  /* The language list goes at the right end of the toolbar */
-  & select {
-    margin-left: auto;
-  }
-
-  /* The slider of the versions goes right before the list of languages. The name of its position
-     is as wide as the longest one, so the slider does not move while dragging it */
+  /* The slider of the versions goes at the right end. The name of its position is as wide as the
+     longest one, so the slider does not move while dragging it */
   & .versions {
     display: grid;
     grid-template-columns: minmax(4rem, 8rem) 9.5rem;
@@ -214,11 +209,6 @@ editor-toolbar {
 
     &[hidden] {
       display: none;
-    }
-
-    /* Hidden, the list of languages stays at the end of the toolbar */
-    &:not([hidden]) + select {
-      margin-left: 0.5rem;
     }
   }
 
@@ -362,6 +352,72 @@ tab-control {
     border-bottom-color: Canvas;
     background: Canvas;
     font-weight: 600;
+  }
+}
+
+/* Files of the solution: tabs with the icon of their language, their name, and a cross that closes
+   them, except the main file. The + button follows them, and the list of languages goes at the
+   right end. The tabs sit on the top border of the toolbar, so the panel has no border */
+.solution > tab-control {
+  & [role="tab"] {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    max-width: min(14rem, 100%);
+  }
+
+  /* A long name ends with an ellipsis, so the cross stays in the tab */
+  & [role="tab"] .file {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & [role="tab"] img {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  /* Field of the name of a new file or of a file to rename, in the place of its tab, as wide as
+     the name */
+  & .file_name {
+    field-sizing: content;
+    min-width: 6rem;
+    height: 1.75rem;
+    padding: 0 0.375rem;
+    border-radius: 0.375rem 0.375rem 0 0;
+    box-shadow: none;
+    font-size: 0.8125rem;
+  }
+
+  & .close {
+    border-radius: 0.25rem;
+    font-size: 1rem;
+
+    &:hover {
+      background: var(--toolbar-border);
+    }
+  }
+
+  & > #add_file {
+    min-width: 0;
+    margin-left: 0.25rem;
+    padding: 2px;
+    box-shadow: none;
+    background: none;
+    color: var(--toolbar-icon);
+    font-size: 1.25rem;
+
+    &:hover:not([disabled]) {
+      filter: none;
+      background: var(--toolbar-border);
+    }
+  }
+
+  & > [role="tabpanel"] {
+    border: none;
+    border-radius: 0;
   }
 }
 

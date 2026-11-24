@@ -8,17 +8,28 @@
 // detail is the index of the selected tab. Arrows, Home, and End move between the tabs
 class TabControl extends HTMLElement {
   connectedCallback() {
-    // The buttons of the tab list, HTMLButtonElement[]
-    this.tabs = [...this.querySelectorAll(':scope > [role="tablist"] > button')];
     // The panel that shows the selected tab, HTMLElement
     this.panel = this.querySelector(':scope > [role="tabpanel"]');
+    const list = this.querySelector(':scope > [role="tablist"]');
+    list?.addEventListener('click', ({ target }) => {
+      const index = this.tabs.indexOf(target.closest('[role="tab"]'));
+      if (index >= 0) {
+        this.select(index);
+      }
+    });
+    list?.addEventListener('keydown', (event) => this.move(event));
+    this.update();
+  }
+
+  // Finds the tabs, also after the page added or removed some (e.g. the files of a solution)
+  update() {
+    // The buttons of the tab list, HTMLButtonElement[]
+    this.tabs = [...this.querySelectorAll(':scope > [role="tablist"] > button')];
     this.tabs.forEach((tab, index) => {
       tab.role = 'tab';
       tab.id = `${this.panel.id}_tab_${index + 1}`;
       tab.setAttribute('aria-controls', this.panel.id);
-      tab.addEventListener('click', () => this.select(index));
     });
-    this.tabs[0]?.parentElement.addEventListener('keydown', (event) => this.move(event));
   }
 
   // Index of the selected tab, or -1 if none is selected

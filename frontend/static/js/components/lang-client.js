@@ -1,18 +1,30 @@
 // Suggestions and parameter hints of the language server of VygOJ (frontend/langserv) in a Monaco
-// editor. It talks the Language Server Protocol (LSP) through a WebSocket: it sends the code of
-// the editor, and shows what the server answers. Without the server, the editor works as before
+// editor. It talks the Language Server Protocol (LSP) through a WebSocket: it sends the files of
+// the solution, and shows what the server answers. Without the server, the editor works as before
 import * as monaco from 'https://esm.sh/monaco-editor';
 
-// Solution file of each language in the server, named as the backend names it, and the name of
-// the language in LSP, which the editor may not know (Monaco does not highlight every language)
+// Name of each language in LSP, which the editor may not know (Monaco does not highlight every
+// language)
 const LANGUAGES = {
-  C: { file: 'solution.c', id: 'c' },
-  'C++': { file: 'solution.cpp', id: 'cpp' },
-  Python: { file: 'solution.py', id: 'python' },
-  Java: { file: 'Solution.java', id: 'java' },
+  C: 'c',
+  'C++': 'cpp',
+  Python: 'python',
+  Java: 'java',
 };
 // Folder of the solution files in the containers of the language server
 const ROOT = 'file:///home/student';
+
+// Returns the address of a file of the solution in the language server. The Monaco model of each
+// file has it, so the client sends the server every file, and the server finds the others (e.g.
+// the tree.h that solution.c includes)
+export function fileUri(name) {
+  return monaco.Uri.parse(`${ROOT}/${name}`);
+}
+
+// True if the Monaco model is a file of the solution
+function isFile(model) {
+  return model.uri.toString().startsWith(`${ROOT}/`);
+}
 // Milliseconds to wait for an answer of the server, for the server to start (some take seconds),
 // and between attempts to connect again
 const REQUEST_TIMEOUT = 10000;
@@ -48,11 +60,10 @@ export default class LanguageClient {
 
   // getKey is an async function that returns { url, key } from the frontend to connect
   constructor(editor, language, getKey) {
-    // The editor that gets the suggestions
+    // The editor that gets the suggestions, which shows one file of the solution at a time
     this.editor = editor; // monaco.editor.IStandaloneCodeEditor
-    // Address of the solution file in the language server, and its language in LSP
-    this.uri = `${ROOT}/${LANGUAGES[language].file}`; // string
-    this.languageId = LANGUAGES[language].id; // string
+    // Language of the files in LSP
+    this.languageId = LANGUAGES[language]; // string
     // Function that asks the frontend for a key
     this.getKey = getKey; // async function
     // Connection with the language server, null while there is none
@@ -63,9 +74,8 @@ export default class LanguageClient {
     this.closed = false; // boolean
     // Functions that receive the answers of the server, by the id of their request
     this.pending = new Map(); // Map
-    // Id of the next request, and version of the code that the server has
+    // Id of the next request
     this.nextId = 1; // number
-    this.version = 1; // number
     // Milliseconds of the last attempt to connect, as Date.now()
     this.lastAttempt = 0; // number
     // Providers of Monaco and listeners of the editor, removed by close()
@@ -74,9 +84,25 @@ export default class LanguageClient {
     this.registered = false; // boolean
   }
 
-  // Sends the changes of the code to the server, and connects
+  // Sends the files and their changes to the server, also the files that the student adds or
+  // closes, and connects. The listeners of a file go away with its model
   start() {
-    this.disposables.push(this.editor.onDidChangeModelContent(() => this.sendCode()));
+    const watch = (model) => {
+      if (isFile(model)) {
+        model.onDidChangeContent(() => this.sendCode(model));
+        model.onWillDispose(() => this.ready
+          && this.notify('textDocument/didClose', { textDocument: { uri: model.uri.toString() } }));
+      }
+    };
+    monaco.editor.getModels().forEach(watch);
+    this.disposables.push(
+      monaco.editor.onDidCreateModel((model) => {
+        watch(model);
+        if (this.ready && isFile(model)) {
+          this.open(model);
+        }
+      }),
+    );
     this.connect();
   }
 
@@ -103,7 +129,9 @@ export default class LanguageClient {
 
   // Disconnects and removes the providers, e.g. when the user chooses another language
   close() {
+    // The listeners of the files stay until their models go, so they must not send anything
     this.closed = true;
+    this.ready = false;
     this.disposables.forEach((disposable) => disposable.dispose());
     this.socket?.close();
   }
@@ -158,25 +186,31 @@ export default class LanguageClient {
       }
       this.register(result.capabilities ?? {});
       this.notify('initialized', {});
-      const { uri, languageId, version } = this;
-      const textDocument = {
-        uri, languageId, version, text: this.editor.getValue(),
-      };
-      this.notify('textDocument/didOpen', { textDocument });
+      monaco.editor.getModels().filter(isFile).forEach((model) => this.open(model));
       this.ready = true;
     } catch {
       this.socket?.close();
     }
   }
 
-  // Sends the whole code to the server after each change, or connects again if the connection
-  // was lost (e.g. the student did not type for a while)
-  sendCode() {
+  // Sends a file of the solution to the server
+  open(model) {
+    const textDocument = {
+      uri: model.uri.toString(),
+      languageId: this.languageId,
+      version: model.getVersionId(),
+      text: model.getValue(),
+    };
+    this.notify('textDocument/didOpen', { textDocument });
+  }
+
+  // Sends the whole code of a file to the server after each change, or connects again if the
+  // connection was lost (e.g. the student did not type for a while)
+  sendCode(model) {
     if (this.ready) {
-      this.version += 1;
       this.notify('textDocument/didChange', {
-        textDocument: { uri: this.uri, version: this.version },
-        contentChanges: [{ text: this.editor.getValue() }],
+        textDocument: { uri: model.uri.toString(), version: model.getVersionId() },
+        contentChanges: [{ text: model.getValue() }],
       });
     } else if (!this.socket && !this.closed && Date.now() - this.lastAttempt > RECONNECT_DELAY) {
       this.connect();
@@ -208,17 +242,17 @@ export default class LanguageClient {
     });
   }
 
-  // Returns the request parameters for the position of the cursor in the solution file
+  // Returns the request parameters for the position of the cursor in the file of the editor
   at(position) {
     return {
-      textDocument: { uri: this.uri },
+      textDocument: { uri: this.editor.getModel().uri.toString() },
       position: { line: position.lineNumber - 1, character: position.column - 1 },
     };
   }
 
   // Returns the suggestions of the server for the position of the cursor
   async suggest(model, position, { triggerKind, triggerCharacter }) {
-    if (model !== this.editor.getModel() || !this.ready) {
+    if (model !== this.editor.getModel() || !isFile(model) || !this.ready) {
       return null;
     }
     // Why the editor asks, e.g. a ':' that is not part of '::', so the server may answer nothing.
@@ -253,7 +287,7 @@ export default class LanguageClient {
   // Returns the parameters of the function called at the position of the cursor, with the one
   // that the cursor is in highlighted
   async hint(model, position) {
-    if (model !== this.editor.getModel() || !this.ready) {
+    if (model !== this.editor.getModel() || !isFile(model) || !this.ready) {
       return null;
     }
     const result = await this.request('textDocument/signatureHelp', this.at(position));
