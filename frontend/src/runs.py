@@ -60,7 +60,7 @@ class Run(db.Model):
     result = db.Column(db.Text)
 
     @staticmethod
-    def hash_code(problem_dict: dict, language: str, code: str) -> str:
+    def hash_code(problem_dict: dict, language: str, files: dict) -> str:
         """ Return the hash that identifies a submission of the given code to the problem, as it is
         sent to the backend: its test cases, effective limits, and other fields that judge it, but
         not the statement, so fixing a typo does not make students run their code again. The code
@@ -68,7 +68,9 @@ class Run(db.Model):
         submissions cannot have the same text to hash """
         # Sorted keys, so the same problem always gives the same text
         problem_json = json.dumps(problem_dict, sort_keys=True, separators=(',', ':'))
-        text = f'{problem_json}\0{language}\0{code}'
+        # The files keep their order, the main one first
+        files_json = json.dumps(files, separators=(',', ':'))
+        text = f'{problem_json}\0{language}\0{files_json}'
         return hashlib.sha256(text.encode('utf-8')).hexdigest()
 
     @staticmethod

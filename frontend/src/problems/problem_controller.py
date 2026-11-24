@@ -235,6 +235,11 @@ class ProblemController:
             return ProblemController.error_response('language not enabled', 400)
         if message.action == 'lang_server':
             return lang_server_key(message.language)
+        error = vyg.solution_files_error(message.files, message.language)
+        if not error and next(iter(message.files)) != solution_filename(message.language):
+            error = f'The first file of the solution must be {solution_filename(message.language)}'
+        if error:
+            return ProblemController.error_response(error, 400)
         return ProblemController.judge_solution(problem, message)
 
     @staticmethod
@@ -247,7 +252,7 @@ class ProblemController:
         message = vyg.Message(json_dict)
         # JSON may carry any type in these fields. The body size is bounded by MAX_CONTENT_LENGTH
         if not all(isinstance(text, str) for text in
-                (message.language, message.code, message.stdin, message.args)):
+                (message.language, message.stdin, message.args)):
             return None
         return message
 
@@ -307,7 +312,7 @@ class ProblemController:
                     length=MAX_ARGS_LENGTH), 400)
         course_name = problem.get_course().name
         problem_dict = ProblemController.backend_problem(problem, message)
-        code_hash = Run.hash_code(problem_dict, message.language, message.code)
+        code_hash = Run.hash_code(problem_dict, message.language, message.files)
         # Cells and data of the activity log of this run. The code hash names the file of its code
         log_cells = { 'course': course_name, 'material': problem.name, 'type': problem.type }
         run_data = { 'language': message.language, 'code': code_hash }
@@ -327,7 +332,7 @@ class ProblemController:
                 { 'Retry-After': str(rejection.retry_after) })
         # Only the code of accepted runs is saved, which are limited per user, so a robot cannot
         # fill the disk with rejected or repeated runs. A repeated run has the file of its first run
-        save_code(code_hash, message.language, message.code)
+        save_code(code_hash, message.files)
         ProblemController.save_solution(flask.session['user'].get('email'), problem, message)
         # The commit of the course repo recovers the statement and test cases that judged the run.
         # Only accepted runs ask git for it, which are limited per user
@@ -358,10 +363,10 @@ class ProblemController:
 
     @staticmethod
     def save_solution(username: str, problem: vyg.Problem, message: vyg.Message):
-        """ Commit the code of the run to the student repo of the user, the history of their
+        """ Commit the files of the run to the student repo of the user, the history of their
         solutions. A failure is logged, and the run goes on without it """
         try:
-            StudentRepo(username).save(problem, solution_filename(message.language), message.code)
+            StudentRepo(username).save(problem, message.language, message.files)
         except (GitError, OSError, ValueError):
             app.logger.exception('could not save the solution of %s/%s',
                 problem.get_course().name, problem.name)
@@ -370,9 +375,9 @@ class ProblemController:
     def get_versions(course_name: str, problem_name: str):
         """ Answer the versions of the solution of the logged user to the problem, in the language
         of the query, from the oldest to the newest, as [[commit, time], ...] """
-        repo, problem, filename = ProblemController.solution_of_user(course_name, problem_name)
+        repo, problem, language = ProblemController.solution_of_user(course_name, problem_name)
         try:
-            versions = repo.versions(problem.get_course().name, problem.name, filename)
+            versions = repo.versions(problem.get_course().name, problem.name, language)
         except (GitError, OSError, ValueError):
             app.logger.exception('could not list the versions of %s/%s', course_name, problem_name)
             versions = []
@@ -381,22 +386,26 @@ class ProblemController:
 
     @staticmethod
     def get_version(course_name: str, problem_name: str, commit: str):
-        """ Answer the code of a version of the solution of the logged user to the problem, in the
-        language of the query, as text. Other users never reach it: it is read from the repo of
-        the logged user only """
-        repo, problem, filename = ProblemController.solution_of_user(course_name, problem_name)
+        """ Answer the files of a version of the solution of the logged user to the problem, in the
+        language of the query, as a JSON object {name: code}, the main file first. Other users
+        never reach it: it is read from the repo of the logged user only """
+        repo, problem, language = ProblemController.solution_of_user(course_name, problem_name)
         try:
-            code = repo.read(commit, problem.get_course().name, problem.name, filename)
+            files = repo.read(commit, problem.get_course().name, problem.name, language)
         except (GitError, OSError, ValueError):
             flask.abort(404)
-        # A commit never changes, so the browser keeps its code
-        return flask.Response(code, mimetype='text/plain', headers={
-            'Cache-Control': 'private, max-age=31536000, immutable' })
+        if not files:
+            flask.abort(404)
+        # A commit never changes, so the browser keeps its files. jsonify() would sort them by
+        # name, and the main file goes first
+        response = ProblemController.json_response(json.dumps(files, separators=(',', ':')))
+        response.headers['Cache-Control'] = 'private, max-age=31536000, immutable'
+        return response
 
     @staticmethod
     def solution_of_user(course_name: str, problem_name: str):
-        """ Return the repo of the logged user, the problem, and the file of its solution in the
-        language of the query, or abort if there is no user, problem, or enabled language """
+        """ Return the repo of the logged user, the problem, and the language of the query, or
+        abort if there is no user, problem, or enabled language """
         user = flask.session.get('user')
         if not user:
             flask.abort(401)
@@ -404,7 +413,7 @@ class ProblemController:
         language = flask.request.args.get('language', '')
         if language not in problem.languages:
             flask.abort(400)
-        return StudentRepo(user['email']), problem, solution_filename(language)
+        return StudentRepo(user['email']), problem, language
 
     @staticmethod
     def grade(result_json: str) -> int:

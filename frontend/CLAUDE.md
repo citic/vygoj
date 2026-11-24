@@ -71,7 +71,7 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
   in `DATA_FOLDER` is deleted after the commit, with the clones of their professor repos.
 - `src/repos/`: package with the git repos of the users (imported as `repos.git_repo`...).
   - `git_repo.py`: `GitRepo`, the operations on git repos shared by student repos and professor
-    repos (commit a file at the end of a branch, versions, read, archive, merge
+    repos (commit files at the end of a branch, versions, read, archive, merge
     branches, copy with a working tree, push over SSH only), `check_ssh_url()` for the remotes of
     users, and `user_folder()`, the folder `DATA_FOLDER/user/<username>` with the repos of each
     user.
@@ -110,7 +110,7 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
   result of the last run.
 - `src/activity_log.py`: activity log: `log_event(event, data, **cells)` appends a row to a
   monthly TSV in `DATA_FOLDER/log/` with fixed columns (`COLUMNS`) and the fields of each event as
-  JSON in `data`, and `save_code()` saves the code of a run by its hash. Events are in `EVENTS`;
+  JSON in `data`, and `save_code()` saves the files of a run by their hash. Events are in `EVENTS`;
   document new events and data fields in `design/readme.adoc`. New kinds of materials add data
   fields, not columns. It also makes the zip archives of the log on demand: the log with tables for
   statistical software (`TABLES`), and the submissions in a folder per user, course, material,
