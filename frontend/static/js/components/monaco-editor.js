@@ -39,6 +39,10 @@ class MonacoEditor extends HTMLElement {
   static observedAttributes = ['language'];
 
   connectedCallback() {
+    // A window of a file moves in the page (problem.js) and keeps its editor
+    if (this.editor) {
+      return;
+    }
     const options = {
       // Accessible name: its aria-label attribute or the text of its <label for>
       ariaLabel: this.getAttribute('aria-label') || document.querySelector(`label[for="${this.id}"]`)?.textContent,
@@ -60,9 +64,6 @@ class MonacoEditor extends HTMLElement {
       this.editor.setModel({ original: monaco.editor.createModel(''), modified: monaco.editor.createModel('') });
     } else {
       this.editor = monaco.editor.create(this, options);
-      this.editor.onDidChangeModelContent(() => this.moveDiagnostics());
-      // Another file may have changed while it was not shown, e.g. by the slider of versions
-      this.editor.onDidChangeModel(() => this.moveDiagnostics());
     }
   }
 
@@ -133,10 +134,9 @@ class MonacoEditor extends HTMLElement {
     }));
   }
 
-  // Moves the underlines with their text when the code changes. The ones of deleted text, e.g. a
-  // fixed error, disappear
-  moveDiagnostics() {
-    const model = this.editor.getModel();
+  // Moves the underlines with their text when the code of the model changes, in this editor or in
+  // another one. The ones of deleted text, e.g. a fixed error, disappear
+  moveDiagnostics(model) {
     const entry = this.diagnosed?.get(model);
     if (!entry) {
       return;

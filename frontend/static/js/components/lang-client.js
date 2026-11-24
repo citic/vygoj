@@ -60,7 +60,8 @@ export default class LanguageClient {
 
   // getKey is an async function that returns { url, key } from the frontend to connect
   constructor(editor, language, getKey) {
-    // The editor that gets the suggestions, which shows one file of the solution at a time
+    // The code editor, whose files have the language of the suggestions. Every editor that shows a
+    // file of the solution gets them, e.g. the one at its side
     this.editor = editor; // monaco.editor.IStandaloneCodeEditor
     // Language of the files in LSP
     this.languageId = LANGUAGES[language]; // string
@@ -242,23 +243,23 @@ export default class LanguageClient {
     });
   }
 
-  // Returns the request parameters for the position of the cursor in the file of the editor
-  at(position) {
+  // Returns the request parameters for the position of the cursor in the file of the model
+  static at(model, position) {
     return {
-      textDocument: { uri: this.editor.getModel().uri.toString() },
+      textDocument: { uri: model.uri.toString() },
       position: { line: position.lineNumber - 1, character: position.column - 1 },
     };
   }
 
   // Returns the suggestions of the server for the position of the cursor
   async suggest(model, position, { triggerKind, triggerCharacter }) {
-    if (model !== this.editor.getModel() || !isFile(model) || !this.ready) {
+    if (!isFile(model) || !this.ready) {
       return null;
     }
     // Why the editor asks, e.g. a ':' that is not part of '::', so the server may answer nothing.
     // The kinds of LSP count from 1, and the ones of Monaco from 0
     const context = { triggerKind: triggerKind + 1, triggerCharacter };
-    const result = await this.request('textDocument/completion', { ...this.at(position), context });
+    const result = await this.request('textDocument/completion', { ...LanguageClient.at(model, position), context });
     const items = Array.isArray(result) ? result : result?.items ?? [];
     const word = model.getWordUntilPosition(position);
     const { lineNumber } = position;
@@ -287,10 +288,10 @@ export default class LanguageClient {
   // Returns the parameters of the function called at the position of the cursor, with the one
   // that the cursor is in highlighted
   async hint(model, position) {
-    if (model !== this.editor.getModel() || !isFile(model) || !this.ready) {
+    if (!isFile(model) || !this.ready) {
       return null;
     }
-    const result = await this.request('textDocument/signatureHelp', this.at(position));
+    const result = await this.request('textDocument/signatureHelp', LanguageClient.at(model, position));
     if (!result?.signatures?.length) {
       return null;
     }

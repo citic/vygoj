@@ -582,15 +582,160 @@ tab-control {
     max-height: 60vh;
   }
 
-  /* Fullscreen button of the toolbar: the editor fills the screen below the toolbar */
+  /* A pane split in two or more panes side by side (a row) or one above the other (a column).
+     Rows are columns on narrow screens */
+  & .split {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    & > * {
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: 5rem;
+    }
+
+    & > monaco-editor {
+      max-height: none;
+    }
+
+    @media (width >= 640px) {
+      &[data-direction="row"] {
+        flex-direction: row;
+      }
+    }
+  }
+
+  /* The code editor, and the windows of files: floating over the page, or in splits with it. The
+     code editor alone is as tall as its code (--fitted-height of problem.js) */
+  & .panes {
+    position: relative;
+    display: grid;
+
+    & > monaco-editor {
+      height: var(--fitted-height);
+    }
+
+    /* The splits of the panes, which the user resizes with the corner handle */
+    & > .split {
+      height: 24rem;
+      overflow: hidden;
+      resize: vertical;
+    }
+
+    /* The half of a pane where a dragged window goes, as in Visual Studio Code */
+    & [data-drop] {
+      position: relative;
+
+      &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: 100;
+        outline: 2px dashed var(--accent);
+        background: color-mix(in srgb, var(--accent) 20%, transparent);
+        pointer-events: none;
+      }
+
+      &[data-drop="left"]::after {
+        right: 50%;
+      }
+
+      &[data-drop="right"]::after {
+        left: 50%;
+      }
+
+      &[data-drop="top"]::after {
+        bottom: 50%;
+      }
+
+      &[data-drop="bottom"]::after {
+        top: 50%;
+      }
+    }
+  }
+
+  /* Window of a file: its editor, below the name of the file and a cross that closes it */
+  & .side {
+    display: flex;
+    flex-direction: column;
+
+    /* The display above would show it while it has no file */
+    &[hidden] {
+      display: none;
+    }
+
+    /* Dragged, it is a window over the page, which its corner handle resizes, in the width of the
+       panes, so the page does not scroll sideways */
+    &[data-floating] {
+      position: absolute;
+      top: max(0px, var(--top));
+      left: clamp(0px, var(--left), 100% - min(36rem, 100%));
+      z-index: 10;
+      width: min(36rem, 100%);
+      max-width: 100%;
+      height: 20rem;
+      overflow: hidden;
+      resize: both;
+      border: 1px solid var(--toolbar-border);
+      border-radius: 0.375rem;
+      background: Canvas;
+      box-shadow: 0 3px 5px grey;
+    }
+
+    & > header {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding-inline: 0.25rem;
+      border-bottom: 1px solid var(--toolbar-border);
+      font-size: 0.8125rem;
+      cursor: move;
+      user-select: none;
+      touch-action: none; /* Touch drags it, it does not scroll the page */
+
+      & > .file {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      & > button {
+        min-width: 0;
+        padding: 0;
+        box-shadow: none;
+        background: none;
+        color: var(--toolbar-icon);
+        font-size: 1rem;
+      }
+    }
+
+    /* Without a corner handle of its own, which would hide the one of the window */
+    & monaco-editor {
+      flex: 1 1 15rem;
+      max-height: none;
+      resize: none;
+    }
+  }
+
+  /* Fullscreen button of the toolbar: the editors fill the screen below the toolbar */
   & .editor:fullscreen {
     display: flex;
     flex-direction: column;
     background: Canvas;
 
-    & monaco-editor {
+    & .panes {
       flex: 1;
+      min-height: 0;
+      grid-auto-rows: minmax(0, 1fr);
+    }
+
+    & .panes > monaco-editor,
+    & .panes > .split {
+      height: auto;
       max-height: none;
+      resize: none;
     }
   }
 

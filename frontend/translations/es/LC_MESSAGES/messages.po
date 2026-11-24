@@ -510,6 +510,9 @@ msgstr "¿Desea cerrar %(file)s? Su código se borrará."
 msgid "Do you want to revert to the initial code?"
 msgstr "¿Desea volver al código inicial?"
 
+msgid "Double click or F2 renames it"
+msgstr "Doble clic o F2 lo renombra"
+
 msgid "Double click or F2 renames it, Delete closes it"
 msgstr "Doble clic o F2 lo renombra, Supr lo cierra"
 
@@ -518,6 +521,12 @@ msgstr "Descargar últimas soluciones"
 
 msgid "Download solution history"
 msgstr "Descargar historial de soluciones"
+
+#, python-format
+msgid "Drag it to see it in a window, or press %(keys)s to see it at the side"
+msgstr ""
+"Arrástrelo para verlo en una ventana, o presione %(keys)s para verlo al "
+"lado"
 
 msgid "Duration"
 msgstr "Duración"

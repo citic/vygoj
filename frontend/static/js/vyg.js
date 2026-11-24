@@ -34,8 +34,9 @@ class Enum {
   }
 }
 
-// Main file of a solution in each language, its first file, named as the backend names it. Java
-// needs the public class Solution in Solution.java
+// Default name of the main file of a solution in each language, its first file, as the initial
+// code names it: Java needs the public class Solution in Solution.java. The student may rename it,
+// keeping its extension, and the backend runs it by its name
 export const MAIN_FILES = {
   Alecci: 'solution.ale',
   C: 'solution.c',
