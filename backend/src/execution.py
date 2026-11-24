@@ -3,6 +3,7 @@ import dataclasses
 import io
 import logging
 import math
+import os
 import re
 import shlex
 import tarfile
@@ -118,8 +119,9 @@ HEADER_EXTENSIONS = ('.h', '.hpp')
 @dataclasses.dataclass(frozen=True)
 class LanguageDefault:
     """ How the backend compiles, runs, and lints the solutions in a programming language """
-    # Fixed name of the main file of the solution in WORKDIR, its first file. A public Java class
-    # must be in a file of its name
+    # Default name of the main file of the solution in WORKDIR, its first file, whose stem the
+    # commands below use (e.g. solution in ./solution). A solution may name its main file, and the
+    # commands use its stem instead: a public Java class must be in a file of its name
     source_file: str
     # Compiler command and its options, before the source files. Interpreted languages only check
     # the syntax, so students get their syntax errors as compiler errors
@@ -275,10 +277,15 @@ class Execution:
         # Extra tools asked by the problem, e.g: ['asan', 'lint']
         self.tools = self.problem.tools.split() if isinstance(self.problem.tools, str) else []
         self._validate()
-        # How to compile, run, and lint the solution
-        self.flags = LANGUAGE_DEFAULTS[self.language]
         # The names of the files of the solution, the main one first, e.g. ['solution.c', 'tree.c']
         self.file_names = list(self.solution.files)
+        # How to compile, run, and lint the solution, with the stem of its main file in the place
+        # of the default one, e.g. python3 tree.py. vyg.solution_files_error() checked the name
+        default = LANGUAGE_DEFAULTS[self.language]
+        old, new = (os.path.splitext(name)[0] for name in (default.source_file, self.file_names[0]))
+        self.flags = dataclasses.replace(default, **{
+            field: getattr(default, field).replace(old, new)
+            for field in ('compiler_suffix', 'compiled_file', 'run_command')})
         # Sanitizers and valgrind only work on native executables
         if not self.flags.native:
             self.tools = [tool for tool in self.tools
@@ -304,9 +311,6 @@ class Execution:
         error = vyg.solution_files_error(self.solution.files, self.language)
         if error:
             raise InvalidSubmission(error)
-        main_file = LANGUAGE_DEFAULTS[self.language].source_file
-        if next(iter(self.solution.files)) != main_file:
-            raise InvalidSubmission(f'The first file of the solution must be {main_file}')
         if not isinstance(self.problem.languages, list):
             raise InvalidSubmission('Invalid problem languages')
         if not Execution._is_list_of_texts(self.problem.mustContain):

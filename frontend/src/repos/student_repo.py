@@ -8,7 +8,8 @@ on disk:
     <course>/<term_group>/<problem>/src/solution.c, tree.h, tree.c...
 
 The src folder holds the files of the solution in each language, told apart by their extensions
-(vyg.SOLUTION_EXTENSIONS), the main file of the language first (solution_filename()).
+(solution_extensions()). The student names the main file, the first one in the Files line of the
+message of each commit.
 
 Each problem has a branch problems/<course>/<term_group>/<problem> with the linear history of its
 solution, a commit per run with new code. The trees of its commits hold the full logical path, so
@@ -81,8 +82,7 @@ class StudentRepo(GitRepo):
         in seconds since the epoch """
         folder = solution_folder(course, problem)
         return self.file_versions(problem_branch(course, problem),
-            [solution_path(folder, solution_filename(language))]
-            + [f'{folder}/*.{extension}' for extension in vyg.SOLUTION_EXTENSIONS[language]])
+            [f'{folder}/*.{extension}' for extension in solution_extensions(language)])
 
     def last_problem(self, course: str) -> str | None:
         """ Return the name of the problem of the course whose solution got a version last, or
@@ -107,12 +107,10 @@ class StudentRepo(GitRepo):
 
     def solution_files(self, commit: str, folder: str, language: str) -> list:
         """ Return the names of the files of the solution in the language in the folder of the
-        commit (or the last commit of a branch), the main file first """
-        extensions = vyg.SOLUTION_EXTENSIONS[language]
-        main_file = solution_filename(language)
-        names = [name for name in self.file_names(commit, folder)
-            if name == main_file or name.rpartition('.')[2] in extensions]
-        return sorted(names, key=lambda name: (name != main_file, name))
+        commit (or the last commit of a branch), sorted by name """
+        extensions = solution_extensions(language)
+        return sorted(name for name in self.file_names(commit, folder)
+            if name.rpartition('.')[2] in extensions)
 
     def archive_solutions(self) -> bytes:
         """ Return a zip archive with the last version of the solution of every problem, in its
@@ -210,9 +208,7 @@ def check_names(*names: str):
         if not NAME_PATTERN.fullmatch(name):
             raise ValueError(f'invalid name: {name!r}')
 
-def solution_filename(language: str) -> str:
-    """ Return the name of the file of a solution in the language, as the backend and the default
-    code of static/initial name it: Java needs the public class Solution in Solution.java """
-    if language == 'Java':
-        return 'Solution.java'
-    return f'solution.{vyg.EXTENSION_LANGUAGES[language]}'
+def solution_extensions(language: str) -> set:
+    """ Return the extensions of the files of a solution in the language: the one of its main
+    file (e.g. c) and the ones of the files that the student adds (e.g. c and h) """
+    return {vyg.EXTENSION_LANGUAGES[language], *vyg.SOLUTION_EXTENSIONS[language]}

@@ -16,7 +16,7 @@ import vyg
 from activity_log import log_event, log_run, repo_commit, save_code
 from courses.course_controller import CourseController
 from repos.git_repo import GitError
-from repos.student_repo import StudentRepo, solution_filename
+from repos.student_repo import StudentRepo
 from limits import CONSTRAINED_FIELDS, Limits
 from problems.problem_loader import ProblemLoader
 from runs import Run, RunRejected
@@ -236,8 +236,6 @@ class ProblemController:
         if message.action == 'lang_server':
             return lang_server_key(message.language)
         error = vyg.solution_files_error(message.files, message.language)
-        if not error and next(iter(message.files)) != solution_filename(message.language):
-            error = f'The first file of the solution must be {solution_filename(message.language)}'
         if error:
             return ProblemController.error_response(error, 400)
         return ProblemController.judge_solution(problem, message)

@@ -2,7 +2,8 @@
 import json
 import re
 
-from vyg.constants import MAX_SOLUTION_BYTES, MAX_SOLUTION_FILES, SOLUTION_EXTENSIONS, Status
+from vyg.constants import (EXTENSION_LANGUAGES, MAX_SOLUTION_BYTES, MAX_SOLUTION_FILES,
+    SOLUTION_EXTENSIONS, Status)
 
 # Names of the files of a solution: no folders, spaces, or dots but the one of the extension, so
 # they are safe file names in the container, the logs, and the student repo. They never start with
@@ -26,8 +27,8 @@ def append(text, suffix, sep = ' '):
 
 def solution_files_error(files, language: str) -> str:
     """ Return why the files of a solution, {name: code} as they come in JSON, are not valid for
-    the language, or an empty text if they are valid. The first file is the main file, whose name
-    the caller checks """
+    the language, or an empty text if they are valid. The first file is the main file, which the
+    student names, with the extension of the language (e.g. tree.c) """
     if not isinstance(files, dict) or not files:
         return 'Missing source code'
     if len(files) > MAX_SOLUTION_FILES:
@@ -35,7 +36,8 @@ def solution_files_error(files, language: str) -> str:
     extensions = SOLUTION_EXTENSIONS.get(language, ())
     for index, (name, code) in enumerate(files.items()):
         match = SOLUTION_FILE_PATTERN.fullmatch(name)
-        if not match or (index > 0 and match[1] not in extensions):
+        if not match or (match[1] != EXTENSION_LANGUAGES.get(language) if index == 0
+                else match[1] not in extensions):
             return f'Invalid file name for {language}: {name[:64]}'
         if not isinstance(code, str):
             return 'Invalid source code'
