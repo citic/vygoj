@@ -1,0 +1,78 @@
+#!/usr/bin/python3
+""" Runs the language server of Python (LANGUAGES in config/defaults.py), and writes the files of
+the solution that the editor opens or changes in /home/student, a small folder in memory of the
+container (start_container() in src/main.py), and removes the ones that it closes. Jedi, the
+engine of pylsp, reads the modules that the code imports (e.g. import tree) from the disk, not from
+the documents that the editor opened. The messages pass to pylsp as they came """
+import contextlib
+import json
+import os
+import re
+import subprocess
+import sys
+
+FOLDER = '/home/student'
+# Address of a Python file of the solution, with a name as the judge checks them
+# (vyg.solution_files_error() of the frontend): no folders, and no names that start with -
+FILE_URI = re.compile(r'file:///home/student/([A-Za-z0-9_][A-Za-z0-9_-]{0,63}\.py)')
+
+def save_file(message: dict):
+    """ Write the file of a message that opens or changes a document with its whole text, or remove
+    the file of a message that closes it """
+    params = message.get('params')
+    document = params.get('textDocument') if isinstance(params, dict) else None
+    uri = document.get('uri') if isinstance(document, dict) else None
+    match = FILE_URI.fullmatch(uri) if isinstance(uri, str) else None
+    if not match:
+        return
+    path = os.path.join(FOLDER, match[1])
+    method = message.get('method')
+    if method == 'textDocument/didClose':
+        os.remove(path)
+        return
+    changes = params.get('contentChanges')
+    # The editor sends the whole text after each change (lang-client.js), without a range
+    text = (document.get('text') if method == 'textDocument/didOpen' else
+        changes[-1].get('text') if isinstance(changes, list) and changes
+        and 'range' not in changes[-1] else None)
+    if isinstance(text, str):
+        # A new file takes the place of the old one at once, so Jedi never reads half a file. In a
+        # full folder, half a file would keep the space, so it is removed
+        try:
+            with open(f'{path}.tmp', 'w', encoding='utf-8') as file:
+                file.write(text)
+            os.replace(f'{path}.tmp', path)
+        except OSError:
+            with contextlib.suppress(OSError):
+                os.remove(f'{path}.tmp')
+            raise
+
+def main() -> int:
+    """ Pass the messages of the standard input to pylsp, saving the files of the solution, until
+    the input ends. Return the exit status of pylsp """
+    source = sys.stdin.buffer
+    with subprocess.Popen(['pylsp'], stdin=subprocess.PIPE) as server:
+        while True:
+            header = b''
+            length = 0
+            while (line := source.readline()).strip():
+                header += line
+                name, _, value = line.partition(b':')
+                if name.strip().lower() == b'content-length':
+                    length = int(value)
+            if not line:
+                break
+            body = source.read(length)
+            # A malformed message or a full folder only leave the file as it was
+            with contextlib.suppress(ValueError, TypeError, AttributeError, RecursionError,
+                    OSError):
+                message = json.loads(body)
+                if isinstance(message, dict):
+                    save_file(message)
+            server.stdin.write(header + b'\r\n' + body)
+            server.stdin.flush()
+        server.stdin.close()
+        return server.wait()
+
+if __name__ == '__main__':
+    sys.exit(main())

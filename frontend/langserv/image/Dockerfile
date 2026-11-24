@@ -30,8 +30,11 @@ RUN apt-get update && \
 COPY --from=jdtls /opt/jdtls /opt/jdtls
 RUN ln -s /opt/jdtls/plugins/org.eclipse.equinox.launcher_*.jar /opt/jdtls/launcher.jar
 COPY jdtls /usr/local/bin/jdtls
+COPY pylsp-files /usr/local/bin/pylsp-files
 
 # Folder of the solution files, as in the engine of the backend. Editors send the code in their
-# messages, but clangd needs the folder to exist. Its options apply to the files in the folder
+# messages, but clangd needs the folder to exist. Its options apply to the files in the folder.
+# Each container mounts a small folder in memory on it, where pylsp-files writes the files of
+# Python solutions
 RUN mkdir /home/student
 COPY clangd.yaml /home/.clangd
