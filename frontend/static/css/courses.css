@@ -55,7 +55,7 @@
   }
 
   & .description {
-    color: gray;
+    color: var(--muted-text);
   }
 
   /* Statistics of the course, such as its students, only on wide screens */
@@ -144,6 +144,11 @@
     color: white;
     font-weight: 600;
     text-align: center;
+  }
+
+  /* Darker on hover, as the other buttons (form.css) */
+  & .enter:hover {
+    filter: brightness(0.85);
   }
 
   & .enter::after {
@@ -602,13 +607,12 @@
 }
 
 /* Banner of a course behind its card in the lists and behind its summary in the course page. It
-   covers them, cropped to their size, under a layer of the surface color. A halo of that color
-   around the letters keeps them readable over any banner, in the light and dark schemes */
+   covers them, cropped to their size, under a layer of the surface color that keeps the text
+   readable over any banner, in the light and dark schemes */
 :is(.course_item, .course .summary):has(> .banner:not([hidden])) {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  text-shadow: 0 0 0.15em var(--surface), 0 0 0.3em var(--surface), 0 0 0.5em var(--surface);
 
   /* No grid area, so it covers the padding too */
   & > .banner {
@@ -626,7 +630,7 @@
     position: absolute;
     inset: 0;
     z-index: -1;
-    background-color: color-mix(in srgb, var(--surface) 60%, transparent);
+    background-color: color-mix(in srgb, var(--surface) 80%, transparent);
   }
 }
 

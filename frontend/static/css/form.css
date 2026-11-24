@@ -125,8 +125,8 @@ a.button {
   cursor: default;
 }
 
+/* A darker background, so the text keeps its contrast and the button its size */
 button:hover:not([disabled]),
 .button:hover:not([disabled]) {
-  font-weight: bold;
-  filter: drop-shadow(2px 2px 2px gray);
+  filter: brightness(0.85);
 }
