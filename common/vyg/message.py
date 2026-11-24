@@ -11,10 +11,11 @@ class Message:
         self.action = json_dict.get('action', '')
         # Used when an error happens, and the rest of the message is invalid
         self.error = json_dict.get('error', '')
-        # The programming language used in field code
+        # The programming language of the files
         self.language = json_dict.get('language', '')
-        # The source code
-        self.code = json_dict.get('code', '')
+        # The files of the solution as {name: code}, in the order of the tabs of the editor. The
+        # first one is the main file, named by the backend (e.g. solution.c)
+        self.files = json_dict.get('files', {})
         # Standard input and command line arguments that the user wrote to run the code, in
         # problems without test cases
         self.stdin = json_dict.get('stdin', '')

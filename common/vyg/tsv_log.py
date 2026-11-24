@@ -5,9 +5,8 @@ import json
 import logging
 import os
 import secrets
+import shutil
 import tempfile
-
-from vyg.constants import EXTENSION_LANGUAGES
 
 logger = logging.getLogger(__name__)
 
@@ -24,9 +23,10 @@ CODE_FOLDER = 'code'
 
 class TsvLog:
     """ A log of events in a folder: a TSV file per month (<prefix>-2026-11.tsv, UTC) whose first
-    row names the columns, and a subfolder with code files named by their hash. Rows have fixed
-    columns, and a data column with the other fields of each event as JSON, so new kinds of events
-    add fields, not columns. Cells never contain tabs or new lines, so each event is one row.
+    row names the columns, and a subfolder with the files of each code in a folder named by their
+    hash. Rows have fixed columns, and a data column with the other fields of each event as JSON,
+    so new kinds of events add fields, not columns. Cells never contain tabs or new lines, so each
+    event is one row.
     Several processes (e.g. gunicorn workers) may write the same log: each row is appended in a
     single system call, and the file of a new month is created with its columns atomically. Files
     are readable only by the user of the server, because they have personal data """
@@ -54,27 +54,39 @@ class TsvLog:
             logger.exception('could not write the %s event in the log %s', row.get('event'),
                 self.folder)
 
-    def save_code(self, code_hash: str, language: str, code: str):
-        """ Save the code in the file named by its hash in the code folder, unless it was saved
-        before (the same submission). The hash must be hexadecimal, made by the server. A failure
-        to write is logged, it never stops the run """
-        path = self.code_path(code_hash, language)
+    def save_code(self, code_hash: str, files: dict):
+        """ Save the files of a solution ({name: code}, names checked by solution_files_error())
+        in the folder named by their hash in the code folder, unless it was saved before (the same
+        submission). The hash must be hexadecimal, made by the server. A failure to write is
+        logged, it never stops the run """
+        path = self.code_path(code_hash)
+        if os.path.isdir(path):
+            return
+        temporary = None
         try:
             os.makedirs(os.path.dirname(path), exist_ok=True)
-            # O_EXCL fails if the file exists: two users may send the same code at the same time
-            descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-            with os.fdopen(descriptor, 'w', encoding='utf-8') as file:
-                file.write(code)
-        except FileExistsError:
-            pass
+            # The files go to a temporary folder (mode 700) that takes the name of the hash at the
+            # end, so a failed write never leaves a partial code. Two users may send the same code
+            # at the same time: the rename of the second one fails, and the first one is kept
+            temporary = tempfile.mkdtemp(dir=os.path.dirname(path), prefix='.')
+            for name, code in files.items():
+                descriptor = os.open(os.path.join(temporary, name),
+                    os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+                with os.fdopen(descriptor, 'w', encoding='utf-8') as file:
+                    file.write(code)
+            os.rename(temporary, path)
+            temporary = None
         except OSError:
-            logger.exception('could not save the code %s in the log %s', code_hash, self.folder)
+            if not os.path.isdir(path):
+                logger.exception('could not save the code %s in the log %s', code_hash, self.folder)
+        finally:
+            if temporary:
+                shutil.rmtree(temporary, ignore_errors=True)
 
-    def code_path(self, code_hash: str, language: str) -> str:
-        """ Return the path of the code file of the given hash, with the extension of the
-        language. The hash is hexadecimal, made by the server, so it is a safe file name """
-        extension = EXTENSION_LANGUAGES.get(language, 'txt')
-        return os.path.join(self.folder, CODE_FOLDER, f'{code_hash}.{extension}')
+    def code_path(self, code_hash: str) -> str:
+        """ Return the folder with the files of the code of the given hash. The hash is
+        hexadecimal, made by the server, so it is a safe file name """
+        return os.path.join(self.folder, CODE_FOLDER, code_hash)
 
     def _month_path(self) -> str:
         """ Return the file of the current month, created with the row of columns if it does not

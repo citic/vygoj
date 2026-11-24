@@ -1,16 +1,17 @@
 """ Log of the submissions that the backend receives, with their verdicts and the resources that
 their test cases used. It is a vyg.TsvLog, as the activity log of the frontend: a TSV file per month
 in data/log/ (next to the logs of gunicorn) with fixed columns and the other fields of each event
-as JSON in the data column, and the code of each submission in data/log/code/<hash>.<ext>:
+as JSON in the data column, and the files of each submission in data/log/code/<hash>/:
 
     data/log/runs-2026-11.tsv
-    data/log/code/<hash>.cpp
+    data/log/code/<hash>/solution.cpp
 
 The frontend sends a context with each submission: the id of the run in its activity log (the id
 column here, which joins both logs), the user, their roles and address, the course, the material,
 and the commit of the course repo. The backend does not use the context to judge. See "Run log" in
 design/readme.adoc """
 import hashlib
+import json
 import os
 
 import flask
@@ -74,10 +75,12 @@ def log_submission(event: str, context: dict, data: dict):
     run_log().write({ **cells, 'id': run_id if isinstance(run_id, str) else None,
         'frontend': flask.request.remote_addr, 'event': event, 'data': data })
 
-def log_run(context: dict, language: str, code: str, result_json: str, duration: float):
-    """ Log a judged submission: save its code by its hash, and log its result in JSON and the
-    seconds it took """
-    code_hash = hashlib.sha256(f'{language}\0{code}'.encode('utf-8')).hexdigest()
-    run_log().save_code(code_hash, language, code)
+def log_run(context: dict, language: str, files: dict, result_json: str, duration: float):
+    """ Log a judged submission: save its files ({name: code}) by their hash, and log its result
+    in JSON and the seconds it took """
+    # The files keep their order, the main one first
+    text = json.dumps([language, files], separators=(',', ':'))
+    code_hash = hashlib.sha256(text.encode('utf-8')).hexdigest()
+    run_log().save_code(code_hash, files)
     log_submission('run', context, { 'language': language, 'code': code_hash,
         'duration': round(duration, 3), **vyg.summarize_result(result_json, TEST_FIELDS) })

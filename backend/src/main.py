@@ -75,7 +75,7 @@ def run_solution():
         result = job.execute()
     finally:
         Backend.job_count -= 1
-    log_run(context, job.language, job.solution.code, result, time.monotonic() - start)
+    log_run(context, job.language, job.solution.files, result, time.monotonic() - start)
     return flask.Response(result, mimetype='application/json')
 
 def reject_submission(context:dict, reason:str):

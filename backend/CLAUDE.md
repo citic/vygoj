@@ -13,7 +13,7 @@ JSON. It must assume that every submitted program is malicious.
   `maxOutputSize`); the backend clamps them to its own ranges in `execution.py`.
 - `src/execution.py`: `Execution` class that drives one submission: static checks, container
   creation, file copy, compilation, test case runs, extra proofs (thread count, sanitizers,
-  linting), and container removal. `LANGUAGE_DEFAULTS` holds the source file, compiler, run
+  linting), and container removal. `LANGUAGE_DEFAULTS` holds the main file, compiler, run
   command, and lint flags of each language (C, C++, Java, Python, Alecci).
   `FailedSolution` stops the run as soon as a verdict is known.
 - `src/run_log.py`: log of every submission received and its verdict (`data/log/runs-*.tsv`, a
@@ -60,8 +60,9 @@ improve isolation, and must never let a submission crash or exhaust the backend 
   list (never a shell string), it always gets a timeout, and its output is capped at
   `MAX_OUTPUT_BYTES` before decoding.
 - Never interpolate student-controlled data (code, test input, file names, language names) into
-  shell commands. Write data to files copied with `put_archive`, use fixed file names, and accept
-  only whitelisted values (e.g. languages in `LANGUAGE_DEFAULTS`, tools `asan`/`tsan`/`ubsan`).
+  shell commands. Write data to files copied with `put_archive`, use fixed file names or the
+  names of solution files that `vyg.solution_files_error()` checked, and accept only whitelisted
+  values (e.g. languages in `LANGUAGE_DEFAULTS`, tools `asan`/`tsan`/`ubsan`).
 - Validate the `/run` request: correct `Content-Type`, required fields, types, and size limits for
   code and test cases. Reject anything else with a 4xx status, never a 500 with a traceback.
 - Always remove containers in `finally`, even on errors, so they do not pile up.
