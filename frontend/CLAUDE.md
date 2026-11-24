@@ -16,17 +16,26 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
   folder, reads it bounded and inside the repo, parses it as JSON or as YAML without aliases
   (only JSON values), and gives the object to `interpret()`, which each subclass implements; the
   values it skips are kept in `warnings`. Questions will get their own subclass.
-- `src/courses/`: package with the courses (imported as `courses.course_offer`...).
+- `src/courses/`: package with the courses (imported as `courses.repo_course`...).
   - `course_controller.py`: `CourseController` lists the courses of the home page (prepared,
-    enrolled, available), offers and enrolls them, lets only the professor, students, and
-    administrators enter a course (`find_course()`), and caches each course by the commit of its
-    offer.
-  - `course_offer.py`: courses are in version control, and the database has their offers, which
-    later will have groups (sections): `CourseOffer` (`course_offers` table: name, professor repo,
-    commit, offered, hidden; prepared courses are offers not offered yet) and `Enrollment`
-    (`enrollments`), and `parse_courses()`/`sync_offers()`, which turn the configuration file of a
-    clone into offers after each clone or pull (see "Professor repositories and courses" in
-    `design/readme.adoc`).
+    taught sections, enrolled, available), lets only the professor, students, and administrators
+    enter a course (`find_course()`) in the version that each one sees (the professor the main
+    branch, students the commit of their section), and caches each version by name, folder, and
+    commit.
+  - `repo_course.py`: courses are in version control, and the database has the courses found in
+    the repos: `RepoCourse` (`repo_courses` table: name, professor repo, commit of the last pull,
+    hidden; prepared courses are the visible ones), and `parse_courses()`/`sync_courses()`, which
+    turn the configuration file of a clone into rows after each clone or pull (see "Professor
+    repositories and courses" in `design/readme.adoc`).
+  - `course_section.py`: the offers of the courses: `CourseSection` (`course_sections` table:
+    duration, weeks, year, term, dates, institution, campus, number, modality, enrollment methods
+    and password hash, cost, and the commit that it shows) and `Enrollment` (`enrollments`: one
+    section per course and user).
+  - `section_controller.py`: `SectionForm` and `SectionController`, the form where professors
+    offer a course in new sections (several numbers at once) and edit one
+    (`templates/section.html`, with `static/js/section/section.js`), the update of a section to
+    the last pull, and the enrollment in open sections (from their start date, password limited
+    as logins).
   - `course_config.py`: `CourseConfig(ConfigFile)`, the file of the root of a repo with its
     courses.
 - `src/problems/`: package with the programming problems (imported as
@@ -79,7 +88,9 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
     a professor) and `CourseRepo(GitRepo)`, its clone in `DATA_FOLDER/user/<username>/<repo>`
     with `main` in its working tree, which the judge only reads: clone and pull over SSH only,
     without the git config of the server, symbolic links as plain files, and its
-    configuration file bounded.
+    configuration file bounded. The commits that sections show have snapshots, working trees of
+    the clone (`git worktree`) in `DATA_FOLDER/user/<username>/snapshots/<repo>/<commit>`
+    (`add_snapshot()`, `remove_snapshot()`).
   - `repo_controller.py`: `RepoController`, the routes of the Repositories section of the home
     page (`/user/repo...`, script `static/js/user/repos.js`), the professor repos only for
     professors.
@@ -111,10 +122,10 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
   an administrator, or resets the password of a user and makes it administrator (`make admin`);
   the first administrator is created here, and then administrators give and take the role of
   others in the web (never their own). `import` creates the missing tables (`db.create_all()`) and
-  updates the users table; `make`, `make release`, `make server`, and `make service` run it
-  before starting, because gunicorn workers creating tables at the same time fail. `main.py`
-  never changes the schema. Administrators import users from CSV or TSV files in `/admin/users`
-  (`admin.py`).
+  updates the users table and the courses tables of older databases; `make`, `make release`,
+  `make server`, and `make service` run it before starting, because gunicorn workers creating
+  tables at the same time fail. `main.py` never changes the schema. Administrators import users
+  from CSV or TSV files in `/admin/users` (`admin.py`).
   `log output.zip` and `submissions output.zip` write the archives of the activity log.
   `repo-job kind username [repo_id]` runs a background job of `repo_jobs.py`. Their logic is in
   `users.py`, `activity_log.py`, and `repo_jobs.py`, so the web application can reuse it.

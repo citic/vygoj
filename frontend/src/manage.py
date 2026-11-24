@@ -9,12 +9,12 @@
 admin creates an administrator, or resets the password of a user and makes it administrator. It
 runs in the server, so the first administrator, and one who lost their password, never depend on
 the web application, where administrators give and take the role of the others, and import
-users from files. import creates and updates the tables of the database; make runs it before
-starting the servers. log and submissions write the archives that administrators download from
-the web application. repo-job runs a job on the student repo of a user (solutions, history, or
-push), or on one of their professor repos, given by its id (pull); the web application starts it
-in the background (see repo_jobs.py). Their logic lives in users.py, activity_log.py, and
-repo_jobs.py, so the web application may reuse it """
+users from files. import creates the tables of the database and updates the ones of older versions
+(users, courses); make runs it before starting the servers. log and submissions write the archives
+that administrators download from the web application. repo-job runs a job on the student repo of
+a user (solutions, history, or push), or on one of their professor repos, given by its id (pull);
+the web application starts it in the background (see repo_jobs.py). Their logic lives in users.py,
+activity_log.py, and repo_jobs.py, so the web application may reuse it """
 import getpass
 import sys
 
@@ -23,6 +23,7 @@ from werkzeug.security import generate_password_hash
 from db import db
 from activity_log import write_archive, log_event
 from courses.course_controller import CourseController
+from courses.course_section import MAX_INSTITUTION_LENGTH, UNIQUE_NUMBER
 from main import app
 from repos.repo_jobs import RepoJob
 from users import MAX_PASSWORD_LENGTH, MAX_USERNAME_LENGTH, LoginAttempt, User, sorted_roles
@@ -100,7 +101,9 @@ def update_database():
     """ Create the tables that do not exist yet (users, their progress, single sign-on...) and
     update the users table of older databases. It runs in a single process, before the servers
     start, because the gunicorn workers would create the same tables at the same time """
+    update_courses_tables()
     db.create_all()
+    update_sections_table()
     update_users_table()
     cascade_user_deletes()
 
@@ -127,6 +130,59 @@ def update_users_table():
         f" ALTER COLUMN username TYPE VARCHAR({MAX_USERNAME_LENGTH}),"
         " ALTER COLUMN roles SET DEFAULT '{student}',"
         " ALTER COLUMN password DROP NOT NULL"))
+    db.session.commit()
+
+def update_courses_tables():
+    """ Turn the course_offers table of older databases into repo_courses, which keeps the courses
+    found in the repos, and drop their offers and enrollments: courses are offered in sections now
+    (courses/course_section.py), so professors offer them again. db.create_all() makes the new
+    tables after it. Names come from the database, never from users """
+    inspector = db.inspect(db.engine)
+    tables = inspector.get_table_names()
+    if ('enrollments' in tables and 'offer_id' in
+            {column['name'] for column in inspector.get_columns('enrollments')}):
+        db.session.execute(db.text('DROP TABLE enrollments'))
+        print('manage: the enrollments in offered courses were dropped, courses have sections now')
+    if 'course_offers' in tables and 'repo_courses' not in tables:
+        # Constraints keep the name of the old table, taken before it is renamed
+        constraints = [inspector.get_pk_constraint('course_offers')['name'],
+            *(key['name'] for key in inspector.get_unique_constraints('course_offers')),
+            *(key['name'] for key in inspector.get_foreign_keys('course_offers'))]
+        db.session.execute(db.text('ALTER TABLE course_offers RENAME TO repo_courses'))
+        db.session.execute(db.text('ALTER TABLE repo_courses DROP COLUMN IF EXISTS offered_at'))
+        for name in constraints:
+            if name and name.startswith('course_offers_'):
+                new_name = 'repo_courses_' + name.removeprefix('course_offers_')
+                db.session.execute(db.text(
+                    f'ALTER TABLE repo_courses RENAME CONSTRAINT "{name}" TO "{new_name}"'))
+        db.session.execute(db.text(
+            'ALTER SEQUENCE IF EXISTS course_offers_id_seq RENAME TO repo_courses_id_seq'))
+        # Hidden courses were offered ones that their repos do not have anymore. Without offers,
+        # they have no sections, so they go as the prepared courses that a pull does not find
+        db.session.execute(db.text('DELETE FROM repo_courses WHERE hidden'))
+        print('manage: course_offers is now repo_courses; offer the courses again in sections')
+    db.session.commit()
+
+def update_sections_table():
+    """ Add the weeks and institution columns to older sections tables, and make the unique numbers
+    of the sections take the institution into account. Names come from the models and the
+    database, never from users """
+    inspector = db.inspect(db.engine)
+    columns = {column['name'] for column in inspector.get_columns('course_sections')}
+    if 'weeks' not in columns:
+        db.session.execute(db.text('ALTER TABLE course_sections ADD COLUMN weeks INTEGER'))
+    if 'institution' not in columns:
+        db.session.execute(db.text('ALTER TABLE course_sections ADD COLUMN institution'
+            f" VARCHAR({MAX_INSTITUTION_LENGTH}) NOT NULL DEFAULT ''"))
+    constraints = inspector.get_unique_constraints('course_sections')
+    if all(constraint['name'] != UNIQUE_NUMBER for constraint in constraints):
+        for constraint in constraints:
+            if 'number' in constraint['column_names']:
+                db.session.execute(db.text(
+                    f'ALTER TABLE course_sections DROP CONSTRAINT "{constraint["name"]}"'))
+        db.session.execute(db.text(f'ALTER TABLE course_sections ADD CONSTRAINT "{UNIQUE_NUMBER}"'
+            ' UNIQUE (course_id, year, term, institution, campus, number)'))
+        print('manage: the numbers of the sections are unique per institution too')
     db.session.commit()
 
 def cascade_user_deletes():

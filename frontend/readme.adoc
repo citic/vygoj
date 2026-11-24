@@ -30,7 +30,7 @@ make install
 [[install_database]]
 === Database
 
-The frontend stores the users, their progress, and the courses offered in a PostgreSQL database. To have the database in the same computer, install and start PostgreSQL with the commands of _Database_ of the distribution, in the link:../readme.adoc#packages[dependencies of the root readme]. Then create a database for the user of the frontend. In macOS, only run `createdb vygoj`, because the user that installed PostgreSQL is already its administrator:
+The frontend stores the users, their progress, and the courses with their sections and students in a PostgreSQL database. To have the database in the same computer, install and start PostgreSQL with the commands of _Database_ of the distribution, in the link:../readme.adoc#packages[dependencies of the root readme]. Then create a database for the user of the frontend. In macOS, only run `createdb vygoj`, because the user that installed PostgreSQL is already its administrator:
 
 [source,sh]
 ----
@@ -70,6 +70,7 @@ The frontend loads its default settings from `config/defaults.py`, which explain
 | `TRUSTED_PROXIES` | `1` behind a reverse proxy (<<reverse_proxy>>), `0` otherwise
 | `REPO_ORIGIN_HOSTS` | Git hosts where users may keep their repositories, e.g. GitHub and GitLab. Add the Git host of the institution if it has one
 | `SSO_CLIENT_SECRETS` | Secrets of the single sign-on providers (<<sso>>)
+| `SECTION_CURRENCIES` | Currencies that professors choose for the cost of their sections (<<professor_repos>>), e.g. `['CRC', 'USD']`, the first one by default
 | `SECRET_KEY`, `LANG_SERVER_SECRET` | Secrets written by `make install`. Changing `SECRET_KEY` logs out all users
 |===
 
@@ -438,18 +439,21 @@ Professors write their courses in git repositories of their own, with their edit
 
 In the _Repositories_ section of the home page, professors add the SSH address of each repository (e.g. `git@github.com:ann/courses.git`), and give read access to the SSH key that the section shows. _Clone_ copies the repository to VygOJ, and _Pull_ brings its changes later. The messages of the section tell the courses found, or what is wrong.
 
-The home page shows three lists of courses:
+Professors offer a course in sections (groups): _Offer_ opens a form with the duration of the section (intensive, monthly, two months, quarter, four months, semester, annual, or indefinite) and its weeks (the longest of the duration is suggested, e.g. 20 for a semester, which may be changed to 16), its year and term (I, II, III), optional start, end, and archive dates, its institution, campus, and numbers (001 to 999; several numbers separated by spaces, such as `003 005 006`, offer several sections at once), its modality of study (regular, tutoring, challenge exam, adaptive, or self-paced), how students enroll (by themselves, with an optional password, or by the professor), and its cost and currency. Required fields have a red asterisk, and _Offer_ is enabled when they are filled. Students enroll from the start date; the end date is the end of the lessons (without it, the section is available forever), and the archive date closes the enrollment. The form estimates the end and archive dates from the start date and the weeks, and remembers its values in the browser for the next section. A course may be offered in many sections. Each section shows the version of the course of the last _Pull_ when it was offered: later changes reach its students only when the professor presses _Update_ in the section. _Edit_ opens the form of the section again. Enrollment by the professor (a list of emails or a CSV file) and payments are not available yet.
+
+The home page shows four lists of courses, each section of a course in a row below its card:
 
 [cols="1,4",options="header"]
 |===
 | List | Courses
 
-| My prepared courses | Only for professors: the courses of their repositories, which only they see, to review them. _Offer_ publishes a course to every user
-| My enrolled courses | The courses where the user is enrolled, with their progress
-| Available courses | The offered courses where the user may enroll
+| My prepared courses | Only for professors: the courses of their repositories, which only they see, to review them. _Offer_ offers a course in a new section
+| My taught sections | Only for professors: the sections that they offered, with their students, and the buttons _Update_ and _Edit_
+| My enrolled courses | The courses where the user is enrolled, with their section and progress
+| Available courses | The sections where the user may enroll by themselves, from their start date until their end date. A user enrolls in one section of each course
 |===
 
-Only the professor of a course, its students, and administrators enter it.
+Only the professor of a course, its students, and administrators enter it. Students see the version of their section, and the professor and administrators the last _Pull_.
 
 [[problems]]
 === Problems

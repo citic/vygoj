@@ -1,13 +1,31 @@
 import { fold, searchWords, setupPageFilter } from '../filter.js';
 
-// Lists of courses of the home page. Actions that cannot be undone from the page, such as offering
-// a prepared course to every user, ask for confirmation first with the text of the data-confirm
-// attribute of their form
+// Lists of courses of the home page. Actions that cannot be undone from the page, such as updating
+// a section to the last version of its course, ask for confirmation first with the text of the
+// data-confirm attribute of their form
 document.querySelectorAll('.courses form[data-confirm]').forEach((form) => {
   form.addEventListener('submit', (event) => {
     // eslint-disable-next-line no-alert -- a native dialog is enough for a rare action
     if (!window.confirm(form.dataset.confirm)) {
       event.preventDefault();
+    }
+  });
+});
+
+// The password of a section that has one stays hidden until the user presses Enroll the first
+// time, so the rows stay compact: that click shows the field instead of sending the form. It is
+// a click listener, because a required hidden field would stop the form before its submit event
+document.querySelectorAll('.courses form.enroll').forEach((form) => {
+  const password = form.querySelector('input.password');
+  if (!password) {
+    return;
+  }
+  password.hidden = true;
+  form.querySelector('button[type="submit"]').addEventListener('click', (event) => {
+    if (password.hidden) {
+      event.preventDefault();
+      password.hidden = false;
+      password.focus();
     }
   });
 });

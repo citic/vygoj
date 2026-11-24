@@ -7,7 +7,7 @@
 }
 
 /* Card of a course in the lists: its image and progress at the left of its code and name,
-   description, and instructors, its actions below them (Enter, Offer, or Enroll), and its banner,
+   description, and instructors, its actions below them (Enter and Offer), and its banner,
    if any, behind them. The last row takes the height of the image that is left */
 .course_item {
   position: relative;
@@ -121,7 +121,7 @@
     color: var(--label-color);
   }
 
-  /* Actions of the course, one below the other: Enter, and Offer or Enroll */
+  /* Actions of the course, one below the other: Enter, and Offer */
   & .actions {
     grid-column: 2;
     display: grid;
@@ -129,17 +129,10 @@
     align-content: center;
   }
 
-  /* The forms of the actions stay over the link of Enter */
-  & form {
+  /* Offer stays over the link of Enter, with the white text of the buttons */
+  & .offer {
     z-index: 1;
-    display: grid;
-  }
-
-  /* An offered course says so instead of its Offer button */
-  & .offered {
-    color: var(--muted-text);
-    font-size: 0.9rem;
-    text-align: center;
+    color: #fff;
   }
 
   /* The link of the button covers the card, so any part of it enters the course */
@@ -227,6 +220,158 @@
 
     & .actions {
       grid-column: auto;
+    }
+  }
+}
+
+/* Sections of a course below its card in the lists of the home page (section_table of
+   macros.html), which fold. In narrow lists each section is a card, with the name of the column
+   of each cell before it (data-label), and in wide ones a row of a table. Each row has its
+   actions (Update and Edit, or Enroll) */
+.sections {
+  container: sections / inline-size;
+  margin: 0.5rem 0 0 1rem;
+
+  /* A table wider than the list scrolls sideways */
+  overflow-x: auto;
+
+  & > summary {
+    margin-bottom: 0.5rem;
+  }
+
+  & h4 {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  & table {
+    display: block;
+    width: 100%;
+  }
+
+  & thead {
+    display: none;
+  }
+
+  & :is(tbody, tr) {
+    display: block;
+  }
+
+  & tr {
+    margin-bottom: 0.75rem;
+    border: 1px solid gray;
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+
+  /* Specific as the data_table rules of site.css, so the cells of a card have only a line
+     between them */
+  & table.data_table :is(th, td) {
+    display: block;
+    border: none;
+    border-bottom: 1px solid rgb(128 128 128 / 25%);
+    padding: 0.4rem 0.75rem;
+  }
+
+  & table.data_table tr > :last-child {
+    border-bottom: none;
+  }
+
+  & [data-label]::before {
+    content: attr(data-label) ": ";
+    color: var(--label-color);
+    font-weight: 600;
+  }
+
+  /* Dates and numbers stay whole, and a range of dates wraps between its dates */
+  & :is(.code, .period, .cost, .students, time) {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The institution above the campus, and the date of the start of an enrollment below Enroll */
+  & :is(.archive, .institution, .opens) {
+    display: block;
+  }
+
+  & :is(.archive, .opens) {
+    color: var(--muted-text);
+  }
+
+  /* Buttons of a row (Update and Edit) of the same size: side by side while the cell has room,
+     and one above the other when the table is narrow. Each one grows from no width (flex-basis
+     0) but never below its text (max-content), so the browser wraps them before they overflow.
+     The cell stays a cell of the table, so its borders line up with the others. A button and a
+     link that looks like one get the same height */
+  & .row_actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+
+    & > * {
+      flex: 1 1 0;
+      min-width: max-content;
+    }
+  }
+
+  & .row_actions :is(button, .button) {
+    box-sizing: border-box;
+    line-height: 1.5;
+  }
+
+  & .update button {
+    width: 100%;
+  }
+
+  /* Enroll, and the password of a section that has one above it, as wide as the button: the
+     field gives no width to the column (width 0) and then fills it */
+  & .enroll {
+    display: inline-grid;
+    grid-template-columns: max-content;
+    gap: 0.5rem;
+  }
+
+  & input.password {
+    box-sizing: border-box;
+    width: 0;
+    min-width: 100%;
+    padding: 4px;
+  }
+}
+
+/* Lists of sections with room: a table, with the names of the columns above them. A container
+   query, because the table needs the room of the list, not of the window (a table of a professor
+   has more columns than the one of a student) */
+@container sections (width >= 1000px) {
+  .sections {
+    & table {
+      display: table;
+    }
+
+    & thead {
+      display: table-header-group;
+    }
+
+    & tbody {
+      display: table-row-group;
+    }
+
+    & tr {
+      display: table-row;
+    }
+
+    & table.data_table :is(th, td) {
+      display: table-cell;
+      border: 1px solid gray;
+      vertical-align: middle;
+    }
+
+    & table.data_table tr > :last-child {
+      border-bottom: 1px solid gray;
+    }
+
+    & [data-label]::before {
+      content: none;
     }
   }
 }
@@ -367,6 +512,92 @@
 
   & .repo_list:empty {
     display: none;
+  }
+}
+
+/* Form of a section (section.html): the version of the course that it shows, and the hints and
+   errors below the fields */
+.section_form {
+  & .version {
+    color: var(--muted-text);
+  }
+
+  & .check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 1rem 0 0;
+  }
+
+  & .check:first-of-type {
+    margin-top: 0;
+  }
+
+  /* Required fields have a red asterisk after their label, and so does a fieldset that requires
+     one of its options (data-required) after its title */
+  & label:has(+ :required)::after,
+  & fieldset[data-required] > legend::after {
+    content: " *";
+    color: var(--error);
+  }
+
+  & .required_note {
+    margin: 0;
+    color: var(--muted-text);
+  }
+
+  /* Button that estimates the end and archive dates, below the start date */
+  & .estimate {
+    align-self: start;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+  }
+
+  & .estimate[hidden] {
+    display: none;
+  }
+
+  & .symbol {
+    font-family: "Material Symbols Outlined", sans-serif;
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+
+  /* The password with its icon buttons (show and copy) at its right */
+  & .password_field {
+    display: flex;
+    align-items: stretch;
+    gap: 0.25rem;
+    margin: 0;
+
+    & input {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    & button {
+      min-width: auto;
+      padding: 4px 6px;
+    }
+
+    & button[hidden] {
+      display: none;
+    }
+  }
+
+  & .hint {
+    color: gray;
+  }
+
+  & .field_error {
+    color: var(--error);
+  }
+
+  & .actions {
+    display: flex;
+    gap: 0.5rem;
   }
 }
 

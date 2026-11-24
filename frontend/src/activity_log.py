@@ -67,7 +67,8 @@ COLUMNS = ('time', 'id', 'user', 'role', 'address', 'event', 'path', 'course', '
 EVENTS = ('visit', 'login', 'login_failed', 'login_blocked', 'logout', 'preferences',
     'user_create', 'user_admin', 'run', 'run_repeated', 'run_rejected', 'run_failed',
     'log_download', 'sso_provider', 'user_update', 'user_suspend', 'user_activate', 'user_delete',
-    'repo_job', 'repo_origin', 'professor_repo', 'course_offer', 'course_enroll')
+    'repo_job', 'repo_origin', 'professor_repo', 'section_create', 'section_edit',
+    'section_update', 'course_enroll', 'course_enroll_failed')
 
 # Fields of each test case of a run that the log keeps
 TEST_FIELDS = ('status', 'wallTime')

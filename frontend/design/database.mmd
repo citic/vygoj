@@ -1,13 +1,16 @@
 %% Tables of the frontend in PostgreSQL. Tables with data of users delete it with the user
-%% (ON DELETE CASCADE). Courses are in git repos; the database only has their offers
+%% (ON DELETE CASCADE). Courses are in git repos; the database has the courses found in them, and
+%% their sections (groups) with their students
 erDiagram
     users ||--o{ progress : "has"
     users ||--o{ runs : "starts"
     users ||--o{ user_identities : "logs in with"
     users ||--o{ professor_repos : "owns"
     users ||--o{ enrollments : "enrolls in"
-    professor_repos ||--o{ course_offers : "has courses"
-    course_offers ||--o{ enrollments : "has students"
+    professor_repos ||--o{ repo_courses : "has courses"
+    repo_courses ||--o{ course_sections : "is offered in"
+    course_sections ||--o{ enrollments : "has students"
+    repo_courses ||--o{ enrollments : "one section per student"
     sso_providers ||..o{ user_identities : "alias"
 
     users {
@@ -72,17 +75,39 @@ erDiagram
         string url
         string folder
     }
-    course_offers {
+    repo_courses {
         int id PK
         string name UK
         int repo_id FK
-        string commit
-        datetime offered_at "empty while prepared"
-        bool hidden
+        string commit "of the last pull"
+        bool hidden "not in the repo, with sections"
+    }
+    course_sections {
+        int id PK
+        int course_id FK
+        string duration
+        int weeks "empty if indefinite"
+        int year
+        string term "I, II, III, or empty"
+        date start_date
+        date end_date
+        date archive_date
+        string institution
+        string campus
+        int number "001 to 999"
+        string modality
+        bool self_enroll
+        string password "hash, empty for none"
+        bool manual_enroll
+        decimal cost
+        string currency
+        string commit "shown to its students"
+        datetime created_at
     }
     enrollments {
         int id PK
         int user_id FK
-        int offer_id FK
+        int course_id FK
+        int section_id FK
         datetime enrolled_at
     }

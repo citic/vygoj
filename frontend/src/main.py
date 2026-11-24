@@ -11,6 +11,8 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from admin import UserAdminController
 from courses.course_controller import CourseController
+from courses.course_section import DURATIONS, MODALITIES
+from courses.section_controller import SectionController
 from limits import BACKEND_CONNECT_TIMEOUT, Limits
 from problems.problem_controller import (BACKEND_STATUS_TIMEOUT, ProblemController,
     lang_server_http_url, lang_server_status_url)
@@ -36,6 +38,8 @@ app = flask.Flask(__name__, template_folder=template_path,
 # Every page uses the font chosen by the user, base.html loads it with these names
 app.jinja_env.globals.update(FONTS=FONTS, DEFAULT_FONT=DEFAULT_FONT, font_url=font_url,
     ROLES=ROLES)
+# The lists of sections of the home page show the names of their durations and modalities
+app.jinja_env.globals.update(SECTION_DURATIONS=DURATIONS, SECTION_MODALITIES=MODALITIES)
 
 # The footer of every page shows the version of the frontend (e.g. '0.2.0') and its commit (e.g.
 # 'ce271b1 2026-11-23'), which the make rules that run the server set (APP_VERSION and APP_COMMIT
@@ -224,15 +228,25 @@ def get_course(name):
     log_event('visit', course=name, material=name, type='course')
     return CourseController.get_course(name)
 
-@app.route('/course/<name>/offer', methods=['POST'])
+@app.route('/course/<name>/section/new', methods=['GET', 'POST'])
 def offer_course(name):
-    """ The professor of a prepared course offers it to every user """
-    return CourseController.offer(name)
+    """ The professor of a prepared course offers it in a new section """
+    return SectionController.create(name)
 
-@app.route('/course/<name>/enroll', methods=['POST'])
-def enroll_course(name):
-    """ The logged user enrolls in an offered course """
-    return CourseController.enroll(name)
+@app.route('/section/<int:section_id>', methods=['GET', 'POST'])
+def edit_section(section_id):
+    """ The professor of a section edits it """
+    return SectionController.edit(section_id)
+
+@app.route('/section/<int:section_id>/update', methods=['POST'])
+def update_section(section_id):
+    """ The professor of a section makes it show the last version of its course """
+    return SectionController.update(section_id)
+
+@app.route('/section/<int:section_id>/enroll', methods=['POST'])
+def enroll_section(section_id):
+    """ The logged user enrolls in an open section """
+    return SectionController.enroll(section_id)
 
 @app.route('/course/<course_name>/files/<path:filename>')
 @talisman(content_security_policy=FILE_CSP)

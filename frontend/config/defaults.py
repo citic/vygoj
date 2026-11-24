@@ -29,6 +29,9 @@ PROFESSOR_REPO_MAX_SIZE = 1024 * 1024 * 1024
 # (e.g. git@github.com:user/repo.git). Other hosts are refused, so users cannot make the server
 # connect to other computers
 REPO_ORIGIN_HOSTS = ['github.com', 'gitlab.com', 'ssh.bitbucket.org', 'git.ucr.ac.cr']
+# Currencies of the cost of the sections of courses, as ISO 4217 codes, the first one by default.
+# Payments are not implemented yet
+SECTION_CURRENCIES = ['USD', 'CRC', 'EUR']
 # Database URI for SQLAlchemy. Without user and password, PostgreSQL uses the system user
 SQLALCHEMY_DATABASE_URI = 'postgresql+psycopg:///vygoj'
 # Frontend network port to listen on

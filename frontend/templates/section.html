@@ -1,0 +1,80 @@
+{% import 'macros.html' as macros %}
+{% extends 'base.html' %}
+{%- block styles %}
+    <link rel="stylesheet" href="/css/courses.css">
+{%- endblock %}
+{%- block main %}
+      <main class="section_form">
+        <h2>{{ it.title }}</h2>
+        {#- The version of the course that the students of the section see: the commit of the last
+            pull for a new section, or the one where the section was offered or updated #}
+        <p class="version">{{ _('Version of the course') }}: <code title="{{ it.section.commit if it.section else it.course.commit }}">{{ (it.section.commit if it.section else it.course.commit)[:7] }}</code></p>
+        {#- section.js enables the button of the form when its required fields are filled, writes
+            the weeks of each duration (data-weeks), pads the section numbers with zeros,
+            estimates the end and archive dates from the start date and the weeks, remembers the values of the form for the next new section (data-new
+            fills a new one), and asks before Cancel leaves a changed form #}
+        <form method="post" id="section_form" class="fieldset_columns" data-weeks='{{ it.weeks|tojson }}'{% if not it.section and not it.form.is_submitted() %} data-new{% endif %}>
+          {{ it.form.hidden_tag() }}
+          <p class="required_note">{{ _('Fields marked with * are required.') }}</p>
+          <fieldset class="period">
+            <legend>{{ _('Period') }}</legend>
+            {{ macros.form_field(it.form.duration) }}
+            {#- section.js writes the weeks of the chosen duration, and disables them if indefinite #}
+            {{ macros.form_field(it.form.weeks, _('The longest of the duration is suggested; change it if your institution has others, e.g. semesters of 16 weeks.'), min=1, max=60) }}
+            {{ macros.form_field(it.form.year) }}
+            {{ macros.form_field(it.form.term) }}
+            {{ macros.form_field(it.form.start_date, _('Optional. From this date, students may enroll in the section. The end and archive dates are estimated from it and the duration.')) }}
+            {#- Shown when the professor changed the end or archive dates, and then the start date or
+                the duration, so their changes are not lost without asking #}
+            <button type="button" class="estimate button neutral small" hidden><span class="symbol material-symbols-outlined" aria-hidden="true">event_repeat</span> {{ _('Estimate the end and archive dates') }}</button>
+            {{ macros.form_field(it.form.end_date, _('Optional. End of the lessons: after it there are no more lessons, but students may still solve the final exercises and assignments. Without an end date, the section is available forever.')) }}
+            {{ macros.form_field(it.form.archive_date, _('Optional. From this date, the course becomes read-only: students cannot do activities or assignments anymore.')) }}
+          </fieldset>
+          <fieldset class="group">
+            <legend>{{ _('Section') }}</legend>
+            {{ macros.form_field(it.form.institution, _('Optional.')) }}
+            {{ macros.form_field(it.form.campus, _('Optional.')) }}
+            {{ macros.form_field(it.form.number, _('From 001 to 999.') if it.section else _('From 001 to 999. Write several numbers separated by spaces to offer several sections at once, e.g. 003 005 006.')) }}
+            {{ macros.form_field(it.form.modality) }}
+          </fieldset>
+          {#- At least one method of enrollment is required (data-required) #}
+          <fieldset class="enrollment" data-required>
+            <legend>{{ _('Enrollment') }}</legend>
+            <p class="check">{{ it.form.self_enroll() }} {{ it.form.self_enroll.label }}</p>
+            {#- The password with two icon buttons of section.js: show or hide it, and copy it. The
+                stored password is never shown, only the one that the professor types #}
+            {{ it.form.new_password.label }}
+            <p class="password_field">
+              {{ it.form.new_password(maxlength=256, autocomplete='new-password', **{'aria-describedby': 'new_password_hint', 'aria-invalid': 'true' if it.form.new_password.errors else false}) }}
+              <button type="button" class="show_password button neutral small symbol material-symbols-outlined" title="{{ _('Show the password') }}" aria-label="{{ _('Show the password') }}" aria-pressed="false" data-show="{{ _('Show the password') }}" data-hide="{{ _('Hide the password') }}" hidden>visibility</button>
+              <button type="button" class="copy_password button neutral small symbol material-symbols-outlined" title="{{ _('Copy the password') }}" aria-label="{{ _('Copy the password') }}" data-done="{{ _('Copied') }}" hidden>content_copy</button>
+            </p>
+            <small class="hint" id="new_password_hint">{{ _('Optional. Students type it to enroll; without it, any user may enroll.') }}{% if it.section and it.section.password %} {{ _('Leave it empty to keep the current one.') }}{% endif %}</small>
+{%- for error in it.form.new_password.errors %}
+            <small class="field_error">{{ error }}</small>
+{%- endfor %}
+{%- if it.section and it.section.password %}
+            <p class="check">{{ it.form.remove_password() }} {{ it.form.remove_password.label }}</p>
+{%- endif %}
+            <p class="check">{{ it.form.manual_enroll() }} {{ it.form.manual_enroll.label }}</p>
+            <small class="hint">{{ _('The professor will provide the emails of the students later, in a form or a CSV or TSV file.') }}</small>
+{%- for error in it.form.manual_enroll.errors %}
+            <small class="field_error">{{ error }}</small>
+{%- endfor %}
+          </fieldset>
+          <fieldset class="cost">
+            <legend>{{ _('Cost') }}</legend>
+            {{ macros.form_field(it.form.cost, _('0 for a free section. Payments are not available yet.'), min=0, step='0.01') }}
+            {{ macros.form_field(it.form.currency) }}
+          </fieldset>
+          <p class="actions">
+            {{ it.form.save(class="button confirm", value=_('Save') if it.section else _('Offer')) }}
+            <a class="cancel button reject" href="{{ url_for('get_index') }}" data-confirm="{{ _('Leave the form? The changes will be lost.') }}">{{ _('Cancel') }}</a>
+          </p>
+        </form>
+      </main>
+{%- endblock %}
+{%- block scripts %}
+  {{ super() }}
+    <script src="/js/section/section.js" type="module" async></script>
+{%- endblock %}

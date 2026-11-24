@@ -3,12 +3,11 @@ import math
 import threading
 import flask
 from flask import current_app as app
-from flask_babel import gettext
 import vyg
-from activity_log import log_event
-from courses.course_offer import CourseOffer, parse_courses
+from courses.course_section import CourseSection, Enrollment
+from courses.repo_course import RepoCourse, parse_courses
 from repos.git_repo import GitError
-from repos.professor_repo import CloneError
+from repos.professor_repo import CloneError, CourseRepo
 from repos.student_repo import StudentRepo
 from users import Progress, User, has_role
 
@@ -22,108 +21,178 @@ EXP_RAND_TYPE = [
     ['problem', 'problem', 'page',    'page'],
 ]
 
+# Versions of a course kept in the cache of each worker: the main branch of its repo and the
+# commits of its sections. The oldest one loaded is dropped first
+MAX_CACHED_VERSIONS = 8
+
 # The threads of a gunicorn worker share the cache of courses. The lock prevents two threads from
 # changing it at once
 _cache_lock = threading.Lock()
 
 class CourseController:
-    """ Manages the courses that professors prepare and offer, and that students enroll """
-    # Cache of the loaded courses, as {name: (commit, vyg.Course)}. Each gunicorn worker is a
-    # separate process with its own cache, so do not read it directly, use load_course(): the
-    # commit of its offer tells when a pull in another process changed a course
+    """ Manages the courses that professors prepare and that students enter. Each user sees a
+    version of a course: its professor and administrators the main branch of its repo, and its
+    students the commit of their section (section_controller.py) """
+    # Cache of the loaded courses, as {(name, folder, commit): vyg.Course}. Each gunicorn worker is
+    # a separate process with its own cache, so do not read it directly, use load_course(): the
+    # commit of the course or of the section tells when a pull or an update in another process
+    # changed it. The folder is part of the key because problems load their files later from it:
+    # the clone has the main branch, and each snapshot the commit of some sections
     all_courses = {}
 
     @staticmethod
-    def load_course(offer: CourseOffer) -> vyg.Course | None:
-        """ Return the course of the offer, from the cache if it has the commit of the offer, or
-        else from the clone of its repo. Return None if the clone does not have it """
-        cached = CourseController.all_courses.get(offer.name)
-        if cached and cached[0] == offer.commit:
-            return cached[1]
-        clone = offer.repo.clone()
+    def load_course(repo_course: RepoCourse, section: CourseSection = None) -> vyg.Course | None:
+        """ Return the course in the main branch of its clone, or in the snapshot of the commit of
+        the section, from the cache if it has it. Return None if it cannot be loaded """
         try:
-            course = parse_courses(clone.read_catalog(), clone.path)[0].get(offer.name)
+            if section is None:
+                commit, folder = repo_course.commit, repo_course.repo.clone().path
+            else:
+                commit = section.commit
+                folder = repo_course.repo.add_snapshot(commit)
+        except (CloneError, GitError, OSError, ValueError):
+            app.logger.exception('could not prepare the snapshot of %s', repo_course.name)
+            return None
+        key = (repo_course.name, folder, commit)
+        cached = CourseController.all_courses.get(key)
+        if cached:
+            return cached
+        try:
+            course = parse_courses(CourseRepo(folder).read_catalog(), folder)[0].get(
+                repo_course.name)
         except CloneError:
-            app.logger.warning('could not read the courses of %s', clone.path)
+            app.logger.warning('could not read the courses of %s', folder)
             return None
         if course:
-            with _cache_lock:
-                CourseController.all_courses[offer.name] = (offer.commit, course)
+            CourseController.cache(key, course)
         return course
 
     @staticmethod
+    def cache(key: tuple, course: vyg.Course):
+        """ Keep the course in the cache, with up to MAX_CACHED_VERSIONS versions of its name """
+        with _cache_lock:
+            cache = CourseController.all_courses
+            cache[key] = course
+            versions = [other for other in cache if other[0] == key[0]]
+            for old in versions[:-MAX_CACHED_VERSIONS]:
+                del cache[old]
+
+    @staticmethod
     def load_all_courses() -> list:
-        """ Return every course that can be loaded, prepared, offered, or hidden, e.g. for the
-        archives of the activity log """
-        courses = (CourseController.load_course(offer) for offer in CourseOffer.all_offers())
-        return [course for course in courses if course]
+        """ Return every course that can be loaded, e.g. for the archives of the activity log: the
+        main branch of its repo, or the commit of its last section if the main branch does not
+        have it anymore (hidden) """
+        courses = []
+        for repo_course in RepoCourse.all_courses():
+            course = None if repo_course.hidden else CourseController.load_course(repo_course)
+            if course is None:
+                section = CourseSection.newest(repo_course.id, open_only=False)
+                course = section and CourseController.load_course(repo_course, section)
+            if course:
+                courses.append(course)
+        return courses
 
     @staticmethod
     def find_course(name: str, to_enter: bool = True) -> vyg.Course | None:
-        """ Return the course of the given name if the logged user may enter it (to_enter), or
-        see its card (e.g. its image), or else None, as if it did not exist """
-        offer = CourseOffer.find(name)
-        if not offer or offer.hidden or not CourseController.can_see(offer, to_enter):
+        """ Return the course of the given name in the version that the logged user sees, if they
+        may enter it (to_enter), or see its card (e.g. its image), or else None, as if it did not
+        exist. The professor of the course sees the main branch of its repo, its students the
+        commit of their section, administrators the main branch, and users who may enroll the
+        card of its last open section. A hidden course is seen in the commit of a section """
+        repo_course = RepoCourse.find(name)
+        user_id = User.logged_id()
+        if not repo_course or not user_id or not flask.session.get('user'):
             return None
-        return CourseController.load_course(offer)
+        owner = repo_course.owned_by(user_id)
+        if owner and not repo_course.hidden:
+            return CourseController.load_course(repo_course)
+        section = CourseSection.of_student(repo_course.id, user_id)
+        if section:
+            return CourseController.load_course(repo_course, section)
+        manager = owner or has_role('admin')
+        if manager and not repo_course.hidden:
+            return CourseController.load_course(repo_course)
+        if manager or not to_enter:
+            section = CourseSection.newest(repo_course.id, open_only=not manager)
+            return section and CourseController.load_course(repo_course, section)
+        return None
 
     @staticmethod
     def is_owner(name: str) -> bool:
         """ True if the course of the given name is in a repo of the logged user """
-        offer = CourseOffer.find(name)
+        repo_course = RepoCourse.find(name)
         user_id = User.logged_id()
-        return bool(offer and user_id and offer.owned_by(user_id))
+        return bool(repo_course and user_id and repo_course.owned_by(user_id))
 
     @staticmethod
-    def can_see(offer: CourseOffer, to_enter: bool) -> bool:
-        """ True if the logged user may enter the course of the offer (to_enter), or see its
-        card: administrators and the professor of the course always, students enrolled in it, and
-        every user may see the cards of offered courses """
-        user = flask.session.get('user')
-        user_id = User.logged_id()
-        if not user or not user_id:
-            return False
-        if has_role('admin') or offer.owned_by(user_id):
-            return True
-        return offer.has_student(user_id) or (not to_enter and offer.is_offered())
-
-    @staticmethod
-    def entries(offers: list) -> list:
-        """ Return the cards of the courses of the offers that can be loaded, as dictionaries
-        with the course, its offer, and the number of its students """
-        counts = CourseOffer.student_counts(offers)
+    def prepared_entries(repo_courses: list) -> list:
+        """ Return the cards of the courses of the repos of a professor that can be loaded, as
+        dictionaries with the course, its row, and the number of its students in every section """
+        counts = Enrollment.course_counts([repo_course.id for repo_course in repo_courses])
         entries = []
-        for offer in offers:
-            course = CourseController.load_course(offer)
+        for repo_course in repo_courses:
+            course = CourseController.load_course(repo_course)
             if course:
-                entries.append({ 'course': course, 'offer': offer,
-                    'students': counts.get(offer.id, 0) })
+                entries.append({ 'course': course, 'repo_course': repo_course,
+                    'students': counts.get(repo_course.id, 0) })
         return entries
 
     @staticmethod
+    def section_entries(sections: list, main_card: bool = False) -> list:
+        """ Return the cards of the courses of the sections that can be loaded, in the order of
+        the sections, as dictionaries with the course, its row, the number of its students in
+        these sections, and its sections, as dictionaries with the section and its number of
+        students. The card shows the main branch of the repo if main_card and the course is not
+        hidden (e.g. for its professor), or else the commit of its last section """
+        counts = CourseSection.student_counts(sections)
+        entries = {}
+        for section in sections:
+            entry = entries.setdefault(section.course_id, { 'repo_course': section.course,
+                'students': 0, 'sections': [] })
+            students = counts.get(section.id, 0)
+            entry['sections'].append({ 'section': section, 'students': students })
+            entry['students'] += students
+        for entry in entries.values():
+            repo_course = entry['repo_course']
+            course = None
+            if main_card and not repo_course.hidden:
+                course = CourseController.load_course(repo_course)
+            if course is None:
+                last = max((row['section'] for row in entry['sections']), key=lambda row: row.id)
+                course = CourseController.load_course(repo_course, last)
+            entry['course'] = course
+        return [entry for entry in entries.values() if entry['course']]
+
+    @staticmethod
     def get_index():
-        """ Get the homepage view: the courses that the logged user prepared (professors), the
-        ones where they are enrolled, and the offered ones where they may enroll """
+        """ Get the homepage view: the courses that the logged user prepared and the sections that
+        they teach (professors), the courses where they are enrolled, and the open sections where
+        they may enroll """
         user = flask.session.get('user')
         user_id = User.logged_id()
-        prepared = enrolled = available = []
+        professor = bool(user_id) and has_role('professor')
+        prepared = taught = enrolled = available = []
         if user_id:
-            if has_role('professor'):
-                prepared = CourseController.entries(CourseOffer.prepared_by(user_id))
-            enrolled = CourseController.entries(CourseOffer.enrolled_by(user_id))
-            available = CourseController.entries(CourseOffer.available_to(user_id))
+            if professor:
+                prepared = CourseController.prepared_entries(RepoCourse.prepared_by(user_id))
+                taught = CourseController.section_entries(CourseSection.taught_by(user_id),
+                    main_card=True)
+            enrolled = CourseController.section_entries(CourseSection.enrolled_by(user_id))
+            available = CourseController.section_entries(CourseSection.available_to(user_id))
         it = {
             'user': user if user_id else None,
             'breadcrumbs': [
             ],
             # Cards of the courses of the repos of the professor, None for other users
-            'prepared_courses': prepared if has_role('professor') else None,
-            # Cards of the courses where the user is enrolled
+            'prepared_courses': prepared if professor else None,
+            # Cards of the courses with the sections that the professor teaches, None for others
+            'taught_courses': taught if professor else None,
+            # Cards of the courses where the user is enrolled, each one with their section
             'enrolled_courses': enrolled,
             # The total progress of the user in each of those courses, as {name: percentage}
             'progress': {entry['course'].name: CourseController.total_progress(entry['course'])
                 for entry in enrolled},
-            # Cards of the offered courses where the user may enroll
+            # Cards of the courses with the open sections where the user may enroll
             'available_courses': available,
             'scripts': [
                 '<script src="/js/user/repos.js" type="module" async="async"></script>',
@@ -132,36 +201,6 @@ class CourseController:
             ],
         }
         return flask.render_template('courses.html', it=it)
-
-    @staticmethod
-    def offer(name: str):
-        """ The professor of a prepared course offers it to every user, who see it in Available
-        courses """
-        user_id = User.logged_id()
-        offer = CourseOffer.find(name)
-        if not user_id or not offer or offer.hidden:
-            flask.abort(404)
-        if not has_role('professor') or not offer.owned_by(user_id):
-            flask.abort(403)
-        if offer.offered_at is None:
-            offer.offer()
-            log_event('course_offer', course=name)
-        flask.flash(gettext('Course %(name)s offered.', name=name), 'success')
-        return flask.redirect(flask.url_for('get_index'))
-
-    @staticmethod
-    def enroll(name: str):
-        """ The logged user enrolls in an offered course, which goes to their enrolled courses """
-        user_id = User.logged_id()
-        if not user_id:
-            flask.abort(401)
-        offer = CourseOffer.find(name)
-        if not offer or not offer.is_offered():
-            flask.abort(404)
-        if offer.enroll(user_id):
-            log_event('course_enroll', course=name)
-        flask.flash(gettext('You are enrolled in %(name)s.', name=name), 'success')
-        return flask.redirect(flask.url_for('get_index'))
 
     @staticmethod
     def total_progress(course) -> int:

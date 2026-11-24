@@ -3,10 +3,11 @@
           <p class="course_columns" aria-hidden="true"><span class="name">{{ _('Course') }}</span><span class="description">{{ _('Description') }}</span><span class="instructors">{{ _('Author') }}</span><span class="statistics">{{ _('Statistics') }}</span></p>
 {%- endmacro %}
 
-{#- Card of a course in the lists of the home page. entry has the course, its offer, and the
-    number of its students. The actions of the card, such as Enter, Offer, or Enroll, come from
-    the call block, in the actions part at its right #}
-{%- macro course_entry(entry, progress=none) %}
+{#- Card of a course in the lists of the home page. entry has the course and the number of its
+    students. The actions of the card, such as Enter or Offer, come from the call block, in the
+    actions part at its right. statistics replaces the number of students, e.g. with the section of
+    a student #}
+{%- macro course_entry(entry, progress=none, statistics=none) %}
 {%- set course = entry.course %}
             <article class="course_item">
 {%- if course.banner %}
@@ -23,11 +24,75 @@
                 <li><a href="/prof/{{ instructor }}">{{ instructor }}</a></li>
 {%- endfor %}
               </ul>
-              <p class="statistics">{{ ngettext('%(num)d student', '%(num)d students', entry.students) }}</p>
+              <p class="statistics">{{ statistics if statistics is not none else ngettext('%(num)d student', '%(num)d students', entry.students) }}</p>
               <div class="actions">
 {{- caller() }}
               </div>
             </article>
+{%- endmacro %}
+
+{#- Number, year, and term of a section, e.g. 001 (2026-I), and its institution and campus if any #}
+{%- macro section_name(section) -%}
+{{ _('Section %(code)s (%(period)s)', code=section.code(), period=section.period()) }}{% if section.place() %}, {{ section.place() }}{% endif %}
+{%- endmacro %}
+
+{#- Sections of a course below its card in the lists of the home page, which fold: a row per
+    section with its data, and its actions from the call block, which receives the row (the
+    section and its number of students). taught adds the columns of its professor: students and
+    the version of the course (the commit that the section shows). On narrow screens each row is a
+    card, and each cell shows the name of its column before it (data-label) #}
+{%- macro section_table(entry, taught=false) %}
+              <details class="sections" open>
+                <summary><h4>{{ ngettext('%(num)d section', '%(num)d sections', entry.sections|length) }}</h4></summary>
+                <table class="data_table">
+                  <thead>
+                    <tr>
+                      <th scope="col" class="code">{{ _('Section') }}</th>
+                      <th scope="col" class="period">{{ _('Period') }}</th>
+                      <th scope="col" class="campus">{{ _('Institution and campus') }}</th>
+                      <th scope="col" class="modality">{{ _('Modality') }}</th>
+                      <th scope="col" class="duration">{{ _('Duration') }}</th>
+                      <th scope="col" class="dates">{{ _('Dates') }}</th>
+                      <th scope="col" class="cost">{{ _('Cost') }}</th>
+{%- if taught %}
+                      <th scope="col" class="students">{{ _('Students') }}</th>
+                      <th scope="col" class="version">{{ _('Version') }}</th>
+{%- endif %}
+                      <th scope="col" class="actions">{{ _('Actions') }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+{%- for row in entry.sections %}
+{%- set section = row.section %}
+                    <tr>
+                      <th scope="row" class="code" data-label="{{ _('Section') }}">{{ section.code() }}</th>
+                      <td class="period" data-label="{{ _('Period') }}">{{ section.period() }}</td>
+                      <td class="campus" data-label="{{ _('Institution and campus') }}">{% if section.institution %}<span class="institution">{{ section.institution }}</span> {% endif %}{{ section.campus }}</td>
+                      <td class="modality" data-label="{{ _('Modality') }}">{{ SECTION_MODALITIES[section.modality][0] }}</td>
+                      <td class="duration" data-label="{{ _('Duration') }}">{{ SECTION_DURATIONS[section.duration] }}{% if section.weeks %} <span class="weeks">({{ ngettext('%(num)d week', '%(num)d weeks', section.weeks) }})</span>{% endif %}</td>
+                      <td class="dates" data-label="{{ _('Dates') }}">
+{%- if section.start_date or section.end_date %}
+                        {% if section.start_date %}<time datetime="{{ section.start_date.isoformat() }}">{{ section.start_date.isoformat() }}</time>{% endif %} – {% if section.end_date %}<time datetime="{{ section.end_date.isoformat() }}">{{ section.end_date.isoformat() }}</time>{% endif %}
+{%- endif %}
+{%- if taught and section.archive_date %}
+                        <small class="archive">{{ _('Archived on') }} <time datetime="{{ section.archive_date.isoformat() }}">{{ section.archive_date.isoformat() }}</time></small>
+{%- endif %}
+                      </td>
+                      <td class="cost" data-label="{{ _('Cost') }}">{% if section.cost %}{{ '%.2f'|format(section.cost) }} {{ section.currency }}{% else %}{{ _('Free') }}{% endif %}</td>
+{%- if taught %}
+                      <td class="students" data-label="{{ _('Students') }}">{{ row.students }}</td>
+                      <td class="version" data-label="{{ _('Version') }}"><code title="{{ section.commit }}">{{ section.commit[:7] }}</code></td>
+{%- endif %}
+                      <td class="actions">
+                        <div class="row_actions">
+{{- caller(row) }}
+                        </div>
+                      </td>
+                    </tr>
+{%- endfor %}
+                  </tbody>
+                </table>
+              </details>
 {%- endmacro %}
 
 {#- A field of a form with its label, an optional hint below it, and its validation errors. The
@@ -59,7 +124,7 @@
 
 {#- Search below the title of a list of courses of the home page, which courses.js applies in the
     page while the user types, and shows: the server does not filter the courses, so without
-    scripts it would do nothing. name tells the list (prepared, enrolled, or available) #}
+    scripts it would do nothing. name tells the list (prepared, taught, enrolled, or available) #}
 {%- macro course_search(name) %}
           <form class="list_search" role="search" hidden>
 {{- search_field('', _('Search courses, e.g. CI0112'), url_for('get_index'), name) }}

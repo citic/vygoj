@@ -85,7 +85,8 @@
 {%- endif %}
         </details>
 {%- if it.prepared_courses is not none %}
-        {#- The courses of the repos of the professor: only they see them, until they offer them #}
+        {#- The courses of the repos of the professor: only they see them. Offer opens the form of
+            a new section of the course, so a course may be offered in many sections #}
         <details id="prepared_courses" open>
           <summary><h2>{{ _('My prepared courses') }}</h2></summary>
 {%- if it.prepared_courses %}
@@ -96,15 +97,7 @@
             <li>
 {%- call macros.course_entry(entry) %}
                 <a class="enter" href="/course/{{ entry.course.name }}">{{ _('Enter') }} ›</a>
-{%- if entry.offer.offered_at %}
-                <p class="offered">{{ _('Offered') }}</p>
-{%- else %}
-                {#- Offering asks for confirmation (courses.js) with the text of data-confirm #}
-                <form class="offer" method="post" action="{{ url_for('offer_course', name=entry.course.name) }}" data-confirm="{{ _('Offer the course %(name)s? Every user will see it in Available courses and may enroll in it.', name=entry.course.name) }}">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                  <button type="submit" class="button action small">{{ _('Offer') }}</button>
-                </form>
-{%- endif %}
+                <a class="offer button action small" href="{{ url_for('offer_course', name=entry.course.name) }}">{{ _('Offer') }}</a>
 {%- endcall %}
             </li>
 {%- endfor %}
@@ -112,6 +105,39 @@
           <p class="empty" hidden>{{ _('No course matches the search.') }}</p>
 {%- else %}
           <p class="empty">{{ _('No prepared courses yet: clone a professor repository with courses.') }}</p>
+{%- endif %}
+        </details>
+{%- endif %}
+{%- if it.taught_courses is not none %}
+        {#- The sections that the professor offered, below the card of their course. Each section
+            shows the commit of its course when it was offered or updated: Update (courses.js asks
+            for confirmation) makes it show the last pull, and Edit opens its form #}
+        <details id="taught_courses" open>
+          <summary><h2>{{ _('My taught sections') }}</h2></summary>
+{%- if it.taught_courses %}
+{{- macros.course_search('taught') }}
+          {{ macros.course_columns() }}
+          <ul class="course_list">
+{%- for entry in it.taught_courses %}
+            <li>
+{%- call macros.course_entry(entry) %}
+                <a class="enter" href="/course/{{ entry.course.name }}">{{ _('Enter') }} ›</a>
+{%- endcall %}
+{%- call(row) macros.section_table(entry, taught=true) %}
+{%- set section = row.section %}
+{%- set current = section.commit == entry.repo_course.commit and not entry.repo_course.hidden %}
+                        <form class="update" method="post" action="{{ url_for('update_section', section_id=section.id) }}" data-confirm="{{ _('Update section %(code)s of %(name)s to the last version of the course? Its students will see the changes of the last pull of the repository.', code=section.code(), name=entry.course.name) }}">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                          <button type="submit" class="button action small"{% if current or entry.repo_course.hidden %} disabled{% endif %} title="{{ _('The repository does not have the course anymore') if entry.repo_course.hidden else _('The section shows the last version of the course') if current else _('Show the last version of the course') }}">{{ _('Update') }}</button>
+                        </form>
+                        <a class="edit button confirm small" href="{{ url_for('edit_section', section_id=section.id) }}">{{ _('Edit') }}</a>
+{%- endcall %}
+            </li>
+{%- endfor %}
+          </ul>
+          <p class="empty" hidden>{{ _('No course matches the search.') }}</p>
+{%- else %}
+          <p class="empty">{{ _('You do not teach any section yet: offer one of your prepared courses.') }}</p>
 {%- endif %}
         </details>
 {%- endif %}
@@ -123,7 +149,7 @@
           <ul class="course_list">
 {%- for entry in it.enrolled_courses %}
             <li>
-{%- call macros.course_entry(entry, it.progress[entry.course.name]) %}
+{%- call macros.course_entry(entry, it.progress[entry.course.name], macros.section_name(entry.sections[0].section)) %}
                 <a class="enter" href="/course/{{ entry.course.name }}">{{ _('Enter') }} ›</a>
 {%- endcall %}
             </li>
@@ -135,7 +161,8 @@
 {%- endif %}
         </details>
 {%- if it.available_courses %}
-        {#- Courses offered by professors, where the user may enroll #}
+        {#- Open sections of the courses where the user is not enrolled, below the card of their
+            course, each one with Enroll, and the field of its password if it has one #}
         <details id="available_courses" open>
           <summary><h2>{{ _('Available courses') }}</h2></summary>
 {{- macros.course_search('available') }}
@@ -144,10 +171,23 @@
 {%- for entry in it.available_courses %}
             <li>
 {%- call macros.course_entry(entry) %}
-                <form class="enroll" method="post" action="{{ url_for('enroll_course', name=entry.course.name) }}">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                  <button type="submit" class="button confirm small">{{ _('Enroll') }}</button>
-                </form>
+{%- endcall %}
+{%- call(row) macros.section_table(entry) %}
+{%- set section = row.section %}
+                        <form class="enroll" method="post" action="{{ url_for('enroll_section', section_id=section.id) }}">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+{%- if section.password and section.has_started() %}
+                          {#- courses.js hides it until the user presses Enroll the first time #}
+                          <input type="password" class="password" name="password" maxlength="256" required autocomplete="off" placeholder="{{ _('Password') }}" aria-label="{{ _('Enrollment password') }}">
+{%- endif %}
+{%- if section.has_started() %}
+                          <button type="submit" class="button confirm small">{{ _('Enroll') }}</button>
+{%- else %}
+                          {#- Users enroll from the start date of the section #}
+                          <button type="submit" class="button confirm small" disabled>{{ _('Enroll') }}</button>
+                          <small class="opens">{{ _('From %(date)s', date=section.start_date.isoformat()) }}</small>
+{%- endif %}
+                        </form>
 {%- endcall %}
             </li>
 {%- endfor %}

@@ -21,8 +21,9 @@ from flask import current_app as app
 import vyg
 from repos.git_repo import GitRepo, check_ssh_url, user_folder
 
-# Offering of the courses (e.g. 2026b05 is group 05 of the second term of 2026), until courses
-# have offerings in the database
+# Offering of the courses (e.g. 2026b05 is group 05 of the second term of 2026). Courses have
+# sections in the database now (courses/course_section.py)
+# TODO(jhc): use the year, term, and number of the section of the student (issue #95)
 TERM_GROUP = '2026b01'
 # Names of courses and problems (folders of the course repos, e.g. collatz_3n+1) and files of
 # solutions. They are parts of refs and paths of git, so they cannot have dots, slashes, or spaces

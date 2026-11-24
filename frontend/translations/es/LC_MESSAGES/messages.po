@@ -97,10 +97,22 @@ msgid "%(jobs)s running"
 msgstr "%(jobs)s en ejecución"
 
 #, python-format
+msgid "%(num)d section"
+msgid_plural "%(num)d sections"
+msgstr[0] "%(num)d grupo"
+msgstr[1] "%(num)d grupos"
+
+#, python-format
 msgid "%(num)d student"
 msgid_plural "%(num)d students"
 msgstr[0] "%(num)d estudiante"
 msgstr[1] "%(num)d estudiantes"
+
+#, python-format
+msgid "%(num)d week"
+msgid_plural "%(num)d weeks"
+msgstr[0] "%(num)d semana"
+msgstr[1] "%(num)d semanas"
 
 #, python-format
 msgid "%(number)s of %(count)s, %(time)s"
@@ -130,6 +142,9 @@ msgstr " y terminó con el código %(code)s"
 msgid ". It took %(seconds)s s"
 msgstr ". Tardó %(seconds)s s"
 
+msgid "0 for a free section. Payments are not available yet."
+msgstr "0 para un grupo gratuito. Los pagos aún no están disponibles."
+
 msgid ""
 "A CSV or TSV file in UTF-8 with a row per user and the columns username "
 "and email, and optionally fullname, password, role, status, language, and"
@@ -138,6 +153,9 @@ msgstr ""
 "Un archivo CSV o TSV en UTF-8 con una fila por usuario y las columnas "
 "username y email, y opcionalmente fullname, password, role, status, "
 "language y font. Elíjalo o suéltelo aquí."
+
+msgid "A section number is repeated."
+msgstr "Un número de grupo está repetido."
 
 msgid "Account"
 msgstr "Cuenta"
@@ -164,6 +182,12 @@ msgstr "Activo"
 
 msgid "Activity log"
 msgstr "Bitácora"
+
+msgid "Adaptive"
+msgstr "Adaptativo"
+
+msgid "Adaptive (self-study with scheduled exams)"
+msgstr "Adaptativo (autoaprendizaje con exámenes programados)"
 
 msgid "Add"
 msgstr "Agregar"
@@ -213,11 +237,20 @@ msgstr ""
 "Un juez en línea educativo para enseñar y aprender programación de "
 "computadoras con énfasis en el paradigma de programación concurrente"
 
+msgid "Annual"
+msgstr "Anual"
+
 msgid "Another provider has this alias"
 msgstr "Otro proveedor tiene este alias"
 
 msgid "Another user has this email"
 msgstr "Otro usuario tiene este correo"
+
+msgid "Archive date"
+msgstr "Fecha de archivado"
+
+msgid "Archived on"
+msgstr "Se archiva el"
 
 msgid "Arguments, one per line"
 msgstr "Argumentos, uno por línea"
@@ -244,11 +277,23 @@ msgstr ""
 msgid "CSV example"
 msgstr "Ejemplo CSV"
 
+msgid "Campus"
+msgstr "Recinto"
+
 msgid "Cancel"
 msgstr "Cancelar"
 
+msgid "Challenge exam"
+msgstr "Suficiencia"
+
+msgid "Challenge exam (students already master the subject and take an exam)"
+msgstr "Suficiencia (ya domina las nociones y hace examen)"
+
 msgid "Change password"
 msgstr "Cambiar contraseña"
+
+msgid "Choose at least one method of enrollment."
+msgstr "Elija al menos un método de inscripción."
 
 msgid ""
 "Claim with the email of the user, which is their username in VygOJ, e.g. "
@@ -318,6 +363,12 @@ msgstr "Copiar"
 msgid "Copy the SSH key"
 msgstr "Copiar la clave SSH"
 
+msgid "Copy the password"
+msgstr "Copiar la contraseña"
+
+msgid "Cost"
+msgstr "Costo"
+
 #, python-format
 msgid "Could not clone %(repo)s: %(reason)s."
 msgstr "No se pudo clonar %(repo)s: %(reason)s."
@@ -361,11 +412,16 @@ msgid "Course"
 msgstr "Curso"
 
 #, python-format
-msgid "Course %(name)s offered."
-msgstr "Curso %(name)s ofrecido."
+msgid "Course %(name)s offered in section %(codes)s."
+msgid_plural "Course %(name)s offered in sections %(codes)s."
+msgstr[0] "Curso %(name)s ofrecido en el grupo %(codes)s."
+msgstr[1] "Curso %(name)s ofrecido en los grupos %(codes)s."
 
 msgid "Create an account for users who are not registered in VygOJ"
 msgstr "Crear una cuenta a los usuarios que no están registrados en VygOJ"
+
+msgid "Currency"
+msgstr "Moneda"
 
 msgid "Current code"
 msgstr "Código actual"
@@ -378,6 +434,9 @@ msgstr "Cortar"
 
 msgid "Dark mode"
 msgstr "Modo oscuro"
+
+msgid "Dates"
+msgstr "Fechas"
 
 msgid "Deadline"
 msgstr "Fecha límite"
@@ -453,6 +512,9 @@ msgstr "Descargar últimas soluciones"
 msgid "Download solution history"
 msgstr "Descargar historial de soluciones"
 
+msgid "Duration"
+msgstr "Duración"
+
 msgid "Edit"
 msgstr "Editar"
 
@@ -466,14 +528,26 @@ msgstr "Correo"
 msgid "Email claim"
 msgstr "Claim del correo"
 
+msgid "End date"
+msgstr "Fecha de finalización"
+
 msgid "Enroll"
 msgstr "Matricular"
+
+msgid "Enrollment"
+msgstr "Inscripción"
+
+msgid "Enrollment password"
+msgstr "Contraseña de inscripción"
 
 msgid "Enter"
 msgstr "Entrar"
 
 msgid "Error"
 msgstr "Error"
+
+msgid "Estimate the end and archive dates"
+msgstr "Estimar las fechas de finalización y archivado"
 
 msgid "Exit fullscreen"
 msgstr "Salir de pantalla completa"
@@ -484,6 +558,9 @@ msgstr "Error esperado"
 msgid "Expected output"
 msgstr "Salida esperada"
 
+msgid "Fields marked with * are required."
+msgstr "Los campos marcados con * son obligatorios."
+
 msgid "File"
 msgstr "Archivo"
 
@@ -492,6 +569,26 @@ msgstr "Filtrar"
 
 msgid "Font"
 msgstr "Tipografía"
+
+msgid "Four months"
+msgstr "Cuatrimestral"
+
+msgid "Free"
+msgstr "Gratuito"
+
+#, python-format
+msgid "From %(date)s"
+msgstr "Desde el %(date)s"
+
+msgid "From 001 to 999."
+msgstr "De 001 a 999."
+
+msgid ""
+"From 001 to 999. Write several numbers separated by spaces to offer "
+"several sections at once, e.g. 003 005 006."
+msgstr ""
+"De 001 a 999. Escriba varios números separados por espacios para ofrecer "
+"varios grupos a la vez, p. ej. 003 005 006."
 
 msgid "Frontend"
 msgstr "Frontend"
@@ -517,6 +614,9 @@ msgstr "Lo entrega el equipo del proveedor"
 msgid "Help"
 msgstr "Ayuda"
 
+msgid "Hide the password"
+msgstr "Ocultar la contraseña"
+
 msgid "Home"
 msgstr "Inicio"
 
@@ -532,6 +632,9 @@ msgstr "Importar usuarios"
 msgid "Imported"
 msgstr "Importado"
 
+msgid "Indefinite"
+msgstr "Indefinida"
+
 msgid "Information"
 msgstr "Información"
 
@@ -541,8 +644,17 @@ msgstr "Entrada"
 msgid "Input and output"
 msgstr "Entrada y salida"
 
+msgid "Institution"
+msgstr "Institución"
+
+msgid "Institution and campus"
+msgstr "Institución y recinto"
+
 msgid "Instructors"
 msgstr "Instructores"
+
+msgid "Intensive or short"
+msgstr "Intensivo o corto"
 
 msgid "Invalid user or password"
 msgstr "Usuario o contraseña inválidos"
@@ -559,6 +671,12 @@ msgstr "Servidor de lenguaje"
 
 msgid "Layout"
 msgstr "Distribución"
+
+msgid "Leave it empty to keep the current one."
+msgstr "Déjela vacía para conservar la actual."
+
+msgid "Leave the form? The changes will be lost."
+msgstr "¿Salir del formulario? Se perderán los cambios."
 
 msgid "Light mode"
 msgstr "Modo claro"
@@ -590,11 +708,26 @@ msgstr "Ingreso cancelado."
 msgid "Logout"
 msgstr "Cerrar sesión"
 
+msgid "Manual enrollment by the professor"
+msgstr "Inscripción manual por el docente"
+
+msgid "Modality"
+msgstr "Modalidad"
+
+msgid "Modality of study"
+msgstr "Modalidad de estudio"
+
+msgid "Monthly"
+msgstr "Mensual"
+
 msgid "My enrolled courses"
 msgstr "Mis cursos matriculados"
 
 msgid "My prepared courses"
 msgstr "Mis cursos preparados"
+
+msgid "My taught sections"
+msgstr "Mis grupos impartidos"
 
 msgid "Name"
 msgstr "Nombre"
@@ -624,6 +757,9 @@ msgstr ""
 "Aún no hay soluciones: cada ejecución de un problema guarda una versión "
 "en este repositorio."
 
+msgid "No term"
+msgstr "Sin ciclo"
+
 msgid "No user matches the search."
 msgstr "Ningún usuario coincide con la búsqueda."
 
@@ -647,15 +783,11 @@ msgid "Offer"
 msgstr "Ofrecer"
 
 #, python-format
-msgid ""
-"Offer the course %(name)s? Every user will see it in Available courses "
-"and may enroll in it."
-msgstr ""
-"¿Ofrecer el curso %(name)s? Todos los usuarios lo verán en Cursos "
-"disponibles y podrán matricularlo."
+msgid "Offer %(name)s in a new section"
+msgstr "Ofrecer %(name)s en un grupo nuevo"
 
-msgid "Offered"
-msgstr "Ofrecido"
+msgid "Optional."
+msgstr "Opcional."
 
 msgid ""
 "Optional. Claim that tells professors from students, e.g. groups or "
@@ -665,11 +797,40 @@ msgstr ""
 "realm_access.roles"
 
 msgid ""
+"Optional. End of the lessons: after it there are no more lessons, but "
+"students may still solve the final exercises and assignments. Without an "
+"end date, the section is available forever."
+msgstr ""
+"Opcional. Fecha de fin de lecciones, a partir de la cual ya no habrá más "
+"lecciones, pero sí se podrán resolver ejercicios y tareas finales. Sin "
+"fecha de finalización, el grupo está disponible permanentemente."
+
+msgid ""
+"Optional. From this date, students may enroll in the section. The end and"
+" archive dates are estimated from it and the duration."
+msgstr ""
+"Opcional. A partir de esta fecha sus estudiantes podrán matricular el "
+"curso. Las fechas de finalización y archivado se estiman a partir de ella"
+" y de la duración."
+
+msgid ""
+"Optional. From this date, the course becomes read-only: students cannot "
+"do activities or assignments anymore."
+msgstr ""
+"Opcional. A partir de esta fecha el curso pasará a sólo consulta y no se "
+"podrán realizar actividades o asignaciones."
+
+msgid ""
 "Optional. Single sign-on links the accounts of providers with this email "
 "to this user."
 msgstr ""
 "Opcional. El inicio de sesión único vincula a este usuario las cuentas de"
 " proveedores con este correo."
+
+msgid "Optional. Students type it to enroll; without it, any user may enroll."
+msgstr ""
+"Opcional. Los estudiantes la escriben para inscribirse; sin ella, "
+"cualquier usuario se puede inscribir."
 
 msgid "Origin"
 msgstr "Origen"
@@ -698,6 +859,9 @@ msgstr "Las contraseñas deben coincidir"
 
 msgid "Paste"
 msgstr "Pegar"
+
+msgid "Period"
+msgstr "Periodo"
 
 #, python-format
 msgid "Pin %(column)s"
@@ -780,14 +944,26 @@ msgstr "Enviado al origen el %(time)s."
 msgid "Pushing..."
 msgstr "Enviando..."
 
+msgid "Quarter"
+msgstr "Trimestral"
+
 msgid "Redirect URI (callback) to register in the provider"
 msgstr "Redirect URI (callback) que se registra en el proveedor"
 
 msgid "Redo"
 msgstr "Rehacer"
 
+msgid "Regular"
+msgstr "Regular"
+
+msgid "Regular (lessons with a professor)"
+msgstr "Regular (mediado con lecciones con docente)"
+
 msgid "Rejected"
 msgstr "Rechazado"
+
+msgid "Remove the password"
+msgstr "Quitar la contraseña"
 
 msgid "Repositories"
 msgstr "Repositorios"
@@ -842,6 +1018,50 @@ msgstr "Buscar cursos, p. ej. CI0112"
 msgid "Search the contents, e.g. 2.3"
 msgstr "Buscar en el contenido, p. ej. 2.3"
 
+msgid "Section"
+msgstr "Grupo"
+
+#, python-format
+msgid "Section %(code)s (%(period)s)"
+msgstr "Grupo %(code)s (%(period)s)"
+
+#, python-format
+msgid "Section %(code)s of %(name)s"
+msgstr "Grupo %(code)s de %(name)s"
+
+#, python-format
+msgid "Section %(code)s of %(name)s already shows the last version."
+msgstr "El grupo %(code)s de %(name)s ya muestra la última versión."
+
+#, python-format
+msgid "Section %(code)s of %(name)s saved."
+msgstr "Grupo %(code)s de %(name)s guardado."
+
+#, python-format
+msgid "Section %(code)s of %(name)s updated."
+msgstr "Grupo %(code)s de %(name)s actualizado."
+
+msgid "Section number"
+msgstr "Número de grupo"
+
+msgid "Section numbers"
+msgstr "Números de grupo"
+
+msgid "Section numbers go from 001 to 999."
+msgstr "Los números de grupo van de 001 a 999."
+
+msgid "Self-enrollment"
+msgstr "Autoinscripción"
+
+msgid "Self-paced"
+msgstr "Autoaprendizaje"
+
+msgid "Self-paced (at their own pace, without mediation)"
+msgstr "Autoaprendizaje (a su ritmo sin mediación)"
+
+msgid "Semester"
+msgstr "Semestral"
+
 msgid "Separated by spaces, e.g. openid profile email"
 msgstr "Separados por espacios, p. ej. openid profile email"
 
@@ -865,6 +1085,12 @@ msgstr ""
 
 msgid "Show"
 msgstr "Mostrar"
+
+msgid "Show the last version of the course"
+msgstr "Mostrar la última versión del curso"
+
+msgid "Show the password"
+msgstr "Mostrar la contraseña"
 
 #, python-format
 msgid "Showing %(first)d to %(last)d of %(total)d"
@@ -900,6 +1126,9 @@ msgstr "Ordenar por %(column)s"
 msgid "Standard input"
 msgstr "Entrada estándar"
 
+msgid "Start date"
+msgstr "Fecha de inicio"
+
 msgid "Statement on the left"
 msgstr "Enunciado a la izquierda"
 
@@ -920,6 +1149,9 @@ msgstr "Estudiante"
 
 msgid "Student repository"
 msgstr "Repositorio de estudiante"
+
+msgid "Students"
+msgstr "Estudiantes"
 
 msgid "Submissions"
 msgstr "Envíos"
@@ -948,6 +1180,9 @@ msgstr "Suspendido"
 msgid "TSV example"
 msgstr "Ejemplo TSV"
 
+msgid "Term"
+msgstr "Ciclo lectivo"
+
 #, python-format
 msgid "Test case %(number)d"
 msgstr "Caso de prueba %(number)d"
@@ -969,6 +1204,11 @@ msgstr ""
 "Los proveedores en prueba no aparecen en la página de ingreso, pero "
 "cualquiera que conozca su URL de ingreso puede usarlos."
 
+msgid "The archive date must not be before the start and end dates."
+msgstr ""
+"La fecha de archivado no puede ser anterior a las fechas de inicio y "
+"finalización."
+
 #, python-format
 msgid "The arguments are too long: at most %(length)d characters"
 msgstr "Los argumentos son demasiado largos: como máximo %(length)d caracteres"
@@ -984,12 +1224,54 @@ msgstr ""
 "se restablezca."
 
 #, python-format
+msgid "The course %(name)s has too many sections."
+msgstr "El curso %(name)s tiene demasiados grupos."
+
+#, python-format
+msgid ""
+"The course has another section with the number %(numbers)s in the same "
+"term, institution, and campus."
+msgid_plural ""
+"The course has other sections with the numbers %(numbers)s in the same "
+"term, institution, and campus."
+msgstr[0] ""
+"El curso tiene otro grupo con el número %(numbers)s en el mismo ciclo, "
+"institución y recinto."
+msgstr[1] ""
+"El curso tiene otros grupos con los números %(numbers)s en el mismo "
+"ciclo, institución y recinto."
+
+msgid ""
+"The course has another section with this number in the same term, "
+"institution, and campus."
+msgstr ""
+"El curso tiene otro grupo con este número en el mismo ciclo, institución "
+"y recinto."
+
+msgid "The end date must not be before the start date."
+msgstr "La fecha de finalización no puede ser anterior a la de inicio."
+
+#, python-format
+msgid "The enrollment in %(name)s opens on %(date)s."
+msgstr "La matrícula de %(name)s abre el %(date)s."
+
+msgid "The enrollment password is not valid."
+msgstr "La contraseña de inscripción no es válida."
+
+#, python-format
 msgid ""
 "The file must be a CSV or TSV file in UTF-8 of up to 1 MiB and %(rows)d "
 "users, with the columns username and email, and optionally %(columns)s."
 msgstr ""
 "El archivo debe ser CSV o TSV en UTF-8 de hasta 1 MiB y %(rows)d "
 "usuarios, con las columnas username y email, y opcionalmente %(columns)s."
+
+msgid ""
+"The longest of the duration is suggested; change it if your institution "
+"has others, e.g. semesters of 16 weeks."
+msgstr ""
+"Se sugiere el máximo de la duración; cámbielo si su institución usa otro,"
+" p. ej. semestres de 16 semanas."
 
 #, python-format
 msgid ""
@@ -1003,6 +1285,16 @@ msgstr ""
 msgid "The origin was up to date on %(time)s."
 msgstr "El origen estaba actualizado el %(time)s."
 
+msgid ""
+"The professor will provide the emails of the students later, in a form or"
+" a CSV or TSV file."
+msgstr ""
+"El docente proveerá luego los correos de sus estudiantes, en un "
+"formulario o con un archivo CSV o TSV."
+
+msgid "The repository does not have the course anymore"
+msgstr "El repositorio ya no tiene el curso"
+
 #, python-format
 msgid ""
 "The repository must be the SSH URL of a repo in %(hosts)s, e.g. "
@@ -1011,11 +1303,25 @@ msgstr ""
 "El repositorio debe ser el URL SSH de un repositorio en %(hosts)s, p. ej."
 " git@github.com:usuario/cursos.git"
 
+#, python-format
+msgid "The repository of %(name)s does not have the course anymore."
+msgstr "El repositorio de %(name)s ya no tiene el curso."
+
 msgid "The requested resource was not found in this site."
 msgstr "El recurso solicitado no se encontró en este sitio."
 
 msgid "The search failed. Try again later."
 msgstr "La búsqueda falló. Intente más tarde."
+
+msgid "The section shows the last version of the course"
+msgstr "El grupo muestra la última versión del curso"
+
+msgid ""
+"The version of the course could not be prepared. Pull the repository and "
+"try again."
+msgstr ""
+"No se pudo preparar la versión del curso. Actualice el repositorio (Pull)"
+" e intente de nuevo."
 
 #, python-format
 msgid ""
@@ -1036,6 +1342,9 @@ msgstr ""
 msgid "There are no SSO providers. Users log in with their password."
 msgstr "No hay proveedores de SSO. Los usuarios ingresan con su contraseña."
 
+msgid "Too many failed attempts. Try again later."
+msgstr "Demasiados intentos fallidos. Intente más tarde."
+
 #, python-format
 msgid "Too many failed logins. Wait %(minutes)d minutes and try again."
 msgstr ""
@@ -1047,12 +1356,32 @@ msgstr ""
 "Confiar en los correos de este proveedor aunque no estén marcados como "
 "verificados"
 
+msgid "Tutoring"
+msgstr "Tutoría"
+
+msgid "Tutoring (individual follow-up)"
+msgstr "Tutoría (seguimiento individual)"
+
+msgid "Two months"
+msgstr "Bimestral"
+
 msgid "Undo"
 msgstr "Deshacer"
 
 #, python-format
 msgid "Unpin %(column)s"
 msgstr "Soltar %(column)s"
+
+msgid "Update"
+msgstr "Actualizar"
+
+#, python-format
+msgid ""
+"Update section %(code)s of %(name)s to the last version of the course? "
+"Its students will see the changes of the last pull of the repository."
+msgstr ""
+"¿Actualizar el grupo %(code)s de %(name)s a la última versión del curso? "
+"Sus estudiantes verán los cambios del último Pull del repositorio."
 
 msgid "Use up to 32 lowercase letters, digits, and hyphens"
 msgstr "Use hasta 32 letras minúsculas, dígitos y guiones"
@@ -1118,6 +1447,12 @@ msgstr ""
 "Valores de ese claim que indican docente, separados por comas. Los demás "
 "usuarios nuevos son estudiantes."
 
+msgid "Version"
+msgstr "Versión"
+
+msgid "Version of the course"
+msgstr "Versión del curso"
+
 msgid "Version of your solution"
 msgstr "Versión de su solución"
 
@@ -1133,6 +1468,9 @@ msgstr "Juez en línea Vygotsky"
 msgid "Warning"
 msgstr "Advertencia"
 
+msgid "Weeks"
+msgstr "Semanas"
+
 msgid "Word wrap"
 msgstr "Ajuste de línea"
 
@@ -1144,6 +1482,18 @@ msgstr "Escriba un correo válido, o déjelo vacío"
 
 msgid "Write an https:// URL"
 msgstr "Escriba un URL https://"
+
+#, python-format
+msgid "Write at most %(num)d section numbers."
+msgstr "Escriba a lo sumo %(num)d números de grupo."
+
+msgid "Write numbers of up to 3 digits separated by spaces, e.g. 003 005 006."
+msgstr ""
+"Escriba números de hasta 3 dígitos separados por espacios, p. ej. 003 005"
+" 006."
+
+msgid "Write one section number."
+msgstr "Escriba un solo número de grupo."
 
 msgid "Write scopes separated by spaces, including openid"
 msgstr "Escriba scopes separados por espacios, incluido openid"
@@ -1159,9 +1509,19 @@ msgstr ""
 "rama main, que aparecen en Mis cursos preparados. Después de cambiar el "
 "repositorio, presione Actualizar."
 
+msgid "Write the weeks of the section."
+msgstr "Escriba las semanas del grupo."
+
+msgid "Year"
+msgstr "Año"
+
 #, python-format
-msgid "You are enrolled in %(name)s."
-msgstr "Está matriculado en %(name)s."
+msgid "You are enrolled in %(name)s already."
+msgstr "Ya está matriculado en %(name)s."
+
+#, python-format
+msgid "You are enrolled in %(name)s, section %(code)s."
+msgstr "Está matriculado en %(name)s, grupo %(code)s."
 
 msgid ""
 "You are not enrolled in any course yet: enroll in one of the available "
@@ -1175,6 +1535,9 @@ msgstr "No puede quitar su propio rol de administrador."
 
 msgid "You cannot suspend nor delete yourself."
 msgstr "No puede suspenderse ni eliminarse a sí mismo."
+
+msgid "You do not teach any section yet: offer one of your prepared courses."
+msgstr "Aún no imparte ningún grupo: ofrezca uno de sus cursos preparados."
 
 msgid "Your account is suspended. Ask the administrator."
 msgstr "Su cuenta está suspendida. Consulte al administrador."
@@ -1440,6 +1803,18 @@ msgstr "su repositorio de estudiante es demasiado grande"
 #~ "su contraseña, nunca con inicio de "
 #~ "sesión único."
 
+#~ msgid "Annual (30 to 40 weeks)"
+#~ msgstr "Anual (30 a 40 semanas)"
+
+#~ msgid "By the professor"
+#~ msgstr "Por el docente"
+
+#~ msgid "Course %(name)s offered in section %(code)s."
+#~ msgstr "Curso %(name)s ofrecido en el grupo %(code)s."
+
+#~ msgid "Course %(name)s offered."
+#~ msgstr "Curso %(name)s ofrecido."
+
 #~ msgid ""
 #~ "Delete the user %(username)s and their"
 #~ " data, such as their preferences and"
@@ -1455,8 +1830,35 @@ msgstr "su repositorio de estudiante es demasiado grande"
 #~ msgid "Download my solutions"
 #~ msgstr "Descargar mis soluciones"
 
+#~ msgid "Four months (14 to 16 weeks)"
+#~ msgstr "Cuatrimestral (14 a 16 semanas)"
+
+#~ msgid "From 1 to 999, shown as 001."
+#~ msgstr "De 1 a 999, se muestra como 001."
+
+#~ msgid "Intensive"
+#~ msgstr "Intensivo"
+
+#~ msgid "Intensive or short (1 to 4 weeks)"
+#~ msgstr "Intensivo o corto (1 a 4 semanas)"
+
+#~ msgid "Monthly (4 weeks)"
+#~ msgstr "Mensual (4 semanas)"
+
 #~ msgid "My courses"
 #~ msgstr "Mis cursos"
+
+#~ msgid ""
+#~ "Offer the course %(name)s? Every user"
+#~ " will see it in Available courses "
+#~ "and may enroll in it."
+#~ msgstr ""
+#~ "¿Ofrecer el curso %(name)s? Todos los"
+#~ " usuarios lo verán en Cursos "
+#~ "disponibles y podrán matricularlo."
+
+#~ msgid "Offered"
+#~ msgstr "Ofrecido"
 
 #~ msgid ""
 #~ "Optional. The ID of the student in"
@@ -1469,8 +1871,31 @@ msgstr "su repositorio de estudiante es demasiado grande"
 #~ " de la UCR. Varias identificaciones "
 #~ "se separan con comas."
 
+#~ msgid "Optional. Without an end date, the section is available forever."
+#~ msgstr ""
+#~ "Opcional. Sin fecha de finalización, el"
+#~ " grupo está disponible permanentemente."
+
+#~ msgid "Quarter (10 to 12 weeks)"
+#~ msgstr "Trimestral (10 a 12 semanas)"
+
+#~ msgid "Self-enrollment with password"
+#~ msgstr "Autoinscripción con contraseña"
+
+#~ msgid "Semester (16 to 20 weeks)"
+#~ msgstr "Semestral (16 a 20 semanas)"
+
+#~ msgid "Standard error output"
+#~ msgstr "Salida de error estándar"
+
 #~ msgid "Student ID"
 #~ msgstr "Identificación de estudiante"
+
+#~ msgid ""
+#~ "The course has another section with "
+#~ "this number in the same term and"
+#~ " campus."
+#~ msgstr "El curso tiene otro grupo con este número en el mismo ciclo y recinto."
 
 #~ msgid ""
 #~ "This user has no password, and "
@@ -1483,6 +1908,9 @@ msgstr "su repositorio de estudiante es demasiado grande"
 #~ "su contraseña. Asígnele una en el "
 #~ "servidor con make admin."
 
+#~ msgid "Two months (8 weeks)"
+#~ msgstr "Bimestral (8 semanas)"
+
 #~ msgid ""
 #~ "User %(username)s has the courses in "
 #~ "their folder and cannot be deleted."
@@ -1494,8 +1922,8 @@ msgstr "su repositorio de estudiante es demasiado grande"
 #~ msgid "User control"
 #~ msgstr "Control de usuario"
 
-#~ msgid "Standard error output"
-#~ msgstr "Salida de error estándar"
+#~ msgid "You are enrolled in %(name)s."
+#~ msgstr "Está matriculado en %(name)s."
 
 #~ msgid "clone"
 #~ msgstr ""

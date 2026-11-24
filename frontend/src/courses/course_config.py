@@ -1,6 +1,6 @@
 """ Configuration file in the root of a professor repo, which lists its courses: an object with a
 course per key, e.g. {"progra1": {"type": "course", "name": "CI0112", "contents": [...]}}.
-parse_courses() in course_offer.py turns each course into a vyg.Course, and skips the invalid
+parse_courses() in repo_course.py turns each course into a vyg.Course, and skips the invalid
 ones """
 
 from config_file import ConfigFile

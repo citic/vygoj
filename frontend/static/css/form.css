@@ -8,12 +8,21 @@ fieldset label:not(:first-of-type) {
 
 input,
 textarea,
-fieldset {
+fieldset,
+fieldset select {
   border: 1px solid #c2c2c2;
   box-shadow: 1px 1px 4px var(--form-shadow);
   border-radius: 3px;
   padding: 7px;
   font: inherit;
+}
+
+/* Fields of one line in fieldsets (text, number, date, and lists of options) are as high as a line
+   of text with the padding and border above, whatever their type, so they line up. Browsers draw
+   selects and dates higher or lower without an explicit height */
+fieldset :is(input:not([type="checkbox"], [type="radio"]), select) {
+  box-sizing: border-box;
+  height: calc(1lh + 16px);
 }
 
 /* Fields that show a value that users cannot edit, but may select and copy (readonly), e.g. the
@@ -110,7 +119,8 @@ a.button {
   background: var(--neutral-bg);
 }
 
-button:disabled {
+/* Disabled buttons, also the submit inputs of forms built with WTForms (e.g. Offer) */
+:is(button, input[type="submit"], input[type="button"]):disabled {
   filter: opacity(0.5);
   cursor: default;
 }
