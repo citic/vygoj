@@ -1276,10 +1276,10 @@ msgstr ""
 #, python-format
 msgid ""
 "The name %(name)s must have up to 64 letters without accents, digits, _, "
-"+, or -, so students cannot run the problem"
+"+, or -, so nobody can run the problem"
 msgstr ""
-"El nombre %(name)s debe tener hasta 64 letras sin tildes, dígitos, _, + "
-"o -, por eso los estudiantes no pueden ejecutar el problema"
+"El nombre %(name)s debe tener hasta 64 letras sin tildes, dígitos, _, + o"
+" -, por eso nadie puede ejecutar el problema"
 
 #, python-format
 msgid ""

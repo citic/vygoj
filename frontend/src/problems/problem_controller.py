@@ -47,7 +47,7 @@ WARNING_TEXTS = {
         '%(kind)s'),
     'invalid_file': lazy_gettext('%(file)s is not valid, so it was ignored: %(error)s'),
     'invalid_name': lazy_gettext('The name %(name)s must have up to 64 letters without accents, '
-        'digits, _, +, or -, so students cannot run the problem'),
+        'digits, _, +, or -, so nobody can run the problem'),
     'invalid_test': lazy_gettext('%(file)s: ignored the test case %(test)s of tests, which must '
         'be an object'),
     'invalid_test_field': lazy_gettext('%(file)s: ignored the field %(field)s of the test case '
@@ -407,6 +407,9 @@ class ProblemController:
         if not user:
             flask.abort(401)
         problem = ProblemController.fetch_problem(course_name, problem_name)
+        # Problems with names that are not valid have no solutions in the repo (judge_solution())
+        if not NAME_PATTERN.fullmatch(problem.name):
+            flask.abort(404)
         language = flask.request.args.get('language', '')
         if language not in problem.languages:
             flask.abort(400)
