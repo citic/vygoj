@@ -41,6 +41,11 @@ fieldset {
   background-color: var(--form-bg);
 }
 
+/* Errors below the fields of every form (form_field of macros.html), readable in both schemes */
+.field_error {
+  color: var(--error-text);
+}
+
 /* Titles of the fieldsets, with the color of the headings of the site (--label-color is lighter
    in the dark scheme, so they stand out from the background) */
 legend {
