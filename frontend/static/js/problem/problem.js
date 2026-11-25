@@ -287,11 +287,7 @@ class ProblemManager {
     // the CSS), until the user gives it another height with its corner handle, and in a split it
     // shares the height of the split. It keeps its height while the slider shows versions, so the
     // page does not jump with each one
-    editor.onDidContentSizeChange(() => {
-      if (this.currentFiles === null) {
-        codeEditor.style.setProperty('--fitted-height', `${editor.getContentHeight()}px`);
-      }
-    });
+    editor.onDidContentSizeChange(() => this.fitHeight());
     // Another tab of this problem saved its files for the chosen language: show them here too.
     // Events arrive late, so an event whose files are not the stored ones anymore is old, and it
     // is ignored. The files keep the Undo history of this tab (see showFiles())
@@ -616,6 +612,15 @@ class ProblemManager {
       this.currentFiles = null;
       slider.value = slider.max;
       this.updateVersionName();
+      this.fitHeight();
+    }
+  }
+
+  // Makes the code editor as tall as its code, unless the slider shows a version
+  fitHeight() {
+    if (this.currentFiles === null) {
+      const height = this.editors[0].getContentHeight();
+      document.getElementById('code_editor').style.setProperty('--fitted-height', `${height}px`);
     }
   }
 
@@ -1320,6 +1325,11 @@ class ProblemManager {
       }, ProblemManager.getRunTimeout()));
       // The result has been received, update the test cases
       this.updateResult();
+      // The slider may have moved to a version during the run, and it goes to its end, so the
+      // current files come back
+      if (this.currentFiles !== null) {
+        this.showVersion(this.versions.length);
+      }
       // The run saved a version if the code was new
       this.loadVersions();
     } catch (error) {
