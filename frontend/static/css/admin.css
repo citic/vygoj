@@ -8,7 +8,7 @@
   }
 
   & .field_error {
-    color: var(--error);
+    color: var(--error-text);
   }
 
   & fieldset ul {
@@ -30,7 +30,7 @@
   }
 
   & .status li[data-status="deleted"] label {
-    color: var(--error);
+    color: var(--error-text);
   }
 
   & input[readonly] {
@@ -127,6 +127,6 @@
   }
 
   & .row[data-result="rejected"] .result {
-    color: var(--error);
+    color: var(--error-text);
   }
 }

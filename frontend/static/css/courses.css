@@ -538,7 +538,7 @@
   & label:has(+ :required)::after,
   & fieldset[data-required] > legend::after {
     content: " *";
-    color: var(--error);
+    color: var(--error-text);
   }
 
   & .required_note {
@@ -592,7 +592,7 @@
   }
 
   & .field_error {
-    color: var(--error);
+    color: var(--error-text);
   }
 
   & .actions {
