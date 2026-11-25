@@ -323,9 +323,9 @@ class UserForm(flask_wtf.FlaskForm):
     # StringField renders <input type=text> element
     # The 'User name' is the field lab
     #username = wtforms.StringField('User name', validators=[validators.DataRequired()])
+    # Usernames have from 1 character, as administrators create them, to the size of their column
     email = wtforms.StringField(lazy_gettext('Username/Email'),
-        validators=[#validators.DataRequired(),
-        validators.Length(3, 128)]) # validators.Email(),
+        validators=[validators.Length(1, MAX_USERNAME_LENGTH)])
     # Password is required to login or to change password
     password = wtforms.PasswordField(lazy_gettext('Password'),
         validators=[validators.Length(max=MAX_PASSWORD_LENGTH)])
