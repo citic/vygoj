@@ -781,10 +781,6 @@ class ProblemManager {
     totalTestCount.textContent = String(this.result.results.length);
     const score = this.result.results.length > 0 ? Math.round((
       100.0 * parseFloat(this.result.passedTestCount)) / this.result.results.length) : 0;
-    // Runs with the input of the user (problems without test cases) are not graded
-    if (this.problem.tests.length > 0) {
-      window.localStorage.setItem(this.problem.name, `${score}`);
-    }
     console.log(`${this.problem.name} := ${score}`);
     console.dir(this.problem);
 
