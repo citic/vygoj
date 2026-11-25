@@ -17,6 +17,7 @@ sequenceDiagram
     Execution->>Docker: create container (no network, no capabilities,<br>limits of memory, processes, CPUs, files)
     Execution->>Container: put_archive: solution
     Execution->>Container: exec compiler (time limit)
+    Execution->>Container: lint, if the problem asks for it
     loop each visible test case, then each hidden one, while the deadline allows
         Execution->>Container: put_archive: input of the test case
         Execution->>Container: exec timeout + /usr/bin/time -v solution
@@ -27,7 +28,6 @@ sequenceDiagram
         end
         Execution->>Container: kill processes left in background
     end
-    Execution->>Container: after run proofs (put_archive: solution, then lint)
     Execution->>Docker: remove container (finally)
     Execution-->>Main: ExecutionResult (compact JSON)
     Main->>Log: log_run(context, language, code, result, duration)

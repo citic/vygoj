@@ -351,14 +351,17 @@ class Execution:
             self._copy_file(self.source_file, self.solution.code)
             # If the solution is in a language that should be compiled, compile it
             self._compile()
+            # The linter runs before the test cases, which could leave files that it reads, e.g.
+            # a hidden one to tell what it read in the messages of the linter
+            linted = self._lint()
             # Run all test cases. TODO(jhc): test in parallel to finish sooner
             order = self._test_order()
             for position, index0 in enumerate(order):
                 self._check_deadline(len(order) - position)
                 self._run_test_case(index0, self.problem.tests[index0])
-            # Run after test case proofs, e.g: linting
-            self._check_deadline(0)
-            self._after_run_proofs()
+            # A solution that the linter rejected fails, whatever its test cases did
+            if not linted:
+                self.result.status = vyg.Status.COMPILER_ERROR
             # TODO(jhc): self.build_message() for the entire execution result
         except FailedSolution:
             # Student's code does not solve the problem, report to frontend
@@ -693,6 +696,9 @@ class Execution:
         # Store the result in the array to be returned to the client, without outputs that are too
         # large or hidden
         self._bound_outputs(test_case, test_result)
+        # If this test case lasted longer than the longest known, even if it failed. Hidden test
+        # cases have no times anymore
+        self.result.maxWallTime = max(self.result.maxWallTime, test_result.wallTime)
         self.result.results.append(test_result)
         self.result.totalPoints += test_case.points
         # If the test was passed
@@ -712,10 +718,12 @@ class Execution:
             their program write. Truncate the outputs of a visible test case to output_limit """
         if test_case.hidden:
             test_result.stdout = test_result.stderr = ''
-            # The solution chooses its exit code, its threads, and its memory, so they could tell
-            # what it read too. Only whether the exit code was 0 is kept
+            # The solution chooses its exit code, its threads, its memory, and its times, so they
+            # could tell what it read too. Only whether the exit code was 0 is kept; the status
+            # tells a timeout
             test_result.exitCode = 1 if test_result.exitCode else 0
             test_result.threadCount = test_result.memory = 0
+            test_result.wallTime = test_result.cpuTime = 0.0
             test_result.message = re.sub(r'-?\d+', 'N', test_result.message)
         else:
             test_result.stdout = truncate_output(test_result.stdout, self.output_limit)
@@ -763,8 +771,6 @@ class Execution:
                 + Execution._parse_stat(SYSTEM_TIME_PATTERN, time_output), 3)
         # /usr/bin/time reports kibibytes, the frontend expects bytes
         test_result.memory = int(Execution._parse_stat(MEMORY_PATTERN, time_output)) * 1024
-        # If this test case lasted longer than the longest known, even if it failed
-        self.result.maxWallTime = max(self.result.maxWallTime, test_result.wallTime)
 
     @staticmethod
     def _parse_stat(pattern:re.Pattern, time_output:str) -> float:
@@ -845,13 +851,11 @@ class Execution:
             test_result.message = (
                     f'Invalid amount of secondary threads ({test_result.threadCount})')
 
-    def _after_run_proofs(self):
-        """ Run after test case proofs, e.g: linting """
+    def _lint(self) -> bool:
+        """ Run the linter if the problem asks for it, e.g: cpplint.py. Return False if it found
+            errors in the code """
         # Languages without a linting filter have no linter yet
         if 'lint' in self.tools and self.flags.linting_options:
-            # The test cases may have changed the file of the solution, e.g. a hidden one to tell
-            # what it read in the messages of the linter, so the code sent is linted
-            self._copy_file(self.source_file, self.solution.code)
             # Run the linter, e.g: cpplint.py
             cmd = ['cpplint', f'--filter={self.flags.linting_options}', self.source_file]
             stdout, stderr, exit_code = self._run_in_container(cmd, LINT_TIMEOUT)
@@ -862,3 +866,5 @@ class Execution:
                 self.result.status = vyg.Status.COMPILER_ERROR
                 self.result.message = vyg.append(self.result.message,
                         'Linter found errors in the code')
+                return False
+        return True
