@@ -41,7 +41,8 @@ def _number(value):
 def _points(value):
     """ Return the value if it is a number of points of a test case, from -MAX_POINTS to
     MAX_POINTS. Raise ValueError otherwise """
-    if abs(_number(value)) > vyg.MAX_POINTS:
+    # NaN fails every comparison, so it is rejected too
+    if not -vyg.MAX_POINTS <= _number(value) <= vyg.MAX_POINTS:
         raise ValueError(value)
     return value
 
