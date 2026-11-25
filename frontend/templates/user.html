@@ -8,7 +8,7 @@
           {{ it.form.hidden_tag() }}
           <fieldset class="user_information">
             <legend>{{ _('User information') }}</legend>
-            {{ macros.form_field(it.form.fullname, maxlength=128, autocomplete='name') }}
+            {{ macros.form_field(it.form.fullname, required=true, maxlength=128, autocomplete='name') }}
             {#- The username identifies the user, so it is shown but not changed #}
             {{ it.form.email.label }} {{ it.form.email(readonly=true) }}
           </fieldset>

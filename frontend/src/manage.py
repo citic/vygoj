@@ -26,13 +26,11 @@ from courses.course_controller import CourseController
 from courses.course_section import MAX_INSTITUTION_LENGTH, UNIQUE_NUMBER
 from main import app
 from repos.repo_jobs import RepoJob
-from users import MAX_PASSWORD_LENGTH, MAX_USERNAME_LENGTH, LoginAttempt, User, sorted_roles
+from users import (MAX_PASSWORD_LENGTH, MAX_USERNAME_LENGTH, MIN_ADMIN_PASSWORD_LENGTH,
+    LoginAttempt, User, sorted_roles)
 
 USAGE = ('Usage: python manage.py admin [username] | import | log output.zip'
     ' | submissions output.zip | repo-job kind username [repo_id]')
-
-# Administrators can do everything, so their passwords must not be easy to guess
-MIN_PASSWORD_LENGTH = 12
 
 # Administrators ----------------------------------------------------------------------------------
 
@@ -48,8 +46,8 @@ def ask_password() -> str:
     """ Ask the new password twice, without showing it, until both are equal and valid """
     while True:
         password = getpass.getpass('New password: ')
-        if not MIN_PASSWORD_LENGTH <= len(password) <= MAX_PASSWORD_LENGTH:
-            print(f'It must have between {MIN_PASSWORD_LENGTH} and {MAX_PASSWORD_LENGTH} '
+        if not MIN_ADMIN_PASSWORD_LENGTH <= len(password) <= MAX_PASSWORD_LENGTH:
+            print(f'It must have between {MIN_ADMIN_PASSWORD_LENGTH} and {MAX_PASSWORD_LENGTH} '
                 'characters')
         elif password != getpass.getpass('Repeat the new password: '):
             print('Passwords do not match')
