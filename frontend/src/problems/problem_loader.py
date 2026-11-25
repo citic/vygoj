@@ -14,6 +14,7 @@ import markdown
 import vyg
 from config_file import ConfigError, is_inside
 from problems.problem_config import ProblemConfig
+from repos.student_repo import NAME_PATTERN
 from sanitize import sanitize_html
 
 # Maximum seconds that asciidoctor may spend converting a problem statement to HTML
@@ -77,6 +78,10 @@ class ProblemLoader:
                             problem.add_warning(code, params)
                     else:
                         logger.warning('problem %s: folder out of its course repo', problem.name)
+                    # Runs, grades, and student repos keep problems by name, so its professor is
+                    # told that students cannot run it (judge_solution() of problem_controller.py)
+                    if not NAME_PATTERN.fullmatch(problem.name):
+                        problem.add_warning('invalid_name', {'name': problem.name})
                     # Sanitize here, also when the folder was not loaded, because the statement
                     # may come from configuration files too
                     problem.statement = sanitize_html(problem.statement,

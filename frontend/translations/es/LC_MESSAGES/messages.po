@@ -1275,6 +1275,14 @@ msgstr ""
 
 #, python-format
 msgid ""
+"The name %(name)s must have up to 64 letters without accents, digits, _, "
+"+, or -, so nobody can run the problem"
+msgstr ""
+"El nombre %(name)s debe tener hasta 64 letras sin tildes, dígitos, _, + o"
+" -, por eso nadie puede ejecutar el problema"
+
+#, python-format
+msgid ""
 "The origin must be the SSH URL of a repo in %(hosts)s, e.g. "
 "git@github.com:user/repo.git"
 msgstr ""
@@ -1341,6 +1349,9 @@ msgstr ""
 
 msgid "There are no SSO providers. Users log in with their password."
 msgstr "No hay proveedores de SSO. Los usuarios ingresan con su contraseña."
+
+msgid "This problem cannot be run because its name is not valid"
+msgstr "Este problema no se puede ejecutar porque su nombre no es válido"
 
 msgid "Too many failed attempts. Try again later."
 msgstr "Demasiados intentos fallidos. Intente más tarde."

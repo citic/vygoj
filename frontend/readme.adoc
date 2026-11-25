@@ -458,7 +458,7 @@ Only the professor of a course, its students, and administrators enter it. Stude
 [[problems]]
 === Problems
 
-Each problem is a folder of the course repository with its statement, the initial code of each language, and its test cases:
+Each problem is a folder of the course repository with its statement, the initial code of each language, and its test cases. Its name, or the name of its folder, has up to 64 letters without accents, digits, `_`, `+`, and `-`, e.g. `collatz_3n+1`; nobody can run a problem with another name, and its page tells its professor:
 
 * The statement is a file `.html`, `.adoc` (Asciidoc), or `.md` (Markdown). It may have formulas, images, and videos of the folder of the problem. Scripts, and frames and videos of other sites, such as YouTube, are removed.
 * The initial code is in its `initial/` or `given/` folder. Without it, students start from the default code of the language.
