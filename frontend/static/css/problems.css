@@ -34,7 +34,7 @@ label {
 
   & figcaption {
     font-style: italic;
-    color: red;
+    color: var(--error-text);
   }
 
   /* Verdict of the selected test case */

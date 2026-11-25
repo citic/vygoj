@@ -34,12 +34,12 @@ Monospace:
   --action-bg: #2e7d32;
   --reject-bg: #b85c00;
   --danger-bg: #d32f2f;
+  --neutral-bg: #616161;
 
   /* Red of the texts of errors (--error is for borders and icons): darker in the light scheme and
      lighter in the dark one, for a contrast of 5:1 at least on --surface and --form-bg */
   --error-text: light-dark(color-mix(in srgb, var(--danger-bg) 85%, black),
     color-mix(in srgb, var(--error) 75%, white));
-  --neutral-bg: #616161;
   --border: light-dark(black, gray);
   --label-color: light-dark(var(--bg-color), rgb(120 190 182));
   --accent: light-dark(rgb(20 163 154), rgb(63 193 181));

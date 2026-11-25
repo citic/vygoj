@@ -591,10 +591,6 @@
     color: gray;
   }
 
-  & .field_error {
-    color: var(--error-text);
-  }
-
   & .actions {
     display: flex;
     gap: 0.5rem;

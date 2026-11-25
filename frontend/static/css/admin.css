@@ -7,10 +7,6 @@
     color: gray;
   }
 
-  & .field_error {
-    color: var(--error-text);
-  }
-
   & fieldset ul {
     padding: 0;
     list-style: none;
