@@ -67,6 +67,7 @@ KIND_TEXTS = {
     'date': lazy_gettext('a text or a number of weeks'),
     'flag': lazy_gettext('true or false'),
     'integer': lazy_gettext('an integer'),
+    'languages': lazy_gettext('a list of languages of VygOJ'),
     'none_lines': lazy_gettext('"none" or "lines"'),
     'number': lazy_gettext('a number'),
     'overdue_policy': lazy_gettext('"hidden", "disabled", or "half"'),

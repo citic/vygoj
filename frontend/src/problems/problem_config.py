@@ -45,9 +45,12 @@ def _texts(value):
     return value
 
 def _languages(value):
-    """ Return the names of the languages of the value, if it is a list of strings, e.g.
-    ['cpp', 'python'] is ['C++', 'Python']. Raise ValueError otherwise """
-    return [vyg.LANGUAGE_NAMES.get(language.lower(), language) for language in _texts(value)]
+    """ Return the names of the languages of the value, if it is a list of names or extensions of
+    languages of VygOJ, e.g. ['cpp', 'python'] is ['C++', 'Python']. Raise ValueError otherwise """
+    names = [vyg.LANGUAGE_NAMES.get(language.lower()) for language in _texts(value)]
+    if None in names:
+        raise ValueError(value)
+    return names
 
 def _words(value):
     """ Return the value as words separated by spaces, if it is a string or a list of strings,
@@ -83,7 +86,7 @@ def _choice(*options):
 PROBLEM_FIELDS = {
     'title': ('text', _text),
     'statement': ('text', _text),
-    'languages': ('texts', _languages),
+    'languages': ('languages', _languages),
     'initialCodeFor': ('codes', _codes),
     'minThreads': ('threads', _threads),
     'maxThreads': ('integer', _integer),

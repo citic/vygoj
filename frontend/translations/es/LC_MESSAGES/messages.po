@@ -1573,6 +1573,9 @@ msgstr ""
 msgid "Your solution"
 msgstr "Su solución"
 
+msgid "a list of languages of VygOJ"
+msgstr "una lista de lenguajes de VygOJ"
+
 msgid "a list of test cases or an object of settings"
 msgstr "una lista de casos de prueba o un objeto de ajustes"
 

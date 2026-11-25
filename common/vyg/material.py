@@ -53,10 +53,12 @@ class Material(abstract):
         # 'half' means students can solve the material but get half of the points
         self.overdue_policy = json_dict.get('overdue_policy', 'disabled')
         # Allowed programming languages, e.g. ['C', 'C++']. vygoj.json may write them by their
-        # extension or name in any case ('cpp', 'python'). Materials without languages inherit a
+        # extension or name in any case ('cpp', 'python'). It is written by hand, so values that are
+        # not the name of a language of VygOJ are ignored. Materials without languages inherit a
         # copy of the parent's ones
-        self.languages = ([LANGUAGE_NAMES.get(language.lower(), language)
-            for language in json_dict.get('languages', [])]
+        self.languages = ([LANGUAGE_NAMES[language.lower()]
+            for language in json_dict.get('languages', [])
+            if isinstance(language, str) and language.lower() in LANGUAGE_NAMES]
             or list(parent.languages if parent else []))
         # Add this material to the course's symbols table, so it can be found by name
         if parent and parent.get_course():
