@@ -4,7 +4,7 @@ ABS_MAX_*) and a default (DEF_*). Professors may choose a value in a problem or 
 clamped to the range, and missing or 0 means the default. The backend receives the effective values
 in the problem, so it only receives a problem and a solution
 """
-import math
+import sys
 
 from flask import current_app as app
 
@@ -62,8 +62,10 @@ class Limits:
     @staticmethod
     def is_number(value) -> bool:
         """ True if value is a finite number. Values of course repos may have any JSON type """
+        # Comparing with the largest float also rejects NaN, infinities, and integers too large for
+        # a float, e.g. 10**400, for which math.isfinite() raises OverflowError
         return (not isinstance(value, bool) and isinstance(value, (int, float))
-            and math.isfinite(value))
+            and abs(value) <= sys.float_info.max)
 
     @staticmethod
     def default_name(field: str) -> str:

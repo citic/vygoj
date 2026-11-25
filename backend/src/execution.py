@@ -5,6 +5,7 @@ import logging
 import math
 import re
 import shlex
+import sys
 import tarfile
 import threading
 import time
@@ -216,7 +217,10 @@ class FailedSolution(Exception):
 
 def bounded_number(value, default:float, low:float, high:float) -> float:
     """ Return value clamped to [low, high], or default if value is not a finite number """
-    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+    # Comparing with the largest float also rejects NaN, infinities, and integers too large for a
+    # float, e.g. 10**400, for which math.isfinite() raises OverflowError
+    if (isinstance(value, bool) or not isinstance(value, (int, float))
+            or not abs(value) <= sys.float_info.max):
         return default
     return min(max(value, low), high)
 
