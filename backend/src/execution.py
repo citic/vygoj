@@ -262,7 +262,7 @@ class Execution:
             # The solution submitted by user, sent by VygOJ frontend as a message
             self.solution = vyg.Message(solution_json)
         except (ValueError, TypeError, AttributeError) as error:
-            # Invalid JSON types in the fields, e.g. a language that is not a text
+            # Invalid JSON types in the fields, e.g. test cases that are not a list
             raise InvalidSubmission('Malformed problem or solution') from error
         # The programming language used by user to write the code solution
         # Language is sent by client, but if omitted, we suppose 'C'

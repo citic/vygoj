@@ -45,12 +45,9 @@ def _texts(value):
     return value
 
 def _languages(value):
-    """ Return the names of the languages of the value, if it is a list of names or extensions of
-    languages of VygOJ, e.g. ['cpp', 'python'] is ['C++', 'Python']. Raise ValueError otherwise """
-    names = [vyg.LANGUAGE_NAMES.get(language.lower()) for language in _texts(value)]
-    if None in names:
-        raise ValueError(value)
-    return names
+    """ Return the names of the languages of the value, if it is a list of strings, e.g.
+    ['cpp', 'python'] is ['C++', 'Python']. Raise ValueError otherwise """
+    return [vyg.LANGUAGE_NAMES.get(language.lower(), language) for language in _texts(value)]
 
 def _words(value):
     """ Return the value as words separated by spaces, if it is a string or a list of strings,
@@ -86,7 +83,7 @@ def _choice(*options):
 PROBLEM_FIELDS = {
     'title': ('text', _text),
     'statement': ('text', _text),
-    'languages': ('languages', _languages),
+    'languages': ('texts', _languages),
     'initialCodeFor': ('codes', _codes),
     'minThreads': ('threads', _threads),
     'maxThreads': ('integer', _integer),
@@ -154,10 +151,18 @@ class ProblemConfig(ConfigFile):
                 checked = self.check(PROBLEM_FIELDS[field], value, field=field)
                 # The problem loader combines the languages with the ones of the course
                 if field == 'languages' and checked is not None:
-                    self.languages = checked
+                    self.languages = self.known_languages(checked)
                 elif checked is not None:
                     fields[field] = checked
         return fields
+
+    def known_languages(self, names: list) -> list:
+        """ Return the names that are languages of VygOJ, with a warning for the others, e.g. a
+        typo, which would break the problem page """
+        unknown = [name for name in names if name not in vyg.EXTENSION_LANGUAGES]
+        if unknown:
+            self.warn('unknown_languages', languages=', '.join(unknown))
+        return [name for name in names if name in vyg.EXTENSION_LANGUAGES]
 
     def check(self, kind: tuple, value, **params):
         """ Return the value checked by the function of its kind (name, function), or None with a

@@ -54,8 +54,8 @@ class Material(abstract):
         self.overdue_policy = json_dict.get('overdue_policy', 'disabled')
         # Allowed programming languages, e.g. ['C', 'C++']. vygoj.json may write them by their
         # extension or name in any case ('cpp', 'python'). It is written by hand, so values that are
-        # not the name of a language of VygOJ are ignored. Materials without languages inherit a
-        # copy of the parent's ones
+        # not the name or extension of a language of VygOJ are ignored. Materials without languages
+        # inherit a copy of the parent's ones
         self.languages = ([LANGUAGE_NAMES[language.lower()]
             for language in json_dict.get('languages', [])
             if isinstance(language, str) and language.lower() in LANGUAGE_NAMES]

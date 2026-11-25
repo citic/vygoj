@@ -56,6 +56,8 @@ WARNING_TEXTS = {
         'language of the course, so it has the ones of the course: %(languages)s'),
     'not_object': lazy_gettext('%(file)s must be an object of fields, so it was ignored'),
     'outside_repo': lazy_gettext('%(file)s is out of the repository, so it was ignored'),
+    'unknown_languages': lazy_gettext('%(file)s: ignored the languages %(languages)s, which VygOJ '
+        'does not have'),
     'too_big': lazy_gettext('%(file)s is larger than %(size)s bytes, so it was ignored'),
     'unknown_test': lazy_gettext('%(file)s: ignored the test case %(test)s of tests, which has no '
         'input file in the tests folder'),
@@ -67,7 +69,6 @@ KIND_TEXTS = {
     'date': lazy_gettext('a text or a number of weeks'),
     'flag': lazy_gettext('true or false'),
     'integer': lazy_gettext('an integer'),
-    'languages': lazy_gettext('a list of languages of VygOJ'),
     'none_lines': lazy_gettext('"none" or "lines"'),
     'number': lazy_gettext('a number'),
     'overdue_policy': lazy_gettext('"hidden", "disabled", or "half"'),
