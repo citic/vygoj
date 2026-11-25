@@ -372,6 +372,14 @@ class UserForm(flask_wtf.FlaskForm):
         next_url = safe_next_url(flask.request.args.get('next'))
         # Fill the form with the data of the logged in user, if any
         form = UserForm(data=user)
+        if not user:
+            # User is not logged in, the password field is required to login. The list of
+            # validators is shared by every form, so it is replaced instead of extended: otherwise
+            # one visit to the login page makes the password required in the preferences too. It is
+            # replaced before validating the form, and WTForms sets the flags of a field (which
+            # give the required attribute of the input) when the form is created, so it is set too
+            form.password.validators = [*form.password.validators, validators.DataRequired()]
+            form.password.flags.required = True
         # If user accepted the dialog
         if form.validate_on_submit():
             if form.logout.data:
@@ -383,11 +391,6 @@ class UserForm(flask_wtf.FlaskForm):
         if user:
             # User is logged in, and wants to change preferences, update some labels
             form.password.label = gettext('Current password')
-        else:
-            # User is not logged in, the password field is required to login. The list of
-            # validators is shared by every form, so it is replaced instead of extended: otherwise
-            # one visit to the login page makes the password required in the preferences too
-            form.password.validators = [*form.password.validators, validators.DataRequired()]
         # Show the versatile form
         return flask.render_template('user.html', it={
             'title': gettext('User preferences') if user else gettext('User login'),
