@@ -806,7 +806,11 @@ class Execution:
         min_threads = test.minThreads or self.problem.minThreads
         if min_threads == 'stdin':
             words = test.stdin.split(maxsplit=1)
-            min_threads = int(words[0]) if words and words[0].isdecimal() else None
+            number = words[0] if words and words[0].isdecimal() else ''
+            # A number with more digits than MAX_THREADS asks for more threads than allowed, and
+            # int() raises ValueError for thousands of digits
+            min_threads = (vyg.MAX_THREADS if len(number.lstrip('0')) > len(str(vyg.MAX_THREADS))
+                    else int(number) if number else None)
         min_threads = bounded_number(min_threads, 1, 0, vyg.MAX_THREADS)
         max_threads = bounded_number(test.maxThreads or self.problem.maxThreads,
                 vyg.MAX_THREADS, 0, vyg.MAX_THREADS)
