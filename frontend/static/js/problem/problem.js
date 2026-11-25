@@ -1161,7 +1161,7 @@ class ProblemManager {
   }
 
   // Fetch the versions of the solution in the chosen language, and put the slider at its end. If
-  // showLast, the editor shows the last version
+  // showLast, the editor shows the last version, unless the user typed code while it was fetched
   async loadVersions(showLast = false) {
     const slider = document.getElementById('version');
     if (!slider) {
@@ -1189,7 +1189,9 @@ class ProblemManager {
     this.updateVersionName();
     if (showLast && this.versions.length > 0) {
       const files = await this.fetchVersion(language, this.versions[this.versions.length - 1][0]);
-      if (files !== null && language === document.getElementById('language').value) {
+      // Typing saves the files in this browser, so they win over the version
+      if (files !== null && language === document.getElementById('language').value
+        && !loadConfig(`files:${language}`)) {
         this.showStoredCode(() => this.showFiles(files));
       }
     }
