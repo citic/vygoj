@@ -311,7 +311,7 @@ Each month has its own file, so no file grows forever. Rows have a few fixed col
 | `visit` | A user (or an anonymous visitor) opens a page: home, course, problem, user, or help. The searches of the users page while the user types are not visits (`log_visit()` in `src/main.py`) |
 | `login`, `logout` | A user logs in or out, or their session ends because an administrator suspended or deleted them | `provider`: alias of the single sign-on provider (<<sso>>), if the user logged in with one. For a session ended by an administrator, `reason`: `suspended` or `deleted`
 | `login_failed`, `login_blocked` | A login has a wrong user or password, or it is rejected by the limits (<<login_limits>>), or a login with a single sign-on provider fails | For single sign-on, `provider` and `reason`: `provider not available`, `invalid answer` (e.g. an invalid ID token), `cancelled`, `no email`, `email not verified`, `administrator`, `not registered`, `concurrent login`, or `suspended`. For a password login of a suspended user, `reason`: `suspended`
-| `preferences` | A user saves their preferences | `color_scheme`, `font`
+| `preferences` | A user saves their preferences | `color_scheme`, `font`, `language`; `password`: true if the user changed their password (never the password nor its hash)
 | `user_create`, `user_admin` | The import of the users page, `manage.py`, or a single sign-on login adds a user, or `manage.py` makes an existing user administrator | `source`: `import`, `make admin`, or `sso` with its `provider`
 | `user_update` | An administrator changed the data or roles of a user (<<users_admin>>) | `username`; `changes`: the value before and after of each changed field (`fullname`, `email`, `roles`), e.g. `{"roles": [["student"], ["student", "professor"]]}`
 | `user_suspend`, `user_activate`, `user_delete` | An administrator suspended, activated, or deleted a user | `username`
@@ -502,6 +502,8 @@ Failed logins are stored in the `login_attempts` table (`LoginAttempt` in `src/u
 Then, logins from that address are rejected, without checking the password, until the oldest failures are older than 15 minutes. Usernames that do not exist count too, so the limits do not reveal which users exist. A successful login forgets the failures of that user from that address. There is no limit per username alone, otherwise anybody could lock the account of a classmate by typing wrong passwords before an exam. Failed and rejected logins are logged as `login_failed` and `login_blocked` (<<activity_log>>).
 
 The passwords of the sections of courses (<<sections>>) have the same limits, with `section:<section id>:<user id>` as the username, so a student cannot guess the password of a section, and their failures do not block the logins of that user.
+
+A wrong current password when a user changes their password in the preferences (`UserForm.check_password_change()`) counts as a failed login of that user, so a session left open does not let anybody guess the password.
 
 The limits depend on the address of the client, so set `TRUSTED_PROXIES` behind a reverse proxy (see the link:../readme.adoc#reverse_proxy[readme]).
 

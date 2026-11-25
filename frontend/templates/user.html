@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% import 'macros.html' as macros %}
 {%- block main %}
   {%- if it.user %}
       <main class="user_preferences">
@@ -7,16 +8,17 @@
           {{ it.form.hidden_tag() }}
           <fieldset class="user_information">
             <legend>{{ _('User information') }}</legend>
-            {{ it.form.fullname.label }} {{ it.form.fullname() }}
-            {{ it.form.email.label }} {{ it.form.email() }}
+            {{ macros.form_field(it.form.fullname, maxlength=128, autocomplete='name') }}
+            {#- The username identifies the user, so it is shown but not changed #}
+            {{ it.form.email.label }} {{ it.form.email(readonly=true) }}
           </fieldset>
           {#- Users who logged in with single sign-on change their password in their provider #}
           {%- if not it.user.sso %}
           <fieldset class="password">
             <legend>{{ _('Change password') }}</legend>
-            {{ it.form.password.label }} {{ it.form.password() }}
-            {{ it.form.new_password.label }} {{ it.form.new_password() }}
-            {{ it.form.confirm_password.label }} {{ it.form.confirm_password() }}
+            {{ macros.form_field(it.form.password, autocomplete='current-password') }}
+            {{ macros.form_field(it.form.new_password, _('At least %(length)d characters', length=it.min_password_length), minlength=it.min_password_length, autocomplete='new-password') }}
+            {{ macros.form_field(it.form.confirm_password, autocomplete='new-password') }}
           </fieldset>
           {%- endif %}
           <fieldset class="color_scheme">

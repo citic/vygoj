@@ -11,6 +11,14 @@
   & label[data-font] {
     font-family: var(--font-family);
   }
+
+  & .hint {
+    color: var(--muted-text);
+  }
+
+  & .field_error {
+    color: var(--error);
+  }
 }
 
 /* Login form for visitors */
