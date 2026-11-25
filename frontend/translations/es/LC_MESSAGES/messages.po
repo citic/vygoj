@@ -580,6 +580,9 @@ msgstr "Los campos marcados con * son obligatorios."
 msgid "File"
 msgstr "Archivo"
 
+msgid "Files of this window"
+msgstr "Archivos de esta ventana"
+
 msgid "Files of your solution"
 msgstr "Archivos de su solución"
 

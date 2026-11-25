@@ -8,6 +8,10 @@
 // detail is the index of the selected tab. Arrows, Home, and End move between the tabs
 class TabControl extends HTMLElement {
   connectedCallback() {
+    // A window of files moves in the page (problem.js) and keeps its listeners
+    if (this.panel) {
+      return;
+    }
     // The panel that shows the selected tab, HTMLElement
     this.panel = this.querySelector(':scope > [role="tabpanel"]');
     const list = this.querySelector(':scope > [role="tablist"]');

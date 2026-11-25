@@ -76,9 +76,10 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
   its `role="tablist"` child) and the panel of the selected one (its `role="tabpanel"` child),
   which the page fills on its `change` event; `update()` finds the tabs again after the page
   changes them. `problem.html` shows the test cases as its tabs, and the files of the solution
-  above the code editor, with the list of languages in the row of the tabs, and a window for each
-  tab dragged out of it, floating or in splits with the code editor (see "Files of a solution" in
-  `design/readme.adoc`). The icons of the files are in `img/files/`.
+  above the code editor, with the list of languages in the row of the tabs, and the windows of the
+  tabs dragged out of it, tab controls with the tabs of all the files, floating or in splits with
+  the code editor (see "Files of a solution" in `design/readme.adoc`). The icons of the files
+  are in `img/files/`.
 
 ## Commands
 

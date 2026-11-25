@@ -160,6 +160,10 @@ class ProblemManager {
     this.files = new Map(); // Map of string to monaco.editor.ITextModel
     // Cursor and scroll of each file while the editor shows another one, by name
     this.viewStates = new Map(); // Map of string to monaco.editor.ICodeEditorViewState
+    // Cursor and scroll of the files of each window while it shows another one, by model
+    this.sideViewStates = new WeakMap(); // WeakMap of HTMLElement to WeakMap
+    // Windows made so far, which numbers the id of the editor of each one
+    this.sideCount = 0; // number
     // Ends the open field of the name of a file, if any, as when it loses the focus
     this.finishFileName = null; // function
     // Versions of the solution that the runs of the user saved in the chosen language, from the
@@ -349,21 +353,30 @@ class ProblemManager {
     this.setupSides(list, fileOf);
   }
 
-  // A tab dragged out of the row of the tabs becomes a window over the page that shows its file, as
-  // in Visual Studio Code, a window for each file, and dragging the header of a window moves it.
-  // Dropping a window on a side of a pane (the code editor or a window at its side) splits the
-  // pane, as many times as the student wants. Ctrl+\ in a tab puts its window at the right of the
-  // code editor. The editors share the model of each file, so the code, Undo history, and
-  // diagnostics are the same in all of them
+  // A tab dragged out of a row of tabs, of the code editor or of a window, becomes a window over
+  // the page with its file selected, and with the tabs of all the files, as the code editor and
+  // every window, so the student pulls out the files as many times as wanted. Ctrl+\ in a tab does
+  // the same, with the new window at the right of the pane of the tab. Dragging the empty part of
+  // the row of the tabs of a window moves it, and its cross closes it. As the groups of editors of
+  // Visual Studio Code, dropping a window on the tabs of the code editor or of another window shows
+  // its file there and closes it, and dropping it on a side of a pane (the code editor or a window
+  // at its side) splits the pane, as many times as the student wants. The editors share the model
+  // of each file, so the code, Undo history, and diagnostics are the same in all of them
   setupSides(list, fileOf) {
     const panes = document.querySelector('.solution .panes');
     const code = document.getElementById('code_editor');
-    // The pane under the pointer, but the window, and its side where the window would go: the
-    // nearest one when the pointer is on its outer third, as in Visual Studio Code. Null elsewhere
+    // Where the window would go with the pointer there: in the tabs of the code editor or of
+    // another window ('tabs'), or at the nearest side of a pane under the pointer when it is on its
+    // outer third, as in Visual Studio Code. Null elsewhere, so the window floats
     const zone = (side, { clientX, clientY }) => {
-      const pane = [code, ...panes.querySelectorAll('.side:not([data-floating], [hidden])')]
-        .find((element) => element !== side
-          && isOver(element.getBoundingClientRect(), clientX, clientY));
+      const others = [...panes.querySelectorAll('.side')].filter((other) => other !== side);
+      const tabs = [list, ...others].find((element) => isOver((element === list ? list
+        : element.querySelector('[role="tablist"]')).getBoundingClientRect(), clientX, clientY));
+      if (tabs) {
+        return [tabs, 'tabs'];
+      }
+      const pane = [code, ...others.filter((other) => !other.hasAttribute('data-floating'))]
+        .find((element) => isOver(element.getBoundingClientRect(), clientX, clientY));
       const box = pane?.getBoundingClientRect();
       const distances = box && Object.entries({
         left: (clientX - box.left) / box.width,
@@ -374,8 +387,8 @@ class ProblemManager {
       return distances?.[0][1] < 1 / 3 ? [pane, distances[0][0]] : null;
     };
     // Moves the window that sideAt returns for each move (null while there is none yet) with the
-    // pointer, which holds the point (dx, dy) of its header, or the middle of the header without
-    // dx, and the half of the pane where it would go is tinted (data-drop)
+    // pointer, which holds the point (dx, dy) of its row of tabs, or the middle of the row without
+    // dx, anywhere in the page, and the place of the pane where it would go is tinted (data-drop)
     const drag = (down, sideAt, dx, dy) => {
       let side = null;
       let drop = null;
@@ -387,7 +400,7 @@ class ProblemManager {
         if (!side.hasAttribute('data-floating')) {
           ProblemManager.floatSide(side);
         }
-        const origin = panes.getBoundingClientRect();
+        const origin = side.offsetParent.getBoundingClientRect();
         side.style.setProperty('--left', `${event.clientX - origin.left - (dx ?? side.offsetWidth / 2)}px`);
         side.style.setProperty('--top', `${event.clientY - origin.top - dy}px`);
         drop?.[0].removeAttribute('data-drop');
@@ -398,39 +411,46 @@ class ProblemManager {
         }
       }, (released) => {
         drop?.[0].removeAttribute('data-drop');
-        if (released && drop) {
+        if (released && drop?.[1] === 'tabs') {
+          this.joinSide(side, drop[0] === list ? null : drop[0]);
+        } else if (released && drop) {
           ProblemManager.dockSide(side, ...drop);
         }
       });
     };
-    // A dragged tab shows its file in its window once the pointer goes above or below the row of
-    // the tabs. A finger on the tabs scrolls the page, so only a mouse or a pen drags them
-    list.addEventListener('pointerdown', (down) => {
+    // A tab dragged out of its row, above or below it, shows its file in a new window. A finger on
+    // the tabs scrolls the page, so only a mouse or a pen drags them
+    const dragTab = (down, row) => {
       const name = fileOf(down.target);
-      if (name && !down.target.closest('.close') && down.pointerType !== 'touch') {
-        drag(down, ({ clientY }) => {
-          const { top, bottom } = list.getBoundingClientRect();
-          return clientY >= top && clientY <= bottom ? null : this.sideOf(name);
-        }, null, 12);
+      drag(down, ({ clientY }) => {
+        const { top, bottom } = row.getBoundingClientRect();
+        return clientY >= top && clientY <= bottom ? null : this.newSide(name);
+      }, null, 12);
+    };
+    list.addEventListener('pointerdown', (down) => {
+      if (fileOf(down.target) && !down.target.closest('.close') && down.pointerType !== 'touch') {
+        dragTab(down, list);
       }
     });
+    // In a window, a tab with others in its row leaves it, and the row of the tabs moves the window
     panes.addEventListener('pointerdown', (down) => {
-      const side = down.target.closest('.side');
-      if (side && down.target.closest('header') && !down.target.closest('button')) {
+      const row = down.target.closest('.side > [role="tablist"]');
+      if (row && fileOf(down.target) && row.children.length > 1 && down.pointerType !== 'touch') {
+        dragTab(down, row);
+      } else if (row) {
+        const side = row.parentElement;
         const { left, top } = side.getBoundingClientRect();
         drag(down, () => side, down.clientX - left, down.clientY - top);
       }
     });
-    list.addEventListener('keydown', ({ ctrlKey, key, target }) => {
+    list.closest('tab-control').addEventListener('keydown', ({ ctrlKey, key, target }) => {
       const name = fileOf(target);
-      if (ctrlKey && key === '\\' && name) {
-        const side = this.sideOf(name);
-        ProblemManager.leaveSplit(side);
-        ProblemManager.dockSide(side, code, 'right');
+      if (name && ctrlKey && key === '\\') {
+        ProblemManager.dockSide(this.newSide(name), target.closest('.side:not([data-floating])') ?? code, 'right');
       }
     });
     panes.addEventListener('click', ({ target }) => {
-      if (target.closest('.side > header > button')) {
+      if (target.closest('.side > .close_window')) {
         ProblemManager.closeSide(target.closest('.side'));
         this.editors[0].focus();
       }
@@ -461,19 +481,42 @@ class ProblemManager {
     }, { signal: drag.signal, capture: true }));
   }
 
-  // Returns the window of the file, a floating copy of the template of the page if the file has
-  // none. Names of files are letters, digits, _, -, and dots, so they fit in the selector
-  sideOf(name) {
-    const panes = document.querySelector('.solution .panes');
-    let side = panes.querySelector(`.side[data-file="${name}"]`);
-    if (!side) {
-      side = document.importNode(document.getElementById('side_window').content.firstElementChild, true);
-      side.dataset.file = name;
-      side.dataset.floating = '';
-      panes.append(side);
-      this.showSides();
-    }
+  // Returns a new window over the page with the tabs of all the files, and the given one selected
+  // (data-file), which its tab control changes with a change event
+  newSide(name) {
+    const side = document.importNode(document.getElementById('side_window').content.firstElementChild, true);
+    this.sideCount += 1;
+    side.querySelector('monaco-editor').id = `side_editor_${this.sideCount}`;
+    side.dataset.file = name;
+    side.dataset.floating = '';
+    side.addEventListener('change', ({ target, detail }) => {
+      if (target === side) {
+        side.dataset.file = [...this.files.keys()][detail];
+        this.showSide(side);
+      }
+    });
+    document.querySelector('.solution .panes').append(side);
+    this.showSide(side);
     return side;
+  }
+
+  // Shows the file of the window in the other window, or in the code editor without one, and
+  // closes the window
+  joinSide(side, other) {
+    if (other) {
+      other.dataset.file = side.dataset.file;
+      this.showSide(other);
+    } else {
+      this.selectFile(side.dataset.file);
+    }
+    ProblemManager.closeSide(side);
+  }
+
+  // The windows that show the file show it with its new name. Names of files are letters, digits,
+  // _, -, and dots, so they fit in the selector
+  static renameInSides(name, newName) {
+    document.querySelectorAll(`.solution .side[data-file="${name}"]`)
+      .forEach((side) => { side.dataset.file = newName; });
   }
 
   // Takes the window out of its split, to the end of the panes, and a split with one pane left
@@ -486,12 +529,12 @@ class ProblemManager {
     }
   }
 
-  // Makes the window float over the page where it is, positioned in the panes
+  // Makes the window float over the page where it is, positioned in the page
   static floatSide(side) {
     const box = side.getBoundingClientRect();
-    const origin = side.closest('.panes').getBoundingClientRect();
     ProblemManager.leaveSplit(side);
     side.dataset.floating = '';
+    const origin = side.offsetParent.getBoundingClientRect();
     side.style.setProperty('--left', `${box.left - origin.left}px`);
     side.style.setProperty('--top', `${box.top - origin.top}px`);
   }
@@ -528,19 +571,35 @@ class ProblemManager {
     }
   }
 
-  // Shows the file of each window, and hides the windows of the files that the solution does not
-  // have, e.g. in a version of the slider or in another language, so they come back with them
+  // Shows the tabs of each window and its selected file
   showSides() {
-    document.querySelectorAll('.solution .side').forEach((side) => {
-      const name = side.dataset.file;
-      const model = this.files.get(name) ?? null;
-      const { editor } = side.querySelector('monaco-editor');
-      side.hidden = !model;
+    document.querySelectorAll('.solution .side').forEach((side) => this.showSide(side));
+  }
+
+  // Shows a tab for each file of the solution, and the file of the window, or the main file if the
+  // solution does not have it (e.g. in a version of the slider or in another language), in its
+  // editor, with its cursor and scroll there
+  showSide(side) {
+    const names = [...this.files.keys()];
+    const { editor } = side.querySelector('monaco-editor');
+    if (!names.includes(side.dataset.file)) {
+      [side.dataset.file] = names;
+    }
+    side.querySelector('[role="tablist"]')
+      .replaceChildren(...names.map((name) => ProblemManager.fileTab(name, false, false)));
+    side.update();
+    const model = this.files.get(side.dataset.file);
+    if (model !== editor.getModel()) {
+      const views = this.sideViewStates.get(side) ?? new WeakMap();
+      this.sideViewStates.set(side, views);
+      if (editor.getModel()) {
+        views.set(editor.getModel(), editor.saveViewState());
+      }
       editor.setModel(model);
-      side.querySelector('img').src = fileIcon(name);
-      side.querySelector('.file').textContent = name;
-      editor.updateOptions({ ariaLabel: name });
-    });
+      editor.restoreViewState(views.get(model) ?? null);
+    }
+    side.selectedIndex = names.indexOf(side.dataset.file);
+    editor.updateOptions({ ariaLabel: side.dataset.file });
   }
 
   // The files of the solution as { name: code }, the main file first
@@ -629,48 +688,53 @@ class ProblemManager {
     this.updateRunButton();
   }
 
-  // Makes a tab for each file: the icon of its language, its name, and a cross that closes it,
-  // except the main file. The + button is disabled when the solution has the most files, or the
-  // language takes one file
+  // Makes a tab for each file, and the + button is disabled when the solution has the most files,
+  // or the language takes one file
   showTabs() {
     const main = this.mainFile();
-    const tabs = [...this.files.keys()].map((name) => {
-      const tab = document.createElement('button');
-      tab.type = 'button';
-      tab.dataset.file = name;
-      const icon = document.createElement('img');
-      icon.src = fileIcon(name);
-      icon.alt = '';
-      // A dragged image would be dragged by the browser, not as the tab
-      icon.draggable = false;
-      // A long name is cut with an ellipsis, and the title shows it whole
-      const label = document.createElement('span');
-      label.className = 'file';
-      label.textContent = name;
-      tab.append(icon, label);
-      // The title says what the mouse and keys do. pybabel does not read _() in template literals
-      const lines = [name, _('Drag it to see it in a window, or press %(keys)s to see it at the side', { keys: 'Ctrl+\\' })];
-      tab.setAttribute('aria-keyshortcuts', 'F2 Control+\\');
-      if (name === main) {
-        lines.push(_('Double click or F2 renames it'));
-      } else {
-        const close = document.createElement('span');
-        close.className = 'close material-symbols-outlined';
-        close.ariaHidden = 'true';
-        close.title = _('Close');
-        close.textContent = 'close';
-        tab.append(close);
-        lines.push(_('Double click or F2 renames it, Delete closes it'));
-        tab.setAttribute('aria-keyshortcuts', 'F2 Delete Control+\\');
-      }
-      tab.title = lines.join('\n');
-      return tab;
-    });
+    const tabs = [...this.files.keys()]
+      .map((name) => ProblemManager.fileTab(name, name !== main, true));
     const tabControl = document.querySelector('.solution > tab-control');
     tabControl.querySelector('[role="tablist"]').replaceChildren(...tabs);
     tabControl.update();
     document.getElementById('add_file').disabled = this.files.size >= MAX_SOLUTION_FILES
       || !SOLUTION_EXTENSIONS[ProblemManager.language()]?.length;
+  }
+
+  // Returns the tab of a file: the icon of its language, its name, and a cross that closes it if it
+  // is closable (not the main file in the tabs of the code editor), with a title that says what the
+  // mouse and the keys do, and if it can be renamed (in the tabs of the code editor)
+  static fileTab(name, closable, renamable) {
+    const tab = document.createElement('button');
+    tab.type = 'button';
+    tab.dataset.file = name;
+    const icon = document.createElement('img');
+    icon.src = fileIcon(name);
+    icon.alt = '';
+    // A dragged image would be dragged by the browser, not as the tab
+    icon.draggable = false;
+    // A long name is cut with an ellipsis, and the title shows it whole
+    const label = document.createElement('span');
+    label.className = 'file';
+    label.textContent = name;
+    tab.append(icon, label);
+    // pybabel does not read _() in template literals
+    const lines = [name, _('Drag it to see it in a window, or press %(keys)s to see it at the side', { keys: 'Ctrl+\\' })];
+    if (renamable) {
+      lines.push(closable ? _('Double click or F2 renames it, Delete closes it') : _('Double click or F2 renames it'));
+    }
+    if (closable) {
+      const close = document.createElement('span');
+      close.className = 'close material-symbols-outlined';
+      close.ariaHidden = 'true';
+      close.title = _('Close');
+      close.textContent = 'close';
+      tab.append(close);
+    }
+    tab.title = lines.join('\n');
+    tab.setAttribute('aria-keyshortcuts', [renamable && 'F2', closable && 'Delete', 'Control+\\']
+      .filter((key) => key).join(' '));
+    return tab;
   }
 
   // Returns why the name is not valid for a new file of the solution, or for the new name of the
@@ -726,9 +790,8 @@ class ProblemManager {
       this.finishFileName = null;
       if (keep && newName && newName !== name && !error) {
         // The files keep their order, with the new name in the place of the old one
-        const side = name && document.querySelector(`.solution .side[data-file="${name}"]`);
-        if (side) {
-          side.dataset.file = newName;
+        if (name) {
+          ProblemManager.renameInSides(name, newName);
         }
         const files = name ? Object.fromEntries(Object.entries(this.getFiles())
           .map(([key, code]) => [key === name ? newName : key, code])) : { ...this.getFiles(), [newName]: '' };
@@ -783,7 +846,6 @@ class ProblemManager {
     }
     const files = this.getFiles();
     delete files[name];
-    ProblemManager.closeSide(document.querySelector(`.solution .side[data-file="${name}"]`));
     this.showFiles(files);
     this.saveFiles();
     // The tab of the closed file had the focus

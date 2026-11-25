@@ -62,20 +62,18 @@
                 </label>
 {%- endif %}
               </editor-toolbar>
-              {#- A tab dragged out of the row of the tabs shows its file in a window of its own, over
-                  the page or at a side of the code editor, as in Visual Studio Code. problem.js
-                  makes the windows from the template #}
+              {#- A tab dragged out of a row of tabs shows its file in a window, over the page or at
+                  a side of the code editor, with the tabs of all the files and a cross that closes
+                  it, as the groups of editors of Visual Studio Code. problem.js makes the windows
+                  from the template #}
               <div class="panes">
                 <monaco-editor id="code_editor" aria-label="{{ _('Your solution') }}"></monaco-editor>
                 <template id="side_window">
-                  <section class="side">
-                    <header>
-                      <img alt="" width="16" height="16" draggable="false">
-                      <span class="file"></span>
-                      <button type="button" class="material-symbols-outlined" title="{{ _('Close') }}" aria-label="{{ _('Close') }}">close</button>
-                    </header>
-                    <monaco-editor></monaco-editor>
-                  </section>
+                  <tab-control class="side">
+                    <div role="tablist" aria-label="{{ _('Files of this window') }}"></div>
+                    <button type="button" class="close_window material-symbols-outlined" title="{{ _('Close') }}" aria-label="{{ _('Close') }}">close</button>
+                    <monaco-editor role="tabpanel"></monaco-editor>
+                  </tab-control>
                 </template>
               </div>
             </div>
