@@ -9,6 +9,7 @@ files of the tests folder: 'default' for all of them, and the number of a test c
 e.g. {"default": {"points": 1}, "004": {"points": 3, "hidden": true}} """
 
 import re
+import sys
 
 import vyg
 from config_file import ConfigFile
@@ -33,10 +34,13 @@ def _integer(value):
     return value
 
 def _number(value):
-    """ Return the value if it is an integer or a real number. Raise ValueError otherwise """
-    if isinstance(value, float):
-        return value
-    return _integer(value)
+    """ Return the value if it is a finite integer or real number. Raise ValueError otherwise """
+    # JSON of Python and YAML accept NaN and the infinities, and integers too large for a float.
+    # Comparing with the largest float rejects them all
+    if (isinstance(value, bool) or not isinstance(value, (int, float))
+            or not abs(value) <= sys.float_info.max):
+        raise ValueError(value)
+    return value
 
 def _texts(value):
     """ Return the value if it is a list of strings. Raise ValueError otherwise """
