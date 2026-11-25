@@ -346,15 +346,18 @@ class Execution:
             self._check_language()
             # Do not run code directly on the OS, isolate student code into a Docker container
             self._create_container()
-            # Copy the student solution and test cases to the container
-            self._copy_files()
+            # Copy the student solution to the container. The input of each test case is copied
+            # just before it runs, so the solution cannot read the inputs of the other ones
+            self._copy_file(self.source_file, self.solution.code)
             # If the solution is in a language that should be compiled, compile it
             self._compile()
             # Run all test cases. TODO(jhc): test in parallel to finish sooner
-            for index0, test_case in enumerate(self.problem.tests):
-                self._check_deadline(len(self.problem.tests) - index0)
-                self._run_test_case(index0, test_case)
-            # Run after test case proofs, e.g: linting
+            order = self._test_order()
+            for position, index0 in enumerate(order):
+                self._check_deadline(len(order) - position)
+                self._run_test_case(index0, self.problem.tests[index0])
+            # Run after test case proofs, e.g: linting. TODO(EliuAV): lint the source as it was
+            # sent, a hidden test case may have changed the file to tell what it read
             self._check_deadline(0)
             self._after_run_proofs()
             # TODO(jhc): self.build_message() for the entire execution result
@@ -377,8 +380,27 @@ class Execution:
         finally:
             # Kill and remove the container even on errors, so they do not pile up on the host
             self._remove_container()
+        self._sort_results()
         # Execution finished, encode the result to JSON and send it to frontend
         return vyg.to_json(self.result)
+
+    def _test_order(self) -> list:
+        """ Return the indexes of the test cases in the order they run: hidden test cases run after
+            the visible ones, so nothing that a hidden one read, e.g. its input saved in a file,
+            reaches the outputs that the student sees """
+        return sorted(range(len(self.problem.tests)),
+                key=lambda index0: bool(self.problem.tests[index0].hidden))
+
+    def _sort_results(self):
+        """ Put the results of the test cases, appended in the order they ran, in the order of the
+            test cases, which the frontend expects. A test case that was not run before the last
+            one that was run, e.g. a hidden one after another that exceeded the total time, is
+            pending """
+        results = dict(zip(self._test_order(), self.result.results))
+        if results:
+            self.result.results = [results.get(index0,
+                    vyg.TestCaseResult({ 'status': vyg.Status.PENDING, 'message': 'Not run' }))
+                    for index0 in range(max(results) + 1)]
 
     def _total_limit(self) -> float:
         """ Return the seconds for the whole submission """
@@ -498,16 +520,14 @@ class Execution:
                 logger.exception('Could not remove container %s', self.container.id)
             self.container = None
 
-    def _copy_files(self):
-        """ Copy the student solution and test cases to the container """
+    def _copy_file(self, name:str, text:str):
+        """ Copy a file with the given fixed name and text to the folder of the student in the
+            container """
         # Docker copies files to a container from a tar file. It is built in memory with fixed file
         # names, owned by the student, so no chown is needed in the container
         mem_tar = io.BytesIO()
         with tarfile.open(fileobj=mem_tar, mode='w') as tar_file:
-            Execution._add_to_tar(tar_file, self.source_file, self.solution.code)
-            # Copy input files of all test cases
-            for index0, test in enumerate(self.problem.tests):
-                Execution._add_to_tar(tar_file, Execution._input_file(index0), test.stdin)
+            Execution._add_to_tar(tar_file, name, text)
         # Extract the tar file in the container
         self.container.put_archive(path=WORKDIR, data=mem_tar.getvalue())
 
@@ -625,6 +645,7 @@ class Execution:
         # Get the test case to run
         assert 0 <= index0 < len(self.problem.tests)
         input_file = Execution._input_file(index0)
+        self._copy_file(input_file, test_case.stdin)
         expected_output = test_case.stdout
         expected_error = test_case.stderr
         wall_time_limit = self._wall_time_limit(test_case)
