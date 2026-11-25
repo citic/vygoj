@@ -1582,6 +1582,9 @@ msgstr "una lista de textos"
 msgid "a number"
 msgstr "un número"
 
+msgid "a number from -1000000 to 1000000"
+msgstr "un número de -1000000 a 1000000"
+
 msgid "a text"
 msgstr "un texto"
 

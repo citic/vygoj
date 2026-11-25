@@ -330,8 +330,10 @@ class Execution:
             raise InvalidSubmission('Test case arguments are too long')
         # Raises InvalidSubmission if the arguments cannot be split, e.g: unbalanced quotes
         Execution._build_args(test)
-        if bounded_number(test.points, None, -math.inf, math.inf) is None:
-            raise InvalidSubmission('Test case points must be a number')
+        if bounded_number(test.points, None, -math.inf, math.inf) is None or (
+                abs(test.points) > vyg.MAX_POINTS):
+            raise InvalidSubmission(f'Test case points must be a number from -{vyg.MAX_POINTS} to '
+                f'{vyg.MAX_POINTS}')
         if not isinstance(test.custom, bool):
             raise InvalidSubmission('Invalid test case')
 
