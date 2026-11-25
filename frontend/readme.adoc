@@ -495,4 +495,4 @@ To protect the users and the judge, the frontend limits:
 * *Failed logins*: after 5 failed logins of a user, or 30 of any users from the same address, in 15 minutes, the frontend rejects the logins of that address until 15 minutes pass. Usernames are never locked, so nobody can lock the account of a classmate.
 * *Runs of solutions*: only logged users run code, one run at a time, at least 5 seconds apart, and at most 120 runs per hour. Running the same code again answers the same result without running it.
 
-Users choose the language of the interface, the color scheme, and the font in their preferences. VygOJ is in English and Spanish.
+Users choose the language of the interface, the color scheme, and the font in their preferences, where they also change their full name and their password (typing the current one, and the new one, of at least 8 characters, or 12 for administrators, twice). Users who log in with single sign-on change their password in their provider. VygOJ is in English and Spanish.

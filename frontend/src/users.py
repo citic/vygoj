@@ -260,6 +260,10 @@ logged_users = set()
 # Maximum length of the passwords. Hashing is slow on purpose, so huge passwords would let a client
 # keep the server busy
 MAX_PASSWORD_LENGTH = 256
+# Minimum length of the new passwords that users choose in their preferences. Administrators can do
+# everything, so their passwords must not be easy to guess, also the ones of manage.py
+MIN_PASSWORD_LENGTH = 8
+MIN_ADMIN_PASSWORD_LENGTH = 12
 
 # Hash of a password nobody has. Login checks it when the user does not exist, so the response
 # takes the same time for existing and missing users, and timing does not reveal the usernames
@@ -330,7 +334,7 @@ class UserForm(flask_wtf.FlaskForm):
     password = wtforms.PasswordField(lazy_gettext('Password'),
         validators=[validators.Length(max=MAX_PASSWORD_LENGTH)])
     # Used only when user wants to change password
-    new_password = wtforms.PasswordField(lazy_gettext('Password'),
+    new_password = wtforms.PasswordField(lazy_gettext('New password'),
         validators=[validators.Length(max=MAX_PASSWORD_LENGTH)])
     # Asked to make user be sure the new password is well typed
     confirm_password = wtforms.PasswordField(lazy_gettext('Confirm new password'),
@@ -377,12 +381,14 @@ class UserForm(flask_wtf.FlaskForm):
             if form.logout.data:
                 return log_out()
             # If user was logged in, update preferences, otherwise try to log in
-            if user:
-                return UserForm.update_preferences(form, user)
-            return UserForm.log_in(form, next_url)
+            if not user:
+                return UserForm.log_in(form, next_url)
+            # Invalid preferences show the form again with their errors
+            if UserForm.update_preferences(form, user):
+                return flask.redirect(flask.url_for('user'))
         if user:
             # User is logged in, and wants to change preferences, update some labels
-            form.password.label = gettext('Current password')
+            form.password.label.text = gettext('Current password')
         else:
             # User is not logged in, the password field is required to login. The list of
             # validators is shared by every form, so it is replaced instead of extended: otherwise
@@ -395,26 +401,76 @@ class UserForm(flask_wtf.FlaskForm):
             'user': user,
             'providers': providers,
             'next_url': next_url,
+            'min_password_length': UserForm.min_password_length(user),
         })
 
     @staticmethod
-    def update_preferences(form: 'UserForm', user: dict):
-        """ Save the preferences chosen in the form for the logged in user """
+    def update_preferences(form: 'UserForm', user: dict) -> bool:
+        """ Save the preferences, the full name, and the new password chosen in the form for the
+        logged in user. Return False, with the errors in the fields of the form, if they are not
+        valid. The username identifies the user, so it is not changed """
+        fullname = (form.fullname.data or '').strip()
+        if not fullname:
+            form.fullname.errors.append(gettext('Type your full name'))
+        # Users who logged in with single sign-on change their password in their provider
+        new_password = '' if user.get('sso') else form.new_password.data
+        if new_password:
+            UserForm.check_password_change(form, user)
+        if form.fullname.errors or form.password.errors or form.new_password.errors:
+            return False
         # Save the chosen color scheme, font, and language in the database and in the session
         preferences = {
             'color_scheme': form.color_scheme.data,
             'font': form.font.data,
             'language': form.language.data,
         }
-        db.session.execute(db.update(User).filter_by(username=user['email'])
-            .values(**preferences))
+        values = { **preferences, 'fullname': fullname }
+        # The log has the full name before and after, as the changes of administrators
+        # (user_update), and tells that the password changed, never the password nor its hash
+        data = dict(preferences)
+        if fullname != user.get('fullname'):
+            data['fullname'] = [user.get('fullname'), fullname]
+        if new_password:
+            values['password'] = generate_password_hash(new_password)
+            data['password'] = True
+        db.session.execute(db.update(User).filter_by(username=user['email']).values(**values))
         db.session.commit()
-        user.update(preferences)
+        user.update(preferences, fullname=fullname)
         flask.session['user'] = user
-        log_event('preferences', preferences)
-        # TODO(I): Update the other user preferences in the database
+        log_event('preferences', data)
         flask.flash(gettext('Preferences updated successfully.'), 'success')
-        return flask.redirect(flask.url_for('user'))
+        return True
+
+    @staticmethod
+    def min_password_length(user: dict | None) -> int:
+        """ Return the minimum length of a new password of the given user of the session """
+        if user and 'admin' in user['roles']:
+            return MIN_ADMIN_PASSWORD_LENGTH
+        return MIN_PASSWORD_LENGTH
+
+    @staticmethod
+    def check_password_change(form: 'UserForm', user: dict):
+        """ Add errors to the password fields of the form if the current password is not the
+        one of the user of the session, or the new one is too short. Wrong current passwords count
+        and are logged as failed logins, so they cannot be guessed here either """
+        username = user['email']
+        address = (flask.request.remote_addr or '')[:64]
+        if LoginAttempt.is_blocked(username, address):
+            log_event('login_blocked', { 'reason': 'preferences' })
+            form.password.errors.append(gettext('Too many failed logins. Wait %(minutes)d minutes '
+                'and try again.', minutes=LOGIN_WINDOW.seconds // 60))
+        else:
+            db_user = db.session.scalar(db.select(User).filter_by(username=username))
+            password_hash = (db_user.password if db_user and db_user.password
+                else _MISSING_USER_HASH)
+            if check_password_hash(password_hash, form.password.data or ''):
+                LoginAttempt.clear(username, address)
+            else:
+                LoginAttempt.record_failure(username, address)
+                log_event('login_failed', { 'reason': 'preferences' })
+                form.password.errors.append(gettext('Wrong password'))
+        if len(form.new_password.data) < UserForm.min_password_length(user):
+            form.new_password.errors.append(gettext('The new password is too short'))
 
     @staticmethod
     def log_in(form: 'UserForm', next_url: str):

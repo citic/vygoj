@@ -11,6 +11,10 @@
   & label[data-font] {
     font-family: var(--font-family);
   }
+
+  & .hint {
+    color: var(--muted-text);
+  }
 }
 
 /* Login form for visitors */
