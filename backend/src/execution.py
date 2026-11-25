@@ -347,7 +347,7 @@ class Execution:
             # Do not run code directly on the OS, isolate student code into a Docker container
             self._create_container()
             # Copy the student solution to the container. The input of each test case is copied
-            # just before it runs, so the solution cannot read the inputs of the other ones
+            # just before it runs, so the solution cannot read the inputs of the following ones
             self._copy_file(self.source_file, self.solution.code)
             # If the solution is in a language that should be compiled, compile it
             self._compile()
@@ -356,8 +356,7 @@ class Execution:
             for position, index0 in enumerate(order):
                 self._check_deadline(len(order) - position)
                 self._run_test_case(index0, self.problem.tests[index0])
-            # Run after test case proofs, e.g: linting. TODO(EliuAV): lint the source as it was
-            # sent, a hidden test case may have changed the file to tell what it read
+            # Run after test case proofs, e.g: linting
             self._check_deadline(0)
             self._after_run_proofs()
             # TODO(jhc): self.build_message() for the entire execution result
@@ -393,14 +392,13 @@ class Execution:
 
     def _sort_results(self):
         """ Put the results of the test cases, appended in the order they ran, in the order of the
-            test cases, which the frontend expects. A test case that was not run before the last
-            one that was run, e.g. a hidden one after another that exceeded the total time, is
-            pending """
+            test cases, which the frontend expects. If some test case ran, the ones that did not,
+            because the total time was over, are pending """
         results = dict(zip(self._test_order(), self.result.results))
         if results:
             self.result.results = [results.get(index0,
                     vyg.TestCaseResult({ 'status': vyg.Status.PENDING, 'message': 'Not run' }))
-                    for index0 in range(max(results) + 1)]
+                    for index0 in range(len(self.problem.tests))]
 
     def _total_limit(self) -> float:
         """ Return the seconds for the whole submission """
@@ -714,6 +712,11 @@ class Execution:
             their program write. Truncate the outputs of a visible test case to output_limit """
         if test_case.hidden:
             test_result.stdout = test_result.stderr = ''
+            # The solution chooses its exit code, its threads, and its memory, so they could tell
+            # what it read too. Only whether the exit code was 0 is kept
+            test_result.exitCode = 1 if test_result.exitCode else 0
+            test_result.threadCount = test_result.memory = 0
+            test_result.message = re.sub(r'-?\d+', 'N', test_result.message)
         else:
             test_result.stdout = truncate_output(test_result.stdout, self.output_limit)
             test_result.stderr = truncate_output(test_result.stderr, self.output_limit)
@@ -846,6 +849,9 @@ class Execution:
         """ Run after test case proofs, e.g: linting """
         # Languages without a linting filter have no linter yet
         if 'lint' in self.tools and self.flags.linting_options:
+            # The test cases may have changed the file of the solution, e.g. a hidden one to tell
+            # what it read in the messages of the linter, so the code sent is linted
+            self._copy_file(self.source_file, self.solution.code)
             # Run the linter, e.g: cpplint.py
             cmd = ['cpplint', f'--filter={self.flags.linting_options}', self.source_file]
             stdout, stderr, exit_code = self._run_in_container(cmd, LINT_TIMEOUT)

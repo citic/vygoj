@@ -15,9 +15,10 @@ sequenceDiagram
     Note over Execution: validate types, sizes, language,<br>clamp limits, set the deadline
     Execution->>Execution: static checks (mustContain)
     Execution->>Docker: create container (no network, no capabilities,<br>limits of memory, processes, CPUs, files)
-    Execution->>Container: put_archive: solution and test case inputs
+    Execution->>Container: put_archive: solution
     Execution->>Container: exec compiler (time limit)
-    loop each test case, while the deadline allows
+    loop each visible test case, then each hidden one, while the deadline allows
+        Execution->>Container: put_archive: input of the test case
         Execution->>Container: exec timeout + /usr/bin/time -v solution
         Container-->>Execution: stdout, stderr, exit code, time, memory
         Execution->>Execution: compare outputs, check time range
@@ -26,7 +27,7 @@ sequenceDiagram
         end
         Execution->>Container: kill processes left in background
     end
-    Execution->>Container: after run proofs (lint)
+    Execution->>Container: after run proofs (put_archive: solution, then lint)
     Execution->>Docker: remove container (finally)
     Execution-->>Main: ExecutionResult (compact JSON)
     Main->>Log: log_run(context, language, code, result, duration)
