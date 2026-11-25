@@ -16,7 +16,7 @@ import vyg
 from activity_log import log_event, log_run, repo_commit, save_code
 from courses.course_controller import CourseController
 from repos.git_repo import GitError
-from repos.student_repo import StudentRepo, solution_filename
+from repos.student_repo import NAME_PATTERN, StudentRepo, solution_filename
 from limits import CONSTRAINED_FIELDS, Limits
 from problems.problem_loader import ProblemLoader
 from runs import Run, RunRejected
@@ -46,6 +46,8 @@ WARNING_TEXTS = {
     'invalid_field': lazy_gettext('%(file)s: ignored the field %(field)s, which must be '
         '%(kind)s'),
     'invalid_file': lazy_gettext('%(file)s is not valid, so it was ignored: %(error)s'),
+    'invalid_name': lazy_gettext('The name %(name)s must have up to 64 letters without accents, '
+        'digits, _, +, or -, so students cannot run the problem'),
     'invalid_test': lazy_gettext('%(file)s: ignored the test case %(test)s of tests, which must '
         'be an object'),
     'invalid_test_field': lazy_gettext('%(file)s: ignored the field %(field)s of the test case '
@@ -300,6 +302,10 @@ class ProblemController:
         user_id = Run.find_user_id(flask.session['user'].get('email'))
         if user_id is None:
             return ProblemController.error_response('Log in to run code', 401)
+        # Runs, grades, and student repos keep problems by name. Its professor sees a warning
+        if not NAME_PATTERN.fullmatch(problem.name):
+            return ProblemController.error_response(
+                gettext('This problem cannot be run because its name is not valid'), 400)
         # The backend rejects longer arguments, so the user is told why
         if len(message.args) > MAX_ARGS_LENGTH:
             return ProblemController.error_response(
