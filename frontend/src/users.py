@@ -377,8 +377,10 @@ class UserForm(flask_wtf.FlaskForm):
             # validators is shared by every form, so it is replaced instead of extended: otherwise
             # one visit to the login page makes the password required in the preferences too. It is
             # replaced before validating the form, and WTForms sets the flags of a field (which
-            # give the required attribute of the input) when the form is created, so it is set too
-            form.password.validators = [*form.password.validators, validators.DataRequired()]
+            # give the required attribute of the input) when the form is created, so it is set too.
+            # InputRequired rejects only an empty field, as the browser does: a password of spaces
+            # is a password
+            form.password.validators = [*form.password.validators, validators.InputRequired()]
             form.password.flags.required = True
         # If user accepted the dialog
         if form.validate_on_submit():
