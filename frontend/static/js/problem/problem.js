@@ -1299,6 +1299,11 @@ class ProblemManager {
       this.updateCompileOutput(_('The solution is too long: at most %(size)s', { size: formatBytes(MAX_SOLUTION_BYTES) }));
       return;
     }
+    // Running a version of the slider makes it the code in the editor, as editing it does, so the
+    // editor, the slider, and the files saved in this browser stay the same after the run
+    if (this.currentFiles !== null) {
+      this.saveFiles();
+    }
     // Disable the Run button while the backend is running the code
     this.running = true;
     this.updateRunButton();
