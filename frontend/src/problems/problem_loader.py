@@ -231,9 +231,9 @@ class ProblemLoader:
         too, or else the ones of the course, with a warning if the problem set others. The problem
         supports the languages of its configuration file, or else the ones of its initial code.
         Without languages in the course nor in the problem, every language of VygOJ is enabled """
-        # The keys of initialCodeFor are written by hand too, so only languages of VygOJ count
-        problem_languages = config.languages or [language for language in problem.initialCodeFor
-            if language in vyg.EXTENSION_LANGUAGES]
+        # The keys of initialCodeFor are written by hand too, so only languages of VygOJ count,
+        # with a warning for the others
+        problem_languages = config.languages or config.known_languages(list(problem.initialCodeFor))
         if not course_languages:
             problem.languages = problem_languages or list(vyg.LANGUAGE_EXTENSIONS.values())
             return

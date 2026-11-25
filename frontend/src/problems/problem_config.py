@@ -55,11 +55,13 @@ def _words(value):
     return value if isinstance(value, str) else ' '.join(_texts(value))
 
 def _codes(value):
-    """ Return the value if it is an object of strings, e.g. the initial code of each language.
-    Raise ValueError otherwise """
+    """ Return the value if it is an object of strings, e.g. the initial code of each language,
+    with the keys that are extensions or names of languages in any case as their names, as
+    _languages() does. Raise ValueError otherwise """
     if not isinstance(value, dict) or not all(isinstance(item, str) for item in value.values()):
         raise ValueError(value)
-    return value
+    return { vyg.LANGUAGE_NAMES.get(str(key).lower(), str(key)): code
+        for key, code in value.items() }
 
 def _threads(value):
     """ Return the value if it is an integer or 'stdin' (the number is in the standard input).
