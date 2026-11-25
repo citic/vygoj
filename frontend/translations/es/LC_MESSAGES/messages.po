@@ -1579,6 +1579,9 @@ msgstr "Su error"
 msgid "Your output"
 msgstr "Su salida"
 
+msgid "Your password changed. Log in with the new one."
+msgstr "Su contraseña cambió. Ingrese con la nueva."
+
 msgid ""
 "Your session expired or the request was not valid. Reload the page and "
 "try again."

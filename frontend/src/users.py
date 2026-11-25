@@ -1,5 +1,6 @@
 """ Manages application users, their preferences, and courses' progress """
 import datetime
+import hashlib
 import os
 import urllib.parse
 
@@ -299,10 +300,17 @@ def suspended_message() -> str:
     administrator suspended them, in the language of the request """
     return gettext('Your account is suspended. Ask the administrator.')
 
+def password_stamp(password_hash: str | None) -> str:
+    """ Return a short fingerprint of the password hash of a user, which the session keeps to end
+    when the password changes. Sessions are signed, but not encrypted, so they have a fingerprint
+    of the hash, never the hash """
+    return hashlib.sha256((password_hash or '').encode()).hexdigest()[:16]
+
 def refresh_session():
     """ Log out the logged user if an administrator suspended or deleted them after they logged in,
-    and take the changes of their full name and roles. Sessions are signed cookies that the server
-    cannot revoke, so every request checks the user in the database """
+    or if their password changed in another session, and take the changes of their full name and
+    roles. Sessions are signed cookies that the server cannot revoke, so every request checks the
+    user in the database """
     user = flask.session.get('user')
     # Static files do not need the user, and they are most of the requests
     if not user or flask.request.endpoint in (None, 'static'):
@@ -314,6 +322,12 @@ def refresh_session():
         logged_users.discard(user.get('email'))
         flask.flash(suspended_message() if db_user else gettext('Your account was deleted.'),
             'error')
+        return
+    # E.g. a session forgotten open in a computer lab, after the user changed the password at home
+    if user.get('password_stamp') != password_stamp(db_user.password):
+        log_event('logout', { 'reason': 'password changed' })
+        flask.session.clear()
+        flask.flash(gettext('Your password changed. Log in with the new one.'), 'warning')
         return
     if (user.get('fullname'), user.get('roles')) != (db_user.fullname, db_user.roles):
         user.update(fullname=db_user.fullname, roles=db_user.roles)
@@ -433,6 +447,8 @@ class UserForm(flask_wtf.FlaskForm):
         if new_password:
             values['password'] = generate_password_hash(new_password)
             data['password'] = True
+            # This session stays open, the other sessions of the user end at their next request
+            user['password_stamp'] = password_stamp(values['password'])
         db.session.execute(db.update(User).filter_by(username=user['email']).values(**values))
         db.session.commit()
         user.update(preferences, fullname=fullname)
@@ -515,6 +531,7 @@ def start_session(db_user: User, next_url: str | None, provider: str = None):
         'color_scheme': db_user.color_scheme,
         'font': db_user.font,
         'language': db_user.language,
+        'password_stamp': password_stamp(db_user.password),
     }
     if provider:
         # The preferences hide the password of users who logged in with single sign-on
