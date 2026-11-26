@@ -91,7 +91,7 @@ kbd:[Ctrl+C] stops the three servers, and their outputs are mixed in the console
 [cols="1,3"]
 |===
 | `make config`
-| Add the missing secrets to `config/config.py` of the frontend and of the language server with random values, the same `LANG_SERVER_SECRET` in both (`common/make_config.py`). It creates the files that do not exist, only readable by their owner, and never changes the settings that they have. `make install` runs it, also in each layer.
+| Add the missing secrets to `config/config.py` of the frontend and of the language server with random values, the same `LANG_SERVER_SECRET` in both (`common/make_config.py`). It creates the files that do not exist, only readable by their owner, and never changes the settings that they have. A setting computed in `config.py`, e.g. from an environment variable, counts as set; if the `LANG_SERVER_SECRET` of one layer is computed, its value is unknown, so `make config` fails instead of giving the other layer a different one, and asks to write it by hand. `make install` runs it, also in each layer.
 
 | `make deps`
 | Install the Python dependencies of the three layers again.

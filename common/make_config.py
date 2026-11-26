@@ -64,16 +64,20 @@ def literal_value(node):
         return COMPUTED
 
 
-def choose_shared_secret(settings: dict) -> str:
+def choose_shared_secret(settings: dict) -> str | None:
     """ Answer the LANG_SERVER_SECRET for the layers that lack it: the one of another layer, or a
-    new random one. Fail if the layers have different ones, because the language server would
-    refuse every editor """
+    new random one. Answer None if another layer computes it, because its value is unknown here,
+    and a random one would differ. Fail if the layers have different ones, because the language
+    server would refuse every editor """
     values = {value[SHARED_SECRET] for value in settings.values() if SHARED_SECRET in value}
+    computed = COMPUTED in values
     values.discard(COMPUTED)
     if len(values) > 1:
         files = ' and '.join(path for path, _ in LAYERS.values())
         raise ConfigError(f'{SHARED_SECRET} differs in {files}, make them equal')
-    return values.pop() if values else secrets.token_hex(32)
+    if values:
+        return values.pop()
+    return None if computed else secrets.token_hex(32)
 
 
 def add_settings(path: str, new_settings: dict):
@@ -114,6 +118,9 @@ def configure(layers: list):
         relative_path, names = LAYERS[layer]
         missing = {name: shared_secret if name == SHARED_SECRET else secrets.token_hex(32)
             for name in names if name not in settings[layer]}
+        if SHARED_SECRET in missing and shared_secret is None:
+            raise ConfigError(f'{SHARED_SECRET} is computed in the config.py of another layer, '
+                f'write the same value in {relative_path}')
         if missing:
             add_settings(os.path.join(ROOT, relative_path), missing)
             print(f'{relative_path}: added {", ".join(missing)}')
