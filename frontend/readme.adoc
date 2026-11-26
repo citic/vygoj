@@ -353,7 +353,7 @@ The list of users can be filtered by any words, e.g. a name, and by column, e.g.
 
 Administrators cannot remove their own administrator role nor suspend themselves, so there is always an administrator.
 
-The _Import users_ section adds many users at once from a CSV or TSV file in UTF-8, such as the one that a spreadsheet saves, of up to 200 users. Its first line names the columns: `username` and `email` are required, and `fullname`, `password`, `role`, `status`, `language`, and `font` are optional. The page has examples of both formats. After the import, a table tells which users were imported, which already existed, and which were rejected and why. A file can be imported again: the users that already exist are skipped. A file cannot create administrators.
+The _Import users_ section adds many users at once from a CSV or TSV file in UTF-8, such as the one that a spreadsheet saves, of up to 200 users. Its first line names the columns: `username` and `email` are required, and `fullname`, `password`, `role`, `status`, `language`, and `font` are optional. The page has examples of both formats. After the import, a table tells which users were imported, which already existed, and which were rejected and why. A file can be imported again: the users that already exist are skipped. If another import adds some of the same users at the same time, e.g. after a double click, this one imports none, and the page asks to import the file again. A file cannot create administrators.
 
 [[sso]]
 === Single sign-on (SSO)

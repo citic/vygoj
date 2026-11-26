@@ -243,6 +243,13 @@ msgstr "Anual"
 msgid "Another provider has this alias"
 msgstr "Otro proveedor tiene este alias"
 
+msgid ""
+"Another request added some of these users at the same time. Import the "
+"file again to see what happened to each row."
+msgstr ""
+"Otra solicitud agregó algunos de estos usuarios al mismo tiempo. Importe "
+"el archivo de nuevo para ver qué pasó con cada fila."
+
 msgid "Another user has this email"
 msgstr "Otro usuario tiene este correo"
 

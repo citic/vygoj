@@ -11,6 +11,7 @@ from their start date """
 import datetime
 
 from flask_babel import lazy_gettext
+from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from db import db
@@ -208,11 +209,15 @@ class CourseSection(db.Model):
 
     def enroll(self, user_id: int) -> bool:
         """ Enroll the user in the section. Return False if they were enrolled in a section of its
-        course already """
+        course already, also by another request meanwhile, e.g. a double click """
         if CourseSection.of_student(self.course_id, user_id):
             return False
         db.session.add(Enrollment(user_id=user_id, course_id=self.course_id, section_id=self.id))
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            return False
         return True
 
     def code(self) -> str:

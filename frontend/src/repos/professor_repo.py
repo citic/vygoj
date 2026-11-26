@@ -25,6 +25,7 @@ import shutil
 import tempfile
 
 from flask import current_app as app
+from sqlalchemy.exc import IntegrityError
 
 from config_file import ConfigError
 from courses.course_config import CourseConfig
@@ -99,7 +100,8 @@ class ProfessorRepo(db.Model):
     @staticmethod
     def add(username: str, url: str) -> 'ProfessorRepo':
         """ Add a repo of the user with the URL, and return it. Raise ValueError with the code of
-        its message if the URL or its folder is not valid, or the user has too many repos """
+        its message if the URL or its folder is not valid, also when another request added the
+        folder meanwhile (e.g. a double click), or the user has too many repos """
         url = check_url(url)
         folder = folder_of(url)
         repos = ProfessorRepo.of_user(username)
@@ -110,7 +112,11 @@ class ProfessorRepo(db.Model):
         user_id = db.session.scalar(db.select(User.id).filter_by(username=username))
         repo = ProfessorRepo(user_id=user_id, url=url, folder=folder)
         db.session.add(repo)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError as error:
+            db.session.rollback()
+            raise ValueError('duplicate_name') from error
         return repo
 
     def set_url(self, url: str):
