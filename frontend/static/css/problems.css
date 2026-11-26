@@ -366,10 +366,15 @@ tab-control {
 }
 
 /* After a run, each test case has the color of its result, also the selected one. The ones that
-   the user wrote have a dashed border */
+   the user wrote have a dashed border and a tint of the site, apart from the ones of the problem */
 .test_cases [role="tab"] {
   &.mine {
-    border-style: dashed;
+    border: 1px dashed var(--label-color);
+    background: color-mix(in srgb, var(--label-color) 15%, var(--surface-alt));
+  }
+
+  &:not(.mine) + .mine {
+    margin-left: 0.5rem;
   }
 
   &[data-status="passed"] {
