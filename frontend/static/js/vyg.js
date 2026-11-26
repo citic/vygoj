@@ -35,7 +35,7 @@ class Enum {
 }
 
 export class Message {
-  constructor(action, error = '', language = '', code = '', stdin = '', args = '', tests = []) {
+  constructor(action, error = '', language = '', code = '', stdin = '', args = '', tests = null) {
     // Action to perform: 'run', 'fetch_problem', 'lang_server'
     this.action = action;
     // Error message if any
@@ -49,7 +49,7 @@ export class Message {
     this.stdin = stdin;
     this.args = args;
     // Test cases that the user wrote, as [{ args, stdin, stdout }, ...], run after the ones of
-    // the problem
+    // the problem. Null if the message does not have them, which keeps the stored ones
     this.tests = tests;
   }
 }

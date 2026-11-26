@@ -20,5 +20,5 @@ class Message:
         self.stdin = json_dict.get('stdin', '')
         self.args = json_dict.get('args', '')
         # Test cases that the user wrote, as [{args, stdin, stdout}, ...], run after the ones of
-        # the problem
-        self.tests = json_dict.get('tests', [])
+        # the problem. None if the message does not have them, which keeps the stored ones
+        self.tests = json_dict.get('tests')

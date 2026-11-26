@@ -249,8 +249,11 @@ class ProblemController:
         if not all(isinstance(text, str) for text in
                 (message.language, message.code, message.stdin, message.args)):
             return None
-        message.tests = check_tests(message.tests)
-        return message if message.tests is not None else None
+        if message.tests is not None:
+            message.tests = check_tests(message.tests)
+            if message.tests is None:
+                return None
+        return message
 
     @staticmethod
     def error_response(message: str, status: int, headers=None):
@@ -365,7 +368,8 @@ class ProblemController:
         try:
             repo = StudentRepo(username)
             repo.save(problem, solution_filename(message.language), message.code)
-            repo.save_tests(problem, message.tests)
+            if message.tests is not None:
+                repo.save_tests(problem, message.tests)
         except (GitError, OSError, ValueError):
             app.logger.exception('could not save the solution of %s/%s',
                 problem.get_course().name, problem.name)
@@ -444,7 +448,7 @@ class ProblemController:
         tests = problem.tests or [vyg.TestCase({ 'stdin': message.stdin, 'args': message.args,
             'custom': True })]
         tests = tests + [vyg.TestCase({ **test, 'custom': not test['stdout'] })
-            for test in message.tests]
+            for test in message.tests or []]
         problem_dict['tests'] = [Limits.effective_test(test, problem_dict) for test in tests]
         return problem_dict
 
