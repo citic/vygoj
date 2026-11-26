@@ -78,7 +78,8 @@ Client-side code lives in `static/` and has its own `static/CLAUDE.md`.
   - `student_repo.py`: `StudentRepo(GitRepo)`, the bare git repo with the solutions that each
     user submits as a student, in `DATA_FOLDER/user/<username>/student_repo`
     (`STUDENT_REPO_NAME`), created at login, with a branch per problem and a commit per run with
-    new code (`ProblemController.save_solution()`), the versions of the slider of the editor, the
+    new code (`ProblemController.save_solution()`), the test cases that the user writes for each
+    problem (`vygoj.json` of its folder), the versions of the slider of the editor, the
     last problem of a course (the course page scrolls to it), the `main` branch that merges the
     problems for copies and pushes, and the origin of the user. It
     runs git through `subprocess` with plumbing commands and a timeout, and validates names of

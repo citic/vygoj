@@ -15,7 +15,7 @@ from courses.course_section import DURATIONS, MODALITIES
 from courses.section_controller import SectionController
 from limits import BACKEND_CONNECT_TIMEOUT, Limits
 from problems.problem_controller import (BACKEND_STATUS_TIMEOUT, ProblemController,
-    lang_server_http_url, lang_server_status_url)
+    lang_server_http_url, lang_server_status_url, user_tests)
 from repos.repo_controller import RepoController
 from repos.repo_jobs import check_config as check_repo_config
 from sso import SsoAdminController, SsoController, SsoProvider
@@ -282,6 +282,11 @@ def get_versions(course_name, problem_name):
 def get_version(course_name, problem_name, commit):
     """ Client JavaScript asked for the code of a version of the solution of the user """
     return ProblemController.get_version(course_name, problem_name, commit)
+
+@app.route('/problem/<course_name>/<problem_name>/tests')
+def get_tests(course_name, problem_name):
+    """ Client JavaScript asked for the test cases that the user wrote for the problem """
+    return user_tests(course_name, problem_name)
 
 
 # Users -------------------------------------------------------------------------------------------

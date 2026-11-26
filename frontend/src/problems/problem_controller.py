@@ -16,7 +16,7 @@ import vyg
 from activity_log import log_event, log_run, repo_commit, save_code
 from courses.course_controller import CourseController
 from repos.git_repo import GitError
-from repos.student_repo import StudentRepo, solution_filename
+from repos.student_repo import StudentRepo, check_tests, solution_filename
 from limits import CONSTRAINED_FIELDS, Limits
 from problems.problem_loader import ProblemLoader
 from runs import Run, RunRejected
@@ -249,7 +249,8 @@ class ProblemController:
         if not all(isinstance(text, str) for text in
                 (message.language, message.code, message.stdin, message.args)):
             return None
-        return message
+        message.tests = check_tests(message.tests)
+        return message if message.tests is not None else None
 
     @staticmethod
     def error_response(message: str, status: int, headers=None):
@@ -343,11 +344,12 @@ class ProblemController:
             # only after it was graded, so an invalid answer is not reused
             backend_json = ProblemController.run_solution(problem_dict, message, context)
             if problem.tests:
-                Progress.store(course_name, problem.name, ProblemController.grade(backend_json))
+                Progress.store(course_name, problem.name,
+                    ProblemController.grade(backend_json, len(problem.tests)))
             else:
                 # Runs with the input of the user (problems without test cases) are not graded,
                 # but grade() also checks that the backend answered a result
-                ProblemController.grade(backend_json)
+                ProblemController.grade(backend_json, 0)
             result_json = backend_json
             return ProblemController.json_response(result_json)
         finally:
@@ -358,10 +360,12 @@ class ProblemController:
 
     @staticmethod
     def save_solution(username: str, problem: vyg.Problem, message: vyg.Message):
-        """ Commit the code of the run to the student repo of the user, the history of their
-        solutions. A failure is logged, and the run goes on without it """
+        """ Commit the code and the test cases of the user of the run to their student repo, the
+        history of their solutions. A failure is logged, and the run goes on without it """
         try:
-            StudentRepo(username).save(problem, solution_filename(message.language), message.code)
+            repo = StudentRepo(username)
+            repo.save(problem, solution_filename(message.language), message.code)
+            repo.save_tests(problem, message.tests)
         except (GitError, OSError, ValueError):
             app.logger.exception('could not save the solution of %s/%s',
                 problem.get_course().name, problem.name)
@@ -407,16 +411,20 @@ class ProblemController:
         return StudentRepo(user['email']), problem, solution_filename(language)
 
     @staticmethod
-    def grade(result_json: str) -> int:
+    def grade(result_json: str, tests: int) -> int:
         """ Return the same score problem.js saves in localStorage for the ExecutionResult in JSON:
-        percentage of passed test cases. Raises ValueError if it is not a JSON object """
+        percentage of passed test cases among the results of the first tests ones, the test cases
+        of the problem. The ones that the user wrote come after them and are not graded. Raises
+        ValueError if it is not a JSON object """
         result = json.loads(result_json)
         if not isinstance(result, dict):
             raise ValueError('the backend did not answer an ExecutionResult object')
         results = result.get('results')
-        passed = result.get('passedTestCount', 0)
-        if not isinstance(results, list) or not results or not isinstance(passed, int):
+        if not isinstance(results, list) or not results[:tests]:
             return 0
+        results = results[:tests]
+        passed = sum(isinstance(test, dict) and test.get('status') == vyg.Status.PASSED
+            for test in results)
         # Adding 0.5 rounds halves up as JavaScript Math.round does (Python round() goes to even)
         return int(100 * passed / len(results) + 0.5)
 
@@ -425,7 +433,8 @@ class ProblemController:
         """ Return the fields of the problem that the backend needs to judge a solution in the
         language of the message, with the effective limits of the problem and of each test case.
         A problem without test cases gets one written by the user: the input and arguments of the
-        message, run without comparing its outputs """
+        message, run without comparing its outputs. The test cases that the user wrote follow the
+        ones of the problem, with no points, and their output is compared only if they have one """
         problem_dict = { field: value for field, value in vyg.to_dict(problem).items()
             if field in BACKEND_FIELDS }
         # Limits of the professor out of the range of config.py, or missing, are replaced
@@ -434,6 +443,8 @@ class ProblemController:
         problem_dict.update(Limits.effective_problem(problem, message.language))
         tests = problem.tests or [vyg.TestCase({ 'stdin': message.stdin, 'args': message.args,
             'custom': True })]
+        tests = tests + [vyg.TestCase({ **test, 'custom': not test['stdout'] })
+            for test in message.tests]
         problem_dict['tests'] = [Limits.effective_test(test, problem_dict) for test in tests]
         return problem_dict
 
@@ -473,6 +484,21 @@ class ProblemController:
         """ Choose a random URI from the configuration BACKENDS array. main.py checks that it is
         not empty """
         return random.choice(app.config['BACKENDS'])
+
+def user_tests(course_name: str, problem_name: str):
+    """ Answer the test cases that the logged user wrote for the problem, from their student repo,
+    as [{args, stdin, stdout}, ...] """
+    user = flask.session.get('user')
+    if not user:
+        flask.abort(401)
+    problem = ProblemController.fetch_problem(course_name, problem_name)
+    try:
+        tests = StudentRepo(user['email']).read_tests(problem.get_course().name, problem.name)
+    except (GitError, OSError, ValueError):
+        app.logger.exception('could not read the test cases of %s/%s', course_name, problem_name)
+        tests = []
+    # A run may change them, so the browser asks for them every time
+    return flask.jsonify(tests), 200, { 'Cache-Control': 'no-store' }
 
 def lang_server_key(language: str):
     """ Answer the address of a language server and a key to connect to it with the code editor
