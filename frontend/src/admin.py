@@ -14,6 +14,7 @@ import flask_wtf
 from flask_babel import gettext, lazy_gettext
 import wtforms
 from wtforms import validators
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from werkzeug.security import generate_password_hash
 
@@ -136,6 +137,13 @@ class UserAdminController:
             if not {'username', 'email'} <= columns or columns - IMPORT_COLUMNS.keys():
                 raise ValueError
             return UserAdminController.get_users(UserAdminController.add_users(rows))
+        except IntegrityError:
+            # Another request added some of the users meanwhile, e.g. a double click, so this one
+            # added none
+            db.session.rollback()
+            flask.flash(gettext('Another request added some of these users at the same time. '
+                'Import the file again to see what happened to each row.'), 'error')
+            return UserAdminController.get_users()
         except (UnicodeDecodeError, ValueError, csv.Error):
             flask.flash(gettext('The file must be a CSV or TSV file in UTF-8 of up to 1 MiB and '
                 '%(rows)d users, with the columns username and email, and optionally %(columns)s.',
