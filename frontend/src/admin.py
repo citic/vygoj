@@ -240,7 +240,8 @@ class UserAdminController:
         """ Store the data of the valid form in the given user, and log the values that changed """
         values = {
             'fullname': form.fullname.data.strip(),
-            'email': (form.email.data or '').strip() or None,
+            # In lowercase, as the import of users and single sign-on store them
+            'email': (form.email.data or '').strip().lower() or None,
             # Users without roles are students
             'roles': sorted_roles(form.roles.data) or ['student'],
         }
