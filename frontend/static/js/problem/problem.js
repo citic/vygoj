@@ -485,7 +485,7 @@ class ProblemManager {
     // Show the arguments, input, expected output, and expected error for this test case. The
     // server does not send the contents of hidden test cases
     const test = this.problem.tests[index];
-    const hidden = test.hidden ? '(hidden test case)' : '';
+    const hidden = test.hidden ? _('(hidden test case)') : '';
     document.getElementById('args').editor.setValue(test.args || hidden);
     this.editors[1].setValue(test.stdin || hidden);
     this.editors[2].setValue(test.stdout || hidden);
@@ -502,7 +502,7 @@ class ProblemManager {
     if (this.result) {
       const test = this.result.results[index];
       // The backend does not send the output of hidden test cases
-      const hidden = this.problem.tests[index].hidden ? '(hidden test case)' : '';
+      const hidden = this.problem.tests[index].hidden ? _('(hidden test case)') : '';
       this.editors[3].setValue(test?.stdout || hidden);
       this.editors[5].setValue(test?.stderr || hidden);
       // The diffs compare the expected output and error (left) with the ones of the user (right).

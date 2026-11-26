@@ -126,6 +126,9 @@ msgstr "%(passed)s casos de prueba aprobados (%(points)s puntos)"
 msgid "%(provider)s did not send your email. Ask the administrator."
 msgstr "%(provider)s no envió su correo. Consulte al administrador."
 
+msgid "(hidden test case)"
+msgstr "(caso de prueba oculto)"
+
 #, python-format
 msgid ", %(count)s secondary threads"
 msgstr ", %(count)s hilos secundarios"
