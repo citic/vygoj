@@ -150,10 +150,13 @@ class MessageLog {
     this.show();
   }
 
-  // Replace the messages of the jobs, and show them
+  // Replace the messages of the jobs, and show them if they changed: each check of the state sends
+  // them again, and screen readers would read the same messages every time
   showJobs(messages) {
-    this.jobMessages = messages;
-    this.show();
+    if (JSON.stringify(messages) !== JSON.stringify(this.jobMessages)) {
+      this.jobMessages = messages;
+      this.show();
+    }
   }
 
   // Show the notices and the messages of the jobs that were not closed, each one after the icon
