@@ -347,7 +347,7 @@ The list of users can be filtered by any words, e.g. a name, and by column, e.g.
 | Action | Effect
 
 | Edit (pencil) | Change the full name, email, roles, and status of the user
-| Suspend (crossed out person) | The user cannot log in, and is logged out at once. Their data is kept, and _Activate_ lets them log in again
+| Suspend (closed lock) | The user cannot log in, and is logged out at once. Their data is kept, and _Activate_ lets them log in again
 | Delete (trash can) | Removes the user and all their data: progress, repositories, courses, and enrollments. Their activity stays in the log. It cannot be undone: only backups recover them
 |===
 

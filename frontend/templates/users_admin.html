@@ -122,12 +122,12 @@
 {%-     if user.status == 'suspended' %}
                   <form method="post" action="{{ url_for('activate_user', user_id=user.id, **it.params) }}" data-confirm="{{ _('Activate the user %(username)s? They will be able to log in again.', username=user.username) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="small action material-symbols-outlined" title="{{ _('Activate') }}" aria-label="{{ _('Activate %(username)s', username=user.username) }}">how_to_reg</button>
+                    <button type="submit" class="small action material-symbols-outlined" title="{{ _('Activate') }}" aria-label="{{ _('Activate %(username)s', username=user.username) }}">lock_open</button>
                   </form>
 {%-     else %}
                   <form method="post" action="{{ url_for('suspend_user', user_id=user.id, **it.params) }}" data-confirm="{{ _('Suspend the user %(username)s? They will not be able to log in until activated, and their data will be kept.', username=user.username) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="small reject material-symbols-outlined" title="{{ _('Suspend') }}" aria-label="{{ _('Suspend %(username)s', username=user.username) }}">person_off</button>
+                    <button type="submit" class="small reject material-symbols-outlined" title="{{ _('Suspend') }}" aria-label="{{ _('Suspend %(username)s', username=user.username) }}">lock</button>
                   </form>
 {%-     endif %}
                   <form method="post" action="{{ url_for('delete_user', user_id=user.id, **it.params) }}" data-confirm="{{ _('Delete the user %(username)s and their data, such as their preferences, progress, and solutions? Their activity stays in the log. Only backups can recover them.', username=user.username) }}">
