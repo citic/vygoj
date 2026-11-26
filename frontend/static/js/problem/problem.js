@@ -39,16 +39,17 @@ class ConnectionError extends Error {}
 
 // Monaco name of each programming language of VygOJ. vygoj.json may write a language by its
 // name or by its extension (LANGUAGE_EXTENSIONS in vyg.py), so keys are in lowercase.
-// TODO: Java and Kotlin are missing because esm.sh fails to serve their highlighting (error 520)
-
 const monacoLanguageFor = {
   ale: 'alecci',
   alecci: 'alecci',
   c: 'c',
   'c++': 'cpp',
   cpp: 'cpp',
+  java: 'java',
   javascript: 'javascript',
   js: 'javascript',
+  kotlin: 'kotlin',
+  kt: 'kotlin',
   python: 'python',
   py: 'python',
 };
