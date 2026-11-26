@@ -497,7 +497,7 @@ tab-control {
     inset: 0 auto 0 calc(50% - 1px);
     z-index: 1;
     width: 1px;
-    border-inline: 1px solid black;
+    border-inline: 1px solid var(--border);
   }
 }
 
