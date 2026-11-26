@@ -43,9 +43,13 @@ class CourseManager {
     CourseManager.setupSearch();
   }
 
-  // The filter of the contents applies while the user types (filter.js)
+  // The filter of the contents applies while the user types (filter.js). The browser may restore
+  // the text of the search when the user goes back to the page, so the contents start filtered
   static setupSearch() {
     setupPageFilter(document.querySelector('.course .list_search'), CourseManager.filter);
+    if (CourseManager.words().length > 0) {
+      CourseManager.filter();
+    }
   }
 
   // The folded words of the search of the contents, none if there is no search
