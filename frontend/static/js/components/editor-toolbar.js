@@ -17,8 +17,18 @@ const buttons = [
 class EditorToolbar extends HTMLElement {
   connectedCallback() {
     this.role = 'toolbar';
-    this.insertAdjacentHTML('afterbegin', buttons.map(([action, title, icon]) => `<button type="button" id="${action}_button"
-      class="material-symbols-outlined" data-action="${action}" title="${title}" aria-label="${title}">${icon}</button>`).join(''));
+    // Elements instead of HTML, because the titles are translations sent by the server
+    this.prepend(...buttons.map(([action, title, icon]) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.id = `${action}_button`;
+      button.className = 'material-symbols-outlined';
+      button.dataset.action = action;
+      button.title = title;
+      button.ariaLabel = title;
+      button.textContent = icon;
+      return button;
+    }));
     // Only the buttons have an action; a click on the language list must not focus the editor
     this.addEventListener('click', (event) => event.target.dataset.action && this.run(event.target.dataset.action));
     // The fullscreen button changes its icon and title when entering or leaving, also with Esc
