@@ -365,8 +365,13 @@ tab-control {
   }
 }
 
-/* After a run, each test case has the color of its result, also the selected one */
+/* After a run, each test case has the color of its result, also the selected one. The ones that
+   the user wrote have a dashed border */
 .test_cases [role="tab"] {
+  &.mine {
+    border-style: dashed;
+  }
+
   &[data-status="passed"] {
     border-color: var(--success);
     background: color-mix(in srgb, var(--success) 30%, var(--surface));

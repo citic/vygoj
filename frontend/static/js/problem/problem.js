@@ -18,6 +18,8 @@ const UNREACHABLE_STATUSES = [502, 503, 504];
 // Side in pixels of the square of the corner handle of an element with CSS resize, about the size
 // that browsers draw it
 const RESIZE_HANDLE_SIZE = 16;
+// Test cases that a user may write for a problem (MAX_TESTS of student_repo.py)
+const MAX_USER_TESTS = 10;
 // A line of the compiler, the linker, or the linter about a line of the solution, with its line,
 // its column or section of the linker, its severity, and its message. E.g. "solution.c:4:18:
 // error: 'y' undeclared" (gcc), "/tmp/solution.c:3:(.text+0x5): undefined reference to `foo'"
@@ -102,6 +104,9 @@ class ProblemManager {
     this.problem = null; // class Problem instance
     // Index of the current shown test case
     this.activeTestCaseIndex = 0;
+    // Test cases that the user wrote, after the ones of the problem, from their student repo. Null
+    // until they are loaded, and then runs send them
+    this.userTests = null; // Array of { args, stdin, stdout }
     // The Run button element, null for anonymous visitors, who cannot run code
     this.runButton = null; // HTMLButtonElement
     // The result after running the user code
@@ -335,7 +340,7 @@ class ProblemManager {
     // Problems without test cases (no tabs) need other parts, e.g. the arguments, so the browser
     // keeps their buttons apart
     const toolbar = document.querySelector('.test_cases [role="tablist"]') ? 'test_toolbar' : 'input_toolbar';
-    document.querySelectorAll('.test_toolbar button').forEach((button) => {
+    document.querySelectorAll('.test_toolbar [data-part]').forEach((button) => {
       const key = `${toolbar}:${button.dataset.part}`;
       button.ariaPressed = window.localStorage.getItem(key) ?? button.ariaPressed;
       button.addEventListener('click', () => {
@@ -469,6 +474,7 @@ class ProblemManager {
       const index = parseInt(loadConfig('test') || '0', 10);
       this.activeTestCaseIndex = index >= 0 && index < length ? index : 0;
       this.showTestCase(this.activeTestCaseIndex);
+      this.loadUserTests();
     } else {
       // Without test cases, the arguments and the input of the user are kept as the code is
       const { editor: args } = document.getElementById('args');
@@ -479,21 +485,106 @@ class ProblemManager {
     }
   }
 
+  // Loads the test cases that the user wrote from their student repo, and lets them add, edit, and
+  // delete them. Only logged users have the buttons. If they cannot be loaded, the buttons stay
+  // disabled, and runs do not send them, so the stored ones are kept
+  async loadUserTests() {
+    const add = document.getElementById('add_test');
+    if (!add) {
+      return;
+    }
+    try {
+      const url = `${window.location.pathname}/tests`;
+      const response = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT) });
+      const tests = response.ok ? await response.json() : null;
+      if (!Array.isArray(tests)) {
+        throw new Error(`${url} answered ${response.status}`);
+      }
+      this.userTests = tests;
+    } catch (error) {
+      console.error(error);
+      return;
+    }
+    // Editing the parts of a test case of the user changes it. The parts of the other test cases
+    // are read only
+    const { editor: args } = document.getElementById('args');
+    [['args', args], ['stdin', this.editors[1]], ['stdout', this.editors[2]]].forEach(([part, editor]) => {
+      editor.onDidChangeModelContent(() => {
+        const test = this.userTests[this.activeTestCaseIndex - this.problem.tests.length];
+        if (test) {
+          test[part] = editor.getValue();
+        }
+      });
+    });
+    add.addEventListener('click', () => {
+      this.userTests.push({ args: '', stdin: '', stdout: '' });
+      this.showUserTabs();
+      this.showTestCase(this.problem.tests.length + this.userTests.length - 1);
+    });
+    document.getElementById('delete_test').addEventListener('click', () => {
+      const index = this.activeTestCaseIndex;
+      this.userTests.splice(index - this.problem.tests.length, 1);
+      // The results of the last run go on matching their test cases
+      this.result?.results.splice(index, 1);
+      const last = this.problem.tests.length + this.userTests.length - 1;
+      this.activeTestCaseIndex = Math.min(index, last);
+      this.showUserTabs();
+      this.showTestCase(this.activeTestCaseIndex);
+    });
+    this.showUserTabs();
+  }
+
+  // Shows a tab for each test case of the user, after the ones of the problem, with the next
+  // numbers
+  showUserTabs() {
+    const tabControl = document.querySelector('.test_cases tab-control');
+    const list = tabControl.querySelector('[role="tablist"]');
+    list.querySelectorAll('.mine').forEach((tab) => tab.remove());
+    list.append(...this.userTests.map((test, index) => {
+      const tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'mine';
+      tab.textContent = String(this.problem.tests.length + index + 1);
+      tab.title = _('My test case %(number)s', { number: index + 1 });
+      return tab;
+    }));
+    tabControl.update();
+    if (this.result) {
+      this.updateTestCases();
+    }
+    document.getElementById('add_test').disabled = this.userTests.length >= MAX_USER_TESTS;
+  }
+
+  // Returns the test case of the problem or of the user at the index of its tab
+  testAt(index) {
+    return this.problem.tests[index] ?? this.userTests[index - this.problem.tests.length];
+  }
+
   showTestCase(index) {
     console.assert(this.problem);
     console.assert(this.editors.length === 6);
+    // First, so the parts of the test case of the user that were shown do not take its values
+    this.activeTestCaseIndex = index;
     // Show the arguments, input, expected output, and expected error for this test case. The
     // server does not send the contents of hidden test cases
-    const test = this.problem.tests[index];
+    const test = this.testAt(index);
     const hidden = test.hidden ? '(hidden test case)' : '';
-    document.getElementById('args').editor.setValue(test.args || hidden);
+    const { editor: args } = document.getElementById('args');
+    args.setValue(test.args || hidden);
     this.editors[1].setValue(test.stdin || hidden);
     this.editors[2].setValue(test.stdout || hidden);
     this.editors[4].setValue(test.stderr || hidden);
+    // Only the test cases of the user can be edited or deleted
+    const mine = index >= this.problem.tests.length;
+    [args, this.editors[1], this.editors[2]]
+      .forEach((editor) => editor.updateOptions({ readOnly: !mine }));
+    const remove = document.getElementById('delete_test');
+    if (remove) {
+      remove.disabled = !mine;
+    }
     this.showTestOutput(index);
     // Mark this test case as the selected tab, also when the page selects it
     document.querySelector('.test_cases tab-control').selectedIndex = index;
-    this.activeTestCaseIndex = index;
     saveConfig('test', `${index}`);
   }
 
@@ -502,7 +593,7 @@ class ProblemManager {
     if (this.result) {
       const test = this.result.results[index];
       // The backend does not send the output of hidden test cases
-      const hidden = this.problem.tests[index].hidden ? '(hidden test case)' : '';
+      const hidden = this.testAt(index).hidden ? '(hidden test case)' : '';
       this.editors[3].setValue(test?.stdout || hidden);
       this.editors[5].setValue(test?.stderr || hidden);
       // The diffs compare the expected output and error (left) with the ones of the user (right).
@@ -733,6 +824,8 @@ class ProblemManager {
         code: this.editors[0].getValue(),
         stdin: custom ? this.editors[1].getValue() : '',
         args: custom ? quoteLines(document.getElementById('args').editor.getValue()) : '',
+        // Not sent until they are loaded, so the server keeps the stored ones
+        tests: this.userTests ?? undefined,
       }, ProblemManager.getRunTimeout()));
       // The result has been received, update the test cases
       this.updateResult();
@@ -772,15 +865,18 @@ class ProblemManager {
   updateStatistics() {
     console.assert(this.result);
 
+    // The results of the test cases of the user come after the ones of the problem, and are not
+    // graded
+    const results = this.result.results.slice(0, this.problem.tests.length);
+    const passed = results.filter((test) => test.status === Status.PASSED).length;
     const passedTestElement = document.getElementById('passed_test_count');
     console.assert(passedTestElement);
-    passedTestElement.textContent = String(this.result.passedTestCount);
+    passedTestElement.textContent = String(passed);
 
     const totalTestCount = document.getElementById('total_test_count');
     console.assert(totalTestCount);
-    totalTestCount.textContent = String(this.result.results.length);
-    const score = this.result.results.length > 0 ? Math.round((
-      100.0 * parseFloat(this.result.passedTestCount)) / this.result.results.length) : 0;
+    totalTestCount.textContent = String(results.length);
+    const score = results.length > 0 ? Math.round((100.0 * passed) / results.length) : 0;
     // Runs with the input of the user (problems without test cases) are not graded
     if (this.problem.tests.length > 0) {
       window.localStorage.setItem(this.problem.name, `${score}`);

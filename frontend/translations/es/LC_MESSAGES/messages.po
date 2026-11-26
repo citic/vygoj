@@ -195,6 +195,12 @@ msgstr "Agregar"
 msgid "Add SSO provider"
 msgstr "Agregar proveedor de SSO"
 
+msgid "Add a test case"
+msgstr "Agregar un caso de prueba"
+
+msgid "Add a test case of mine. The next run saves it"
+msgstr "Agregar un caso de prueba mío. La próxima ejecución lo guarda"
+
 msgid "Add repository"
 msgstr "Agregar repositorio"
 
@@ -454,6 +460,9 @@ msgstr "Eliminar a %(username)s"
 msgid "Delete account"
 msgstr "Eliminar cuenta"
 
+msgid "Delete my selected test case. The next run saves it"
+msgstr "Borrar mi caso de prueba seleccionado. La próxima ejecución lo guarda"
+
 #, python-format
 msgid ""
 "Delete the provider %(provider)s? Its users will not be able to log in "
@@ -461,6 +470,9 @@ msgid ""
 msgstr ""
 "¿Eliminar el proveedor %(provider)s? Sus usuarios no podrán ingresar con "
 "él."
+
+msgid "Delete the test case"
+msgstr "Borrar el caso de prueba"
 
 #, python-format
 msgid ""
@@ -728,6 +740,13 @@ msgstr "Mis cursos preparados"
 
 msgid "My taught sections"
 msgstr "Mis grupos impartidos"
+
+#, python-format
+msgid "My test case %(number)s"
+msgstr "Mi caso de prueba %(number)s"
+
+msgid "My test cases"
+msgstr "Mis casos de prueba"
 
 msgid "Name"
 msgstr "Nombre"

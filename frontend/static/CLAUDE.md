@@ -73,7 +73,9 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
   the layout menu and the language list inside it. Icons come from the Material Symbols font.
 - The `<tab-control>` element in `js/components/tab-control.js` is a row of tabs (the buttons of
   its `role="tablist"` child) and the panel of the selected one (its `role="tabpanel"` child),
-  which the page fills on its `change` event. `problem.html` shows the test cases as its tabs.
+  which the page fills on its `change` event; after adding or removing buttons of the tab list,
+  the page calls its `update()`. `problem.html` shows the test cases as its tabs, and
+  `problem.js` adds the ones of the user after them.
 
 ## Commands
 
