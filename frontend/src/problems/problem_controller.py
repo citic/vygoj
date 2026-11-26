@@ -16,7 +16,8 @@ import vyg
 from activity_log import log_event, log_run, repo_commit, save_code
 from courses.course_controller import CourseController
 from repos.git_repo import GitError
-from repos.student_repo import StudentRepo, check_tests, solution_filename
+from repos.student_repo import (MAX_TESTS, TEST_FIELDS, StudentRepo, check_tests,
+    solution_filename)
 from limits import CONSTRAINED_FIELDS, Limits
 from problems.problem_loader import ProblemLoader
 from runs import Run, RunRejected
@@ -249,10 +250,6 @@ class ProblemController:
         if not all(isinstance(text, str) for text in
                 (message.language, message.code, message.stdin, message.args)):
             return None
-        if message.tests is not None:
-            message.tests = check_tests(message.tests)
-            if message.tests is None:
-                return None
         return message
 
     @staticmethod
@@ -309,6 +306,14 @@ class ProblemController:
             return ProblemController.error_response(
                 gettext('The arguments are too long: at most %(length)d characters',
                     length=MAX_ARGS_LENGTH), 400)
+        # The test cases of the user are checked here, so they are told the limits
+        if message.tests is not None:
+            message.tests = check_tests(message.tests)
+            if message.tests is None:
+                return ProblemController.error_response(
+                    gettext('Your test cases do not fit: at most %(count)d, with up to %(args)d '
+                        'characters of arguments and %(text)d of input or expected output each',
+                        count=MAX_TESTS, args=TEST_FIELDS['args'], text=TEST_FIELDS['stdin']), 400)
         course_name = problem.get_course().name
         problem_dict = ProblemController.backend_problem(problem, message)
         code_hash = Run.hash_code(problem_dict, message.language, message.code)
