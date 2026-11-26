@@ -18,8 +18,9 @@ const UNREACHABLE_STATUSES = [502, 503, 504];
 // Side in pixels of the square of the corner handle of an element with CSS resize, about the size
 // that browsers draw it
 const RESIZE_HANDLE_SIZE = 16;
-// Test cases that a user may write for a problem (MAX_TESTS of student_repo.py)
-const MAX_USER_TESTS = 10;
+// Test cases of a run, the ones of the problem and the ones of the user (MAX_TESTS of
+// student_repo.py and of the backend)
+const MAX_TESTS = 100;
 // A line of the compiler, the linker, or the linter about a line of the solution, with its line,
 // its column or section of the linker, its severity, and its message. E.g. "solution.c:4:18:
 // error: 'y' undeclared" (gcc), "/tmp/solution.c:3:(.text+0x5): undefined reference to `foo'"
@@ -552,7 +553,8 @@ class ProblemManager {
     if (this.result) {
       this.updateTestCases();
     }
-    document.getElementById('add_test').disabled = this.userTests.length >= MAX_USER_TESTS;
+    const count = this.problem.tests.length + this.userTests.length;
+    document.getElementById('add_test').disabled = count >= MAX_TESTS;
   }
 
   // Returns the test case of the problem or of the user at the index of its tab

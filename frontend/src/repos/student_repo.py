@@ -43,9 +43,11 @@ RUN_ACTION = 'run'
 # change them
 TESTS_FILENAME = 'vygoj.json'
 TESTS_ACTION = 'tests'
-# Test cases that a user may write for a problem, and the length of each field of them. The backend
-# accepts 4096 characters of arguments (MAX_ARGS_LENGTH of problems/problem_controller.py)
-MAX_TESTS = 10
+# Test cases of a run, the ones of the problem and the ones that the user wrote, as the backend
+# accepts (MAX_TESTS of backend/src/execution.py), and the length of each field of the test cases of
+# the user. The backend accepts 4096 characters of arguments (MAX_ARGS_LENGTH of
+# problems/problem_controller.py)
+MAX_TESTS = 100
 TEST_FIELDS = { 'args': 4096, 'stdin': 65536, 'stdout': 65536 }
 FILENAME_PATTERN = re.compile(r'[A-Za-z0-9_-]{1,64}\.[a-z0-9]{1,8}')
 # Prefix of the refs of the branches of the problems
@@ -196,11 +198,11 @@ def tests_path(course: str, problem: str) -> str:
     check_names(course, problem)
     return f'{course}/{TERM_GROUP}/{problem}/{TESTS_FILENAME}'
 
-def check_tests(tests) -> list | None:
+def check_tests(tests, count: int = MAX_TESTS) -> list | None:
     """ Return the test cases that a user wrote, with only the fields of TEST_FIELDS, or None if
-    they are not a list of up to MAX_TESTS objects whose fields are texts within their lengths.
-    They come from the browser, or from the repo """
-    if not isinstance(tests, list) or len(tests) > MAX_TESTS:
+    they are not a list of up to count objects whose fields are texts within their lengths. They
+    come from the browser, or from the repo """
+    if not isinstance(tests, list) or len(tests) > count:
         return None
     checked = []
     for test in tests:
