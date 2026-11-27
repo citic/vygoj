@@ -412,8 +412,8 @@ class ProblemController:
 
     @staticmethod
     def grade(result_json: str) -> int:
-        """ Return the same score problem.js saves in localStorage for the ExecutionResult in JSON:
-        percentage of passed test cases. Raises ValueError if it is not a JSON object """
+        """ Return the score of the ExecutionResult in JSON, the percentage of passed test cases,
+        which the course page shows. Raises ValueError if it is not a JSON object """
         result = json.loads(result_json)
         if not isinstance(result, dict):
             raise ValueError('the backend did not answer an ExecutionResult object')

@@ -1,8 +1,8 @@
 import { fold, searchWords, setupPageFilter } from '../filter.js';
 
-// Shows the progress of each problem as a percentage and a bar. The grade stored in the database
-// for the logged user wins; otherwise the one that the problem page saved in localStorage is used.
-// Sections and the whole course show the average of the problems they contain
+// Shows the progress of each problem as a percentage and a bar: the grade of the last run of the
+// logged user in this course, stored in the database, or 0. Sections and the whole course show the
+// average of the problems they contain
 class CourseManager {
   static main() {
     const course = { element: document.getElementById('course_progress'), level: 1, scores: [] };
@@ -22,12 +22,7 @@ class CourseManager {
         groups.push(section);
         open.push(section);
       } else if (element.dataset.problem) {
-        // Anonymous users have no grade in the database, so they keep their local progress.
-        // localStorage can be edited by anyone, so accept only integers from 0 to 100
-        const { grade, problem } = element.dataset;
-        const stored = grade ?? window.localStorage.getItem(problem);
-        const saved = Math.round(Number(stored));
-        const score = Math.min(Math.max(saved || 0, 0), 100);
+        const score = Number(element.dataset.grade ?? 0);
         open.forEach((group) => group.scores.push(score));
         CourseManager.show(element, score);
       }
