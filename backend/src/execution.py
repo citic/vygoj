@@ -350,17 +350,22 @@ class Execution:
             self._check_language()
             # Do not run code directly on the OS, isolate student code into a Docker container
             self._create_container()
-            # Copy the student solution and test cases to the container
-            self._copy_files()
+            # Copy the student solution to the container. The input of each test case is copied
+            # just before it runs, so the solution cannot read the inputs of the following ones
+            self._copy_file(self.source_file, self.solution.code)
             # If the solution is in a language that should be compiled, compile it
             self._compile()
+            # The linter runs before the test cases, which could leave files that it reads, e.g.
+            # a hidden one to tell what it read in the messages of the linter
+            linted = self._lint()
             # Run all test cases. TODO(jhc): test in parallel to finish sooner
-            for index0, test_case in enumerate(self.problem.tests):
-                self._check_deadline(len(self.problem.tests) - index0)
-                self._run_test_case(index0, test_case)
-            # Run after test case proofs, e.g: linting
-            self._check_deadline(0)
-            self._after_run_proofs()
+            order = self._test_order()
+            for position, index0 in enumerate(order):
+                self._check_deadline(len(order) - position)
+                self._run_test_case(index0, self.problem.tests[index0])
+            # A solution that the linter rejected fails, whatever its test cases did
+            if not linted:
+                self.result.status = vyg.Status.COMPILER_ERROR
             # TODO(jhc): self.build_message() for the entire execution result
         except FailedSolution:
             # Student's code does not solve the problem, report to frontend
@@ -381,8 +386,26 @@ class Execution:
         finally:
             # Kill and remove the container even on errors, so they do not pile up on the host
             self._remove_container()
+        self._sort_results()
         # Execution finished, encode the result to JSON and send it to frontend
         return vyg.to_json(self.result)
+
+    def _test_order(self) -> list:
+        """ Return the indexes of the test cases in the order they run: hidden test cases run after
+            the visible ones, so nothing that a hidden one read, e.g. its input saved in a file,
+            reaches the outputs that the student sees """
+        return sorted(range(len(self.problem.tests)),
+                key=lambda index0: bool(self.problem.tests[index0].hidden))
+
+    def _sort_results(self):
+        """ Put the results of the test cases, appended in the order they ran, in the order of the
+            test cases, which the frontend expects. If some test case ran, the ones that did not,
+            because the total time was over, are pending """
+        results = dict(zip(self._test_order(), self.result.results))
+        if results:
+            self.result.results = [results.get(index0,
+                    vyg.TestCaseResult({ 'status': vyg.Status.PENDING, 'message': 'Not run' }))
+                    for index0 in range(len(self.problem.tests))]
 
     def _total_limit(self) -> float:
         """ Return the seconds for the whole submission """
@@ -502,16 +525,14 @@ class Execution:
                 logger.exception('Could not remove container %s', self.container.id)
             self.container = None
 
-    def _copy_files(self):
-        """ Copy the student solution and test cases to the container """
+    def _copy_file(self, name:str, text:str):
+        """ Copy a file with the given fixed name and text to the folder of the student in the
+            container """
         # Docker copies files to a container from a tar file. It is built in memory with fixed file
         # names, owned by the student, so no chown is needed in the container
         mem_tar = io.BytesIO()
         with tarfile.open(fileobj=mem_tar, mode='w') as tar_file:
-            Execution._add_to_tar(tar_file, self.source_file, self.solution.code)
-            # Copy input files of all test cases
-            for index0, test in enumerate(self.problem.tests):
-                Execution._add_to_tar(tar_file, Execution._input_file(index0), test.stdin)
+            Execution._add_to_tar(tar_file, name, text)
         # Extract the tar file in the container
         self.container.put_archive(path=WORKDIR, data=mem_tar.getvalue())
 
@@ -629,6 +650,7 @@ class Execution:
         # Get the test case to run
         assert 0 <= index0 < len(self.problem.tests)
         input_file = Execution._input_file(index0)
+        self._copy_file(input_file, test_case.stdin)
         expected_output = test_case.stdout
         expected_error = test_case.stderr
         wall_time_limit = self._wall_time_limit(test_case)
@@ -678,6 +700,9 @@ class Execution:
         # Store the result in the array to be returned to the client, without outputs that are too
         # large or hidden
         self._bound_outputs(test_case, test_result)
+        # If this test case lasted longer than the longest known, even if it failed. Hidden test
+        # cases have no times anymore
+        self.result.maxWallTime = max(self.result.maxWallTime, test_result.wallTime)
         self.result.results.append(test_result)
         self.result.totalPoints += test_case.points
         # If the test was passed
@@ -697,6 +722,13 @@ class Execution:
             their program write. Truncate the outputs of a visible test case to output_limit """
         if test_case.hidden:
             test_result.stdout = test_result.stderr = ''
+            # The solution chooses its exit code, its threads, its memory, and its times, so they
+            # could tell what it read too. Only whether the exit code was 0 is kept; the status
+            # tells a timeout
+            test_result.exitCode = 1 if test_result.exitCode else 0
+            test_result.threadCount = test_result.memory = 0
+            test_result.wallTime = test_result.cpuTime = 0.0
+            test_result.message = re.sub(r'-?\d+', 'N', test_result.message)
         else:
             test_result.stdout = truncate_output(test_result.stdout, self.output_limit)
             test_result.stderr = truncate_output(test_result.stderr, self.output_limit)
@@ -743,8 +775,6 @@ class Execution:
                 + Execution._parse_stat(SYSTEM_TIME_PATTERN, time_output), 3)
         # /usr/bin/time reports kibibytes, the frontend expects bytes
         test_result.memory = int(Execution._parse_stat(MEMORY_PATTERN, time_output)) * 1024
-        # If this test case lasted longer than the longest known, even if it failed
-        self.result.maxWallTime = max(self.result.maxWallTime, test_result.wallTime)
 
     @staticmethod
     def _parse_stat(pattern:re.Pattern, time_output:str) -> float:
@@ -825,8 +855,9 @@ class Execution:
             test_result.message = (
                     f'Invalid amount of secondary threads ({test_result.threadCount})')
 
-    def _after_run_proofs(self):
-        """ Run after test case proofs, e.g: linting """
+    def _lint(self) -> bool:
+        """ Run the linter if the problem asks for it, e.g: cpplint.py. Return False if it found
+            errors in the code """
         # Languages without a linting filter have no linter yet
         if 'lint' in self.tools and self.flags.linting_options:
             # Run the linter, e.g: cpplint.py
@@ -839,3 +870,5 @@ class Execution:
                 self.result.status = vyg.Status.COMPILER_ERROR
                 self.result.message = vyg.append(self.result.message,
                         'Linter found errors in the code')
+                return False
+        return True
