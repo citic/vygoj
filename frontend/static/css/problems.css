@@ -186,9 +186,8 @@ editor-toolbar {
     color: var(--toolbar-icon);
   }
 
-  /* Replaces the bold and shadow that form.css gives to buttons on hover */
+  /* Replaces the shade that form.css gives to buttons on hover */
   & button:hover:not([disabled]) {
-    filter: none;
     background: var(--toolbar-border);
   }
 
@@ -349,10 +348,8 @@ tab-control {
     font-size: 0.8125rem;
   }
 
-  /* Replaces the bold and shadow that form.css gives to buttons on hover */
+  /* The border marks the tab on hover; its background has no shade of form.css */
   & > [role="tablist"] > button:hover {
-    font-weight: normal;
-    filter: none;
     border-color: var(--label-color);
   }
 
@@ -414,8 +411,6 @@ tab-control {
   }
 
   & .button:hover {
-    font-weight: normal;
-    filter: none;
     border-color: var(--label-color);
     color: var(--label-color);
   }

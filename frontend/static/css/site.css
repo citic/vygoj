@@ -28,6 +28,12 @@ Monospace:
   --form-shadow: light-dark(#ebebeb, transparent);
   --button-shadow: light-dark(#dadada, black);
 
+  /* Shades over the background of buttons under the pointer and pressed (form.css). They darken
+     only the background, so the text keeps its color and the button its size */
+  --button-shade: transparent;
+  --button-hover-shade: rgb(0 0 0 / 12%);
+  --button-active-shade: rgb(0 0 0 / 22%);
+
   /* Backgrounds of the colors of the buttons, by the effect of their action (form.css). Dark
      enough for their white text (contrast of 4.5:1 at least) */
   --confirm-bg: #3f51b5;
@@ -661,8 +667,6 @@ details:not([open]) > summary > :is(h2, h3, h4, h5, h6)::before {
 
   & .close:hover {
     color: inherit;
-    font-weight: normal;
-    filter: none;
   }
 }
 
@@ -706,10 +710,6 @@ details:not([open]) > summary > :is(h2, h3, h4, h5, h6)::before {
     font-size: x-large;
     cursor: pointer;
     box-shadow: none;
-  }
-
-  & button:hover {
-    filter: none;
   }
 }
 

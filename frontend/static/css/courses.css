@@ -144,11 +144,23 @@
     color: white;
     font-weight: 600;
     text-align: center;
+    background-image: linear-gradient(var(--button-shade), var(--button-shade));
   }
 
-  /* Darker on hover, as the other buttons (form.css) */
+  /* Darker under the pointer and pressed, as the other buttons (form.css). Its link covers the
+     card, so the pointer anywhere on the card darkens it. A filter would make the button the
+     containing block of the link, which would shrink to the button and leave the pointer: the
+     hover would toggle on and off without end */
   & .enter:hover {
-    filter: brightness(0.85);
+    --button-shade: var(--button-hover-shade);
+
+    text-decoration: none;
+  }
+
+  & .enter:active {
+    --button-shade: var(--button-active-shade);
+
+    box-shadow: none;
   }
 
   & .enter::after {
@@ -492,7 +504,7 @@
 
   /* A zip ready to download delivers a result, so its button takes the action color */
   & button[data-state="download"] {
-    background: var(--action-bg);
+    background-color: var(--action-bg);
   }
 
   & > .repo_line {

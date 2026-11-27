@@ -79,6 +79,10 @@ a.button {
   cursor: pointer;
   fill: currentcolor;
   text-align: center;
+
+  /* The shade of the states below, over the background color. Buttons that set a background of
+     their own (e.g. icons without one) replace it, so they keep their own look */
+  background-image: linear-gradient(var(--button-shade), var(--button-shade));
 }
 
 .button.small {
@@ -100,23 +104,23 @@ a.button {
 }
 
 .confirm {
-  background: var(--confirm-bg);
+  background-color: var(--confirm-bg);
 }
 
 .action {
-  background: var(--action-bg);
+  background-color: var(--action-bg);
 }
 
 .reject {
-  background: var(--reject-bg);
+  background-color: var(--reject-bg);
 }
 
 .danger {
-  background: var(--danger-bg);
+  background-color: var(--danger-bg);
 }
 
 .neutral {
-  background: var(--neutral-bg);
+  background-color: var(--neutral-bg);
 }
 
 /* Disabled buttons, also the submit inputs of forms built with WTForms (e.g. Offer) */
@@ -125,8 +129,18 @@ a.button {
   cursor: default;
 }
 
-/* A darker background, so the text keeps its contrast and the button its size */
+/* A darker background under the pointer, and darker still and without shadow while pressed, as
+   if it sank. Text, shadow, and size stay, and links that look like buttons are not underlined */
 button:hover:not([disabled]),
 .button:hover:not([disabled]) {
-  filter: brightness(0.85);
+  --button-shade: var(--button-hover-shade);
+
+  text-decoration: none;
+}
+
+button:active:not([disabled]),
+.button:active:not([disabled]) {
+  --button-shade: var(--button-active-shade);
+
+  box-shadow: none;
 }
