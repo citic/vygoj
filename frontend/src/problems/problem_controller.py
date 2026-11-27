@@ -72,6 +72,8 @@ KIND_TEXTS = {
     'none_lines': lazy_gettext('"none" or "lines"'),
     'number': lazy_gettext('a number'),
     'overdue_policy': lazy_gettext('"hidden", "disabled", or "half"'),
+    # The range of MAX_POINTS of vyg
+    'points': lazy_gettext('a number from -1000000 to 1000000'),
     'tests': lazy_gettext('a list of test cases or an object of settings'),
     'text': lazy_gettext('a text'),
     'texts': lazy_gettext('a list of texts'),

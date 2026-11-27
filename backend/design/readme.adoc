@@ -77,7 +77,7 @@ include::container.mmd[]
 
 `put_archive` cannot write into a tmpfs, so `/home/student` stays on the writable layer of the container, bounded by the limit of file size.
 
-Requests to `/run` larger than 16 MiB, or with invalid JSON, types, languages, or sizes, are rejected with a 4xx status. The backend has no authentication: it must not be reachable from the Internet, only from the frontend.
+Requests to `/run` larger than 16 MiB, or with invalid JSON, types, languages, or sizes, or with points of a test case out of the range from -1000000 to 1000000 (`MAX_POINTS` of `vyg`), are rejected with a 4xx status. The backend has no authentication: it must not be reachable from the Internet, only from the frontend.
 
 Containers have the label `vygoj=engine`. If a backend process is killed during a submission, its container may remain; the systemd unit removes them when the service stops (`ExecStopPost`), and they can be removed by hand with:
 

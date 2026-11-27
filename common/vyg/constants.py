@@ -16,6 +16,10 @@ class Status(str, enum.Enum):
 # Maximum number of allowed execution threads to be created by a user solution
 MAX_THREADS = 2**15
 
+# Largest absolute value of the points of a test case. Their sum must stay a finite number, which
+# JSON can carry
+MAX_POINTS = 1_000_000
+
 # Map file extensions to supported programming languages
 LANGUAGE_EXTENSIONS = {
     'ale': 'Alecci',
