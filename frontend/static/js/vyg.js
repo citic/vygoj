@@ -85,8 +85,9 @@ export class TestCase {
     // in problems without test cases. It is run, but its outputs are not compared and it gives
     // no points
     this.custom = json?.custom || false;
-    // Minimum number of threads that user solution must create in order to consider it right
-    this.minThreads = json?.minThreads || 1;
+    // Minimum number of threads that user solution must create in order to consider it right.
+    // 0 means the one of the problem, e.g. 'stdin'
+    this.minThreads = json?.minThreads || 0;
     // Maximum number of threads that user solution may create to consider it correct
     this.maxThreads = json?.maxThreads || MAX_THREADS;
     // Range of wall time in seconds that the solution may spend in this test case. 0 means the

@@ -32,8 +32,9 @@ class TestCase:
         # in problems without test cases. It is run, but its outputs are not compared and it gives
         # no points
         self.custom = json_dict.get('custom', False)
-        # Minimum number of threads that user solution must create in order to consider it right
-        self.minThreads = json_dict.get('minThreads', 1)
+        # Minimum number of threads that user solution must create in order to consider it right.
+        # 0 or missing means the one of the problem, e.g. 'stdin'
+        self.minThreads = json_dict.get('minThreads', 0)
         # Maximum number of threads that user solution may create to consider it correct
         self.maxThreads = json_dict.get('maxThreads', MAX_THREADS)
         # Range of wall time in seconds that the solution may spend in this test case. 0 or missing
