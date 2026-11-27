@@ -7,19 +7,23 @@ on disk:
 
     <course>/<term_group>/<problem>/src/solution.c
 
+The test cases that the user writes for a problem are in the configuration file of the problem,
+as in course repos: <course>/<term_group>/<problem>/vygoj.json, {"tests": [...]}
+
 Each problem has a branch problems/<course>/<term_group>/<problem> with the linear history of its
 solution, a commit per run with new code. The trees of its commits hold the full logical path, so
 the branches of the problems are merged without conflicts into the main branch, which is made
 when the repo is copied or pushed: its files are the last version of every solution, so it is the
 working tree of the copies. The user may push the repo to a remote of their own (origin) """
 
+import json
 import os
 import re
 
 from flask import current_app as app
 
 import vyg
-from repos.git_repo import GitRepo, check_ssh_url, user_folder
+from repos.git_repo import GitError, GitRepo, check_ssh_url, user_folder
 
 # Offering of the courses (e.g. 2026b05 is group 05 of the second term of 2026). Courses have
 # sections in the database now (courses/course_section.py)
@@ -35,6 +39,14 @@ SECTION_UNSAFE = re.compile(r'[^\w.+-]+')
 SECTION_LENGTH = 64
 # Action of the commits made by runs, after the path of the problem in their messages
 RUN_ACTION = 'run'
+# File with the test cases that the user wrote for a problem, and action of the commits that
+# change them
+TESTS_FILENAME = 'vygoj.json'
+TESTS_ACTION = 'tests'
+# Test cases that a user may write for a problem, and the length of each field of them. The backend
+# accepts 4096 characters of arguments (MAX_ARGS_LENGTH of problems/problem_controller.py)
+MAX_TESTS = 10
+TEST_FIELDS = { 'args': 4096, 'stdin': 65536, 'stdout': 65536 }
 FILENAME_PATTERN = re.compile(r'[A-Za-z0-9_-]{1,64}\.[a-z0-9]{1,8}')
 # Prefix of the refs of the branches of the problems
 PROBLEMS_REFS = 'refs/heads/problems/'
@@ -62,6 +74,32 @@ class StudentRepo(GitRepo):
         return self.commit_file(problem_branch(course, problem.name),
             solution_path(course, problem.name, filename), code,
             commit_message(problem, RUN_ACTION))
+
+    def save_tests(self, problem: vyg.Problem, tests: list) -> bool:
+        """ Commit the test cases that the user wrote for the problem, checked by check_tests(),
+        at the end of its branch, unless they did not change. Return whether a commit was made """
+        course = problem.get_course().name
+        # Problems without test cases of the user get no file
+        if not tests and not self.read_tests(course, problem.name):
+            return False
+        self.create()
+        return self.commit_file(problem_branch(course, problem.name),
+            tests_path(course, problem.name), json.dumps({ 'tests': tests }, indent=2) + '\n',
+            commit_message(problem, TESTS_ACTION))
+
+    def read_tests(self, course: str, problem: str) -> list:
+        """ Return the test cases that the user wrote for the problem, from the last commit of its
+        branch, or an empty list if it has none """
+        commit = self.last_commit(problem_branch(course, problem))
+        try:
+            data = json.loads(self.read_file(commit, tests_path(course, problem))) if commit else {}
+        except GitError:
+            # The branch has solutions but no test cases yet
+            return []
+        except ValueError:
+            data = {}
+        tests = check_tests(data.get('tests') if isinstance(data, dict) else None)
+        return tests or []
 
     def versions(self, course: str, problem: str, filename: str) -> list:
         """ Return the versions of the file of the solution of the problem, from the oldest to the
@@ -152,9 +190,33 @@ def solution_path(course: str, problem: str, filename: str) -> str:
         raise ValueError('invalid file name')
     return f'{course}/{TERM_GROUP}/{problem}/src/{filename}'
 
+def tests_path(course: str, problem: str) -> str:
+    """ Return the logical path of the file with the test cases that the user wrote for the
+    problem """
+    check_names(course, problem)
+    return f'{course}/{TERM_GROUP}/{problem}/{TESTS_FILENAME}'
+
+def check_tests(tests) -> list | None:
+    """ Return the test cases that a user wrote, with only the fields of TEST_FIELDS, or None if
+    they are not a list of up to MAX_TESTS objects whose fields are texts within their lengths.
+    They come from the browser, or from the repo """
+    if not isinstance(tests, list) or len(tests) > MAX_TESTS:
+        return None
+    checked = []
+    for test in tests:
+        if not isinstance(test, dict):
+            return None
+        fields = { field: test.get(field, '') for field in TEST_FIELDS }
+        if not all(isinstance(value, str) and len(value) <= TEST_FIELDS[field]
+                for field, value in fields.items()):
+            return None
+        checked.append(fields)
+    return checked
+
 def commit_message(problem: vyg.Problem, action: str) -> str:
     """ Return the message of a commit with the action on the solution of the problem: the path of
-    the problem in the course, with its sections and subsections, and the action, e.g.
+    the problem in the course, with its sections and subsections, and the action (RUN_ACTION or
+    TESTS_ACTION), e.g.
     CI0112/2026b01/1.1_intro_io/practice/sum_int: run """
     course = problem.get_course()
     sections = []

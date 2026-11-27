@@ -1580,6 +1580,14 @@ msgstr ""
 msgid "Your solution"
 msgstr "Su solución"
 
+#, python-format
+msgid ""
+"Your test cases do not fit: at most %(count)d, with up to %(args)d "
+"characters of arguments and %(text)d of input or expected output each"
+msgstr ""
+"Sus casos de prueba no caben: como máximo %(count)d, con hasta %(args)d "
+"caracteres de argumentos y %(text)d de entrada o salida esperada cada uno"
+
 msgid "a list of test cases or an object of settings"
 msgstr "una lista de casos de prueba o un objeto de ajustes"
 
