@@ -543,10 +543,13 @@ class ProblemManager {
     showCode();
     languageList.addEventListener('change', showCode);
 
-    // Before Clear or Revert, keep a copy of the code, so Undo can bring it back after reloading
+    // Before Clear or Revert, keep a copy of the code, so Undo can bring it back after reloading.
+    // Only if the code changed: the other listeners of the click ask the user, who may cancel
     ['clear_button', 'revert_button'].forEach((id) => {
       document.getElementById(id).addEventListener('click', () => {
-        saveConfig(`backup:${languageList.value}`, this.editors[0].getValue());
+        const code = this.editors[0].getValue();
+        setTimeout(() => this.editors[0].getValue() !== code
+          && saveConfig(`backup:${languageList.value}`, code));
       });
     });
 
