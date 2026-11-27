@@ -26,7 +26,7 @@ the course repo of the run, to run the submissions again:
         problem.es.adoc                             # statement (.adoc, .md, or .html)
         initial/, given/                            # initial code
         tests/input001.txt, tests/output001.txt...  # test cases
-        <YYYYMMDD_HHMMSS>/solution.cpp              # code, with the extension of its language
+        <YYYYMMDD_HHMMSS>/solution.cpp, tree.hpp... # files of the solution
                          /result.tsv                # verdict of each test case
 
 See "Activity log" in design/readme.adoc """
@@ -109,10 +109,10 @@ def log_run(event: str, run_data: dict, result_json: str = None, **cells):
     in JSON, if any """
     log_event(event, { **run_data, **vyg.summarize_result(result_json, TEST_FIELDS) }, **cells)
 
-def save_code(code_hash: str, language: str, code: str):
-    """ Save the code of a run in the file named by its hash in the code folder of the log, unless
-    it was saved before (the same submission) """
-    event_log().save_code(code_hash, language, code)
+def save_code(code_hash: str, files: dict):
+    """ Save the files of a run ({name: code}) in the folder named by their hash in the code
+    folder of the log, unless they were saved before (the same submission) """
+    event_log().save_code(code_hash, files)
 
 def repo_commit(folder: str):
     """ Return the commit of the git repo that has the folder (e.g. a course), or None if it is not
@@ -286,11 +286,14 @@ def write_submissions_archive(zip_file: zipfile.ZipFile, folder: str, load_cours
         write_table(zip_file, 'submissions.tsv', SUBMISSION_COLUMNS, index)
 
 def write_submission(zip_file: zipfile.ZipFile, folder: str, submission: str, data: dict):
-    """ Write the code of the submission (its run data) and the verdict of each test case in its
-    folder of the archive. The extension of the code is the one of its language """
-    code_file = event_log(folder).code_path(data['code'], data.get('language'))
-    if os.path.isfile(code_file) and not os.path.islink(code_file):
-        zip_file.write(code_file, f'{submission}/solution{os.path.splitext(code_file)[1]}')
+    """ Write the files of the submission (its run data) and the verdict of each test case in its
+    folder of the archive """
+    code_folder = event_log(folder).code_path(data['code'])
+    if os.path.isdir(code_folder) and not os.path.islink(code_folder):
+        for name in sorted(os.listdir(code_folder)):
+            code_file = os.path.join(code_folder, name)
+            if os.path.isfile(code_file) and not os.path.islink(code_file):
+                zip_file.write(code_file, f'{submission}/{name}')
     tests = [{ 'test': number, 'status': test.get('status'), 'wall_time': test.get('wallTime') }
         for number, test in enumerate(run_tests(data), 1)]
     if tests:

@@ -29,18 +29,20 @@ include::execution.mmd[]
 [[languages]]
 == Programming languages
 
-The backend runs solutions in C, C++, Java, Python, and Alecci (`LANGUAGE_DEFAULTS` in `src/execution.py`). Each language has a fixed source file name, its compiler command and compile time limit, and the command that runs the solution. Python is interpreted, so its "compiler" only checks the syntax, and students get their syntax errors as compiler errors before any test case runs:
+The backend runs solutions in C, C++, Java, Python, and Alecci (`LANGUAGE_DEFAULTS` in `src/execution.py`). Each language has a default name for the main file of a solution, its compiler command and compile time limit, and the command that runs the solution. A solution may name its main file, with the extension of the language, and the backend uses its stem in the place of the default one in the output of the compiler and the command that runs it (e.g. `python3 tree.py`, `java -ea -cp . Tree`, or `-o tree` and `./tree`). Python is interpreted, so its "compiler" only checks the syntax, and students get their syntax errors as compiler errors before any test case runs:
 
 [cols="1,2,3,1,2"]
 |===
-| Language | Source file | Compiler | Compile limit | Run
+| Language | Default main file | Compiler | Compile limit per source file | Run
 
 | C | `solution.c` | `gcc -g -Wall -Wextra -std=gnu17 -pthread` | 2 s | `./solution`
 | C++ | `solution.cpp` | `g++ -g -Wall -Wextra -std=gnu++20 -pthread` | 2 s | `./solution`
 | Java | `Solution.java` | `javac -g -encoding UTF-8 -Xlint:all -d .` (the default JDK of Debian trixie) | 10 s | `java -ea -cp . Solution`
-| Python | `solution.py` | `python3 -m py_compile` (Python 3 of Debian trixie) | 2 s | `python3 solution.py`
+| Python | `solution.py` | `python3 -I -m py_compile` (Python 3 of Debian trixie; `-I` keeps the files of the solution out of `sys.path`, so a file named `py_compile.py` cannot replace the check) | 2 s | `python3 solution.py`
 | Alecci | `solution.ale` | `alecci --no-tsan` (https://pypi.org/project/alecci/[alecci] 1.x, which links with clang) | 5 s | `./solution`
 |===
+
+A solution is an object `files` of the message, `{name: code}` in the order of the tabs of the editor, with up to `MAX_SOLUTION_FILES` (32) files and `MAX_SOLUTION_BYTES` (256 KiB) together. Its first file is the main file, with the extension of the language (e.g. `.c`; `EXTENSION_LANGUAGES` in `common/vyg/constants.py`), and the others have the extensions of that language (`SOLUTION_EXTENSIONS` in `common/vyg/constants.py`: `.c` and `.h` in C, `.cpp` and `.hpp` in C++, `.java`, and `.py`; Alecci has none, because its compiler takes one file), with names of letters, digits, `_`, and `-` (`vyg.solution_files_error()`), so they are safe file names that never start with `-`. The backend copies every file to the working directory, compiles all of them but the headers (`.h`, `.hpp`) in one command, with the compile limit of the language for each source file (e.g. `g++` takes about half a second for each file that includes `<iostream>`), within the time of the whole submission (`maxTotalDuration`); a compiler that runs out of time gets the message `Compilation took more than N seconds`, e.g. `gcc ... solution.c tree.c -o solution -lm` or `javac ... Solution.java Tree.java`, and runs the main file; Python checks the syntax of every file, and `import tree` finds `tree.py` next to the main file. `mustContain` looks in all the files, and `lint` checks all of them.
 
 Java requires a public class to be in a file of its name, so the main class of a Java solution must be the public class `Solution`, as in the default code of the frontend. Java solutions run with assertions enabled (`-ea`). The sanitizers (`asan`, `tsan`, `ubsan`) and valgrind (`memcheck`, `helgrind`) work only on native executables, so they are ignored for Java and Python, as is `lint`, which runs `cpplint` on C and C++ only. `gdb` counts the threads of C, C++, and Python solutions (the threads of Python are threads of the operating system), but not of Java, whose virtual machine creates threads of its own.
 
@@ -107,7 +109,7 @@ The backend logs every submission it receives in `/run`, with its verdict (`src/
 ----
 data/log/
   runs-2026-11.tsv      # one row per submission of November 2026 (UTC); the first row names the columns
-  code/<hash>.c         # code of each judged submission, named by the SHA-256 of its language and code
+  code/<hash>/solution.c  # files of each judged submission, in a folder named by the SHA-256 of its language and files
 ----
 
 The frontend sends a `context` object with each submission, besides the `problem` and the `solution`: the id of the run in its activity log, the user, their roles (separated by spaces) and address, the course, the material and its type, and the commit of the course repo. The backend does not use it to judge, it only logs it; a submission without context is judged and logged with empty cells. A context that is not an object of up to 32 fields with names of up to 64 characters, and values that are texts of up to 256 characters, numbers, booleans, or null, is rejected with HTTP 400.
@@ -120,7 +122,7 @@ The frontend sends a `context` object with each submission, besides the `problem
 | `frontend` | Network address of the frontend that sent the submission
 | `event` | `run` if the submission was judged, or `run_invalid` if it was rejected with HTTP 400
 | `user`, `role`, `address`, `course`, `material`, `type` | Fields of the context
-| `data` | JSON object. For `run`: `language`; `code`, the hash of its file; `duration`, seconds the submission took; `status` and `passed` (test cases) of the result; and `tests`, with the `status`, `wallTime`, `cpuTime`, `memory` (bytes), `threadCount`, and `exitCode` of each test case, omitted when they are 0. For `run_invalid`: `reason`. Other fields of the context (e.g. `commit`) go in `context`
+| `data` | JSON object. For `run`: `language`; `code`, the hash of its files (the name of their folder); `duration`, seconds the submission took; `status` and `passed` (test cases) of the result; and `tests`, with the `status`, `wallTime`, `cpuTime`, `memory` (bytes), `threadCount`, and `exitCode` of each test case, omitted when they are 0. For `run_invalid`: `reason`. Other fields of the context (e.g. `commit`) go in `context`
 |===
 
 The log keeps no test cases or outputs. Cells never contain tabs or new lines, texts are truncated to 256 characters, and the files are readable only by the user that runs the backend. Several gunicorn workers write the same log safely (see `vyg.TsvLog` in `common/vyg/tsv_log.py`, shared with the frontend).

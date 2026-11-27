@@ -19,10 +19,13 @@ IMAGE = 'vygoj-langserv'
 # Command of the language server of each programming language of VygOJ, run in the image. Code
 # editors of other languages get no connection
 LANGUAGES = {
-    # Suggestions of functions of other headers add their #include, without marking them
-    'C': ['clangd', '--log=error', '--header-insertion-decorators=false'],
-    'C++': ['clangd', '--log=error', '--header-insertion-decorators=false'],
-    'Python': ['pylsp'],
+    # Suggestions of functions of other headers add their #include, without marking them. The
+    # headers of the solution are open in the editor, and not on the disk (--use-dirty-headers)
+    'C': ['clangd', '--log=error', '--header-insertion-decorators=false', '--use-dirty-headers'],
+    'C++': ['clangd', '--log=error', '--header-insertion-decorators=false', '--use-dirty-headers'],
+    # pylsp reads the modules of the solution from the disk: the script of the image
+    # (image/pylsp-files) writes them in /home/student and runs pylsp
+    'Python': ['pylsp-files'],
     # Script of the image (image/jdtls) with the options of Java and Eclipse
     'Java': ['jdtls'],
 }

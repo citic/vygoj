@@ -500,17 +500,33 @@ msgstr "Desconectado: %(error)s"
 msgid "Discovery URL or issuer"
 msgstr "URL de descubrimiento o issuer"
 
-msgid "Do you want to clear all the code?"
-msgstr "¿Desea borrar todo el código?"
+msgid "Do you want to clear all the code of this file?"
+msgstr "¿Desea borrar todo el código de este archivo?"
+
+#, python-format
+msgid "Do you want to close %(file)s? Its code will be deleted."
+msgstr "¿Desea cerrar %(file)s? Su código se borrará."
 
 msgid "Do you want to revert to the initial code?"
 msgstr "¿Desea volver al código inicial?"
+
+msgid "Double click or F2 renames it"
+msgstr "Doble clic o F2 lo renombra"
+
+msgid "Double click or F2 renames it, Delete closes it"
+msgstr "Doble clic o F2 lo renombra, Supr lo cierra"
 
 msgid "Download last solutions"
 msgstr "Descargar últimas soluciones"
 
 msgid "Download solution history"
 msgstr "Descargar historial de soluciones"
+
+#, python-format
+msgid "Drag it to see it in a window, or press %(keys)s to see it at the side"
+msgstr ""
+"Arrástrelo para verlo en una ventana, o presione %(keys)s para verlo al "
+"lado"
 
 msgid "Duration"
 msgstr "Duración"
@@ -563,6 +579,12 @@ msgstr "Los campos marcados con * son obligatorios."
 
 msgid "File"
 msgstr "Archivo"
+
+msgid "Files of this window"
+msgstr "Archivos de esta ventana"
+
+msgid "Files of your solution"
+msgstr "Archivos de su solución"
 
 msgid "Filter"
 msgstr "Filtrar"
@@ -678,6 +700,14 @@ msgstr "Déjela vacía para conservar la actual."
 msgid "Leave the form? The changes will be lost."
 msgstr "¿Salir del formulario? Se perderán los cambios."
 
+#, python-format
+msgid ""
+"Letters, digits, _ or - (not first), and one of the extensions "
+"%(extensions)s"
+msgstr ""
+"Letras, dígitos, _ o - (no al inicio), y una de las extensiones "
+"%(extensions)s"
+
 msgid "Light mode"
 msgstr "Modo claro"
 
@@ -732,8 +762,18 @@ msgstr "Mis grupos impartidos"
 msgid "Name"
 msgstr "Nombre"
 
+msgid "Name of the new file"
+msgstr "Nombre del nuevo archivo"
+
 msgid "New SSO provider"
 msgstr "Nuevo proveedor de SSO"
+
+msgid "New file"
+msgstr "Nuevo archivo"
+
+#, python-format
+msgid "New name of %(file)s"
+msgstr "Nuevo nombre de %(file)s"
 
 msgid "Next"
 msgstr "Siguiente"
@@ -1316,6 +1356,10 @@ msgstr "La búsqueda falló. Intente más tarde."
 msgid "The section shows the last version of the course"
 msgstr "El grupo muestra la última versión del curso"
 
+#, python-format
+msgid "The solution is too long: at most %(size)s"
+msgstr "La solución es demasiado larga: como máximo %(size)s"
+
 msgid ""
 "The version of the course could not be prepared. Pull the repository and "
 "try again."
@@ -1341,6 +1385,10 @@ msgstr ""
 
 msgid "There are no SSO providers. Users log in with their password."
 msgstr "No hay proveedores de SSO. Los usuarios ingresan con su contraseña."
+
+#, python-format
+msgid "There is a file named %(file)s already"
+msgstr "Ya hay un archivo llamado %(file)s"
 
 msgid "Too many failed attempts. Try again later."
 msgstr "Demasiados intentos fallidos. Intente más tarde."

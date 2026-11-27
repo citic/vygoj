@@ -77,18 +77,24 @@ class GitRepo:
             os.makedirs(self.path, exist_ok=True)
             self.git('init', '--quiet', '--bare')
 
-    def commit_file(self, branch: str, path: str, content: str, message: str) -> bool:
-        """ Commit the content as the file of the given path, at the end of the branch, unless the
-        file did not change. Return whether a commit was made """
+    def commit_files(self, branch: str, files: dict, removed: list, message: str) -> bool:
+        """ Commit the files ({path: content}) and remove the removed paths, at the end of the
+        branch, unless nothing changed. Return whether a commit was made """
         old_commit = self.last_commit(branch)
-        blob = self.git('hash-object', '-w', '--stdin', stdin=content)
-        # The tree of the last commit with the new file. The index is temporary, because workers
+        # The tree of the last commit with the new files. The index is temporary, because workers
         # of gunicorn may commit at the same time
         with tempfile.TemporaryDirectory() as folder:
             index = { 'GIT_INDEX_FILE': os.path.join(folder, 'index') }
             if old_commit:
                 self.git('read-tree', old_commit, env=index)
-            self.git('update-index', '--add', '--cacheinfo', f'100644,{blob},{path}', env=index)
+            # A bare repo has no working tree for --force-remove: a line of mode 0 removes a path
+            if removed:
+                self.git('update-index', '-z', '--index-info', env=index,
+                    stdin=''.join(f'0 {NO_COMMIT}\t{path}\0' for path in removed))
+            for path, content in files.items():
+                blob = self.git('hash-object', '-w', '--stdin', stdin=content)
+                self.git('update-index', '--add', '--cacheinfo', f'100644,{blob},{path}',
+                    env=index)
             tree = self.git('write-tree', env=index)
         if old_commit and tree == self.git('rev-parse', f'{old_commit}^{{tree}}'):
             return False
@@ -99,13 +105,14 @@ class GitRepo:
         self.git('update-ref', branch, commit, old_commit or NO_COMMIT)
         return True
 
-    def file_versions(self, branch: str, path: str) -> list:
-        """ Return the versions of the file of the given path in the branch, from the oldest to
-        the newest, as [commit, time] pairs, with the time in seconds since the epoch """
+    def file_versions(self, branch: str, paths: list) -> list:
+        """ Return the versions of the files of the given paths (which may have wildcards, e.g.
+        src/*.c) in the branch, from the oldest to the newest, as [commit, time] pairs, with the
+        time in seconds since the epoch """
         if not self.last_commit(branch):
             return []
         output = self.git('log', f'--max-count={MAX_VERSIONS}', '--reverse', '--format=%H %ct',
-            branch, '--', path)
+            branch, '--', *paths)
         return [[commit, int(time)] for commit, time in
             (line.split() for line in output.splitlines())]
 
@@ -115,6 +122,12 @@ class GitRepo:
         if not COMMIT_PATTERN.fullmatch(commit):
             raise ValueError('invalid commit')
         return self.git('cat-file', 'blob', f'{commit}:{path}', strip=False)
+
+    def file_names(self, commit: str, folder: str) -> list:
+        """ Return the names of the files in the folder of the commit (or the last commit of a
+        branch), without their folder """
+        return [os.path.basename(path) for path in
+            self.git('ls-tree', '--name-only', commit, f'{folder}/').splitlines()]
 
     def archive(self, refs_prefix: str) -> bytes:
         """ Return a zip archive with the files of the last commits of the branches whose refs

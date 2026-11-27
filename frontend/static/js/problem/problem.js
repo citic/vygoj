@@ -1,10 +1,12 @@
+import * as monaco from 'https://esm.sh/monaco-editor';
 import {
-  ExecutionResult, Problem, Status,
+  ExecutionResult, MAIN_FILES, MAX_SOLUTION_BYTES, MAX_SOLUTION_FILES, Problem, SOLUTION_EXTENSIONS,
+  SOLUTION_FILE_PATTERN, Status,
 } from '../vyg.js';
 import { CHECK_EVENT, STATUS_EVENT } from '../site.js';
 import _ from '../i18n.js';
 import '../components/monaco-editor.js';
-import LanguageClient from '../components/lang-client.js';
+import LanguageClient, { fileUri } from '../components/lang-client.js';
 import '../components/editor-toolbar.js';
 import '../components/tab-control.js';
 
@@ -18,20 +20,43 @@ const UNREACHABLE_STATUSES = [502, 503, 504];
 // Side in pixels of the square of the corner handle of an element with CSS resize, about the size
 // that browsers draw it
 const RESIZE_HANDLE_SIZE = 16;
-// A line of the compiler, the linker, or the linter about a line of the solution, with its line,
-// its column or section of the linker, its severity, and its message. E.g. "solution.c:4:18:
-// error: 'y' undeclared" (gcc), "/tmp/solution.c:3:(.text+0x5): undefined reference to `foo'"
-// (ld), "solution.c:5:  Missing space after ,  [whitespace/comma] [3]" (cpplint),
+// A line of the compiler, the linker, or the linter about a line of a file of the solution, with
+// its file, its line, its column or section of the linker, its severity, and its message. E.g.
+// "tree.c:4:18: error: 'y' undeclared" (gcc), "/tmp/solution.c:3:(.text+0x5): undefined reference
+// to `foo'" (ld), "solution.c:5:  Missing space after ,  [whitespace/comma] [3]" (cpplint),
 // "Solution.java:7: error: ';' expected" (javac), or "solution.ale:3:1: syntax error: unexpected
-// token 'end'" (alecci)
-const DIAGNOSTIC = /^(?:\S*\/)?[Ss]olution\.\w+:(\d+):(?:(\d+):|(\(\.[^)]*\)):)?\s*(?:(?:fatal |syntax )?(error|warning|note):)?\s*(.*)$/;
-// A line of Python about a line of the solution, e.g. '  File "solution.py", line 3' of a syntax
-// error. Its message is in a later line that names the error, e.g. "SyntaxError: invalid syntax"
-const PYTHON_DIAGNOSTIC = /^\s*File "(?:\S*\/)?solution\.py", line (\d+)/;
+// token 'end'" (alecci). The files of the solution are in /home/student, so lines about other
+// folders (e.g. /usr/include/tree.h) are not diagnostics, even if a file of the solution has the
+// same name. The linker may name a temporary copy in /tmp
+const DIAGNOSTIC = /^(?:\/home\/student\/|\/tmp\/)?([\w-]+\.\w+):(\d+):(?:(\d+):|(\(\.[^)]*\)):)?\s*(?:(?:fatal |syntax )?(error|warning|note):)?\s*(.*)$/;
+// A line of Python about a line of a file, e.g. '  File "tree.py", line 3' of a syntax error. Its
+// message is in a later line that names the error, e.g. "SyntaxError: invalid syntax"
+const PYTHON_DIAGNOSTIC = /^\s*File "(?:\/home\/student\/)?([\w-]+\.py)", line (\d+)/;
 const PYTHON_ERROR = /^\w*(?:Error|Exception|Warning)\b/;
 // An error of alecci with its line at the end, e.g. "solution.ale: error: undefined variable 'y'
 // (line 2)"
-const ALECCI_DIAGNOSTIC = /^(?:\S*\/)?solution\.ale: (error|warning): (.*) \(line (\d+)\)$/;
+const ALECCI_DIAGNOSTIC = /^(?:\/home\/student\/)?([\w-]+\.ale): (error|warning): (.*) \(line (\d+)\)$/;
+// Extensions of the files of a solution with an icon in /img/files/<extension>.svg: the file
+// icons of Visual Studio Code (vscode-icons, MIT license). Other extensions get file.svg. They are
+// files of this site, because the CSP blocks images of other sites (see design/readme.adoc)
+const FILE_ICONS = ['c', 'h', 'cpp', 'hpp', 'java', 'py'];
+
+// Returns the extensions of the main file of a solution in the language (the one of its default
+// name, e.g. c in solution.c), or of the other files
+function fileExtensions(language, main) {
+  return main ? [MAIN_FILES[language]?.split('.').pop()] : SOLUTION_EXTENSIONS[language] ?? [];
+}
+
+// True if the point is in the rectangle
+function isOver(rect, x, y) {
+  return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+}
+
+// Returns the address of the icon of a file, by its extension
+function fileIcon(name) {
+  const extension = name.split('.').pop();
+  return `/img/files/${FILE_ICONS.includes(extension) ? extension : 'file'}.svg`;
+}
 
 // An error that means that the server or the judge could not be reached, not that the request was
 // wrong. The connection is checked again after it
@@ -59,6 +84,22 @@ function loadConfig(key) {
 
 function saveConfig(key, value) {
   window.localStorage.setItem(`${key}:${window.location.pathname}`, value);
+}
+
+// Returns the files of a solution in the language ({ name: code }) in JSON, or null if the text is
+// not a solution: up to MAX_SOLUTION_FILES files, the main file first, with the extensions of the
+// language. localStorage and the server are untrusted, and their values may be invalid or old
+function parseFiles(text, language) {
+  try {
+    const files = JSON.parse(text);
+    const entries = files && typeof files === 'object' ? Object.entries(files) : [];
+    const valid = entries.length > 0 && entries.length <= MAX_SOLUTION_FILES
+      && entries.every(([name, code], index) => typeof code === 'string'
+        && fileExtensions(language, index === 0).includes(name.match(SOLUTION_FILE_PATTERN)?.[1]));
+    return valid ? files : null;
+  } catch {
+    return null;
+  }
 }
 
 // Writes each line of the text as a command line argument in single quotes, so the backend, which
@@ -114,14 +155,25 @@ class ProblemManager {
     // another tab changed it), so the change is not saved again. Saving it again made tabs of the
     // same problem send each other old versions of the code forever
     this.savesCode = true;
+    // The files of the solution in the chosen language, by name in the order of their tabs, the
+    // main file first. Each Monaco model keeps the code, Undo history, and diagnostics of a file
+    this.files = new Map(); // Map of string to monaco.editor.ITextModel
+    // Cursor and scroll of each file while the editor shows another one, by name
+    this.viewStates = new Map(); // Map of string to monaco.editor.ICodeEditorViewState
+    // Cursor and scroll of the files of each window while it shows another one, by model
+    this.sideViewStates = new WeakMap(); // WeakMap of HTMLElement to WeakMap
+    // Windows made so far, which numbers the id of the editor of each one
+    this.sideCount = 0; // number
+    // Ends the open field of the name of a file, if any, as when it loses the focus
+    this.finishFileName = null; // function
     // Versions of the solution that the runs of the user saved in the chosen language, from the
     // oldest to the newest, as [commit, time in seconds] pairs, for the slider of the toolbar
     this.versions = []; // Array
-    // Code of the versions already fetched, by language and commit, which never change
-    this.versionCodes = new Map(); // Map
-    // Code in the editor while the slider shows a version, shown again at the end of the slider.
-    // Null while the editor shows it
-    this.currentCode = null; // string
+    // Files of the versions already fetched, by language and commit, which never change
+    this.versionFiles = new Map(); // Map of string to Object
+    // Files of the solution while the slider shows a version, shown again at the end of the
+    // slider. Null while the editor shows them
+    this.currentFiles = null; // Object
     // Suggestions of the language server for the chosen language, null if it has none
     this.languageClient = null; // LanguageClient
   }
@@ -226,65 +278,578 @@ class ProblemManager {
     if (languageList.selectedIndex < 0) {
       languageList.selectedIndex = 0;
     }
-    const setLanguage = () => {
-      const language = languageList.value;
-      saveConfig('language', language);
-      codeEditor.setAttribute('language', monacoLanguageFor[language.toLowerCase()] || 'plaintext');
-      this.languageClient?.close();
-      this.languageClient = null;
-      if (LanguageClient.supports(language)) {
-        const message = { action: 'lang_server', language }; // Message object
-        const getKey = () => ProblemManager.sendJson(message, FETCH_TIMEOUT);
-        this.languageClient = new LanguageClient(editor, language, getKey);
-        this.languageClient.start();
-      }
-    };
-    setLanguage();
     // Only a choice of the user becomes the last language, not the one a problem starts with
     languageList.addEventListener('change', () => {
       window.localStorage.setItem('language', languageList.value);
-      setLanguage();
     });
-    editor.getModel().updateOptions({ tabSize: 2 }); // Google code style
     this.editors.push(editor);
-    // The editor is as tall as its code, between the min-height and max-height of the CSS, until
-    // the user gives it another height with its corner handle. It keeps its height while the
-    // slider shows versions, so the page does not jump with each one
-    let fittedHeight = '';
+    // The editor is as tall as its code (--fitted-height, between the min-height and max-height of
+    // the CSS), until the user gives it another height with its corner handle, and in a split it
+    // shares the height of the split. It keeps its height while the slider shows versions, so the
+    // page does not jump with each one
     editor.onDidContentSizeChange(() => {
-      const { style } = editor.getContainerDomNode();
-      if (style.height === fittedHeight && this.currentCode === null) {
-        fittedHeight = `${editor.getContentHeight()}px`;
-        style.height = fittedHeight;
+      if (this.currentFiles === null) {
+        codeEditor.style.setProperty('--fitted-height', `${editor.getContentHeight()}px`);
       }
     });
-    editor.onDidChangeModelContent(() => {
-      if (this.savesCode) {
-        saveConfig(`code:${languageList.value}`, editor.getValue());
-      }
-      this.updateRunButton();
-    });
-    // Another tab of this problem saved its code for the chosen language: show it here too.
-    // Events arrive late, so an event whose code is not the stored one anymore is old, and it is
-    // ignored. An edit instead of setValue() keeps the Undo history of this tab, as its own step
+    // Another tab of this problem saved its files for the chosen language: show them here too.
+    // Events arrive late, so an event whose files are not the stored ones anymore is old, and it
+    // is ignored. The files keep the Undo history of this tab (see showFiles())
     window.addEventListener('storage', (event) => {
-      if (event.key === `code:${languageList.value}:${window.location.pathname}`
-        && event.newValue !== null && event.newValue === window.localStorage.getItem(event.key)
-        && event.newValue !== editor.getValue()) {
-        this.showStoredCode(() => {
-          editor.pushUndoStop();
-          editor.executeEdits('storage', [{ range: editor.getModel().getFullModelRange(), text: event.newValue }]);
-          editor.pushUndoStop();
-        });
+      if (event.key !== `files:${languageList.value}:${window.location.pathname}`) {
+        return;
+      }
+      // A name that the student is writing ends first, as when its field loses the focus. If it
+      // makes a file, the files of this tab are newer, and they go to the other tab instead
+      this.finishFileName?.('blur');
+      const files = parseFiles(event.newValue, languageList.value);
+      if (files && event.newValue === window.localStorage.getItem(event.key)
+        && event.newValue !== JSON.stringify(this.getFiles())) {
+        this.showStoredCode(() => this.showFiles(files));
       }
     });
-    // Clicking a line of the diagnostics about a line of the code goes to its code
+    // Clicking a line of the diagnostics about a line of the code goes to its file and its code
     document.getElementById('diagnostics').addEventListener('click', ({ target }) => {
-      const index = target.closest('button')?.dataset.index;
+      const { index, file } = target.closest('button')?.dataset ?? {};
       if (index) {
+        this.selectFile(file);
         codeEditor.goToDiagnostic(Number(index));
       }
     });
+    this.setupFileTabs();
+  }
+
+  // The language chosen in the list of the row of the files
+  static language() {
+    return document.getElementById('language').value;
+  }
+
+  // The tabs of the files of the solution. Selecting a tab shows its file in the editor, the +
+  // button adds a file, and double clicking a tab or F2 renames its file, and its cross or Delete
+  // closes it, except the main file
+  setupFileTabs() {
+    const tabControl = document.querySelector('.solution > tab-control');
+    // The change events of the field of a name and of the list of languages also reach it
+    tabControl.addEventListener('change', ({ target, detail }) => target === tabControl
+      && this.selectFile([...this.files.keys()][detail]));
+    const list = tabControl.querySelector('[role="tablist"]');
+    const fileOf = (target) => target.closest('[role="tab"]')?.dataset.file;
+    // In the capture phase, before the tab control selects the tab of the cross
+    list.addEventListener('click', (event) => {
+      if (event.target.closest('.close')) {
+        event.stopPropagation();
+        this.closeFile(fileOf(event.target));
+      }
+    }, true);
+    list.addEventListener('dblclick', ({ target }) => this.renameFile(fileOf(target)));
+    list.addEventListener('keydown', (event) => {
+      if (event.key === 'F2') {
+        this.renameFile(fileOf(event.target));
+      } else if (event.key === 'Delete') {
+        this.closeFile(fileOf(event.target));
+      }
+    });
+    document.getElementById('add_file').addEventListener('click', () => this.editFileName());
+    this.setupSides(list, fileOf);
+  }
+
+  // A tab dragged out of a row of tabs, of the code editor or of a window, becomes a window over
+  // the page with its file selected, and with the tabs of all the files, as the code editor and
+  // every window, so the student pulls out the files as many times as wanted. Ctrl+\ in a tab does
+  // the same, with the new window at the right of the pane of the tab. Dragging the empty part of
+  // the row of the tabs of a window moves it, and its cross closes it. As the groups of editors of
+  // Visual Studio Code, dropping a window on the tabs of the code editor or of another window shows
+  // its file there and closes it, and dropping it on a side of a pane (the code editor or a window
+  // at its side) splits the pane, as many times as the student wants. The editors share the model
+  // of each file, so the code, Undo history, and diagnostics are the same in all of them
+  setupSides(list, fileOf) {
+    const panes = document.querySelector('.solution .panes');
+    const code = document.getElementById('code_editor');
+    // Where the window would go with the pointer there: in the tabs of the code editor or of
+    // another window ('tabs'), or at the nearest side of a pane under the pointer when it is on its
+    // outer third, as in Visual Studio Code. Null elsewhere, so the window floats
+    const zone = (side, { clientX, clientY }) => {
+      const others = [...panes.querySelectorAll('.side')].filter((other) => other !== side);
+      const tabs = [list, ...others].find((element) => isOver((element === list ? list
+        : element.querySelector('[role="tablist"]')).getBoundingClientRect(), clientX, clientY));
+      if (tabs) {
+        return [tabs, 'tabs'];
+      }
+      const pane = [code, ...others.filter((other) => !other.hasAttribute('data-floating'))]
+        .find((element) => isOver(element.getBoundingClientRect(), clientX, clientY));
+      const box = pane?.getBoundingClientRect();
+      const distances = box && Object.entries({
+        left: (clientX - box.left) / box.width,
+        right: (box.right - clientX) / box.width,
+        top: (clientY - box.top) / box.height,
+        bottom: (box.bottom - clientY) / box.height,
+      }).sort(([, first], [, second]) => first - second);
+      return distances?.[0][1] < 1 / 3 ? [pane, distances[0][0]] : null;
+    };
+    // Moves the window that sideAt returns for each move (null while there is none yet) with the
+    // pointer, which holds the point (dx, dy) of its row of tabs, or the middle of the row without
+    // dx, anywhere in the page, and the place of the pane where it would go is tinted (data-drop)
+    const drag = (down, sideAt, dx, dy) => {
+      let side = null;
+      let drop = null;
+      ProblemManager.dragPointer(down, (event) => {
+        side ??= sideAt(event);
+        if (!side) {
+          return;
+        }
+        if (!side.hasAttribute('data-floating')) {
+          ProblemManager.floatSide(side);
+        }
+        const origin = side.offsetParent.getBoundingClientRect();
+        side.style.setProperty('--left', `${event.clientX - origin.left - (dx ?? side.offsetWidth / 2)}px`);
+        side.style.setProperty('--top', `${event.clientY - origin.top - dy}px`);
+        drop?.[0].removeAttribute('data-drop');
+        drop = zone(side, event);
+        if (drop) {
+          const [pane, where] = drop;
+          pane.dataset.drop = where;
+        }
+      }, (released) => {
+        drop?.[0].removeAttribute('data-drop');
+        if (released && drop?.[1] === 'tabs') {
+          this.joinSide(side, drop[0] === list ? null : drop[0]);
+        } else if (released && drop) {
+          ProblemManager.dockSide(side, ...drop);
+        }
+      });
+    };
+    // A tab dragged out of its row, above or below it, shows its file in a new window. A finger on
+    // the tabs scrolls the page, so only a mouse or a pen drags them
+    const dragTab = (down, row) => {
+      const name = fileOf(down.target);
+      drag(down, ({ clientY }) => {
+        const { top, bottom } = row.getBoundingClientRect();
+        return clientY >= top && clientY <= bottom ? null : this.newSide(name);
+      }, null, 12);
+    };
+    list.addEventListener('pointerdown', (down) => {
+      if (fileOf(down.target) && !down.target.closest('.close') && down.pointerType !== 'touch') {
+        dragTab(down, list);
+      }
+    });
+    // In a window, a tab with others in its row leaves it, and the row of the tabs moves the window
+    panes.addEventListener('pointerdown', (down) => {
+      const row = down.target.closest('.side > [role="tablist"]');
+      if (row && fileOf(down.target) && row.children.length > 1 && down.pointerType !== 'touch') {
+        dragTab(down, row);
+      } else if (row) {
+        const side = row.parentElement;
+        const { left, top } = side.getBoundingClientRect();
+        drag(down, () => side, down.clientX - left, down.clientY - top);
+      }
+    });
+    list.closest('tab-control').addEventListener('keydown', ({ ctrlKey, key, target }) => {
+      const name = fileOf(target);
+      if (name && ctrlKey && key === '\\') {
+        ProblemManager.dockSide(this.newSide(name), target.closest('.side:not([data-floating])') ?? code, 'right');
+      }
+    });
+    panes.addEventListener('click', ({ target }) => {
+      if (target.closest('.side > .close_window')) {
+        ProblemManager.closeSide(target.closest('.side'));
+        this.editors[0].focus();
+      }
+    });
+  }
+
+  // Follows the drag of the pointer that went down with the main button, with pointer events, which
+  // work alike with a mouse, a pen, or a finger, and in every browser (the drag and drop of HTML
+  // did not drop in Firefox), in the capture phase, before Monaco. Each move after the first
+  // pixels calls move with its event, and the end calls end, with true if the pointer was released
+  static dragPointer(down, move, end) {
+    if (down.button !== 0) {
+      return;
+    }
+    const drag = new AbortController();
+    let moved = false;
+    document.addEventListener('pointermove', (event) => {
+      moved ||= Math.hypot(event.clientX - down.clientX, event.clientY - down.clientY) > 4;
+      if (moved) {
+        move(event);
+      }
+    }, { signal: drag.signal, capture: true });
+    ['pointerup', 'pointercancel'].forEach((type) => document.addEventListener(type, () => {
+      drag.abort();
+      if (moved) {
+        end(type === 'pointerup');
+      }
+    }, { signal: drag.signal, capture: true }));
+  }
+
+  // Returns a new window over the page with the tabs of all the files, and the given one selected
+  // (data-file), which its tab control changes with a change event
+  newSide(name) {
+    const side = document.importNode(document.getElementById('side_window').content.firstElementChild, true);
+    this.sideCount += 1;
+    side.querySelector('monaco-editor').id = `side_editor_${this.sideCount}`;
+    side.dataset.file = name;
+    side.dataset.floating = '';
+    side.addEventListener('change', ({ target, detail }) => {
+      if (target === side) {
+        side.dataset.file = [...this.files.keys()][detail];
+        this.showSide(side);
+      }
+    });
+    document.querySelector('.solution .panes').append(side);
+    this.showSide(side);
+    return side;
+  }
+
+  // Shows the file of the window in the other window, or in the code editor without one, and
+  // closes the window
+  joinSide(side, other) {
+    if (other) {
+      other.dataset.file = side.dataset.file;
+      this.showSide(other);
+    } else {
+      this.selectFile(side.dataset.file);
+    }
+    ProblemManager.closeSide(side);
+  }
+
+  // The windows that show the file show it with its new name. Names of files are letters, digits,
+  // _, -, and dots, so they fit in the selector
+  static renameInSides(name, newName) {
+    document.querySelectorAll(`.solution .side[data-file="${name}"]`)
+      .forEach((side) => { side.dataset.file = newName; });
+  }
+
+  // Takes the window out of its split, to the end of the panes, and a split with one pane left
+  // becomes that pane
+  static leaveSplit(side) {
+    const split = side.parentElement;
+    side.closest('.panes').append(side);
+    if (split.matches('.split') && split.children.length === 1) {
+      split.replaceWith(split.firstElementChild);
+    }
+  }
+
+  // Makes the window float over the page where it is, positioned in the page
+  static floatSide(side) {
+    const box = side.getBoundingClientRect();
+    ProblemManager.leaveSplit(side);
+    side.dataset.floating = '';
+    const origin = side.offsetParent.getBoundingClientRect();
+    side.style.setProperty('--left', `${box.left - origin.left}px`);
+    side.style.setProperty('--top', `${box.top - origin.top}px`);
+  }
+
+  // Docks the floating window at the side ('left', 'right', 'top', or 'bottom') of the pane, in
+  // the split of the pane if it goes in that direction, or in a new split in its place. The code
+  // editor in a split shares its height, not the one of its corner handle
+  static dockSide(side, pane, where) {
+    const direction = where === 'left' || where === 'right' ? 'row' : 'column';
+    let split = pane.parentElement;
+    delete side.dataset.floating;
+    side.removeAttribute('style');
+    pane.style.removeProperty('height');
+    if (!split.matches(`.split[data-direction="${direction}"]`)) {
+      split = document.createElement('div');
+      split.className = 'split';
+      split.dataset.direction = direction;
+      pane.replaceWith(split);
+      split.append(pane);
+    }
+    if (where === 'left' || where === 'top') {
+      pane.before(side);
+    } else {
+      pane.after(side);
+    }
+  }
+
+  // Removes the window, and its editor, but not the model of its file
+  static closeSide(side) {
+    if (side) {
+      ProblemManager.leaveSplit(side);
+      side.querySelector('monaco-editor').editor.dispose();
+      side.remove();
+    }
+  }
+
+  // Shows the tabs of each window and its selected file
+  showSides() {
+    document.querySelectorAll('.solution .side').forEach((side) => this.showSide(side));
+  }
+
+  // Shows a tab for each file of the solution, and the file of the window, or the main file if the
+  // solution does not have it (e.g. in a version of the slider or in another language), in its
+  // editor, with its cursor and scroll there
+  showSide(side) {
+    const names = [...this.files.keys()];
+    const { editor } = side.querySelector('monaco-editor');
+    if (!names.includes(side.dataset.file)) {
+      [side.dataset.file] = names;
+    }
+    side.querySelector('[role="tablist"]')
+      .replaceChildren(...names.map((name) => ProblemManager.fileTab(name, false, false)));
+    side.update();
+    const model = this.files.get(side.dataset.file);
+    if (model !== editor.getModel()) {
+      const views = this.sideViewStates.get(side) ?? new WeakMap();
+      this.sideViewStates.set(side, views);
+      if (editor.getModel()) {
+        views.set(editor.getModel(), editor.saveViewState());
+      }
+      editor.setModel(model);
+      editor.restoreViewState(views.get(model) ?? null);
+    }
+    side.selectedIndex = names.indexOf(side.dataset.file);
+    editor.updateOptions({ ariaLabel: side.dataset.file });
+  }
+
+  // The files of the solution as { name: code }, the main file first
+  getFiles() {
+    return Object.fromEntries([...this.files].map(([name, model]) => [name, model.getValue()]));
+  }
+
+  // Saves the files of the solution in this browser. Changing them makes them the current files
+  // at the end of the slider of the versions
+  saveFiles() {
+    saveConfig(`files:${ProblemManager.language()}`, JSON.stringify(this.getFiles()));
+    const slider = document.getElementById('version');
+    if (slider && this.currentFiles !== null) {
+      this.currentFiles = null;
+      slider.value = slider.max;
+      this.updateVersionName();
+    }
+  }
+
+  // Name of the main file of the solution, its first one, which the student may rename
+  mainFile() {
+    return this.files.keys().next().value;
+  }
+
+  // Name of the file in the editor
+  selectedFile() {
+    const model = this.editors[0].getModel();
+    return [...this.files].find(([, file]) => file === model)?.[0];
+  }
+
+  // Shows the file in the editor with its cursor and scroll, or the main file if there is no file
+  // of that name, and selects its tab
+  selectFile(name) {
+    const editor = this.editors[0];
+    const model = this.files.get(name) ?? this.files.values().next().value;
+    if (model !== editor.getModel()) {
+      const selected = this.selectedFile();
+      if (selected) {
+        this.viewStates.set(selected, editor.saveViewState());
+      }
+      editor.setModel(model);
+      editor.restoreViewState(this.viewStates.get(name) ?? null);
+    }
+    document.querySelector('.solution > tab-control').selectedIndex = [...this.files.values()].indexOf(model);
+  }
+
+  // Shows the files ({ name: code }) in their tabs, the main file first. Files of the same name
+  // keep their model, so the change is a step of their Undo history, and the others are created
+  // or removed. The code of backups ({ name: code }) goes first in the history of a new file, so
+  // Undo brings it back
+  showFiles(files, backups = {}) {
+    const selected = this.selectedFile();
+    const old = this.files;
+    const language = monacoLanguageFor[ProblemManager.language().toLowerCase()] || 'plaintext';
+    const write = (model, text) => {
+      if (model.getValue() !== text) {
+        model.pushStackElement();
+        model.pushEditOperations([], [{ range: model.getFullModelRange(), text }], () => null);
+        model.pushStackElement();
+      }
+    };
+    this.files = new Map(Object.entries(files).map(([name, code]) => {
+      let model = old.get(name);
+      if (!model) {
+        model = monaco.editor.createModel(backups[name] ?? code, language, fileUri(name));
+        model.updateOptions({ tabSize: 2 }); // Google code style
+        // The student edits the file in any of the editors
+        model.onDidChangeContent(() => {
+          document.getElementById('code_editor').moveDiagnostics(model);
+          if (this.savesCode) {
+            this.saveFiles();
+          }
+          this.updateRunButton();
+        });
+      }
+      write(model, code);
+      return [name, model];
+    }));
+    this.showTabs();
+    this.selectFile(selected);
+    this.showSides();
+    old.forEach((model, name) => !this.files.has(name) && model.dispose());
+    // The cursors of the files that are gone are not needed anymore
+    [...this.viewStates.keys()].filter((name) => !this.files.has(name))
+      .forEach((name) => this.viewStates.delete(name));
+    this.updateRunButton();
+  }
+
+  // Makes a tab for each file, and the + button is disabled when the solution has the most files,
+  // or the language takes one file
+  showTabs() {
+    const main = this.mainFile();
+    const tabs = [...this.files.keys()]
+      .map((name) => ProblemManager.fileTab(name, name !== main, true));
+    const tabControl = document.querySelector('.solution > tab-control');
+    tabControl.querySelector('[role="tablist"]').replaceChildren(...tabs);
+    tabControl.update();
+    document.getElementById('add_file').disabled = this.files.size >= MAX_SOLUTION_FILES
+      || !SOLUTION_EXTENSIONS[ProblemManager.language()]?.length;
+  }
+
+  // Returns the tab of a file: the icon of its language, its name, and a cross that closes it if it
+  // is closable (not the main file in the tabs of the code editor), with a title that says what the
+  // mouse and the keys do, and if it can be renamed (in the tabs of the code editor)
+  static fileTab(name, closable, renamable) {
+    const tab = document.createElement('button');
+    tab.type = 'button';
+    tab.dataset.file = name;
+    const icon = document.createElement('img');
+    icon.src = fileIcon(name);
+    icon.alt = '';
+    // A dragged image would be dragged by the browser, not as the tab
+    icon.draggable = false;
+    // A long name is cut with an ellipsis, and the title shows it whole
+    const label = document.createElement('span');
+    label.className = 'file';
+    label.textContent = name;
+    tab.append(icon, label);
+    // pybabel does not read _() in template literals
+    const lines = [name, _('Drag it to see it in a window, or press %(keys)s to see it at the side', { keys: 'Ctrl+\\' })];
+    if (renamable) {
+      lines.push(closable ? _('Double click or F2 renames it, Delete closes it') : _('Double click or F2 renames it'));
+    }
+    if (closable) {
+      const close = document.createElement('span');
+      close.className = 'close material-symbols-outlined';
+      close.ariaHidden = 'true';
+      close.title = _('Close');
+      close.textContent = 'close';
+      tab.append(close);
+    }
+    tab.title = lines.join('\n');
+    tab.setAttribute('aria-keyshortcuts', [renamable && 'F2', closable && 'Delete', 'Control+\\']
+      .filter((key) => key).join(' '));
+    return tab;
+  }
+
+  // Returns why the name is not valid for a new file of the solution, or for the new name of the
+  // file current, or an empty text. The main file keeps the extension of the language. Names that
+  // differ only in case are the same file in Windows
+  fileNameError(name, current = null) {
+    const extensions = fileExtensions(ProblemManager.language(), current === this.mainFile());
+    const match = name.match(SOLUTION_FILE_PATTERN);
+    if (!match || !extensions.includes(match[1])) {
+      const list = extensions.map((extension) => `.${extension}`).join(' ');
+      return _('Letters, digits, _ or - (not first), and one of the extensions %(extensions)s', { extensions: list });
+    }
+    const taken = [...this.files.keys()]
+      .some((file) => file !== current && file.toLowerCase() === name.toLowerCase());
+    return taken ? _('There is a file named %(file)s already', { file: name }) : '';
+  }
+
+  // Writes the name of a file in a field in the row of the tabs, as in Visual Studio Code: of a
+  // new file at the end, or of the file of the given name in its tab. Enter keeps a valid name,
+  // and shows why an invalid one is not valid. Escape, or leaving the field with an empty or
+  // invalid name, cancels: a new file without a name is not created
+  editFileName(name = null) {
+    // One field at a time: the open one ends first
+    this.finishFileName?.('blur');
+    const list = document.querySelector('.solution > tab-control [role="tablist"]');
+    const field = document.createElement('input');
+    field.className = 'file_name';
+    field.ariaLabel = name ? _('New name of %(file)s', { file: name }) : _('Name of the new file');
+    field.value = name ?? '';
+    field.spellcheck = false;
+    const tab = name && [...list.children].find((element) => element.dataset.file === name);
+    if (tab) {
+      tab.replaceWith(field);
+    } else {
+      list.append(field);
+    }
+    field.focus();
+    // As Visual Studio Code, the name is selected without its extension
+    field.setSelectionRange(0, name ? name.lastIndexOf('.') : 0);
+    let done = false;
+    const finish = (keep) => {
+      if (done) {
+        return;
+      }
+      const newName = field.value.trim();
+      const error = keep && newName && newName !== name ? this.fileNameError(newName, name) : '';
+      if (error && keep === 'enter') {
+        field.setCustomValidity(error);
+        field.reportValidity();
+        return;
+      }
+      done = true;
+      this.finishFileName = null;
+      if (keep && newName && newName !== name && !error) {
+        // The files keep their order, with the new name in the place of the old one
+        if (name) {
+          ProblemManager.renameInSides(name, newName);
+        }
+        const files = name ? Object.fromEntries(Object.entries(this.getFiles())
+          .map(([key, code]) => [key === name ? newName : key, code])) : { ...this.getFiles(), [newName]: '' };
+        this.showFiles(files);
+        this.selectFile(newName);
+        this.saveFiles();
+        this.editors[0].focus();
+      } else {
+        // Only the tab of the field comes back, so the rest of the row stays as it is
+        if (tab) {
+          field.replaceWith(tab);
+        } else {
+          field.remove();
+        }
+        // Escape or Enter give the focus back to the tabs, so the keyboard goes on there
+        if (keep !== 'blur') {
+          (tab || list.querySelector('[aria-selected="true"]'))?.focus();
+        }
+      }
+    };
+    this.finishFileName = finish;
+    // The keys stay in the field: the arrows of the tab control and Delete do not reach the tabs
+    field.addEventListener('keydown', (event) => {
+      event.stopPropagation();
+      if (event.key === 'Enter' || event.key === 'Escape') {
+        event.preventDefault();
+        finish(event.key === 'Enter' && 'enter');
+      }
+    });
+    field.addEventListener('input', () => field.setCustomValidity(''));
+    // After the click that took the focus, e.g. on another tab, so the click reaches its tab
+    field.addEventListener('blur', () => setTimeout(() => finish('blur')));
+  }
+
+  // Edits the name of the file in its tab, also of the main file, which stays the first one
+  renameFile(name) {
+    if (this.files.has(name)) {
+      this.editFileName(name);
+    }
+  }
+
+  // Removes the file, after asking if it has code
+  closeFile(name) {
+    if (!this.files.has(name) || name === this.mainFile()) {
+      return;
+    }
+    const question = _('Do you want to close %(file)s? Its code will be deleted.', { file: name });
+    // The native dialogs of the browser are enough for a simple confirmation
+    // eslint-disable-next-line no-alert
+    if (this.files.get(name).getValue().trim() && !window.confirm(question)) {
+      return;
+    }
+    const files = this.getFiles();
+    delete files[name];
+    this.showFiles(files);
+    this.saveFiles();
+    // The tab of the closed file had the focus
+    document.querySelector('.solution > tab-control [aria-selected="true"]').focus();
   }
 
   // Run the given function, that shows code already stored in the code editor, without saving it
@@ -525,43 +1090,60 @@ class ProblemManager {
 
   loadUserCode() {
     console.assert(this.problem);
-    // Each language keeps its own code. Show the code saved for the chosen language, or else
-    // its initial code. Its copy from before the last Clear or Revert goes first, as an older step
-    // in the history, so Undo brings it back after reloading. Editing also updates the Run button
-    const languageList = document.getElementById('language');
-    const showCode = () => {
-      const editor = this.editors[0];
-      const language = languageList.value;
-      const code = loadConfig(`code:${language}`) || this.initialCodeFor(language);
-      // The backup is not the current code, so it must not be saved as such
-      this.showStoredCode(() => {
-        editor.setValue(loadConfig(`backup:${language}`) || code);
-        editor.executeEdits('load', [{ range: editor.getModel().getFullModelRange(), text: code }]);
-        editor.pushUndoStop();
-      });
-    };
-    showCode();
-    languageList.addEventListener('change', showCode);
+    this.loadFiles();
+    document.getElementById('language').addEventListener('change', () => this.loadFiles());
 
-    // Before Clear or Revert, keep a copy of the code, so Undo can bring it back after reloading
+    // Before Clear or Revert, keep a copy of the file, so Undo can bring it back after reloading
     ['clear_button', 'revert_button'].forEach((id) => {
       document.getElementById(id).addEventListener('click', () => {
-        saveConfig(`backup:${languageList.value}`, this.editors[0].getValue());
+        const language = ProblemManager.language();
+        const key = `backup:${language}`;
+        // Only the backups of the files of the solution are kept, so they do not grow forever
+        const backups = Object.entries(parseFiles(loadConfig(key), language) ?? {})
+          .filter(([name]) => this.files.has(name));
+        saveConfig(key, JSON.stringify({
+          ...Object.fromEntries(backups), [this.selectedFile()]: this.editors[0].getValue(),
+        }));
       });
     });
 
+    // The main file goes back to the initial code, and the other files to empty
     document.getElementById('revert_button').addEventListener('click', () => {
       // The native dialogs of the browser are enough for a simple confirmation
       // eslint-disable-next-line no-alert
       if (window.confirm(_('Do you want to revert to the initial code?'))) {
         // An edit instead of setValue(), so Undo can bring back the code that was replaced
         const editor = this.editors[0];
-        const text = this.initialCodeFor(languageList.value);
+        const language = ProblemManager.language();
+        const text = this.selectedFile() === this.mainFile() ? this.initialCodeFor(language) : '';
         editor.pushUndoStop();
         editor.executeEdits('revert', [{ range: editor.getModel().getFullModelRange(), text }]);
         editor.pushUndoStop();
       }
     });
+  }
+
+  // Each language keeps its own files. Show the files saved for the chosen language, or else its
+  // main file with its initial code. The copies from before the last Clear or Revert go first, as
+  // older steps in the history, so Undo brings them back after reloading. The language server of
+  // the old language closes first, so it never gets the new files, and the new one gets them
+  loadFiles() {
+    const language = ProblemManager.language();
+    saveConfig('language', language);
+    this.languageClient?.close();
+    const stored = parseFiles(loadConfig(`files:${language}`), language);
+    const files = stored ?? { [MAIN_FILES[language]]: this.initialCodeFor(language) };
+    const backups = parseFiles(loadConfig(`backup:${language}`), language) ?? {};
+    this.viewStates.clear();
+    // The backups are not the current code, so they must not be saved as such
+    this.showStoredCode(() => this.showFiles(files, backups));
+    this.languageClient = null;
+    if (LanguageClient.supports(language)) {
+      const message = { action: 'lang_server', language }; // Message object
+      const getKey = () => ProblemManager.sendJson(message, FETCH_TIMEOUT);
+      this.languageClient = new LanguageClient(this.editors[0], language, getKey);
+      this.languageClient.start();
+    }
   }
 
   // The slider of the toolbar shows the versions of the solution that the runs saved, and at its
@@ -574,16 +1156,8 @@ class ProblemManager {
     }
     slider.addEventListener('input', () => this.showVersion(Number(slider.value)));
     document.getElementById('language').addEventListener('change', () => this.loadVersions());
-    this.editors[0].onDidChangeModelContent(() => {
-      if (this.savesCode && this.currentCode !== null) {
-        this.currentCode = null;
-        slider.value = slider.max;
-        this.updateVersionName();
-      }
-    });
     // Without code of their own in this browser, the user gets the last version that they ran
-    const language = document.getElementById('language').value;
-    this.loadVersions(!loadConfig(`code:${language}`));
+    this.loadVersions(!loadConfig(`files:${ProblemManager.language()}`));
   }
 
   // Fetch the versions of the solution in the chosen language, and put the slider at its end. If
@@ -608,62 +1182,60 @@ class ProblemManager {
       return;
     }
     this.versions = Array.isArray(versions) ? versions : [];
-    this.currentCode = null;
+    this.currentFiles = null;
     slider.max = String(this.versions.length);
     slider.value = slider.max;
     slider.closest('.versions').hidden = this.versions.length === 0;
     this.updateVersionName();
     if (showLast && this.versions.length > 0) {
-      const code = await this.fetchVersion(language, this.versions[this.versions.length - 1][0]);
-      if (code !== null && language === document.getElementById('language').value) {
-        this.showStoredCode(() => this.editors[0].setValue(code));
+      const files = await this.fetchVersion(language, this.versions[this.versions.length - 1][0]);
+      if (files !== null && language === document.getElementById('language').value) {
+        this.showStoredCode(() => this.showFiles(files));
       }
     }
   }
 
-  // Return the code of the version of the given commit, or null if it could not be fetched
+  // Return the files of the version of the given commit ({ name: code }), or null if they could
+  // not be fetched
   async fetchVersion(language, commit) {
     const key = `${language}:${commit}`;
-    if (!this.versionCodes.has(key)) {
+    if (!this.versionFiles.has(key)) {
       try {
         const query = `language=${encodeURIComponent(language)}`;
         const url = `${window.location.pathname}/versions/${commit}?${query}`;
         const response = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT) });
-        if (!response.ok) {
+        const files = response.ok ? parseFiles(await response.text(), language) : null;
+        if (!files) {
           return null;
         }
-        this.versionCodes.set(key, await response.text());
+        this.versionFiles.set(key, files);
       } catch (error) {
         console.error(error);
         return null;
       }
     }
-    return this.versionCodes.get(key);
+    return this.versionFiles.get(key);
   }
 
-  // Show the version at the index in the editor, or the code in the editor at the end of the
-  // slider. An edit instead of setValue() keeps the Undo history, and the scroll and the cursor
-  // stay where they were
+  // Show the files of the version at the index, or the current files at the end of the slider.
+  // The files keep their Undo history (see showFiles()), and the scroll and the cursor stay
+  // where they were
   async showVersion(index) {
     const editor = this.editors[0];
-    let code = this.currentCode;
+    let files = this.currentFiles;
     if (index < this.versions.length) {
-      code = await this.fetchVersion(document.getElementById('language').value, this.versions[index][0]);
+      files = await this.fetchVersion(ProblemManager.language(), this.versions[index][0]);
       // The slider may have moved on while waiting
-      if (code === null || index !== Number(document.getElementById('version').value)) {
+      if (files === null || index !== Number(document.getElementById('version').value)) {
         return;
       }
-      this.currentCode ??= editor.getValue();
+      this.currentFiles ??= this.getFiles();
     } else {
-      this.currentCode = null;
+      this.currentFiles = null;
     }
-    if (code !== null && code !== editor.getValue()) {
+    if (files !== null) {
       const view = editor.saveViewState();
-      this.showStoredCode(() => {
-        editor.pushUndoStop();
-        editor.executeEdits('version', [{ range: editor.getModel().getFullModelRange(), text: code }]);
-        editor.pushUndoStop();
-      });
+      this.showStoredCode(() => this.showFiles(files));
       editor.restoreViewState(view);
     }
     this.updateVersionName();
@@ -712,7 +1284,7 @@ class ProblemManager {
     if (!this.runButton) {
       return;
     }
-    const hasCode = this.editors[0].getValue().trim().length > 0;
+    const hasCode = [...this.files.values()].some((model) => model.getValue().trim().length > 0);
     this.runButton.disabled = this.running || !this.online || !hasCode;
     this.runButton.textContent = this.running ? _('Running') : _('Run');
   }
@@ -720,6 +1292,13 @@ class ProblemManager {
   async runSolution() {
     // The language chosen in the list of the toolbar
     const language = document.getElementById('language').value;
+    // The judge rejects larger solutions, so the student is told here, in their language
+    const files = this.getFiles();
+    const size = new TextEncoder().encode(Object.values(files).join('')).length;
+    if (size > MAX_SOLUTION_BYTES) {
+      this.updateCompileOutput(_('The solution is too long: at most %(size)s', { size: formatBytes(MAX_SOLUTION_BYTES) }));
+      return;
+    }
     // Disable the Run button while the backend is running the code
     this.running = true;
     this.updateRunButton();
@@ -730,7 +1309,7 @@ class ProblemManager {
       this.result = new ExecutionResult(await ProblemManager.sendJson({
         action: 'run',
         language,
-        code: this.editors[0].getValue(),
+        files,
         stdin: custom ? this.editors[1].getValue() : '',
         args: custom ? quoteLines(document.getElementById('args').editor.getValue()) : '',
       }, ProblemManager.getRunTimeout()));
@@ -810,7 +1389,7 @@ class ProblemManager {
         .filter((text) => text).join('\n\n');
     }
     // Without diagnostics, the code editor underlines nothing
-    ProblemManager.showDiagnostics(compileOutput || '');
+    this.showDiagnostics(compileOutput || '');
     // If there is a diagnostic, show it
     if (compileOutput && compileOutput.length > 0) {
       showElement('diagnostics_wrapper');
@@ -819,22 +1398,24 @@ class ProblemManager {
     }
   }
 
-  // Shows the text of the diagnostics. Its lines about a line of the code are buttons that go to
-  // that line, and the code editor underlines them
-  static showDiagnostics(text) {
+  // Shows the text of the diagnostics. Its lines about a line of a file of the solution are
+  // buttons that go to that line, and the code editor underlines them
+  showDiagnostics(text) {
     const diagnostics = [];
     const lines = text.split('\n');
     const nodes = lines.flatMap((line, index) => {
       const diagnostic = ProblemManager.parseDiagnostic(line, lines.slice(index + 1));
+      const model = this.files.get(diagnostic?.file);
       // Line 0 of cpplint is about the whole file, e.g. a missing copyright
-      if (!diagnostic || diagnostic.line < 1) {
+      if (!model || diagnostic.line < 1) {
         return [line, '\n'];
       }
       const button = document.createElement('button');
       button.type = 'button';
       button.dataset.index = diagnostics.length;
+      button.dataset.file = diagnostic.file;
       button.textContent = line;
-      diagnostics.push(diagnostic);
+      diagnostics.push({ ...diagnostic, model });
       return [button, '\n'];
     });
     // The last line break is not needed
@@ -843,16 +1424,17 @@ class ProblemManager {
     document.getElementById('code_editor').showDiagnostics(diagnostics);
   }
 
-  // Return the diagnostic {line, column, severity, message} of a line of the compiler, the
-  // linker, the linter, Python, or alecci about a line of the solution, or null. The following
-  // lines carry the message of Python
+  // Return the diagnostic {file, line, column, severity, message} of a line of the compiler, the
+  // linker, the linter, Python, or alecci about a line of a file, or null. The following lines
+  // carry the message of Python
   static parseDiagnostic(line, nextLines) {
     const match = line.match(DIAGNOSTIC);
     if (match) {
-      const [, row, column, section, severity, message] = match;
+      const [, file, row, column, section, severity, message] = match;
       // Without a severity, a line of the linker is an error, one of gcc with a column gives the
       // context of another, e.g. "required from here", and one of cpplint is a warning of style
       return {
+        file,
         line: Number(row),
         column: Number(column) || 0,
         severity: severity || (section && 'error') || (column && 'note') || 'warning',
@@ -862,7 +1444,8 @@ class ProblemManager {
     const python = line.match(PYTHON_DIAGNOSTIC);
     if (python) {
       return {
-        line: Number(python[1]),
+        file: python[1],
+        line: Number(python[2]),
         column: 0,
         severity: 'error',
         message: nextLines.find((next) => PYTHON_ERROR.test(next)) || line.trim(),
@@ -870,8 +1453,9 @@ class ProblemManager {
     }
     const alecci = line.match(ALECCI_DIAGNOSTIC);
     if (alecci) {
-      const [, severity, message, row] = alecci;
+      const [, file, severity, message, row] = alecci;
       return {
+        file,
         line: Number(row),
         column: 0,
         severity,

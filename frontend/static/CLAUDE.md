@@ -70,10 +70,16 @@ browsers load these files as they are. The parent `frontend/CLAUDE.md` also appl
   CDN, configured in `js/problem/mathjax-config.js`.
 - The `<editor-toolbar for="code_editor">` element in `js/components/editor-toolbar.js` adds the
   editor buttons (cut, copy, paste, undo, redo, clear, revert, fullscreen). `problem.html` places
-  the layout menu and the language list inside it. Icons come from the Material Symbols font.
+  the layout menu and the slider of the versions inside it. Icons come from the Material Symbols
+  font.
 - The `<tab-control>` element in `js/components/tab-control.js` is a row of tabs (the buttons of
   its `role="tablist"` child) and the panel of the selected one (its `role="tabpanel"` child),
-  which the page fills on its `change` event. `problem.html` shows the test cases as its tabs.
+  which the page fills on its `change` event; `update()` finds the tabs again after the page
+  changes them. `problem.html` shows the test cases as its tabs, and the files of the solution
+  above the code editor, with the list of languages in the row of the tabs, and the windows of the
+  tabs dragged out of it, tab controls with the tabs of all the files, floating or in splits with
+  the code editor (see "Files of a solution" in `design/readme.adoc`). The icons of the files
+  are in `img/files/`.
 
 ## Commands
 

@@ -3,6 +3,7 @@ import dataclasses
 import io
 import logging
 import math
+import os
 import re
 import shlex
 import tarfile
@@ -52,8 +53,8 @@ DEADLINE_GRACE = 20 # seconds
 # Read timeout for each call to the Docker API, longer than any command run in the container
 DOCKER_TIMEOUT = MAX_DURATION + THREAD_PROOF_EXTRA + KILL_GRACE + HANG_GRACE + 10 # seconds
 
-# Bounds for the data received from the frontend. Each value is untrusted
-MAX_CODE_BYTES = 256 * 1024
+# Bounds for the data received from the frontend. Each value is untrusted. The files of solutions
+# are bounded by vyg.solution_files_error()
 MAX_TESTS = 100
 MAX_TEST_INPUT_BYTES = 4 * 1024 * 1024
 MAX_ARGS_LENGTH = 4096
@@ -112,15 +113,20 @@ ALECCI_TOOLS = {
 ALECCI_STATUS = re.compile(r'^(?:Compiling with [\w ]+ support|'
         r'Compilation successful! Executable created: \S+)(?:\n|$)', re.MULTILINE)
 
+# Extensions of the files of a solution that are included, not compiled
+HEADER_EXTENSIONS = ('.h', '.hpp')
+
 @dataclasses.dataclass(frozen=True)
 class LanguageDefault:
     """ How the backend compiles, runs, and lints the solutions in a programming language """
-    # Fixed name of the source file in WORKDIR. A public Java class must be in a file of its name
+    # Default name of the main file of the solution in WORKDIR, its first file, whose stem the
+    # commands below use (e.g. solution in ./solution). A solution may name its main file, and the
+    # commands use its stem instead: a public Java class must be in a file of its name
     source_file: str
-    # Compiler command and its options, before the source file. Interpreted languages only check
+    # Compiler command and its options, before the source files. Interpreted languages only check
     # the syntax, so students get their syntax errors as compiler errors
     compiler: str
-    # Arguments after the source file. The linker resolves symbols in order, so libraries must
+    # Arguments after the source files. The linker resolves symbols in order, so libraries must
     # follow the source files
     compiler_suffix: str
     # Seconds to compile. The Java compiler runs in a JVM, which starts slower than gcc
@@ -161,11 +167,12 @@ LANGUAGE_DEFAULTS = {
     'Java': LanguageDefault('Solution.java',
         'javac -g -encoding UTF-8 -Xlint:all -d .', '', JAVA_COMPILE_TIMEOUT, 'Solution.class',
         'java -ea -cp . Solution', '', native=False, count_threads=False),
-    # py_compile reports syntax errors before running the test cases. The threads of Python are
-    # threads of the operating system, so gdb counts them on the interpreter
+    # py_compile reports syntax errors before running the test cases. -I keeps the files of the
+    # solution out of sys.path, so a file named py_compile.py cannot replace the check. The
+    # threads of Python are threads of the operating system, so gdb counts them on the interpreter
     # TODO(jhc): lint Python solutions, e.g. with pylint or pycodestyle
     'Python': LanguageDefault('solution.py',
-        'python3 -m py_compile', '', COMPILE_TIMEOUT, '', 'python3 solution.py', '',
+        'python3 -I -m py_compile', '', COMPILE_TIMEOUT, '', 'python3 solution.py', '',
         native=False),
     # alecci translates the solution to LLVM IR and links it with clang into a native executable
     'Alecci': LanguageDefault('solution.ale',
@@ -270,10 +277,15 @@ class Execution:
         # Extra tools asked by the problem, e.g: ['asan', 'lint']
         self.tools = self.problem.tools.split() if isinstance(self.problem.tools, str) else []
         self._validate()
-        # How to compile, run, and lint the solution
-        self.flags = LANGUAGE_DEFAULTS[self.language]
-        # The filename of the student's solution, e.: 'solution.c'
-        self.source_file = self.flags.source_file
+        # The names of the files of the solution, the main one first, e.g. ['solution.c', 'tree.c']
+        self.file_names = list(self.solution.files)
+        # How to compile, run, and lint the solution, with the stem of its main file in the place
+        # of the default one, e.g. python3 tree.py. vyg.solution_files_error() checked the name
+        default = LANGUAGE_DEFAULTS[self.language]
+        old, new = (os.path.splitext(name)[0] for name in (default.source_file, self.file_names[0]))
+        self.flags = dataclasses.replace(default, **{
+            field: getattr(default, field).replace(old, new)
+            for field in ('compiler_suffix', 'compiled_file', 'run_command')})
         # Sanitizers and valgrind only work on native executables
         if not self.flags.native:
             self.tools = [tool for tool in self.tools
@@ -296,10 +308,9 @@ class Execution:
         """ Check types and sizes of the untrusted data used to run the solution """
         if self.language not in LANGUAGE_DEFAULTS:
             raise InvalidSubmission(f'Not supported language by backend: {self.language}')
-        if not isinstance(self.solution.code, str) or not self.solution.code:
-            raise InvalidSubmission('Missing source code')
-        if len(self.solution.code.encode('utf-8')) > MAX_CODE_BYTES:
-            raise InvalidSubmission(f'Source code exceeds {MAX_CODE_BYTES} bytes')
+        error = vyg.solution_files_error(self.solution.files, self.language)
+        if error:
+            raise InvalidSubmission(error)
         if not isinstance(self.problem.languages, list):
             raise InvalidSubmission('Invalid problem languages')
         if not Execution._is_list_of_texts(self.problem.mustContain):
@@ -403,7 +414,7 @@ class Execution:
         """ If professor asked to do static analysis, eg: check some words are in code"""
         if not self.problem.mustContain:
             return
-        code = self.solution.code or ''
+        code = '\n'.join(self.solution.files.values())
         # A single text is one token, not a list of characters
         tokens = self.problem.mustContain
         for token in [tokens] if isinstance(tokens, str) else tokens:
@@ -504,7 +515,8 @@ class Execution:
         # names, owned by the student, so no chown is needed in the container
         mem_tar = io.BytesIO()
         with tarfile.open(fileobj=mem_tar, mode='w') as tar_file:
-            Execution._add_to_tar(tar_file, self.source_file, self.solution.code)
+            for name, code in self.solution.files.items():
+                Execution._add_to_tar(tar_file, name, code)
             # Copy input files of all test cases
             for index0, test in enumerate(self.problem.tests):
                 Execution._add_to_tar(tar_file, Execution._input_file(index0), test.stdin)
@@ -578,15 +590,24 @@ class Execution:
     def _compile(self):
         """ Compile the solution if its language is compiled, e.g: C, C++, Java, or check its
             syntax if it is interpreted, e.g: Python """
-        # Prepare compilation command. Options are defined by the backend, never by users
-        cmd = (self._build_compiler_options() + [self.source_file]
-                + self.flags.compiler_suffix.split())
+        # Prepare compilation command. Options are defined by the backend, never by users. The
+        # names of the files were checked: they never start with - nor have spaces
+        sources = [name for name in self.file_names if not name.endswith(HEADER_EXTENSIONS)]
+        cmd = (self._build_compiler_options() + sources + self.flags.compiler_suffix.split())
+        # Each source file has the time of a solution of one file, e.g. g++ takes half a second for
+        # each file that includes <iostream>, within the time of the whole submission
+        timeout = self._time_left(self.flags.compile_timeout * len(sources))
         # Run the compilation command, if it fails, report to frontend
-        stdout, stderr, exit_code = self._run_in_container(cmd, self.flags.compile_timeout)
+        stdout, stderr, exit_code = self._run_in_container(cmd, timeout)
         output = stdout + stderr
         if self.flags.status_lines:
             output = self.flags.status_lines.sub('', output)
         self.result.compileOutput = truncate_output(output, self.output_limit)
+        # Several files of a solution take longer to compile, and a compiler that ran out of time
+        # writes nothing, so the student is told why
+        if exit_code in (TIMEOUT_EXIT_CODE, KILLED_EXIT_CODE):
+            raise FailedSolution(self.result, vyg.Status.COMPILER_ERROR,
+                f'Compilation took more than {timeout:.3g} seconds')
         if exit_code != 0 or not self._compiled_file_exists():
             # Student code produced compiling errors. They are in compileOutput, the client shows
             # it after the message
@@ -826,7 +847,7 @@ class Execution:
         # Languages without a linting filter have no linter yet
         if 'lint' in self.tools and self.flags.linting_options:
             # Run the linter, e.g: cpplint.py
-            cmd = ['cpplint', f'--filter={self.flags.linting_options}', self.source_file]
+            cmd = ['cpplint', f'--filter={self.flags.linting_options}', *self.file_names]
             stdout, stderr, exit_code = self._run_in_container(cmd, LINT_TIMEOUT)
             if exit_code != 0:
                 # Linter found errors, report them

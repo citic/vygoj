@@ -78,11 +78,14 @@ DOCKER_TIMEOUT = 10
 def start_container(language: str) -> subprocess.Popen:
     """ Start the language server of the language in a new container, and return the docker run
     process, whose stdin and stdout are the ones of the server. The container has no network,
-    capabilities, nor writable files but /tmp, runs as nobody, and stops by itself at the end of
-    MAX_DURATION or when its stdin closes """
+    capabilities, nor writable files but /tmp and the folder of the solution, small folders in
+    memory, runs as nobody, and stops by itself at the end of MAX_DURATION or when its stdin
+    closes. Some language servers read the files of the solution from its folder (see
+    image/pylsp-files) """
     name = f'langserv-{secrets.token_hex(8)}'
     command = ['docker', 'run', '--rm', '--interactive', '--name', name, '--label', LABEL,
         '--network', 'none', '--read-only', '--tmpfs', '/tmp:size=64m',
+        '--tmpfs', '/home/student:size=2m,uid=65534,gid=65534,mode=700',
         '--user', '65534:65534', '--env', 'HOME=/tmp', '--cap-drop', 'ALL',
         '--security-opt', 'no-new-privileges',
         '--memory', config['CONTAINER_MEMORY'], '--memory-swap', config['CONTAINER_MEMORY'],
@@ -109,7 +112,7 @@ def stop_container(process: subprocess.Popen):
 # Methods of the protocol that editors may send. Others, e.g. renaming files or running commands
 # of the server, are dropped
 CLIENT_METHODS = {'initialize', 'initialized', 'textDocument/didOpen', 'textDocument/didChange',
-    'textDocument/completion', 'textDocument/signatureHelp'}
+    'textDocument/didClose', 'textDocument/completion', 'textDocument/signatureHelp'}
 # Folder of the solution files in the containers
 ROOT = 'file:///home/student'
 # Bytes of a message of a language server, e.g. thousands of suggestions after "std::"

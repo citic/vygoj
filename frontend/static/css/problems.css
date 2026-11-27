@@ -191,13 +191,8 @@ editor-toolbar {
     background: var(--toolbar-border);
   }
 
-  /* The language list goes at the right end of the toolbar */
-  & select {
-    margin-left: auto;
-  }
-
-  /* The slider of the versions goes right before the list of languages. The name of its position
-     is as wide as the longest one, so the slider does not move while dragging it */
+  /* The slider of the versions goes at the right end. The name of its position is as wide as the
+     longest one, so the slider does not move while dragging it */
   & .versions {
     display: grid;
     grid-template-columns: minmax(4rem, 8rem) 9.5rem;
@@ -213,11 +208,6 @@ editor-toolbar {
 
     &[hidden] {
       display: none;
-    }
-
-    /* Hidden, the list of languages stays at the end of the toolbar */
-    &:not([hidden]) + select {
-      margin-left: 0.5rem;
     }
   }
 
@@ -362,6 +352,73 @@ tab-control {
   }
 }
 
+/* Files of the solution: tabs with the icon of their language, their name, and a cross that closes
+   them, except the main file. The + button follows them, and the list of languages goes at the
+   right end. The tabs sit on the top border of the toolbar, so the panel has no border */
+.solution > tab-control {
+  & [role="tab"] {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    max-width: min(14rem, 100%);
+    user-select: none; /* Dragging a tab does not select its name */
+  }
+
+  /* A long name ends with an ellipsis, so the cross stays in the tab */
+  & [role="tab"] .file {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  & [role="tab"] img {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  /* Field of the name of a new file or of a file to rename, in the place of its tab, as wide as
+     the name */
+  & .file_name {
+    field-sizing: content;
+    min-width: 6rem;
+    height: 1.75rem;
+    padding: 0 0.375rem;
+    border-radius: 0.375rem 0.375rem 0 0;
+    box-shadow: none;
+    font-size: 0.8125rem;
+  }
+
+  & .close {
+    border-radius: 0.25rem;
+    font-size: 1rem;
+
+    &:hover {
+      background: var(--toolbar-border);
+    }
+  }
+
+  & > #add_file {
+    min-width: 0;
+    margin-left: 0.25rem;
+    padding: 2px;
+    box-shadow: none;
+    background: none;
+    color: var(--toolbar-icon);
+    font-size: 1.25rem;
+
+    &:hover:not([disabled]) {
+      filter: none;
+      background: var(--toolbar-border);
+    }
+  }
+
+  & > [role="tabpanel"] {
+    border: none;
+    border-radius: 0;
+  }
+}
+
 /* After a run, each test case has the color of its result, also the selected one */
 .test_cases [role="tab"] {
   &[data-status="passed"] {
@@ -500,6 +557,7 @@ tab-control {
    materials. Its layout is chosen in the layout menu. It is a container for the width of the
    links */
 .problem {
+  position: relative; /* For the windows of files, which float anywhere in the page */
   container-type: inline-size;
 
   /* The statement can be made shorter with its corner handle; problem.js remembers its size */
@@ -521,15 +579,172 @@ tab-control {
     max-height: 60vh;
   }
 
-  /* Fullscreen button of the toolbar: the editor fills the screen below the toolbar */
-  & .editor:fullscreen {
+  /* A pane split in two or more panes side by side (a row) or one above the other (a column).
+     Rows are columns on narrow screens */
+  & .split {
     display: flex;
     flex-direction: column;
+    gap: 0.25rem;
+
+    & > * {
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: 5rem;
+    }
+
+    & > monaco-editor {
+      max-height: none;
+    }
+
+    @media (width >= 640px) {
+      &[data-direction="row"] {
+        flex-direction: row;
+      }
+    }
+  }
+
+  /* The code editor, and the windows of files: floating over the page, or in splits with it. The
+     code editor alone is as tall as its code (--fitted-height of problem.js) */
+  & .panes {
+    display: grid;
+
+    & > monaco-editor {
+      height: var(--fitted-height);
+    }
+
+    /* The splits of the panes, which the user resizes with the corner handle */
+    & > .split {
+      height: 24rem;
+      overflow: hidden;
+      resize: vertical;
+    }
+  }
+
+  /* Where a dragged window goes, as in Visual Studio Code: the half of a pane, or all the tabs
+     (data-drop="tabs") of the code editor or of another window */
+  & [data-drop] {
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 100;
+      outline: 2px dashed var(--accent);
+      background: color-mix(in srgb, var(--accent) 20%, transparent);
+      pointer-events: none;
+    }
+
+    &[data-drop="left"]::after {
+      right: 50%;
+    }
+
+    &[data-drop="right"]::after {
+      left: 50%;
+    }
+
+    &[data-drop="top"]::after {
+      bottom: 50%;
+    }
+
+    &[data-drop="bottom"]::after {
+      top: 50%;
+    }
+  }
+
+  /* Window of files: a tab control with the tabs of all the files and its cross above the editor
+     of the selected one */
+  & .side {
+    display: grid;
+    grid-template: auto minmax(0, 1fr) / minmax(0, 1fr) auto;
+    align-items: stretch;
+
+    /* Dragged, it is a window over the page, which its corner handle resizes, in the width of the
+       page, so the page does not scroll sideways. Its row of tabs stays in the page, and in the
+       screen in fullscreen */
+    &[data-floating] {
+      position: absolute;
+      top: clamp(0px, var(--top), 100% - 2.5rem);
+      left: clamp(0px, var(--left), 100% - min(36rem, 100%));
+      z-index: 10;
+      width: min(36rem, 100%);
+      max-width: 100%;
+      height: 20rem;
+      overflow: hidden;
+      resize: both;
+      border: 1px solid var(--toolbar-border);
+      border-radius: 0.375rem;
+      background: Canvas;
+      box-shadow: 0 3px 5px grey;
+    }
+
+    /* The tabs sit on the line at its bottom, and its empty part drags the window */
+    & > [role="tablist"] {
+      margin-bottom: 0;
+      padding-top: 0.25rem;
+      box-shadow: inset 0 -1px var(--toolbar-border);
+      cursor: move;
+      user-select: none;
+      touch-action: none; /* Touch drags it, it does not scroll the page */
+    }
+
+    /* On the line below the tabs, as the cross of a tab of the code editor */
+    & > .close_window {
+      align-self: center;
+      min-width: 0;
+      margin: 0 0.25rem;
+      padding: 0;
+      border-radius: 0.25rem;
+      box-shadow: none;
+      background: none;
+      color: var(--toolbar-icon);
+      font-size: 1rem;
+
+      &:hover {
+        filter: none;
+        background: var(--toolbar-border);
+      }
+    }
+
+    /* Without a corner handle of its own, which would hide the one of the window */
+    & > monaco-editor {
+      grid-area: 2 / 1 / 3 / -1;
+      min-height: 5rem;
+      max-height: none;
+      border-color: var(--border); /* Of the editors, not of the panel of a tab control */
+      border-radius: 0;
+      resize: none;
+    }
+  }
+
+  /* Fullscreen button of the toolbar: the tabs of the files and the toolbar on top, and the editors
+     fill the rest of the screen */
+  & > .solution > tab-control:fullscreen {
+    display: grid;
+    grid-template: auto minmax(0, 1fr) / minmax(0, auto) auto 1fr;
+    align-items: end;
+    padding: 0.5rem 1rem 1rem;
     background: Canvas;
 
-    & monaco-editor {
+    & > [role="tabpanel"] {
+      display: flex;
+      grid-area: 2 / 1 / 3 / -1;
+      flex-direction: column;
+      align-self: stretch;
+      min-height: 0;
+    }
+
+    & .panes {
       flex: 1;
+      min-height: 0;
+      grid-auto-rows: minmax(0, 1fr);
+    }
+
+    & .panes > monaco-editor,
+    & .panes > .split {
+      height: auto;
       max-height: none;
+      resize: none;
     }
   }
 

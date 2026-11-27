@@ -18,7 +18,7 @@ The backend runs solutions in these languages, with these compilers:
 
 [cols="1,2,3",options="header"]
 |===
-| Language | Source file | Compiler
+| Language | Default main file | Compiler
 
 | C | `solution.c` | GCC, standard C17 with GNU extensions
 | C++ | `solution.cpp` | G++, standard C++20 with GNU extensions
@@ -26,6 +26,8 @@ The backend runs solutions in these languages, with these compilers:
 | Python | `solution.py` | Python 3 of Debian trixie
 | Alecci | `solution.ale` | https://pypi.org/project/alecci/[alecci] 1.x, a pseudo-language for teaching concurrent programming
 |===
+
+A solution may have up to 32 files, of 256 KiB together: the main file of its language, which the student may rename keeping its extension (e.g. `tree.c`, or `Tree.java` with the public class `Tree`), and others that the student adds with the extensions of that language (`.c` and `.h` in C, `.cpp` and `.hpp` in C++, `.java` in Java, `.py` in Python). Alecci solutions have one file.
 
 Problems may also check C and C++ solutions with sanitizers (`asan`, `tsan`, `ubsan`), valgrind (`memcheck`, `helgrind`), and `cpplint` (`lint`).
 
