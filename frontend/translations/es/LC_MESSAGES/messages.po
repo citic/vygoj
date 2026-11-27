@@ -71,6 +71,10 @@ msgid "%(file)s: ignored the field %(field)s, which the course sets"
 msgstr "%(file)s: se ignoró el campo %(field)s, que lo define el curso"
 
 #, python-format
+msgid "%(file)s: ignored the languages %(languages)s, which VygOJ does not have"
+msgstr "%(file)s: se ignoraron los lenguajes %(languages)s, que VygOJ no tiene"
+
+#, python-format
 msgid ""
 "%(file)s: ignored the test case %(test)s of tests, which has no input "
 "file in the tests folder"

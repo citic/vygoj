@@ -55,11 +55,13 @@ def _words(value):
     return value if isinstance(value, str) else ' '.join(_texts(value))
 
 def _codes(value):
-    """ Return the value if it is an object of strings, e.g. the initial code of each language.
-    Raise ValueError otherwise """
+    """ Return the value if it is an object of strings, e.g. the initial code of each language,
+    with the keys that are extensions or names of languages in any case as their names, as
+    _languages() does. Raise ValueError otherwise """
     if not isinstance(value, dict) or not all(isinstance(item, str) for item in value.values()):
         raise ValueError(value)
-    return value
+    return { vyg.LANGUAGE_NAMES.get(str(key).lower(), str(key)): code
+        for key, code in value.items() }
 
 def _threads(value):
     """ Return the value if it is an integer or 'stdin' (the number is in the standard input).
@@ -151,10 +153,18 @@ class ProblemConfig(ConfigFile):
                 checked = self.check(PROBLEM_FIELDS[field], value, field=field)
                 # The problem loader combines the languages with the ones of the course
                 if field == 'languages' and checked is not None:
-                    self.languages = checked
+                    self.languages = self.known_languages(checked)
                 elif checked is not None:
                     fields[field] = checked
         return fields
+
+    def known_languages(self, names: list) -> list:
+        """ Return the names that are languages of VygOJ, with a warning for the others, e.g. a
+        typo, which would break the problem page """
+        unknown = [name for name in names if name not in vyg.EXTENSION_LANGUAGES]
+        if unknown:
+            self.warn('unknown_languages', languages=', '.join(unknown))
+        return [name for name in names if name in vyg.EXTENSION_LANGUAGES]
 
     def check(self, kind: tuple, value, **params):
         """ Return the value checked by the function of its kind (name, function), or None with a
