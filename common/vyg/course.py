@@ -38,10 +38,13 @@ class Course(Resource):
         # data/user/jhc/pexercises
         self.folder = folder
         # Courses may have an allusive image for helping users to identify it. Courses without it
-        # show the gavel of VygOJ
-        self.image = json_dict.get('image') or '/img/logo2.svg'
+        # show the gavel of VygOJ. vygoj.json is written by hand, so values that are not texts are
+        # ignored
+        image = json_dict.get('image')
+        self.image = image if isinstance(image, str) and image else '/img/logo2.svg'
         # A wide image shown behind the title of the course page
-        self.banner = json_dict.get('banner', '')
+        banner = json_dict.get('banner')
+        self.banner = banner if isinstance(banner, str) else ''
         # Professors that created the course, they may be different than professors who teach it
         self.authors = json_dict.get('authors', [])
         # Status of the course: 'editing', 'available', 'enabled', 'disabled'
