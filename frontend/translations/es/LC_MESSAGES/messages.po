@@ -271,6 +271,10 @@ msgstr "Argumentos, uno por línea"
 msgid "Assistant"
 msgstr "Asistente"
 
+#, python-format
+msgid "At least %(length)d characters"
+msgstr "Al menos %(length)d caracteres"
+
 msgid "Author"
 msgstr "Autor"
 
@@ -760,6 +764,9 @@ msgstr "Nombre"
 
 msgid "New SSO provider"
 msgstr "Nuevo proveedor de SSO"
+
+msgid "New password"
+msgstr "Nueva contraseña"
 
 msgid "Next"
 msgstr "Siguiente"
@@ -1299,6 +1306,9 @@ msgstr ""
 "Se sugiere el máximo de la duración; cámbielo si su institución usa otro,"
 " p. ej. semestres de 16 semanas."
 
+msgid "The new password is too short"
+msgstr "La nueva contraseña es demasiado corta"
+
 #, python-format
 msgid ""
 "The origin must be the SSH URL of a repo in %(hosts)s, e.g. "
@@ -1390,6 +1400,9 @@ msgstr "Tutoría (seguimiento individual)"
 
 msgid "Two months"
 msgstr "Bimestral"
+
+msgid "Type your full name"
+msgstr "Escriba su nombre completo"
 
 msgid "Undo"
 msgstr "Deshacer"
@@ -1538,6 +1551,9 @@ msgstr ""
 msgid "Write the weeks of the section."
 msgstr "Escriba las semanas del grupo."
 
+msgid "Wrong password"
+msgstr "Contraseña incorrecta"
+
 msgid "Year"
 msgstr "Año"
 
@@ -1588,6 +1604,9 @@ msgstr "Su error"
 
 msgid "Your output"
 msgstr "Su salida"
+
+msgid "Your password changed. Log in with the new one."
+msgstr "Su contraseña cambió. Ingrese con la nueva."
 
 msgid ""
 "Your session expired or the request was not valid. Reload the page and "
