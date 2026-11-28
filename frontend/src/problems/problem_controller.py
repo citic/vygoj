@@ -309,12 +309,12 @@ class ProblemController:
         # The test cases of the user are checked here, so they are told the limits. A run has up
         # to MAX_TESTS test cases, with the ones of the problem
         if message.tests is not None:
-            message.tests = check_tests(message.tests, MAX_TESTS - len(problem.tests))
+            message.tests = check_tests(message.tests, user_tests_room(problem))
             if message.tests is None:
                 return ProblemController.error_response(
                     gettext('Your test cases do not fit: at most %(count)d in this problem, with '
                         'up to %(args)d characters of arguments and %(text)d of input or '
-                        'expected output each', count=MAX_TESTS - len(problem.tests),
+                        'expected output each', count=user_tests_room(problem),
                         args=TEST_FIELDS['args'], text=TEST_FIELDS['stdin']), 400)
         course_name = problem.get_course().name
         problem_dict = ProblemController.backend_problem(problem, message)
@@ -495,6 +495,12 @@ class ProblemController:
         """ Choose a random URI from the configuration BACKENDS array. main.py checks that it is
         not empty """
         return random.choice(app.config['BACKENDS'])
+
+def user_tests_room(problem: vyg.Problem) -> int:
+    """ Return how many test cases the user may add to the ones of the problem in a run, up to
+    MAX_TESTS. A problem with more has no room left, but never a negative count, which would
+    reject even an empty list (the backend rejects those problems anyway) """
+    return max(0, MAX_TESTS - len(problem.tests))
 
 def user_tests(course_name: str, problem_name: str):
     """ Answer the test cases that the logged user wrote for the problem, from their student repo,
