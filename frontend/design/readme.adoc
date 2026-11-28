@@ -106,7 +106,7 @@ Only the columns of the table are searched or sorted (`USER_COLUMNS` in `src/adm
 [cols="1,4",options="header"]
 |===
 | Action | Effect
-| Edit (pencil) | Opens the form of the user (`/admin/users/<id>`): full name, email, roles (checkboxes; a user without roles is a student), and status. Emails are unique, and single sign-on links the accounts of providers with that email to the user (<<sso>>). Choosing _Suspended_, _Active_, or _Deleted_ as status and saving has the same effect as the buttons of the table
+| Edit (pencil) | Opens the form of the user (`/admin/users/<id>`): full name, email, roles (checkboxes; a user without roles is a student), and status. Emails are unique and stored in lowercase, and single sign-on links the accounts of providers with that email to the user (<<sso>>). Choosing _Suspended_, _Active_, or _Deleted_ as status and saving has the same effect as the buttons of the table
 | Suspend (pause) | The user cannot log in, with their password or with single sign-on, and if they are logged in, their session ends at their next request. Their data is kept. Suspended users are shown in gray, with an Activate (play) button that lets them log in again
 | Delete (red X) | Removes the user and their data from the database: preferences, progress, single sign-on identities, runs, enrollments, and professor repos with their courses and the enrollments of the students in them (<<professor_repos>>), and their folder in `DATA_FOLDER` (`user/<username>`) with their student repo (<<student_repos>>) and the clones of their professor repos. Their activity stays in the log (<<activity_log>>). It cannot be undone: only backups recover them
 |===
