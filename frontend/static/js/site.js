@@ -177,6 +177,8 @@ class Site {
     this.online = null; // boolean | null
     // The timer of the next status check
     this.statusTimer = 0; // number
+    // Number of the last status check, which is the only one that shows its answer
+    this.statusCheck = 0; // number
     // Error checking
     if (!this.backendOfflineElement || !this.backendOnlineElement) {
       throw new Error('Could not find backend status elements');
@@ -210,14 +212,28 @@ class Site {
   async checkBackendStatus() {
     // TODO: Replace by a WebSocket. Instead of pulling, server pushes changes
     window.clearTimeout(this.statusTimer);
+    this.statusCheck += 1;
+    const check = this.statusCheck;
+    let json = null;
+    let failure = null;
     try {
       // The timeout ensures a hung connection is reported, instead of waiting forever
       const response = await fetch('/status', { signal: AbortSignal.timeout(STATUS_TIMEOUT) });
-      this.updateBackendStatus(await response.json());
+      json = await response.json();
     } catch (error) {
+      failure = error;
+    }
+    // Checks may overlap, e.g. a failed run asks for one while another waits. Only the last one
+    // shows its answer and schedules the next check, so an older answer cannot replace it
+    if (check !== this.statusCheck) {
+      return;
+    }
+    if (failure) {
       this.backendStatus = new BackendStatus();
       this.showBackendVersion();
-      this.setOnline(false, _('Disconnected: %(error)s', { error: error.message }), true);
+      this.setOnline(false, _('Disconnected: %(error)s', { error: failure.message }), true);
+    } else {
+      this.updateBackendStatus(json);
     }
     const interval = this.online ? STATUS_INTERVAL_ONLINE : STATUS_INTERVAL_OFFLINE;
     this.statusTimer = window.setTimeout(() => this.checkBackendStatus(), interval);
