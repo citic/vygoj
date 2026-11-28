@@ -484,6 +484,8 @@ Hidden test cases are not shown to students. The limits of time and output are e
 
 Every user has a student repository, a git repository in VygOJ with the history of their solutions. Each run of a solution saves a new version of the code, unless it did not change. The code editor of the problem page has a slider with the versions of the solution, to see or recover an older one.
 
+Students may also write test cases of their own, e.g. a case that the professor did not include. In a problem with test cases, the _+_ button above the tabs adds one, with its arguments, input, and an optional expected output, and _−_ deletes the selected one; a run has up to 100 test cases, the ones of the professor included. Each run saves them in the student repository, with the solution, and runs them after the ones of the professor: their tabs have a dashed border, and they give no points nor count in the passed test cases. Their output is compared only if they have an expected output.
+
 In the _Repositories_ section of the home page, students download a zip with their last solutions, or a zip with the whole history, and may push their repository to a Git host of their own (_Origin_ and _Push_), after giving write access to the SSH key that the section shows. Zips take some time to be ready, and are kept for 24 hours.
 
 

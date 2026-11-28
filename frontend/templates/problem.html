@@ -118,6 +118,15 @@
                 ('view', _('View'), diff + [('word_wrap', 'wrap', _('Word wrap'), 'false')]),
               ] %}
               <div class="test_toolbar" role="toolbar" aria-label="{{ _('Parts of the test case') }}">
+{%- if tests and it.user %}
+                {#- The test cases that the user writes, kept in their student repo. problem.js
+                    enables the buttons when it loads them: + adds one, and − deletes the selected
+                    one #}
+                <div class="user_tests" role="group" aria-label="{{ _('My test cases') }}">
+                  <button type="button" id="add_test" class="button small" aria-label="{{ _('Add a test case') }}" title="{{ _('Add a test case of mine. The next run saves it') }}" disabled>+</button>
+                  <button type="button" id="delete_test" class="button small" aria-label="{{ _('Delete the test case') }}" title="{{ _('Delete my selected test case. The next run saves it') }}" disabled>−</button>
+                </div>
+{%- endif %}
 {%- for group, name, buttons in groups %}
                 <div class="{{ group }}" role="group" aria-label="{{ name }}">
   {%- for part, text, title, pressed in buttons %}

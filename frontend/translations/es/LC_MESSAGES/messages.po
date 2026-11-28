@@ -202,6 +202,12 @@ msgstr "Agregar"
 msgid "Add SSO provider"
 msgstr "Agregar proveedor de SSO"
 
+msgid "Add a test case"
+msgstr "Agregar un caso de prueba"
+
+msgid "Add a test case of mine. The next run saves it"
+msgstr "Agregar un caso de prueba mío. La próxima ejecución lo guarda"
+
 msgid "Add repository"
 msgstr "Agregar repositorio"
 
@@ -461,6 +467,9 @@ msgstr "Eliminar a %(username)s"
 msgid "Delete account"
 msgstr "Eliminar cuenta"
 
+msgid "Delete my selected test case. The next run saves it"
+msgstr "Borrar mi caso de prueba seleccionado. La próxima ejecución lo guarda"
+
 #, python-format
 msgid ""
 "Delete the provider %(provider)s? Its users will not be able to log in "
@@ -468,6 +477,9 @@ msgid ""
 msgstr ""
 "¿Eliminar el proveedor %(provider)s? Sus usuarios no podrán ingresar con "
 "él."
+
+msgid "Delete the test case"
+msgstr "Borrar el caso de prueba"
 
 #, python-format
 msgid ""
@@ -735,6 +747,13 @@ msgstr "Mis cursos preparados"
 
 msgid "My taught sections"
 msgstr "Mis grupos impartidos"
+
+#, python-format
+msgid "My test case %(number)s"
+msgstr "Mi caso de prueba %(number)s"
+
+msgid "My test cases"
+msgstr "Mis casos de prueba"
 
 msgid "Name"
 msgstr "Nombre"
@@ -1582,11 +1601,13 @@ msgstr "Su solución"
 
 #, python-format
 msgid ""
-"Your test cases do not fit: at most %(count)d, with up to %(args)d "
-"characters of arguments and %(text)d of input or expected output each"
+"Your test cases do not fit: at most %(count)d in this problem, with up to"
+" %(args)d characters of arguments and %(text)d of input or expected "
+"output each"
 msgstr ""
-"Sus casos de prueba no caben: como máximo %(count)d, con hasta %(args)d "
-"caracteres de argumentos y %(text)d de entrada o salida esperada cada uno"
+"Sus casos de prueba no caben: como máximo %(count)d en este problema, con"
+" hasta %(args)d caracteres de argumentos y %(text)d de entrada o salida "
+"esperada cada uno"
 
 msgid "a list of test cases or an object of settings"
 msgstr "una lista de casos de prueba o un objeto de ajustes"

@@ -5,20 +5,33 @@
 //     <div id="active_test" role="tabpanel">...</div>
 //   </tab-control>
 // The tabs share the panel: the page fills it when the tab control sends a change event, whose
-// detail is the index of the selected tab. Arrows, Home, and End move between the tabs
+// detail is the index of the selected tab. Arrows, Home, and End move between the tabs. The page
+// may add or remove buttons of the tab list, and then calls update()
 class TabControl extends HTMLElement {
   connectedCallback() {
-    // The buttons of the tab list, HTMLButtonElement[]
-    this.tabs = [...this.querySelectorAll(':scope > [role="tablist"] > button')];
     // The panel that shows the selected tab, HTMLElement
     this.panel = this.querySelector(':scope > [role="tabpanel"]');
+    this.update();
+    // The list takes the clicks and keys of its tabs, also of the ones added later
+    const list = this.querySelector(':scope > [role="tablist"]');
+    list?.addEventListener('click', (event) => {
+      const index = this.tabs.indexOf(event.target.closest('button'));
+      if (index >= 0) {
+        this.select(index);
+      }
+    });
+    list?.addEventListener('keydown', (event) => this.move(event));
+  }
+
+  // Finds the buttons of the tab list again, and makes them tabs of the panel
+  update() {
+    // The buttons of the tab list, HTMLButtonElement[]
+    this.tabs = [...this.querySelectorAll(':scope > [role="tablist"] > button')];
     this.tabs.forEach((tab, index) => {
       tab.role = 'tab';
       tab.id = `${this.panel.id}_tab_${index + 1}`;
       tab.setAttribute('aria-controls', this.panel.id);
-      tab.addEventListener('click', () => this.select(index));
     });
-    this.tabs[0]?.parentElement.addEventListener('keydown', (event) => this.move(event));
   }
 
   // Index of the selected tab, or -1 if none is selected
