@@ -40,8 +40,9 @@
 
 /* SSO providers and users in tables of data (site.css). Aliases, usernames, and emails have no
    spaces, so they break anywhere to fit narrow screens. The status of each provider gets the
-   color of its data-status, and suspended users are grayed out. The actions of users are icons of
-   the Material Symbols font */
+   color of its data-status, and suspended users are grayed out. The actions of users are quiet
+   icons of the Material Symbols font, as the toolbars, that take the color of the effect of their
+   action (form.css) on hover and keyboard focus */
 .users_admin {
   & :is(.provider .alias, .user .username, .user .email) {
     overflow-wrap: anywhere;
@@ -57,13 +58,44 @@
 
     /* a.button of form.css inherits the font of the page, the icons need theirs */
     & .material-symbols-outlined {
+      --effect: var(--toolbar-icon);
+
       display: inline-block;
       min-width: auto;
       padding: 2px 4px;
+      border-radius: 0.25rem;
+      box-shadow: none;
+      background: none;
+      color: var(--toolbar-icon);
       font-family: "Material Symbols Outlined", sans-serif;
       font-size: 1.5rem;
       line-height: 1;
       vertical-align: middle;
+
+      &.confirm {
+        --effect: var(--confirm-bg);
+      }
+
+      &.action {
+        --effect: var(--action-bg);
+      }
+
+      &.reject {
+        --effect: var(--reject-bg);
+      }
+
+      &.danger {
+        --effect: var(--danger-bg);
+      }
+
+      /* Replaces the bold and shadow of form.css. The effect colors are dark, so they are lighter
+         on the dark background */
+      &:is(:hover, :focus-visible) {
+        background: color-mix(in srgb, var(--effect) 15%, transparent);
+        color: light-dark(var(--effect), color-mix(in srgb, var(--effect) 55%, white));
+        font-weight: normal;
+        filter: none;
+      }
     }
   }
 
